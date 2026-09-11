@@ -1,0 +1,611 @@
+import { supabase } from '../lib/supabase';
+import { getAccessibleFolders } from './permissions.service';
+import { generateEmbeddings } from './llm.service';
+import { STORAGE_CONFIG } from '../config/storage.config';
+import { expandQuery, type QueryExpansionOptions } from './queryExpansion';
+
+export interface DocumentChunk {
+  id: string;
+  content: string;
+  documentTitle: string;
+  documentId?: string;
+  similarity: number;
+  metadata: unknown;
+}
+
+export async function generateEmbedding(text: string): Promise<number[] | null> {
+  try {
+    const embeddings = await generateEmbeddings([text]);
+    return embeddings[0] || null;
+  } catch (error) {
+    console.warn('No embedding generated, RAG functionality will be limited:', error);
+    return null;
+  }
+}
+
+export async function getRAGEnabledFolders(
+  moduleType?: 'general' | 'explain' | 'project' | 'quiz',
+  courseId?: string | null
+): Promise<string[]> {
+  if (courseId === null) {
+    return [];
+  }
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) {
+      console.warn('[RAG] No session token — cannot fetch RAG folders');
+      return [];
+    }
+
+    const params = new URLSearchParams();
+    if (courseId !== undefined) params.set('courseId', courseId);
+    if (moduleType) params.set('moduleType', moduleType);
+
+    const response = await fetch(`/api/rag-enabled-folders?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error('[RAG] rag-enabled-folders error:', response.status);
+      return [];
+    }
+
+    const data = await response.json();
+    return data.folderIds ?? [];
+  } catch (error) {
+    console.error('[RAG] Error fetching RAG-enabled folders:', error);
+    return [];
+  }
+}
+
+// Haal de primaire RAG-folders op die docenten aan een set begrippen hebben
+// gekoppeld. Wordt door searchRelevantChunksWithStats gebruikt om eerst binnen
+// die folders te zoeken voordat het terugvalt op de bredere cursus-mappen.
+async function fetchPrimaryRagFolders(
+  courseId: string,
+  conceptIds: string[],
+): Promise<string[]> {
+  if (!conceptIds || conceptIds.length === 0) return [];
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+    const res = await fetch('/api/quiz/primary-rag-folders', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ courseId, conceptIds }),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.folderIds) ? data.folderIds : [];
+  } catch (err) {
+    console.warn('[RAG] Primaire folders ophalen mislukt:', err);
+    return [];
+  }
+}
+
+// Task #243: haal de bij extractie opgeslagen bewijsfragmenten voor een begrip
+// op. Deze dienen in "Ik leg uit" als gegarandeerde basis-context uit het
+// cursusmateriaal, onafhankelijk van de live RAG-zoekopdracht. Faalt stil
+// (lege lijst) zodat de pagina blijft werken zonder de migratie.
+export async function fetchConceptEvidence(conceptId: string): Promise<DocumentChunk[]> {
+  if (!conceptId) return [];
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers: Record<string, string> = {};
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+    const res = await fetch(`/api/concepts/evidence?conceptId=${encodeURIComponent(conceptId)}`, { headers });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data?.evidence) ? (data.evidence as DocumentChunk[]) : [];
+  } catch (err) {
+    console.warn('[RAG] Bewijsfragmenten ophalen mislukt:', err);
+    return [];
+  }
+}
+
+export interface RAGSearchStats {
+  chunks: DocumentChunk[];
+  threshold: number;
+  matchCount: number;
+  maxSimilarity: number;
+  candidatesConsidered: number;
+  searchPerformed: boolean;
+}
+
+export async function searchRelevantChunksWithStats(
+  query: string,
+  matchThreshold: number = 0.7,
+  matchCount: number = 5,
+  moduleType?: 'general' | 'explain' | 'project' | 'quiz',
+  userRole: 'student' | 'docent' | 'admin' = 'admin',
+  courseId?: string | null,
+  expansion?: QueryExpansionOptions & { enabled?: boolean },
+  conceptIds?: string[],
+): Promise<RAGSearchStats> {
+  const baseStats: RAGSearchStats = {
+    chunks: [],
+    threshold: matchThreshold,
+    matchCount,
+    maxSimilarity: 0,
+    candidatesConsidered: 0,
+    searchPerformed: false,
+  };
+
+
+  if (courseId === null) {
+    console.log('[RAG] No active course — skipping RAG search');
+    return baseStats;
+  }
+
+  // Verrijk de zoekterm wanneer expansion expliciet aanstaat. Voor korte
+  // Nederlandse vaktermen (bv. "cohort") geeft text-embedding-3-small zonder
+  // verrijking lage similarity-scores; door synoniemen + de definition mee te
+  // geven scoren we meetbaar hoger zonder de drempel te verlagen.
+  const _storedLang = localStorage.getItem('lair-vu-lang');
+  const _ragLang = (_storedLang === 'nl' || _storedLang === 'en') ? _storedLang : 'nl';
+  const embedQuery = expansion?.enabled
+    ? expandQuery(query, { definition: expansion.definition, keyPoints: expansion.keyPoints }, _ragLang)
+    : query;
+  if (expansion?.enabled && embedQuery !== query) {
+    console.log(`[RAG] Query expanded for embedding: "${query}" -> "${embedQuery.slice(0, 120)}${embedQuery.length > 120 ? '…' : ''}"`);
+  }
+
+  const embedding = await generateEmbedding(embedQuery);
+
+  if (!embedding) {
+    console.warn('[RAG] No embedding generated, RAG not available');
+    return baseStats;
+  }
+
+  try {
+    const { count: docCount } = await supabase
+      .from('documents')
+      .select('*', { count: 'exact', head: true })
+      .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
+
+    if (!docCount || docCount === 0) {
+      console.warn('[RAG] No RAG documents in database, operating without RAG context');
+      return baseStats;
+    }
+
+    console.log(`[RAG] Found ${docCount} RAG documents in database`);
+
+    const ragEnabledFolders = await getRAGEnabledFolders(moduleType, courseId);
+
+    if (courseId !== undefined && ragEnabledFolders.length === 0) {
+      console.log('[RAG] Active course has no RAG folders for this module — skipping RAG');
+      return baseStats;
+    }
+
+    const accessibleFolderIds = await getAccessibleFolders(userRole);
+
+    const allowedFolderIds = userRole === 'admin'
+      ? ragEnabledFolders
+      : ragEnabledFolders.filter((id) => accessibleFolderIds.includes(id));
+
+    // Primaire RAG-folders per begrip (Task #57). Wanneer concepten gekoppeld
+    // zijn aan een specifieke folder, geven we die voorrang. Pas als daar geen
+    // bruikbare hits zijn, vallen we terug op de bredere allowedFolderIds.
+    const primaryFolderIds = (conceptIds && conceptIds.length > 0 && courseId)
+      ? (await fetchPrimaryRagFolders(courseId, conceptIds)).filter((id) => allowedFolderIds.includes(id))
+      : [];
+
+    console.log(`[RAG] Allowed folder IDs: ${allowedFolderIds.length}, primary folders: ${primaryFolderIds.length}`);
+
+    // Scope de kandidaten op documentniveau VÓÓR de LIMIT (Task #394): zonder
+    // filter trekt match_document_chunks een globale top-N over de hele corpus,
+    // waardoor een grote multi-cursus-corpus de eigen chunks van een cursus
+    // wegcrowdt. We resolven de toegestane RAG-documenten en geven hun id's mee.
+    let filterDocumentIds: string[] | null = null;
+    if (allowedFolderIds.length > 0) {
+      const { data: scopedDocs } = await supabase
+        .from('documents')
+        .select('id')
+        .in('folder_id', allowedFolderIds)
+        .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
+      filterDocumentIds = (scopedDocs || []).map((d) => d.id);
+      if (filterDocumentIds.length === 0) {
+        console.log('[RAG] No RAG documents in allowed folders — skipping RAG');
+        return { ...baseStats, searchPerformed: true };
+      }
+    }
+
+    // Ruime, cursus-gescopete kandidatenpool: omdat we op documentniveau filteren
+    // is een grote pool goedkoop en eerlijk, en blijft een zwak-scorende maar
+    // relevante chunk binnen bereik ook als de corpus groeit. Drempel 0 zodat we
+    // altijd de hoogste beschikbare score kunnen rapporteren bij geen match.
+    const { data: allChunks, error } = await supabase.rpc('match_document_chunks', {
+      query_embedding: embedding,
+      match_threshold: 0,
+      match_count: Math.max(matchCount * 5, 60),
+      filter_document_ids: filterDocumentIds,
+    });
+
+    if (error) {
+      console.error('[RAG] Error searching chunks:', error);
+      return baseStats;
+    }
+
+    if (!allChunks || allChunks.length === 0) {
+      console.warn('[RAG] match_document_chunks returned no rows at all');
+      return { ...baseStats, searchPerformed: true };
+    }
+
+    console.log(`[RAG] RPC returned ${allChunks.length} candidate chunks (top score: ${(allChunks[0]?.similarity ?? 0).toFixed(3)})`);
+
+    const { data: documents } = await supabase
+      .from('documents')
+      .select('id, folder_id, bucket')
+      .in('id', allChunks.map((c: { document_id: string }) => c.document_id))
+      .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
+
+    const docFolderById = new Map((documents || []).map((d) => [d.id, d.folder_id]));
+
+    const allowedDocIds = new Set(
+      documents
+        ?.filter((doc) => {
+          if (!doc.folder_id) return allowedFolderIds.length === 0;
+          return allowedFolderIds.includes(doc.folder_id);
+        })
+        .map((doc) => doc.id) || []
+    );
+
+    const inAllowedFolders = (allChunks as Array<{ id: string; document_id: string; content: string; document_title: string; similarity: number; metadata: unknown }>)
+      .filter((chunk) => allowedDocIds.has(chunk.document_id));
+
+    // Voorrang aan chunks uit primaire folders zodra die voldoende hits opleveren.
+    let workingSet = inAllowedFolders;
+    if (primaryFolderIds.length > 0) {
+      const primarySet = new Set(primaryFolderIds);
+      const primaryChunks = inAllowedFolders.filter((c) => {
+        const f = docFolderById.get(c.document_id);
+        return f && primarySet.has(f);
+      });
+      const primaryAboveThreshold = primaryChunks.filter((c) => c.similarity >= matchThreshold);
+      if (primaryAboveThreshold.length >= Math.min(matchCount, 2)) {
+        workingSet = primaryChunks;
+        console.log(`[RAG] Primaire folder-set gebruikt (${primaryChunks.length} kandidaten, ${primaryAboveThreshold.length} ≥ drempel)`);
+      } else {
+        console.log(`[RAG] Primaire folder-set onvoldoende (${primaryAboveThreshold.length} hits) — fallback naar brede set.`);
+      }
+    }
+
+    const maxAllowed = workingSet.length > 0
+      ? Math.max(...workingSet.map((c) => c.similarity))
+      : 0;
+
+    const aboveThreshold = workingSet.filter((c) => c.similarity >= matchThreshold);
+
+    if (aboveThreshold.length === 0) {
+      console.warn(
+        `[RAG] Geen chunks boven drempel ${matchThreshold.toFixed(2)} ` +
+        `(beste score in toegestane mappen: ${maxAllowed.toFixed(3)}, kandidaten: ${workingSet.length}). ` +
+        `Overweeg de drempel te verlagen.`
+      );
+      return {
+        chunks: [],
+        threshold: matchThreshold,
+        matchCount,
+        maxSimilarity: maxAllowed,
+        candidatesConsidered: workingSet.length,
+        searchPerformed: true,
+      };
+    }
+
+    const filteredChunks = aboveThreshold.slice(0, matchCount);
+
+    console.log(`[RAG] Returning ${filteredChunks.length} chunks (scores: ${filteredChunks.map((c) => c.similarity.toFixed(3)).join(', ')})`);
+
+    return {
+      chunks: filteredChunks.map((chunk) => ({
+        id: chunk.id,
+        content: chunk.content,
+        documentTitle: chunk.document_title,
+        documentId: chunk.document_id,
+        similarity: chunk.similarity,
+        metadata: chunk.metadata,
+      })),
+      threshold: matchThreshold,
+      matchCount,
+      maxSimilarity: maxAllowed,
+      candidatesConsidered: workingSet.length,
+      searchPerformed: true,
+    };
+  } catch (error) {
+    console.error('[RAG] Unexpected error in searchRelevantChunksWithStats:', error);
+    return baseStats;
+  }
+}
+
+export async function searchRelevantChunks(
+  query: string,
+  matchThreshold: number = 0.7,
+  matchCount: number = 5,
+  moduleType?: 'general' | 'explain' | 'project' | 'quiz',
+  userRole: 'student' | 'docent' | 'admin' = 'admin',
+  courseId?: string | null,
+  expansion?: QueryExpansionOptions & { enabled?: boolean },
+  conceptIds?: string[],
+): Promise<DocumentChunk[]> {
+  const stats = await searchRelevantChunksWithStats(
+    query,
+    matchThreshold,
+    matchCount,
+    moduleType,
+    userRole,
+    courseId,
+    expansion,
+    conceptIds,
+  );
+  return stats.chunks;
+}
+
+export async function checkRAGAvailability(): Promise<{
+  documentsAvailable: boolean;
+  chunksAvailable: boolean;
+  embeddingsConfigured: boolean;
+  documentCount: number;
+  chunkCount: number;
+  ragFoldersCount: number;
+}> {
+  try {
+    const { count: docCount } = await supabase
+      .from('documents')
+      .select('*', { count: 'exact', head: true })
+      .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
+
+    const { count: chunkCount } = await supabase
+      .from('document_chunks')
+      .select('*', { count: 'exact', head: true });
+
+    const { count: ragFoldersCount } = await supabase
+      .from('document_folders')
+      .select('*', { count: 'exact', head: true })
+      .eq('bucket_type', 'rag_sources');
+
+    let embeddingsConfigured = false;
+    try {
+      const healthRes = await fetch('/api/health');
+      if (healthRes.ok) {
+        const health = await healthRes.json() as { openai?: boolean; azureEmbeddings?: boolean };
+        embeddingsConfigured = !!health.azureEmbeddings;
+      }
+    } catch {
+      embeddingsConfigured = false;
+    }
+
+    return {
+      documentsAvailable: (docCount || 0) > 0,
+      chunksAvailable: (chunkCount || 0) > 0,
+      embeddingsConfigured,
+      documentCount: docCount || 0,
+      chunkCount: chunkCount || 0,
+      ragFoldersCount: ragFoldersCount || 0,
+    };
+  } catch (error) {
+    console.error('[RAG] Error checking RAG availability:', error);
+    return {
+      documentsAvailable: false,
+      chunksAvailable: false,
+      embeddingsConfigured: false,
+      documentCount: 0,
+      chunkCount: 0,
+      ragFoldersCount: 0,
+    };
+  }
+}
+
+// Veiligheidsgrenzen voor de prompt naar het taalmodel. De char-cap blijft de
+// echte rem tegen token-blow-up; het chunk-plafond stond op 10 vanwege het oude
+// gpt-4o-mini-venster, maar de chat draait nu op Azure gpt-5.5 (ruime context).
+// Een te laag chunk-plafond knipte een door de docent ingestelde, ruimere
+// match_count alsnog terug op 10 — waardoor een laag-rangschikkende maar
+// relevante chunk (bv. een figuuronderschrift) buiten beeld viel (Task #394).
+// De char-cap (18000) begrenst de werkelijke contextgrootte.
+export const RAG_CONTEXT_MAX_CHUNKS = 15;
+export const RAG_CONTEXT_MAX_CHARS = 18000;
+
+export interface FormattedContext {
+  context: string;
+  usedChunks: number;
+  totalChunks: number;
+  /** True wanneer er chunks zijn weggelaten of wanneer chunk-inhoud is ingekort. */
+  truncated: boolean;
+  /** True wanneer minstens één chunk-inhoud is afgekapt door de char-cap. */
+  charTrimmed: boolean;
+}
+
+export function formatContextFromChunks(chunks: DocumentChunk[]): string {
+  return buildContextWithCap(chunks).context;
+}
+
+// Dia-reeks uit chunk-metadata van een PowerPoint-bron (source:'pptx').
+// Geeft null terug voor niet-pptx of onvolledige metadata.
+export interface SlideRange {
+  start: number;
+  end: number;
+}
+
+export function slideRangeFromMetadata(metadata: unknown): SlideRange | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const m = metadata as Record<string, unknown>;
+  if (m.source !== 'pptx') return null;
+  const start = Number(m.slideStart);
+  if (!Number.isFinite(start)) return null;
+  const endRaw = Number(m.slideEnd);
+  const end = Number.isFinite(endRaw) ? endRaw : start;
+  return { start, end: Math.max(start, end) };
+}
+
+// Pagina-reeks uit chunk-metadata van een PDF-bron (pageStart/pageEnd, vastgelegd
+// tijdens het inlezen). PowerPoint-chunks (source:'pptx') gebruiken de dia-reeks
+// en worden hier overgeslagen. Geeft null bij ontbrekende/ongeldige metadata.
+export function pageRangeFromMetadata(metadata: unknown): SlideRange | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const m = metadata as Record<string, unknown>;
+  if (m.source === 'pptx') return null;
+  const start = Number(m.pageStart);
+  if (!Number.isFinite(start) || start < 1) return null;
+  const endRaw = Number(m.pageEnd);
+  const end = Number.isFinite(endRaw) ? endRaw : start;
+  return { start, end: Math.max(start, end) };
+}
+
+// Bouwt een bron-item uit een chunk en neemt de vindplaats mee: de dia-reeks bij
+// een PowerPoint-chunk ("dia 4–6") of de pagina-reeks bij een PDF ("p. 12–13").
+export function chunkToDisplaySource(chunk: {
+  documentTitle: string;
+  similarity: number;
+  documentId?: string;
+  metadata?: unknown;
+}): {
+  title: string;
+  similarity: number;
+  documentId?: string;
+  slideStart?: number;
+  slideEnd?: number;
+  pageStart?: number;
+  pageEnd?: number;
+} {
+  const base = {
+    title: chunk.documentTitle,
+    similarity: chunk.similarity,
+    documentId: chunk.documentId,
+  };
+  const slide = slideRangeFromMetadata(chunk.metadata);
+  if (slide) return { ...base, slideStart: slide.start, slideEnd: slide.end };
+  const page = pageRangeFromMetadata(chunk.metadata);
+  if (page) return { ...base, pageStart: page.start, pageEnd: page.end };
+  return base;
+}
+
+export function dedupeSourcesByDocument<
+  T extends {
+    title: string;
+    similarity: number;
+    documentId?: string;
+    slideStart?: number;
+    slideEnd?: number;
+    pageStart?: number;
+    pageEnd?: number;
+  }
+>(
+  sources: T[],
+  topN: number = 3
+): T[] {
+  if (sources.length === 0 || topN <= 0) return [];
+  const bestPerDoc = new Map<string, T>();
+  for (const src of sources) {
+    // Bij voorkeur dedupliceren op documentId zodat verschillende documenten met
+    // dezelfde titel niet ten onrechte worden samengevoegd; fallback op titel.
+    // De dia-/pagina-reeks zit in de sleutel zodat verschillende vindplaatsen uit
+    // hetzelfde document als aparte bronnen zichtbaar blijven.
+    const slidePart = src.slideStart != null ? `:s${src.slideStart}-${src.slideEnd ?? src.slideStart}` : '';
+    const pagePart = src.pageStart != null ? `:p${src.pageStart}-${src.pageEnd ?? src.pageStart}` : '';
+    const key = (src.documentId ? `id:${src.documentId}` : `t:${src.title}`) + slidePart + pagePart;
+    const existing = bestPerDoc.get(key);
+    if (!existing || src.similarity > existing.similarity) {
+      bestPerDoc.set(key, src);
+    }
+  }
+  return Array.from(bestPerDoc.values())
+    .sort((a, b) => b.similarity - a.similarity)
+    .slice(0, topN);
+}
+
+// Bouw een veilig href voor het downloaden van een RAG-document. Geeft undefined
+// terug wanneer er geen documentId beschikbaar is.
+export function ragDocumentDownloadUrl(documentId?: string): string | undefined {
+  if (!documentId) return undefined;
+  return `/api/rag/documents/${encodeURIComponent(documentId)}/download`;
+}
+
+// Opent een RAG-document via een geauthenticeerde fetch. Vereist omdat een
+// gewone <a href> de Supabase Bearer-token niet meestuurt (de download-route
+// zou dan 401 geven). Bij signed-URL responses opent een nieuw tabblad de
+// getekende URL; bij binary (file_bytes) responses wordt een blob-URL geopend.
+export async function openRagDocument(documentId: string, targetPage?: number): Promise<void> {
+  if (!documentId) return;
+  const url = `/api/rag/documents/${encodeURIComponent(documentId)}/download`;
+  // Browsers springen voor PDF's naar de juiste pagina via een #page=N-fragment.
+  const pageFragment =
+    Number.isFinite(targetPage) && (targetPage as number) >= 1
+      ? `#page=${Math.floor(targetPage as number)}`
+      : '';
+  const { data: { session } } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+  if (session?.access_token) headers['Authorization'] = `Bearer ${session.access_token}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    let detail = '';
+    try {
+      const j = await res.json();
+      detail = j?.error || '';
+    } catch { /* ignore */ }
+    throw new Error(detail || `Kon bron niet openen (${res.status}).`);
+  }
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    const j = await res.json() as { url?: string };
+    if (!j.url) throw new Error('Geen downloadlink ontvangen.');
+    window.open(j.url + pageFragment, '_blank', 'noopener,noreferrer');
+    return;
+  }
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const win = window.open(objectUrl + pageFragment, '_blank', 'noopener,noreferrer');
+  // Geef de browser even tijd om het tabblad te openen voor we de URL revoken.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+  if (!win) throw new Error('Pop-up geblokkeerd. Sta pop-ups toe om de bron te openen.');
+}
+
+export function buildContextWithCap(
+  chunks: DocumentChunk[],
+  maxChunks: number = RAG_CONTEXT_MAX_CHUNKS,
+  maxChars: number = RAG_CONTEXT_MAX_CHARS
+): FormattedContext {
+  const total = chunks.length;
+  if (total === 0) {
+    return { context: '', usedChunks: 0, totalChunks: 0, truncated: false, charTrimmed: false };
+  }
+
+  // Aannemen dat searchRelevantChunks al op similarity gesorteerd is (hoogst eerst).
+  const limitN = Math.min(maxChunks, total);
+  const SEP = '\n\n---\n\n';
+  const parts: string[] = [];
+  let runningChars = 0;
+  let used = 0;
+  let charTrimmed = false;
+  for (let i = 0; i < limitN; i++) {
+    const chunk = chunks[i];
+    const header = `[Bron ${i + 1}: ${chunk.documentTitle}]\n`;
+    const sepLen = parts.length === 0 ? 0 : SEP.length;
+    const headroom = maxChars - runningChars - sepLen - header.length;
+    if (headroom <= 0) {
+      // Geen ruimte meer voor de header van deze chunk — stoppen.
+      break;
+    }
+    // Trim chunk-inhoud zo nodig zodat we ook de eerste (mogelijk grote) chunk
+    // strikt onder maxChars houden.
+    let content = chunk.content;
+    if (chunk.content.length > headroom) {
+      content = chunk.content.slice(0, Math.max(0, headroom - 20)) + '…[ingekort]';
+      charTrimmed = true;
+    }
+    const part = header + content;
+    parts.push(part);
+    runningChars += part.length + sepLen;
+    used += 1;
+  }
+
+  return {
+    context: parts.join(SEP),
+    usedChunks: used,
+    totalChunks: total,
+    truncated: used < total || charTrimmed,
+    charTrimmed,
+  };
+}
