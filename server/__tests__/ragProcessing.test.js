@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { processPptxCore, processPlainRagDocument, processDocxCore } from '../ragProcessing.js';
 import { assignPdfPages } from '../pdfPages.js';
+import { chunkPlainText } from '../chunking.js';
 
 // Mini-mock van supabaseAdmin: legt elke documents-status-update vast zodat we
 // kunnen verifiëren dat de fail-safe het document op 'failed' zet.
@@ -149,6 +150,30 @@ describe('processPlainRagDocument fail-safe', () => {
     expect(statusUpdates.some((u) => u.processing_status === 'completed')).toBe(true);
     expect(statusUpdates.some((u) => u.processing_status === 'failed')).toBe(false);
   });
+
+  it('normaliseert officeparser-objecten naar platte tekst in plaats van "[object Object]"', async () => {
+    const { supabaseAdmin, insertedRows } = makeMockSupabase();
+    const officeObject = {
+      type: 'docx',
+      content: [
+        { type: 'paragraph', text: 'Eerste alinea.' },
+        { type: 'paragraph', text: 'Tweede alinea.' },
+      ],
+      toText: () => 'Eerste alinea.\n\nTweede alinea.',
+    };
+    const deps = {
+      supabaseAdmin,
+      embedTextsServer: okEmbeddings,
+      parseOfficeAsync: async () => officeObject,
+      chunkPlainText: (t) => [t],
+    };
+    const docxDoc = { ...TXT_DOC, id: 'docx-normalize', file_path: 'folder/essay.docx', file_type: 'docx' };
+
+    const res = await processPlainRagDocument(docxDoc, 'sk-test', deps);
+
+    expect(res.totalChunks).toBe(1);
+    expect(insertedRows[0].content).toBe('Eerste alinea.\n\nTweede alinea.');
+  });
 });
 
 const PDF_DOC = { id: 'doc-pdf', file_path: 'folder/reader.pdf', bucket: 'rag_sources', file_type: 'pdf' };
@@ -212,6 +237,37 @@ describe('processPlainRagDocument — betrouwbare PDF-extractie (Task #397)', ()
     await expect(processPlainRagDocument(PDF_DOC, 'sk-test', deps)).rejects.toThrow(/leesbare tekst/i);
     expect(statusUpdates.some((u) => u.processing_status === 'failed')).toBe(true);
     expect(statusUpdates.some((u) => u.processing_status === 'completed')).toBe(false);
+  });
+});
+
+describe('chunkPlainText guard against one-chunk collapse', () => {
+  it('splitst een rijk document met veel zinnen niet in één onbruikbare chunk', () => {
+    const text = [
+      'Kernbegrip 1: effectiviteit wordt bepaald door de combinatie van kwaliteit, vertrouwen en tijdigheid.',
+      'Bij een hoge kwaliteit is de kans op een positieve uitkomst groter, maar de kosten kunnen ook stijgen.',
+      'Ondersteuning en begeleiding zijn cruciaal omdat studenten anders niet goed kunnen differentiëren tussen oorzaak en gevolg.',
+      'Het tweede kernbegrip is validiteit, oftewel in hoeverre een meting werkelijk het construct meet dat bedoeld is.',
+      'Validiteit verschilt van betrouwbaarheid: een meting kan betrouwbaar zijn zonder valide te zijn.',
+      'Daarom moeten variabelen expliciet worden gedefinieerd en gecontroleerd voor confounding en bias.',
+      'De methoden in deze module bouwen voort op deze definities, zodat de analyse niet alleen beschrijvend blijft maar ook interpreteerbaar is.',
+      'Dit maakt het mogelijk om op basis van concrete aanwijzingen een verantwoorde conclusie te trekken.',
+      'In de praktijk betekent dat dat de docent de casus eerst analyseert, vervolgens de relevante termen benoemt en daarna de juiste procedure selecteert.',
+      'Een methodische aanpak verhoogt de kwaliteit van de evaluatie en voorkomt misclassificatie van complexe situaties.',
+      'Deze regel geldt ook voor voorbeelden: een voorbeeld mag illustratief zijn, maar het is geen kernbegrip van de cursus.',
+      'Daarom wordt de conceptextractie streng gescheiden tussen kernbegrippen en voorbeelden.',
+      'De docent gebruikt deze definities om het verschil tussen causale en associatieve interpretaties te verduidelijken.',
+      'Dat is relevant omdat studenten anders gemakkelijk een correlatie als oorzaak interpretteren.',
+      'In het tweede deel van de module worden statistische criteria besproken om effectmodificatie en confounding te herkennen.',
+      'Daarbij wordt expliciet aandacht besteed aan variabele selectie, optreden van bias en de interpretatie van uitkomsten.',
+      'Een goed begrippenkader helpt om de juiste terminologie te gebruiken bij het schrijven van een uitgebreid verslag.',
+      'De begrippen zijn daarom niet alleen voor de quiz relevant, maar ook voor de praktische analyse van casussen.',
+      'Het systeem moet deze termen onderscheidbaar houden van losse voorbeelden, want voorbeelden zijn geen kernbegrippen.',
+      'Met deze ankerbegrippen kunnen studenten later zelf de juiste theorie en methoden toepassen in een nieuw probleem.'
+    ].join(' ');
+
+    const chunks = chunkPlainText(text);
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.some((c) => c.length > 200)).toBe(true);
   });
 });
 

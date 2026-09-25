@@ -104,6 +104,7 @@ const PROMPT_LABELS: Record<string, string> = {
   quiz_generate_strict: 'Strikt (alleen RAG)',
   quiz_generate_blended: 'Gemengd (RAG + algemene kennis)',
   quiz_generate_creative: 'Creatief (transfer/casus)',
+  quiz_verify: 'Kwaliteitscontrole vragen',
   quiz_evaluate_open: 'Beoordelen open antwoorden',
 };
 

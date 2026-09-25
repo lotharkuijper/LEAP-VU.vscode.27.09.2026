@@ -18,6 +18,7 @@ import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { NoticeBanner, useNotice } from '../components/Notice';
 import { PromptDebugBadge } from '../components/PromptDebugBadge';
 import { useLearningLevel } from '../hooks/useLearningLevel';
+import { useRefocusAfterLoading } from '../hooks/useRefocusAfterLoading';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
 
 
@@ -492,6 +493,10 @@ export function ChatPage() {
     ta.style.height = 'auto';
     ta.style.height = Math.min(ta.scrollHeight, 200) + 'px';
   }, [input]);
+
+  // Na een antwoord (loading true→false) meteen weer in het invoerveld staan,
+  // zodat de student direct de volgende vraag kan typen.
+  useRefocusAfterLoading(chatInputRef, loading);
 
   // Bewaar de gekozen breedte van het documentpaneel tussen sessies.
   useEffect(() => {

@@ -20,6 +20,9 @@ export interface QuizTopic {
   id: string;
   name: string;
   category?: string;
+  /** Voor query-uitbreiding bij het ophalen van cursusmateriaal. */
+  definition?: string | null;
+  keyPoints?: string[] | null;
   /** "course" | "global" | "empty" — herkomst zoals teruggegeven door /api/concepts. */
   source: 'course' | 'global' | 'empty';
 }
@@ -56,6 +59,9 @@ export async function getQuizTopics(courseId: string | null): Promise<QuizTopic[
       id: c.id,
       name: c.name,
       category: c.category,
+      definition: typeof c.definition === 'string' ? c.definition : null,
+      // key_points kan (pre-migratie) cursus-markers als "[course:…]" bevatten; expandQuery filtert die weg.
+      keyPoints: Array.isArray(c.key_points) ? c.key_points.filter((k: unknown): k is string => typeof k === 'string') : null,
       source,
     }));
 }

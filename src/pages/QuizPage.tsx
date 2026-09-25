@@ -16,12 +16,16 @@ import {
   type CasusQuestion,
   type QuizSource,
 } from '../services/llm.service';
-import { generateMixedQuiz, fetchSourceMix, distributeMix, SOURCE_LABELS, SOURCE_COLORS, type SourceMix, type MixCounts } from '../services/quiz-mix.service';
-import { searchRelevantChunksWithStats, buildContextWithCap, chunkToDisplaySource, type DocumentChunk } from '../services/rag.service';
+import { generateMixedQuiz, fetchSourceMix, distributeMix, SOURCE_LABELS, SOURCE_COLORS, type SourceMix, type MixCounts, type VerificationSummary } from '../services/quiz-mix.service';
+import { buildContextWithCap, chunkToDisplaySource, type DocumentChunk } from '../services/rag.service';
+import { retrieveQuizContext } from '../services/quiz-context.service';
 import { getQuizTopics, type QuizTopic } from '../services/quiz-topic.service';
 import { SourceList, type SourceItem } from '../components/SourceList';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
 import { PromptDebugBadge } from '../components/PromptDebugBadge';
+import { QuizCheckLLMButton } from '../components/QuizCheckLLMButton';
+import { QuizGenerationProgress, type GenerationPhase } from '../components/QuizGenerationProgress';
+import { estimateQuizSeconds, recordQuizDuration, roundSeconds } from '../lib/quizTimeEstimate';
 import {
   Play,
   CheckCircle,
@@ -42,6 +46,7 @@ import {
   Loader2,
   Search,
   Calendar,
+  Clock,
 } from 'lucide-react';
 import { RAGStatusIndicator } from '../components/RAGStatusIndicator';
 import { NoticeBanner, useNotice } from '../components/Notice';
@@ -77,6 +82,7 @@ interface RagModuleSettings {
   similarity_threshold: number;
   match_count: number;
   rag_strict_mode: boolean;
+  query_expansion_enabled?: boolean;
 }
 interface RagSettings {
   chat: RagModuleSettings;
@@ -175,6 +181,12 @@ export function QuizPage() {
   // Bronnen-mix per cursus (Task #57)
   const [sourceMix, setSourceMix] = useState<SourceMix>({ pct_rag: 50, pct_itembank: 0, pct_llm: 50 });
   const [lastMixCounts, setLastMixCounts] = useState<MixCounts | null>(null);
+  const [verification, setVerification] = useState<VerificationSummary | null>(null);
+  // Wachtbalk tijdens het genereren (fase + voorlopig aantal goedgekeurde vragen).
+  const [genProgress, setGenProgress] = useState<{
+    phase: GenerationPhase; approved: number; target: number; startedAt: number; expected: number;
+  } | null>(null);
+  const timeEstimate = useMemo(() => estimateQuizSeconds(questionType, numQuestions), [questionType, numQuestions, genProgress]);
 
   // Per-begrip beschikbaarheid (Task #57): toont aan jou hoeveel RAG-documenten
   // en ItemBank-vragen per geselecteerd begrip beschikbaar zijn, zodat je
@@ -359,29 +371,36 @@ export function QuizPage() {
     setFeedbackError(null);
     setContextStats(null);
     setRagStats(null);
+    setVerification(null);
+    const startedAt = Date.now();
+    setGenProgress({
+      phase: 'searching', approved: 0, target: numQuestions, startedAt,
+      expected: estimateQuizSeconds(questionType, numQuestions).expected,
+    });
 
     const topicNames = selectedTopics.map(t => t.name);
 
     try {
       let ragContext: string | undefined;
+      let bestScore = 0;
       if (activeCourse !== null) {
         let chunks: DocumentChunk[] = [];
         try {
-          const ragResult = await searchRelevantChunksWithStats(
-            topicNames.join(', '),
-            ragSettings.quiz.similarity_threshold,
-            ragSettings.quiz.match_count,
-            'quiz',
-            profile?.role || 'student',
-            activeCourse,
-            undefined,
-            selectedTopics.map(t => t.id),
-          );
+          // Per onderwerp zoeken + vastgelegde bewijsfragmenten (zie quiz-context.service).
+          const ragResult = await retrieveQuizContext({
+            topics: selectedTopics,
+            courseId: activeCourse,
+            role: profile?.role || 'student',
+            threshold: ragSettings.quiz.similarity_threshold,
+            matchCount: ragSettings.quiz.match_count,
+            expansionEnabled: !!ragSettings.quiz.query_expansion_enabled,
+          });
+          bestScore = ragResult.stats.maxSimilarity;
           setRagStats({
-            threshold: ragResult.threshold,
-            maxSimilarity: ragResult.maxSimilarity,
-            candidatesConsidered: ragResult.candidatesConsidered,
-            searchPerformed: ragResult.searchPerformed,
+            threshold: ragResult.stats.threshold,
+            maxSimilarity: ragResult.stats.maxSimilarity,
+            candidatesConsidered: ragResult.stats.candidatesConsidered,
+            searchPerformed: ragResult.stats.searchPerformed,
           });
           chunks = ragResult.chunks;
         } catch (ragErr) {
@@ -411,9 +430,43 @@ export function QuizPage() {
           ragContext,
           ragStrictMode: ragSettings.quiz.rag_strict_mode,
           mix: sourceMix,
+          onProgress: (e) => setGenProgress(p => p && { ...p, phase: e.phase, approved: e.approved }),
         });
         generated = result.questions;
         mixCounts = result.counts;
+        // Kalibreer de tijdschatting alleen met geslaagde quizzen.
+        if (result.status === 'ok') recordQuizDuration(questionType, numQuestions, (Date.now() - startedAt) / 1000);
+        setVerification(result.verification);
+        // Geen passend cursusmateriaal → geen enkele vraag is bij de cursus te
+        // toetsen, dus ook geen quiz (en geen ongetoetste vrije generatie).
+        if (result.status === 'no_course_material') {
+          setFeedbackError({
+            title: t('quiz.noCourseMaterial'),
+            detail: `${t('quiz.noCourseMaterialDetail')} ${t('quiz.noCourseMaterialScore', {
+              best: bestScore.toFixed(3),
+              threshold: ragSettings.quiz.similarity_threshold.toFixed(2),
+            })}`,
+          });
+          return;
+        }
+        // De student krijgt precies het gevraagde aantal, of — als dat ook na
+        // de vervangrondes niet lukt — een eerlijke melding i.p.v. minder vragen.
+        if (result.status === 'shortfall') {
+          const v = result.verification;
+          // Technische fouten tijdens de controle zijn géén inhoudelijke afkeuring:
+          // meld ze als zodanig, met de foutmelding in de technische details.
+          const onlyErrors = v.failed > 0 && v.rejected === 0;
+          setFeedbackError({
+            title: onlyErrors
+              ? t('quiz.verificationUnavailable')
+              : t('quiz.verificationShortfall', { kept: String(generated.length), requested: String(numQuestions) }),
+            detail: [
+              v.rejected > 0 ? t('quiz.verificationShortfallDetail', { rejected: String(v.rejected) }) : '',
+              v.failed > 0 ? t('quiz.verificationFailedDetail', { failed: String(v.failed), error: v.lastError || '' }) : '',
+            ].filter(Boolean).join(' '),
+          });
+          return;
+        }
       } catch (llmErr) {
         console.error('[QUIZ] Mixed quiz generation failed:', llmErr);
         setFeedbackError(llmErrorToDutch(llmErr, lang));
@@ -446,6 +499,7 @@ export function QuizPage() {
       });
     } finally {
       setLoading(false);
+      setGenProgress(null);
     }
   };
 
@@ -909,7 +963,7 @@ export function QuizPage() {
               </label>
               <input
                 type="range"
-                min={3}
+                min={1}
                 max={questionType === 'mcq' ? 10 : 6}
                 value={numQuestions}
                 onChange={e => setNumQuestions(parseInt(e.target.value))}
@@ -917,7 +971,7 @@ export function QuizPage() {
                 data-testid="input-num-questions"
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>3</span>
+                <span>1</span>
                 <span>{questionType === 'mcq' ? 10 : 6}</span>
               </div>
               {questionType !== 'mcq' && (
@@ -979,6 +1033,19 @@ export function QuizPage() {
               </p>
             )}
 
+            {!loading && (() => {
+              const low = roundSeconds(timeEstimate.low);
+              const high = roundSeconds(timeEstimate.high);
+              return (
+                <p className="text-xs text-gray-600 flex items-center gap-1.5" data-testid="text-quiz-time-estimate">
+                  <Clock className="w-3.5 h-3.5 text-cyan-600" />
+                  {low === high
+                    ? t('quiz.estimate.single', { seconds: String(low) })
+                    : t('quiz.estimate.range', { low: String(low), high: String(high) })}
+                </p>
+              );
+            })()}
+
             <button
               onClick={handleStartQuiz}
               disabled={loading || selectedTopicIds.size === 0}
@@ -994,6 +1061,17 @@ export function QuizPage() {
                 </>
               )}
             </button>
+
+            {loading && genProgress && (
+              <QuizGenerationProgress
+                phase={genProgress.phase}
+                approved={genProgress.approved}
+                target={genProgress.target}
+                expectedSeconds={genProgress.expected}
+                startedAt={genProgress.startedAt}
+                questionType={questionType}
+              />
+            )}
 
             {feedbackError && !loading && (
               <div className="bg-red-50 border border-red-200 rounded-2xl p-5" data-testid="block-quiz-error">
@@ -1112,6 +1190,18 @@ export function QuizPage() {
               {contextStats.used < contextStats.total
                 ? t('quiz.contextStatsNoteSome', { used: String(contextStats.used), total: String(contextStats.total) })
                 : t('quiz.contextStatsNoteTrimmed', { total: String(contextStats.total) })}
+            </p>
+          )}
+          {verification && (verification.rejected > 0 || verification.repaired > 0) && (
+            <p
+              className="text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 text-left"
+              data-testid="text-quiz-verification"
+            >
+              {t('quiz.verificationSummary', {
+                kept: String(questions.length),
+                repaired: String(verification.repaired),
+                rejected: String(verification.rejected),
+              })}
             </p>
           )}
           {ragStats && (
@@ -1278,6 +1368,15 @@ export function QuizPage() {
                   <p className={`text-sm ${currentAnswer.isCorrect ? 'text-green-800' : 'text-orange-800'}`}>
                     {(currentQ as MCQQuestion).explanation}
                   </p>
+                  <div className="mt-3">
+                    <QuizCheckLLMButton
+                      question={currentQ}
+                      answer={{ type: 'mcq', selectedIndex: currentAnswer.selectedIndex }}
+                      sourceLabel={currentQ.source ? SOURCE_LABELS[currentQ.source] : undefined}
+                      sources={ragSources}
+                      courseId={activeCourse}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1336,7 +1435,18 @@ export function QuizPage() {
               )}
 
               {isEvaluatedFree && currentAnswer && currentAnswer.type !== 'mcq' && currentAnswer.evaluation && (
-                <FreeTextEvaluationBlock evaluation={currentAnswer.evaluation} modelAnswer={(currentQ as OpenQuestion | CasusQuestion).modelAnswer} lang={lang} />
+                <>
+                  <FreeTextEvaluationBlock evaluation={currentAnswer.evaluation} modelAnswer={(currentQ as OpenQuestion | CasusQuestion).modelAnswer} lang={lang} />
+                  <div>
+                    <QuizCheckLLMButton
+                      question={currentQ}
+                      answer={{ type: currentAnswer.type, text: currentAnswer.text, evaluation: currentAnswer.evaluation }}
+                      sourceLabel={currentQ.source ? SOURCE_LABELS[currentQ.source] : undefined}
+                      sources={ragSources}
+                      courseId={activeCourse}
+                    />
+                  </div>
+                </>
               )}
             </div>
           )}

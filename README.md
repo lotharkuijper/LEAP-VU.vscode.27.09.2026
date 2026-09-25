@@ -1,218 +1,138 @@
-# Interactieve Epidemiologie & Statistiek Leeromgeving
+# LEAP-VU — AI-leeromgeving
 
-Een moderne webapplicatie voor Bachelorstudenten om epidemiologie en biostatistiek spelenderwijs te oefenen met AI-ondersteuning.
+LEAP-VU is een webapplicatie van de VU Amsterdam waarin studenten met AI-ondersteuning oefenen met cursusstof. De app is ontstaan voor epidemiologie en biostatistiek, maar ondersteunt inmiddels meerdere cursussen. Alle AI-functies zijn gegrond in het cursusmateriaal dat docenten per cursus uploaden (RAG).
 
 ## Functies
 
-### 1. Socratische Chatbot met RAG
-- Intelligente chatbot die vragen stelt in plaats van direct antwoorden te geven
-- Gebruikt Retrieval Augmented Generation (RAG) voor contextbewuste antwoorden
-- Gebaseerd op door docenten geüploade cursusmateriaal
+### Voor studenten
+- **Socratische chatbot** (`/chat`) — stelt wedervragen in plaats van direct antwoorden te geven. Antwoorden worden onderbouwd met relevante fragmenten uit de cursusdocumenten. Ondersteunt meerdere gesprekken, persona's en een zelf in te stellen leerniveau (1–5) per cursus.
+- **"Ik leg uit"** (`/explain`) — de student legt een begrip in eigen woorden uit en krijgt AI-feedback op juistheid en volledigheid. De begrippen worden per cursus uit de geüploade documenten geëxtraheerd.
+- **Quiz** (`/quiz`) — vragen uit een mix van drie bronnen: cursusmateriaal (RAG), een itembank en LLM-generatie. De docent bepaalt de verhouding per cursus (standaard 50% RAG / 0% itembank / 50% LLM). Daarnaast zijn er ShareStats-onderwerpen (`/sharestats`).
+- **Studiecafé** (`/studiecafe`) — discussieforum per cursus met categorieën (vraag, discussie, samenwerken, check-llm), reacties en e-mailmeldingen.
+- **Projecten** (`/projects`) — projecten met groepsruimtes.
+- **Bronnen** (`/resources`) en **feedback** (`/feedback`).
 
-### 2. "Ik Leg Uit" Module
-- 30 vooraf ingeladen begrippen (epidemiologie en biostatistiek)
-- Studenten leggen begrippen uit in eigen woorden
-- AI geeft gedetailleerde feedback op volledigheid en correctheid
+### Voor docenten en admins
+- **Cursusbeheer** (`/admin/courses`) — cursussen, zichtbaarheid, banners en leden beheren.
+- **Documentbeheer** (`/admin/documenten`) — uploaden van PDF, Word, PowerPoint en tekst, en importeren van webpagina's. Documenten worden omgezet naar platte tekst, in chunks verdeeld (~380 tokens met 60 tokens overlap), voorzien van embeddings en opgeslagen in pgvector. Daarna volgen conceptextractie en een controle tegen het brondocument.
+- **Beheer** (`/admin`) — gebruikers en rollen (ook bulkaccounts), bronnenmix voor quizzen, leerniveaus, persona-bibliotheek, projecten, itembank (CSV-import) en documentreview/-vertaling.
 
-### 3. Chat Systeem
-- Meerdere conversaties beheren
-- Real-time interactie met LLM
-- Context uit documenten wordt automatisch opgehaald
+### Meertaligheid
+De interface is beschikbaar in 20 talen (o.a. Nederlands, Engels, Duits, Frans, Chinees, Arabisch); zie `src/i18n/locales/`. De AI antwoordt in de gekozen taal.
 
-### 4. Admin/Docent Dashboard
-- Gebruikersbeheer (rollen wijzigen)
-- Document upload voor RAG systeem
-- Begrippen beheer
-- Systeemconfiguratie
+## Technologie
 
-## Technologie Stack
+| Onderdeel | Technologie |
+|---|---|
+| Frontend | React 18 + TypeScript + Vite, Tailwind CSS, React Router 7, TipTap, KaTeX |
+| Backend | Node.js + Express 5 (`server/index.js`, poort 3001) |
+| Database & auth | Supabase (PostgreSQL + pgvector, Auth, Storage, Edge Functions) |
+| LLM (chat, feedback, quizgeneratie) | Azure OpenAI (VU-resource), via deployment-naam |
+| Embeddings | Azure OpenAI `text-embedding-3-small` — **geen** terugval naar de publieke OpenAI-API |
+| Documentverwerking | pdfjs-dist, mammoth, officeparser, LibreOffice (`soffice`) voor rendering |
+| E-mail | Resend (optioneel, voor Studiecafé-meldingen) |
+| Tests | Vitest + Testing Library |
 
-- **Frontend:** React 18 + TypeScript + Vite
-- **Styling:** Tailwind CSS
-- **Database:** Supabase (PostgreSQL + pgvector)
-- **Authenticatie:** Supabase Auth
-- **LLM:** Groq API (LLama 3.3 70B)
-- **Embeddings:** OpenAI API (text-embedding-3-small)
-- **Routing:** React Router v6
+In development draait Vite op `http://localhost:5173` en stuurt alle `/api`-verzoeken door naar de Express-server op `http://localhost:3001`.
 
-## Setup Instructies
+## Installatie
 
-### 1. API Keys Configureren
+### 1. Omgevingsvariabelen
 
-Open het `.env` bestand en voeg je API keys toe:
+Maak een `.env` in de hoofdmap (commit dit bestand nooit):
 
 ```env
-VITE_GROQ_API_KEY=jouw_groq_api_key_hier
-VITE_OPENAI_API_KEY=jouw_openai_api_key_hier
+# Supabase
+VITE_PUBLIC_SUPABASE_URL=
+VITE_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_DB_URL=
+
+# Azure OpenAI
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_API_VERSION=2024-10-21
+AZURE_OPENAI_DEPLOYMENT=
+AZURE_OPENAI_EMBEDDING_DEPLOYMENT=
+# AZURE_OPENAI_EMBEDDING_API_VERSION=   # optioneel, standaard gelijk aan AZURE_OPENAI_API_VERSION
+
+# Optioneel
+# OPENAI_MODEL=              # modelnaam voor parameterkeuze (bijv. gpt-5.x / gpt-4o-mini)
+# RESEND_API_KEY=            # e-mailmeldingen
+# NOTIFICATION_FROM_EMAIL=
+# GITHUB_TOKEN=              # ShareStats-inhoud ophalen van GitHub
+# SOFFICE_BIN=soffice        # pad naar LibreOffice
+# APP_PUBLIC_URL=            # basis-URL in e-mails/links
+# PORT=3001
 ```
 
-#### Groq API Key verkrijgen:
-1. Ga naar [https://console.groq.com](https://console.groq.com)
-2. Maak een account aan
-3. Genereer een nieuwe API key
-4. Kopieer en plak in `.env`
+Zonder `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` geven de chat-endpoints een 503. Zonder `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` falen alle embedding-calls (upload, RAG-zoekvragen, conceptextractie) expliciet met een 503.
 
-#### OpenAI API Key verkrijgen:
-1. Ga naar [https://platform.openai.com](https://platform.openai.com)
-2. Maak een account aan
-3. Navigeer naar API Keys
-4. Genereer een nieuwe API key
-5. Kopieer en plak in `.env`
+### 2. Database
 
-### 2. Applicatie Starten
+De databasestructuur staat in `supabase/migrations/`. Pas de migraties toe op je Supabase-project (bijv. met de Supabase CLI: `supabase db push`). Edge Functions staan in `supabase/functions/`.
+
+### 3. Starten
 
 ```bash
 npm install
-npm run dev
+npm run dev          # start Express-server én Vite tegelijk
 ```
 
-De applicatie draait nu op `http://localhost:5173`
+Losse onderdelen: `npm run dev:server` of `npm run dev:frontend`.
 
-### 3. Eerste Admin Account Aanmaken
+Overige scripts: `npm run build`, `npm run lint`, `npm run typecheck`.
 
-**BELANGRIJK:** Het email adres **l.d.j.kuijper@vu.nl** krijgt automatisch admin rechten bij registratie!
+## Rollen
 
-1. Ga naar de login pagina
-2. Klik op "Nog geen account? Registreer nu"
-3. Registreer met het email: **l.d.j.kuijper@vu.nl**
-4. Vul je volledige naam en wachtwoord in
-5. Je wordt automatisch als **Admin** aangemeld
+- **Student** — standaardrol bij registratie. Toegang tot chat, uitleg, quiz, Studiecafé en projecten van zichtbare cursussen.
+- **Docent** — beheert eigen cursussen: documenten, begrippen, bronnenmix, leden.
+- **Admin** — volledige toegang, inclusief gebruikers- en rolbeheer.
 
-Alle andere registraties krijgen standaard de rol "Student".
+Het account `l.d.j.kuijper@vu.nl` krijgt altijd admin-rechten via databasetriggers en een Edge Function; zie [SUPERUSER_SYSTEM.md](SUPERUSER_SYSTEM.md).
 
-## Gebruikersrollen
+Beveiliging loopt via Supabase Row Level Security en server-side controles op cursustoegang en staf-rol. Schrijfacties met de service-role verifiëren altijd dat de rij bij de gevraagde cursus hoort.
 
-### Student
-- Toegang tot Chat, Ik Leg Uit, Quiz, Projecten, Samenwerken
-- Kan begrippen uitleggen en feedback ontvangen
-- Kan met AI chatbot communiceren
+## Projectstructuur
 
-### Docent
-- Alle student functionaliteit
-- Kan documenten uploaden voor RAG systeem
-- Kan begrippen toevoegen en beheren
-- Kan datasets uploaden voor projecten
+```
+src/
+  pages/          pagina's (Chat, Explain, Quiz, Studiecafe, Admin, ...)
+  components/     UI-componenten
+  contexts/       AuthContext, ActiveCourseContext, CourseAccessContext
+  services/       LLM-, RAG-, quiz-, upload- en ShareStats-services
+  lib/            gedeelde helpers + Supabase-types
+  i18n/           vertalingen
+server/
+  index.js        Express-API (alle /api-routes)
+  chunking.js, ragProcessing.js, conceptExtraction.js, conceptEvidence.js
+                  ingestie- en RAG-pijplijn
+  __tests__/      server-tests
+supabase/
+  migrations/     databaseschema
+  functions/      Edge Functions
+scripts/          evaluatie- en onderhoudsscripts
+```
 
-### Admin (l.d.j.kuijper@vu.nl)
-- Alle docent functionaliteit
-- Kan gebruikersrollen wijzigen (studenten promoveren tot docent)
-- Volledige toegang tot alle beheersfuncties
-- Kan audit logs bekijken
+## Testen
 
-## Belangrijke Functies voor Admin
+```bash
+npx vitest run                                         # alle tests
+npx vitest run server/__tests__/ragProcessing.test.js  # ingestie/chunking
+npx vitest run server/__tests__/conceptExtraction.test.js
+```
 
-### Gebruikersrollen Wijzigen
-1. Log in als admin
-2. Ga naar "Beheer" in het menu
-3. Selecteer het tabblad "Gebruikers"
-4. Zoek de student die je wilt promoveren
-5. Klik op "→ Docent" om de rol te wijzigen
-
-**Let op:** Alleen de admin kan rollen wijzigen. Rolwijzigingen worden gelogd in de audit log.
-
-### Documenten Uploaden voor RAG
-1. Ga naar "Beheer" → "Documenten"
-2. Klik op "Document Uploaden"
-3. Upload PDF's, slides, of artikelen
-4. Het systeem verwerkt documenten automatisch:
-   - Tekst extractie
-   - Chunking (500 tokens per chunk)
-   - Embedding generatie met OpenAI
-   - Opslag in Supabase vector database
-
-Deze documenten worden gebruikt om contextuele antwoorden te geven in de chatbot.
-
-### Begrippen Toevoegen
-1. Ga naar "Beheer" → "Begrippen"
-2. Klik op "Begrip Toevoegen"
-3. Vul naam, categorie, en definitie in
-4. Het begrip is nu beschikbaar in de "Ik Leg Uit" module
-
-## Database Structuur
-
-De applicatie gebruikt Supabase met de volgende hoofdtabellen:
-
-- **profiles:** Gebruikersprofielen met rollen
-- **documents & document_chunks:** RAG systeem met vector embeddings
-- **conversations & messages:** Chat geschiedenis
-- **concepts & student_explanations:** "Ik Leg Uit" module data
-- **quiz_questions & quiz_sets:** Quiz systeem (in ontwikkeling)
-- **projects & datasets:** Project module (in ontwikkeling)
-- **collaboration_sessions:** Samenwerkingsfunctionaliteit (in ontwikkeling)
-
-## Security Features
-
-### Row Level Security (RLS)
-Alle database tabellen hebben strikte RLS policies:
-- Studenten kunnen alleen eigen data zien
-- Docenten kunnen student data lezen maar niet wijzigen
-- Admin heeft volledige toegang
-- Document upload is beperkt tot docenten en admin
-
-### Role-Based Access Control
-- Frontend en backend verificatie van gebruikersrollen
-- Audit logging voor kritieke acties (rolwijzigingen)
-- API rate limiting per gebruiker
-
-### Data Encryption
-- Wachtwoorden worden gehashed door Supabase Auth
-- API keys zijn alleen server-side beschikbaar
-- Bestanden worden veilig opgeslagen in Supabase Storage
-
-## Modules Status
-
-### ✅ Volledig Geïmplementeerd
-- Authenticatie systeem met rolbeheer
-- Dashboard met statistieken
-- Chat systeem met Groq LLM
-- RAG systeem met OpenAI embeddings
-- "Ik Leg Uit" module met AI feedback
-- Admin dashboard met gebruikersbeheer
-
-### 🚧 In Ontwikkeling
-- Quiz module met ShareStats integratie
-- Project module voor dataset analyse
-- Samenwerkingsfunctionaliteit
-- Document processing voor PDF's
-- Real-time collaboration features
+Sommige `*.integration.test.js`-bestanden hebben een werkende databaseverbinding nodig.
 
 ## Troubleshooting
 
-### Chatbot geeft geen antwoorden
-- Controleer of `VITE_GROQ_API_KEY` correct is ingesteld in `.env`
-- Herstart de development server na het wijzigen van `.env`
-- Check de browser console voor error berichten
+- **Chat geeft een 503 "Azure OpenAI is niet geconfigureerd"** — controleer `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` en `AZURE_OPENAI_DEPLOYMENT`, en herstart de server.
+- **Upload/RAG faalt met een embeddings-fout** — controleer `AZURE_OPENAI_EMBEDDING_DEPLOYMENT`. Bij een 429 (rate limit) probeert de server het opnieuw. Upload minder bestanden tegelijk als het blijft falen.
+- **Document levert geen of rare chunks op** — controleer in documentbeheer het aantal chunks. Eén enorme chunk of tekst als `[object Object]` wijst op een extractieprobleem en moet worden onderzocht, niet genegeerd.
+- **Geen toegang tot beheer** — controleer je rol (rechtsboven) of vraag een admin om die aan te passen.
 
-### RAG context wordt niet opgehaald
-- Controleer of `VITE_OPENAI_API_KEY` correct is ingesteld
-- Zorg dat er documenten zijn geüpload door docent/admin
-- Documenten moeten status "completed" hebben in de admin panel
-
-### Kan geen documenten uploaden
-- Alleen docenten en admin kunnen documenten uploaden
-- Check je rol in het profiel menu (rechtsboven)
-- Vraag admin om je rol te wijzigen indien nodig
-
-### Admin kan rollen niet wijzigen
-- Alleen het email **l.d.j.kuijper@vu.nl** heeft admin rechten
-- Log opnieuw in als de rol recent is gewijzigd
-- Check de browser console voor permission errors
-
-## Contact & Support
-
-Voor vragen of problemen, neem contact op met de administrator via l.d.j.kuijper@vu.nl
-
-## Toekomstige Ontwikkeling
-
-Geplande features:
-- ShareStats GitHub integratie voor quiz vragen
-- Automatische quiz validatie via RAG
-- Dataset upload en analyse tools
-- Real-time samenwerkingsfunctionaliteit met groepschat
-- Voortgang tracking en analytics voor docenten
-- Export functionaliteit voor student data
-- Mobile-responsive design optimalisatie
+Zie ook [GIT_WORKFLOW.md](GIT_WORKFLOW.md) voor de git-werkwijze en [exports/LEAP-VU-korte-manual.md](exports/LEAP-VU-korte-manual.md) voor een korte handleiding.
 
 ## Licentie
 
-Dit project is ontwikkeld voor educatief gebruik aan de VU Amsterdam.
+Ontwikkeld voor educatief gebruik aan de VU Amsterdam.

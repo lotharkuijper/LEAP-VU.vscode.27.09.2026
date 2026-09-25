@@ -18,6 +18,7 @@ import { ProjectsAdminTab } from './admin/ProjectsAdminTab';
 import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { classifyConceptForTeacher, getDifficultyTier, type ConceptClass, type DifficultyTier } from '../lib/conceptClassification';
 
 import DocumentsPage from '../pages/DocumentsPage';
 
@@ -139,6 +140,14 @@ function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deleting
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sourceBg}`}>
                 {sourceLabel}
               </span>
+              {concept.review_status === 'rejected' && (
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-200 text-gray-600"
+                  data-testid={`badge-not-approved-${concept.id}`}
+                >
+                  {t('admin.concepts.notApprovedBadge')}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1 ml-2 flex-shrink-0">
               {deleteConfirmId === concept.id ? (
@@ -253,13 +262,30 @@ export function AdminPage() {
   const [addConceptError, setAddConceptError] = useState<string | null>(null);
   const [addConceptSuccess, setAddConceptSuccess] = useState(false);
   const [regeneratingConcepts, setRegeneratingConcepts] = useState(false);
-  const [regenerateResult, setRegenerateResult] = useState<{ count: number; skipped: number; message: string } | null>(null);
+  const [regenerateResult, setRegenerateResult] = useState<{ message: string } | null>(null);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
   const [selectedConceptIds, setSelectedConceptIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  const [approveConfirm, setApproveConfirm] = useState(false);
+  const [approveResult, setApproveResult] = useState<{ approved: number; rejected: number } | null>(null);
   const [conceptsMeta, setConceptsMeta] = useState<{ ragCount: number; manualCount: number; lastExtraction: string | null; lastDocumentChange: string | null; lastSuccessfulRegeneration: string | null } | null>(null);
+  // Aantal DISTINCT documenten met bewijs per begrip-id (uit concept_evidence),
+  // gebruikt om te bepalen of een begrip cursusbreed (meerdere modules) of
+  // module-specifiek (één bestand) is — zie classifyConceptForTeacher.
+  const [conceptModuleCounts, setConceptModuleCounts] = useState<Record<string, number>>({});
+  // Maximum aantal te extraheren begrippen (null = geen limiet), rechtstreeks
+  // in de Begrippen-tab bewerkbaar — vlak vóór "Hergenereer begrippenlijst",
+  // waar een docent er ook echt naar kijkt. Persisteert via dezelfde
+  // extraction-instelling als RAG Instellingen (/api/rag-settings), maar
+  // gescoped op de actieve cursus i.p.v. de los te selecteren cursus in die
+  // andere tab — vandaar een eigen state/fetch i.p.v. ragSettingsState delen.
+  const [maxConceptsSetting, setMaxConceptsSetting] = useState<number | null>(null);
+  const [maxConceptsSaving, setMaxConceptsSaving] = useState(false);
+  const [maxConceptsError, setMaxConceptsError] = useState<string | null>(null);
   const [roleMsg, setRoleMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [roleConfirm, setRoleConfirm] = useState<{ userId: string; newRole: UserRole; requireText?: string } | null>(null);
   const [roleConfirmInput, setRoleConfirmInput] = useState('');
@@ -396,7 +422,7 @@ export function AdminPage() {
   useEffect(() => {
     if (activeTab === 'users') loadUsers();
     if (activeTab === 'documents') loadDocuments();
-    if (activeTab === 'concepts') { loadConcepts(); loadConceptsMeta(); }
+    if (activeTab === 'concepts') { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); loadMaxConceptsSetting(); }
     if (activeTab === 'rag_beheer') { loadConceptsMeta(); }
     if (activeTab === 'prompts') {
       loadPrompts();
@@ -480,7 +506,11 @@ export function AdminPage() {
   const loadConcepts = async () => {
     if (!session?.access_token) return;
     try {
-      const res = await fetch('/api/concepts', {
+      // scope=manage: deze tab moet OOK afgekeurde/nog-niet-beoordeelde
+      // begrippen zien en beheren (dat is precies waar deze tab voor is).
+      // Quiz/"Ik leg uit" vragen dit bewust NIET aan, ook al is de aanroeper
+      // een docent — die moeten altijd de goedgekeurde lijst zien.
+      const res = await fetch('/api/concepts?scope=manage', {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       if (!res.ok) {
@@ -527,6 +557,67 @@ export function AdminPage() {
     } catch (err) {
       console.error('Error loading concepts meta:', err);
       setConceptsMeta(null);
+    }
+  };
+
+  const loadConceptModuleCounts = async () => {
+    if (!session?.access_token || !activeCourseId) {
+      setConceptModuleCounts({});
+      return;
+    }
+    try {
+      const res = await fetch(`/api/concepts/evidence-summary?courseId=${activeCourseId}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        console.error('Error loading concept module counts:', await res.text());
+        setConceptModuleCounts({});
+        return;
+      }
+      const data = await res.json();
+      setConceptModuleCounts(data.moduleCounts || {});
+    } catch (err) {
+      console.error('Error loading concept module counts:', err);
+      setConceptModuleCounts({});
+    }
+  };
+
+  const loadMaxConceptsSetting = async () => {
+    if (!activeCourseId) { setMaxConceptsSetting(null); return; }
+    try {
+      const res = await fetch(`/api/rag-settings?courseId=${activeCourseId}`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setMaxConceptsSetting(data?.extraction?.max_concepts ?? null);
+    } catch (err) {
+      console.warn('[admin] max_concepts laden mislukt:', err);
+    }
+  };
+
+  const handleSaveMaxConcepts = async (value: number | null) => {
+    setMaxConceptsSetting(value);
+    if (!session?.access_token || !activeCourseId) return;
+    setMaxConceptsSaving(true);
+    setMaxConceptsError(null);
+    try {
+      const res = await fetch('/api/rag-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ courseId: activeCourseId, settings: { extraction: { max_concepts: value } } }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || t('admin.concepts.errorStatus', { status: String(res.status) }));
+      }
+    } catch (err) {
+      setMaxConceptsError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
+    } finally {
+      setMaxConceptsSaving(false);
     }
   };
 
@@ -1159,13 +1250,10 @@ export function AdminPage() {
       if (!response.ok) {
         throw new Error(data.error || t('admin.ragSettings.serverErrorStatus', { status: String(response.status) }));
       }
-      setRegenerateResult({
-        count: (data.concepts?.length ?? 0) + (data.updated ?? 0),
-        skipped: data.skipped ?? 0,
-        message: data.message || '',
-      });
+      setRegenerateResult({ message: data.message || '' });
       await loadConcepts();
       await loadConceptsMeta();
+      await loadConceptModuleCounts();
     } catch (err) {
       setRegenerateError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
     } finally {
@@ -1199,6 +1287,41 @@ export function AdminPage() {
     setBulkDeleting(false);
     await loadConcepts();
     await loadConceptsMeta();
+  };
+
+  // Docent-curatie: PRECIES de geselecteerde cursusbegrippen worden 'approved'
+  // (en dus zichtbaar voor Quiz/"Ik leg uit" via GET /api/concepts), alle
+  // overige begrippen van deze cursus worden 'rejected'. Vereist een expliciete
+  // bevestiging omdat dit niet-geselecteerde begrippen voor studenten verbergt.
+  const handleApproveSelected = async () => {
+    if (!approveConfirm) {
+      setApproveConfirm(true);
+      return;
+    }
+    if (!session?.access_token || !activeCourseId) return;
+    setApproving(true);
+    setApproveError(null);
+    setApproveConfirm(false);
+    try {
+      const res = await fetch('/api/admin/concepts/set-approval', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ courseId: activeCourseId, approvedIds: Array.from(selectedConceptIds) }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || t('admin.concepts.errorStatus', { status: String(res.status) }));
+      }
+      setApproveResult({ approved: data.approved ?? 0, rejected: data.rejected ?? 0 });
+      await loadConcepts();
+    } catch (err) {
+      setApproveError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
+    } finally {
+      setApproving(false);
+    }
   };
 
   const handleSavePrompt = async () => {
@@ -1900,6 +2023,34 @@ const tabGroups = [
                 </div>
               </div>
 
+              {activeCourseId && (
+                <div className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                  <label htmlFor="input-max-concepts" className="text-gray-700 font-medium">
+                    {t('admin.concepts.maxConceptsLabel')}
+                  </label>
+                  <input
+                    id="input-max-concepts"
+                    type="number"
+                    min={5}
+                    max={500}
+                    placeholder={t('admin.concepts.maxConceptsUnlimited')}
+                    value={maxConceptsSetting ?? ''}
+                    onChange={(e) => setMaxConceptsSetting(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                    onBlur={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') { handleSaveMaxConcepts(null); return; }
+                      const parsed = parseInt(raw, 10);
+                      handleSaveMaxConcepts(Number.isFinite(parsed) ? Math.max(5, Math.min(500, parsed)) : null);
+                    }}
+                    className="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                    data-testid="input-max-concepts"
+                  />
+                  <span className="text-xs text-gray-500">{t('admin.concepts.maxConceptsHint')}</span>
+                  {maxConceptsSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+                  {maxConceptsError && <span className="text-xs text-red-600">{maxConceptsError}</span>}
+                </div>
+              )}
+
               {activeCourse && conceptsMeta && conceptsMeta.lastDocumentChange && (() => {
                 const effectiveRegen = [conceptsMeta.lastSuccessfulRegeneration, conceptsMeta.lastExtraction]
                   .filter(Boolean).sort().reverse()[0] ?? null;
@@ -1942,11 +2093,7 @@ const tabGroups = [
               {regenerateResult && (
                 <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800" data-testid="text-regenerate-result">
                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600" />
-                  <span>
-                    <strong>{regenerateResult.count}</strong> {t('admin.concepts.generated')}
-                    {regenerateResult.skipped > 0 && <>, <strong>{regenerateResult.skipped}</strong> {t('admin.concepts.skipped')}</>}.
-                    {regenerateResult.message && <> {regenerateResult.message}</>}
-                  </span>
+                  <span>{regenerateResult.message}</span>
                 </div>
               )}
               {regenerateError && (
@@ -2081,6 +2228,50 @@ const tabGroups = [
                     {bulkDeleteError && (
                       <span className="text-sm text-red-600">{bulkDeleteError}</span>
                     )}
+
+                    {activeCourse && courseConcepts.length > 0 && (
+                      approveConfirm ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-emerald-700 font-medium">
+                            {t('admin.concepts.approveConfirm', { count: String(selectedConceptIds.size), total: String(courseConcepts.length) })}
+                          </span>
+                          <button
+                            onClick={handleApproveSelected}
+                            disabled={approving}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                            data-testid="button-confirm-approve-selected"
+                          >
+                            {approving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                            {t('admin.concepts.approveYes')}
+                          </button>
+                          <button
+                            onClick={() => setApproveConfirm(false)}
+                            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                          >
+                            {t('admin.cancel')}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleApproveSelected}
+                          disabled={approving}
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors"
+                          data-testid="button-approve-selected"
+                        >
+                          <CheckCircle className="w-3 h-3" />
+                          {t('admin.concepts.approveSelected')}
+                        </button>
+                      )
+                    )}
+
+                    {approveError && (
+                      <span className="text-sm text-red-600">{approveError}</span>
+                    )}
+                    {approveResult && !approveError && (
+                      <span className="text-sm text-emerald-700">
+                        {t('admin.concepts.approveResult', { approved: String(approveResult.approved), rejected: String(approveResult.rejected) })}
+                      </span>
+                    )}
                   </div>
                 );
               })()}
@@ -2097,35 +2288,138 @@ const tabGroups = [
                       <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />
                       <p className="text-sm">{t('admin.concepts.noCourseConcepts')}</p>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {courseConcepts.map(concept => {
-                        const isRagExtracted = (concept.key_points || []).includes('[RAG-geëxtraheerd uit cursusmateriaal]');
-                        const sourceLabel = isRagExtracted ? t('admin.concepts.sourceAI') : t('admin.concepts.sourceCourse');
-                        const sourceBg = isRagExtracted ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
-                        return (
-                          <ConceptCard
-                            key={concept.id}
-                            concept={concept}
-                            sourceLabel={sourceLabel}
-                            sourceBg={sourceBg}
-                            deleteConfirmId={deleteConfirmId}
-                            deletingConceptId={deletingConceptId}
-                            onDeleteRequest={(id) => { setDeleteConfirmId(id); setDeleteError(null); }}
-                            onDeleteConfirm={handleDeleteConcept}
-                            onDeleteCancel={() => setDeleteConfirmId(null)}
-                            isSelected={selectedConceptIds.has(concept.id)}
-                            onToggleSelect={(id) => setSelectedConceptIds(prev => {
-                              const next = new Set(prev);
-                              next.has(id) ? next.delete(id) : next.add(id);
-                              return next;
-                            })}
-                            lang={lang}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
+                  ) : (() => {
+                    // Groepeer op teacher-facing classificatie zodat een docent
+                    // voorbeelden/casussen niet meer als kernbegrip tegenkomt en
+                    // per klasse in bulk kan selecteren (bv. alle voorbeelden
+                    // wegselecteren vóór "Verwijder geselecteerde").
+                    const classDefs: Array<{ key: ConceptClass; title: string; hint: string; badgeBg: string }> = [
+                      { key: 'course', title: t('admin.concepts.classCourse'), hint: t('admin.concepts.classCourseHint'), badgeBg: 'bg-purple-50 text-purple-700 border-purple-200' },
+                      { key: 'module', title: t('admin.concepts.classModule'), hint: t('admin.concepts.classModuleHint'), badgeBg: 'bg-blue-50 text-blue-700 border-blue-200' },
+                      { key: 'example', title: t('admin.concepts.classExample'), hint: t('admin.concepts.classExampleHint'), badgeBg: 'bg-amber-50 text-amber-700 border-amber-200' },
+                    ];
+                    // Tweede hiërarchie-niveau binnen elke klasse: moeilijkheidsgraad
+                    // (beoordeeld door de LLM op basis van de definitietekst, zie
+                    // classifyConceptDifficulty in server/conceptExtraction.js — NIET
+                    // afgeleid uit de embedding-vector). Moeilijk eerst, zodat een
+                    // docent die kwaliteit checkt de complexere begrippen als eerste ziet.
+                    const difficultyDefs: Array<{ key: DifficultyTier; title: string; dotColor: string }> = [
+                      { key: 'hard', title: t('admin.concepts.difficultyHard'), dotColor: 'bg-red-500' },
+                      { key: 'medium', title: t('admin.concepts.difficultyMedium'), dotColor: 'bg-yellow-500' },
+                      { key: 'easy', title: t('admin.concepts.difficultyEasy'), dotColor: 'bg-green-500' },
+                    ];
+                    const grouped = new Map<ConceptClass, Concept[]>([['course', []], ['module', []], ['example', []]]);
+                    for (const concept of courseConcepts) {
+                      grouped.get(classifyConceptForTeacher(concept, conceptModuleCounts))!.push(concept);
+                    }
+                    return (
+                      <div className="space-y-6">
+                        {classDefs.map(({ key, title, hint, badgeBg }) => {
+                          const items = grouped.get(key) || [];
+                          if (items.length === 0) return null;
+                          const ids = items.map((c) => c.id);
+                          const allSelected = ids.every((id) => selectedConceptIds.has(id));
+                          return (
+                            <div key={key}>
+                              <div className="flex flex-wrap items-center gap-3 mb-3">
+                                <span className={`text-sm font-semibold px-2.5 py-1 rounded-lg border ${badgeBg}`}>
+                                  {title} ({items.length})
+                                </span>
+                                <span className="text-xs text-gray-500">{hint}</span>
+                                <button
+                                  onClick={() => setSelectedConceptIds((prev) => {
+                                    const next = new Set(prev);
+                                    if (allSelected) ids.forEach((id) => next.delete(id));
+                                    else ids.forEach((id) => next.add(id));
+                                    return next;
+                                  })}
+                                  className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 transition-colors ml-auto"
+                                  data-testid={`button-toggle-select-all-${key}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    readOnly
+                                    checked={allSelected}
+                                    className="w-3.5 h-3.5 rounded border-gray-300 accent-blue-600 pointer-events-none"
+                                  />
+                                  {allSelected ? t('admin.concepts.deselectAll') : t('admin.concepts.selectAll')}
+                                </button>
+                              </div>
+                              {(() => {
+                                const byDifficulty = new Map<DifficultyTier, Concept[]>([['hard', []], ['medium', []], ['easy', []]]);
+                                for (const concept of items) byDifficulty.get(getDifficultyTier(concept))!.push(concept);
+                                return (
+                                  <div className="space-y-4 pl-1">
+                                    {difficultyDefs.map(({ key: diffKey, title: diffTitle, dotColor }) => {
+                                      const diffItems = byDifficulty.get(diffKey) || [];
+                                      if (diffItems.length === 0) return null;
+                                      const diffIds = diffItems.map((c) => c.id);
+                                      const diffAllSelected = diffIds.every((id) => selectedConceptIds.has(id));
+                                      return (
+                                        <div key={diffKey}>
+                                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                                            <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+                                            <span className="text-xs font-medium text-gray-600">
+                                              {diffTitle} ({diffItems.length})
+                                            </span>
+                                            <button
+                                              onClick={() => setSelectedConceptIds((prev) => {
+                                                const next = new Set(prev);
+                                                if (diffAllSelected) diffIds.forEach((id) => next.delete(id));
+                                                else diffIds.forEach((id) => next.add(id));
+                                                return next;
+                                              })}
+                                              className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-900 transition-colors ml-auto"
+                                              data-testid={`button-toggle-select-all-${key}-${diffKey}`}
+                                            >
+                                              <input
+                                                type="checkbox"
+                                                readOnly
+                                                checked={diffAllSelected}
+                                                className="w-3 h-3 rounded border-gray-300 accent-blue-600 pointer-events-none"
+                                              />
+                                              {diffAllSelected ? t('admin.concepts.deselectAll') : t('admin.concepts.selectAll')}
+                                            </button>
+                                          </div>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            {diffItems.map((concept) => {
+                                              const isRagExtracted = (concept.key_points || []).includes('[RAG-geëxtraheerd uit cursusmateriaal]');
+                                              const sourceLabel = isRagExtracted ? t('admin.concepts.sourceAI') : t('admin.concepts.sourceCourse');
+                                              const sourceBg = isRagExtracted ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
+                                              return (
+                                                <ConceptCard
+                                                  key={concept.id}
+                                                  concept={concept}
+                                                  sourceLabel={sourceLabel}
+                                                  sourceBg={sourceBg}
+                                                  deleteConfirmId={deleteConfirmId}
+                                                  deletingConceptId={deletingConceptId}
+                                                  onDeleteRequest={(id) => { setDeleteConfirmId(id); setDeleteError(null); }}
+                                                  onDeleteConfirm={handleDeleteConcept}
+                                                  onDeleteCancel={() => setDeleteConfirmId(null)}
+                                                  isSelected={selectedConceptIds.has(concept.id)}
+                                                  onToggleSelect={(id) => setSelectedConceptIds(prev => {
+                                                    const next = new Set(prev);
+                                                    next.has(id) ? next.delete(id) : next.add(id);
+                                                    return next;
+                                                  })}
+                                                  lang={lang}
+                                                />
+                                              );
+                                            })}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

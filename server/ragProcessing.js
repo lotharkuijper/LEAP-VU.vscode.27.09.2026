@@ -14,6 +14,40 @@ import { buildEmbedInput } from './chunking.js';
 // ruis. Alleen voor PDF: andere formaten kunnen legitiem kort zijn.
 const MIN_PDF_TEXT_CHARS = 20;
 
+function normalizeOfficeText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value).trim();
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => normalizeOfficeText(item))
+      .filter(Boolean)
+      .join('\n\n')
+      .trim();
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toText === 'function') {
+      const converted = normalizeOfficeText(value.toText());
+      if (converted) return converted;
+    }
+    if (typeof value.text === 'string') return value.text.trim();
+    if (typeof value.content === 'string') return value.content.trim();
+    if (Array.isArray(value.content)) {
+      const joined = value.content
+        .map((item) => normalizeOfficeText(item))
+        .filter(Boolean)
+        .join('\n\n');
+      if (joined) return joined.trim();
+    }
+    try {
+      return JSON.stringify(value).trim();
+    } catch {
+      return '';
+    }
+  }
+  return String(value).trim();
+}
+
 // Maximale rij-batch per INSERT in de atomic-transactie (houdt het aantal
 // query-parameters ruim onder de Postgres-limiet, ook bij grote documenten).
 const INSERT_BATCH = 100;
@@ -231,7 +265,7 @@ export async function processDocxCore(doc, openaiKey, deps = {}) {
       paged = true;
     } else {
       try {
-        text = String(await parseOfficeAsync(buffer) || '').trim();
+        text = normalizeOfficeText(await parseOfficeAsync(buffer));
       } catch (err) {
         const e = new Error(`Kon tekst niet uit bestand halen: ${err.message}`);
         e.status = 422;
@@ -360,7 +394,7 @@ export async function processPlainRagDocument(doc, openaiKey, deps = {}) {
           text = String(await parseOfficeAsync(buffer) || '').trim();
         }
       } else if (['docx', 'xlsx', 'odt', 'ods', 'odp'].includes(ext)) {
-        text = String(await parseOfficeAsync(buffer) || '').trim();
+        text = normalizeOfficeText(await parseOfficeAsync(buffer));
       } else {
         // Onbekend type: probeer als platte tekst te lezen.
         text = buffer.toString('utf8');

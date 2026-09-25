@@ -144,7 +144,7 @@ function _getLang(): Lang {
   return getActiveLang();
 }
 
-async function callChatAPI(body: object): Promise<any> {
+export async function callChatAPI(body: object): Promise<any> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
     const { supabase } = await import('../lib/supabase');
@@ -350,6 +350,11 @@ const difficultyLabel = (d: 'easy' | 'medium' | 'hard', lang: string = 'nl') =>
     ? (d === 'easy' ? 'easy' : d === 'medium' ? 'medium' : 'hard')
     : (d === 'easy' ? 'makkelijke' : d === 'medium' ? 'gemiddelde' : 'moeilijke');
 
+// Quiz-vragen moeten een vaste, strikte toon houden. Een lage temperatuur
+// reduceert hallucinaties en "vreemde" vragen die niet meer uit het gekozen
+// concept of cursusmateriaal volgen.
+const QUIZ_GENERATION_TEMPERATURE = 0.2;
+
 const SECOND_PERSON_RULE_NL = `Aanspraakvorm (volg STRIKT): spreek de student direct aan met "je" / "jij" / "jouw". Gebruik NOOIT "de student", "deze student" of "de student heeft" — schrijf alsof je het één-op-één tegen de student zegt.`;
 const SECOND_PERSON_RULE_EN = `Addressing rule (follow STRICTLY): address the student directly using "you" / "your". NEVER use "the student", "this student" or "the student has" — write as if giving feedback one-on-one.`;
 const getSecondPersonRule = () => _getLang() !== 'nl' ? SECOND_PERSON_RULE_EN : SECOND_PERSON_RULE_NL;
@@ -400,7 +405,7 @@ function isRefusalQuestion(q: QuizQuestion): boolean {
   );
 }
 
-function extractJSON<T>(content: string, kind: 'array' | 'object'): T {
+export function extractJSON<T>(content: string, kind: 'array' | 'object'): T {
   const re = kind === 'array' ? /\[[\s\S]*\]/ : /\{[\s\S]*\}/;
   const match = content.match(re);
   if (!match) {
@@ -430,6 +435,7 @@ export type QuizPromptName =
   | 'quiz_generate_strict'
   | 'quiz_generate_blended'
   | 'quiz_generate_creative'
+  | 'quiz_verify'
   | 'quiz_evaluate_open';
 
 // Cache met TTL: succesvolle ophaal blijft 5 min geldig zodat we niet bij elke
@@ -469,6 +475,7 @@ export async function fetchQuizPrompts(): Promise<Record<QuizPromptName, string>
         quiz_generate_strict: '',
         quiz_generate_blended: '',
         quiz_generate_creative: '',
+        quiz_verify: '',
         quiz_evaluate_open: '',
       } as Record<QuizPromptName, string>;
       quizPromptCache = fallback;
@@ -630,7 +637,7 @@ ${en
     const data = await callChatAPI({
       model: undefined,
       messages: [{ role: 'user', content: quizPrompt + outputLanguageDirective(lang) }],
-      temperature: 0.7,
+      temperature: QUIZ_GENERATION_TEMPERATURE,
       max_tokens: maxTokens,
       skipSystemPrompt: true,
       ...(promptName && promptName.trim().length > 0
@@ -652,6 +659,9 @@ ${en
     })) as QuizQuestion[];
     // Veiligheidsfilter: gooi weigeringsvragen eruit die het model per ongeluk
     // als echte quiz-vraag heeft opgemaakt.
+    // De inhoudelijke kwaliteitscontrole (blind oplossen + vergelijken) zit
+    // NIET hier maar in quiz-verification.service: die geldt voor élke
+    // gegenereerde vraag, ongeacht bron of strict-mode.
     return typed.filter(q => !isRefusalQuestion(q));
   } catch (error: any) {
     console.error('Error generating quiz:', error);

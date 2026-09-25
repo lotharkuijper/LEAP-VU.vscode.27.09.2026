@@ -39,6 +39,49 @@ export function registerConceptEvidenceRoutes(app, deps) {
     getSchemaReady,
   } = deps;
 
+  // GET /api/concepts/evidence-summary — per begrip het aantal DISTINCT
+  // documenten waarin bewijs is gevonden voor deze cursus. De Begrippen-tab
+  // gebruikt dit om te bepalen of een begrip cursusbreed is (in meerdere
+  // modules/bestanden aangetroffen) of module-specifiek (uit precies één
+  // bestand): dat is pas ná de verificatiestap bekend (zie extract-concepts
+  // in server/index.js), nooit uit de LLM-extractie zelf.
+  app.get('/api/concepts/evidence-summary', async (req, res) => {
+    const auth = await requireAuthUser(req, res);
+    if (!auth) return;
+    const { courseId } = req.query;
+    if (!courseId) {
+      return res.status(400).json({ error: 'courseId is required' });
+    }
+    if (!(await userHasCourseAccess(auth.user, auth.profile, courseId))) {
+      return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
+    }
+    if (!getSchemaReady()) {
+      return res.json({ moduleCounts: {} });
+    }
+    try {
+      const { data: rows, error } = await supabaseAdmin
+        .from('concept_evidence')
+        .select('concept_id, document_id')
+        .eq('course_id', courseId);
+      if (error) {
+        console.error('[concepts/evidence-summary] query error:', error.message);
+        return res.status(500).json({ error: error.message });
+      }
+      const docSetByConceptId = new Map();
+      for (const r of rows || []) {
+        if (!r.document_id) continue;
+        if (!docSetByConceptId.has(r.concept_id)) docSetByConceptId.set(r.concept_id, new Set());
+        docSetByConceptId.get(r.concept_id).add(r.document_id);
+      }
+      const moduleCounts = {};
+      for (const [conceptId, docSet] of docSetByConceptId) moduleCounts[conceptId] = docSet.size;
+      return res.json({ moduleCounts });
+    } catch (err) {
+      console.error('[concepts/evidence-summary] Unexpected error:', err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/concepts/evidence', async (req, res) => {
     const auth = await requireAuthUser(req, res);
     if (!auth) return;

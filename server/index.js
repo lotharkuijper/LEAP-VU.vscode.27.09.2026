@@ -10,9 +10,44 @@ import fs from 'fs';
 import officeParserPkg from 'officeparser';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+function normalizeOfficeText(value) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value).trim();
+  if (Array.isArray(value)) {
+    const joined = value
+      .map((item) => normalizeOfficeText(item))
+      .filter(Boolean)
+      .join('\n\n');
+    return joined.trim();
+  }
+  if (typeof value === 'object') {
+    if (typeof value.toText === 'function') {
+      const converted = normalizeOfficeText(value.toText());
+      if (converted) return converted;
+    }
+    if (typeof value.text === 'string') return value.text.trim();
+    if (typeof value.content === 'string') return value.content.trim();
+    if (Array.isArray(value.content)) {
+      const joined = value.content
+        .map((item) => normalizeOfficeText(item))
+        .filter(Boolean)
+        .join('\n\n');
+      if (joined) return joined.trim();
+    }
+    try {
+      return JSON.stringify(value).trim();
+    } catch {
+      return '';
+    }
+  }
+  return String(value).trim();
+}
+
 const parseOfficeAsync = (buffer) => new Promise((resolve, reject) => {
   officeParserPkg.parseOffice(buffer, (data, err) => {
-    if (err) reject(err); else resolve(data);
+    if (err) reject(err);
+    else resolve(normalizeOfficeText(data));
   });
 });
 import { createClient } from '@supabase/supabase-js';
@@ -105,7 +140,7 @@ import {
   sendEmailViaResend,
 } from './notifications.js';
 import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceType } from './documentRender.js';
-import { planConceptReplace, planConceptWrites } from './conceptExtraction.js';
+import { planConceptReplace, planConceptWrites, classifyConceptRole, normalizeConceptRole, classifyConceptDifficulty, normalizeDifficulty, isMetaCommentaryName, capByBestMatch, mergeNearDuplicateConcepts } from './conceptExtraction.js';
 import {
   scoreToLabel as relScoreToLabel,
   scoreToBucket as relScoreToBucket,
@@ -307,6 +342,10 @@ const RAG_MODULE_DEFAULTS = {
 const RAG_EXTRACTION_DEFAULTS = {
   similarity_threshold: 0.55,
   min_evidence_chunks: 1,
+  // null = geen limiet (bestaand gedrag ongewijzigd totdat een docent dit
+  // expliciet instelt). Bij een limiet: de beste RAG-matches (hoogste
+  // similarity-score) blijven staan, zie POST /api/admin/extract-concepts.
+  max_concepts: null,
 };
 
 // allowedFolderIds semantiek:
@@ -384,6 +423,10 @@ async function searchChunksServerSide(queryText, threshold, matchCount, allowedF
       maxScore: candidate.length > 0 ? Math.max(...candidate.map(c => c.similarity)) : 0,
       candidatesInAllowed: candidate.length,
       embedQuery,
+      // De query-embedding zelf teruggeven: extract-concepts hergebruikt hem
+      // om kandidaat-begripsnamen onderling te vergelijken (near-duplicate
+      // detectie), zonder daarvoor een aparte embedding-call te doen.
+      embedding,
     };
   } catch (err) {
     console.error('[searchChunksServerSide] Error:', err.message);
@@ -1079,6 +1122,15 @@ app.put('/api/rag-settings', async (req, res) => {
         const parsed = parseInt(e.min_evidence_chunks);
         if (isNaN(parsed)) return res.status(400).json({ error: 'min_evidence_chunks is geen geldig getal' });
         e.min_evidence_chunks = Math.max(0, Math.min(10, parsed));
+      }
+      if (e.max_concepts !== undefined) {
+        if (e.max_concepts === null || e.max_concepts === '') {
+          e.max_concepts = null;
+        } else {
+          const parsed = parseInt(e.max_concepts);
+          if (isNaN(parsed)) return res.status(400).json({ error: 'max_concepts is geen geldig getal' });
+          e.max_concepts = Math.max(5, Math.min(500, parsed));
+        }
       }
     }
 
@@ -5220,18 +5272,41 @@ Analyseer de onderstaande tekst uit universitair cursusmateriaal. Identificeer A
 
 BELANGRIJK: kies de begripsnamen zó dat ze letterlijk of bijna-letterlijk in het onderstaande cursusmateriaal voorkomen, want de namen worden daarna automatisch tegen dat materiaal geverifieerd.
 
+Voordat je een begrip opneemt: zou een docent een student ooit letterlijk vragen "Wat bedoelen we met [naam]?" en is daar een eenduidig, feitelijk antwoord op? Zo niet, neem het NIET op.
+
+NIET geschikt als begrip (ook al staat het letterlijk in de tekst):
+- Een waardeoordeel of moeilijkheidsbeoordeling ÓVER de tekst/stof zelf, bv. "methodologisch zeer uitdagend", "belangrijk aspect", "kernpunt van deze paragraaf" — dit ZIJN geen vaktermen, dit is commentaar op vaktermen
+- Een volledige zin, samenvatting of instructie in plaats van een opzoekbare term
+- Een naam die alleen bestaat uit een intensiveerder + evaluatief bijvoeglijk naamwoord (bv. "zeer complex", "erg belangrijk") zonder een concreet vakinhoudelijk zelfstandig naamwoord
+
+Er is een extra classificatie nodig: elk begrip moet duidelijk worden ingedeeld in één van deze rollen:
+- main_course_concept: kernbegrip van de cursus, vaak in definities, modellen, methoden of kernprincipes
+- module_concept: relevant voor een module of hoofdstuk, maar niet per se de hele cursus
+- definition_term: een term die direct wordt gedefinieerd of geformaliseerd
+- method_term: een methode, techniek, model of analyse-aanpak
+- latent_concept: een concept dat impliciet in de tekst aanwezig is (niet met een kopje gemarkeerd) maar WEL een concrete, opzoekbare vakterm heeft — GEEN vrije samenvatting of oordeel zonder vaste term
+- example_instance: alleen een voorbeeld, casus, product, dataset, persoon, merk of illustratie; géén echt quiz-topic
+
 Geschikte begrippen zijn onder meer:
 - Termen die in de tekst gedefinieerd of toegelicht worden
 - Vakinhoudelijke concepten, methoden en technieken
 - Belangrijke formules, modellen of procedures
 - Termen die met kopjes, secties of gemarkeerde tekst worden benadrukt
+- Prikkelende voorbeelden moeten als example_instance worden gemarkeerd, niet als echte kernbegrippen
+
+Beoordeel ook hoe MOEILIJK het begrip is voor een bachelorstudent, uitsluitend op basis van wat de definitie/tekst zelf vereist om te begrijpen (niet op basis van hoe vaak het voorkomt):
+- easy: rechtstreeks af te leiden uit de naam/definitie zelf, geen voorkennis van andere begrippen nodig, één enkel idee
+- medium: vereist begrip van één onderliggend mechanisme of de relatie tussen twee elementen
+- hard: vereist het combineren van meerdere begrippen, methodologische/statistische redenering, of een precies onderscheid met een vergelijkbaar begrip
 
 Geef elk gevonden begrip de volgende velden:
 ${languageDirective}
+- concept_role: exact één van main_course_concept | module_concept | definition_term | method_term | latent_concept | example_instance
+- difficulty: exact één van easy | medium | hard
 
 Geef UITSLUITEND een JSON-array terug, zonder extra tekst of uitleg:
 [
-  {"name": "Begrip naam", "definition": "Definitie hier."}
+  {"name": "Begrip naam", "definition": "Definitie hier.", "concept_role": "main_course_concept", "difficulty": "medium"}
 ]
 
 CURSUSMATERIAAL:
@@ -5312,9 +5387,31 @@ ${combinedText}`;
       return res.json({ concepts: [], message: 'Geen begrippen gevonden in LLM-respons' });
     }
 
-    const rawValidConcepts = extractedConcepts.filter(
-      (c) => c.name && c.definition
-    );
+    const rawValidConcepts = extractedConcepts
+      .map((c) => {
+        const conceptRole = normalizeConceptRole(c?.concept_role || c?.category || classifyConceptRole(c?.name, c?.definition));
+        const difficulty = normalizeDifficulty(c?.difficulty) || classifyConceptDifficulty(c?.name, c?.definition);
+        return { ...c, concept_role: conceptRole, category: c?.category || conceptRole, difficulty };
+      })
+      .filter((c) => c.name && c.definition);
+
+    // Vangnet vóór de (dure) RAG-verificatie: een naam die uitsluitend een
+    // waardeoordeel over de stof is (bv. "Methodologisch zeer uitdagend") is
+    // geen vakterm, ook al staat hij letterlijk in de tekst en zou hij dus de
+    // similarity-check kunnen doorstaan. Zie isMetaCommentaryName in
+    // conceptExtraction.js voor het criterium.
+    const metaRejected = [];
+    const candidateConcepts = [];
+    for (const c of rawValidConcepts) {
+      if (isMetaCommentaryName(c.name)) {
+        metaRejected.push({ concept: c, matchedCount: 0, maxScore: 0, candidates: 0, reason: 'meta_commentary' });
+      } else {
+        candidateConcepts.push(c);
+      }
+    }
+    if (metaRejected.length > 0) {
+      console.log(`[extract-concepts] ${metaRejected.length} kandidaten afgewezen als waardeoordeel/commentaar (geen vakterm): ${metaRejected.map((r) => `"${r.concept.name}"`).join(', ')}`);
+    }
 
     // VERIFICATIE-STAP: vergelijk elk LLM-kandidaat-begrip met RAG-chunks
     // (eigen instellingen, los van chat/explain/quiz/project)
@@ -5323,11 +5420,22 @@ ${combinedText}`;
     const verifyThreshold = extractionSettings.similarity_threshold;
     const minEvidence = extractionSettings.min_evidence_chunks;
 
-    console.log(`[extract-concepts] Verificatie: ${rawValidConcepts.length} kandidaten met drempel ${verifyThreshold.toFixed(2)} en min ${minEvidence} bewijschunks`);
+    console.log(`[extract-concepts] Verificatie: ${candidateConcepts.length} kandidaten met drempel ${verifyThreshold.toFixed(2)} en min ${minEvidence} bewijschunks`);
 
     const verificationResults = await Promise.all(
-      rawValidConcepts.map(async (c) => {
-        const result = await searchChunksServerSide(c.name, verifyThreshold, 10, ragFolderIds);
+      candidateConcepts.map(async (c) => {
+        // Query-expansion met de eigen (LLM-gegenereerde) definitie: een kale
+        // naam als "behandeling" of "toeval" draagt weinig semantisch signaal
+        // en scoort daardoor vaak net onder de drempel tegen chunk-tekst, ook
+        // al is het begrip zelf prima onderbouwd. De definitie zelf toevoegen
+        // aan de embedding-query (dezelfde expandQuery die chat/explain/quiz
+        // al gebruiken) geeft méér context zonder de drempel te verlagen —
+        // dus zonder de bewijseis te verzwakken.
+        const result = await searchChunksServerSide(
+          c.name, verifyThreshold, 10, ragFolderIds,
+          { enabled: true, definition: c.definition },
+          conceptLanguage === 'en' ? 'en' : 'nl'
+        );
         return {
           concept: c,
           matchedCount: result?.matched?.length || 0,
@@ -5336,25 +5444,104 @@ ${combinedText}`;
           // Task #243: bewaar de ondersteunende chunks zodat we ze later als
           // begrip-bronkoppeling kunnen wegschrijven (i.p.v. weggooien).
           matched: result?.matched || [],
+          // Hergebruikt voor near-duplicate-detectie (mergeNearDuplicateConcepts)
+          // — geen extra embedding-call nodig, de naam is al geëmbed voor de
+          // RAG-verificatie hierboven.
+          embedding: result?.embedding || null,
         };
       })
     );
 
-    const validConcepts = [];
-    const rejectedConcepts = [];
-    // Task #243: map begripsnaam (genormaliseerd) → top-bewijschunks. Wordt na
-    // de insert/update gebruikt om de koppeling in concept_evidence te schrijven.
-    const evidenceByName = new Map();
+    const rejectedConcepts = [...metaRejected];
+    const acceptedResults = [];
     for (const r of verificationResults) {
       if (r.matchedCount >= minEvidence) {
-        validConcepts.push(r.concept);
-        evidenceByName.set(r.concept.name.toLowerCase().trim(), r.matched);
+        acceptedResults.push(r);
       } else {
         rejectedConcepts.push(r);
       }
     }
 
-    console.log(`[extract-concepts] Verificatie klaar: ${validConcepts.length} geaccepteerd, ${rejectedConcepts.length} afgewezen`);
+    // Spellings-/verbuigingsvarianten en synoniemen ("Genest" vs "Geneste
+    // patiënt controleonderzoek", "Cross-over onderzoek" vs "Cross-over
+    // studie") zijn hetzelfde begrip — samenvoegen vóórdat het (eventuele)
+    // maximum aantal begrippen wordt toegepast, anders "verspilt" de docent
+    // ingestelde limiet plekken aan duplicaten van hetzelfde begrip.
+    //
+    // Dit moet OOK tegen al-bestaande cursusbegrippen gebeuren, niet alleen
+    // binnen deze batch: de LLM formuleert hetzelfde begrip niet elke run
+    // identiek (temperature>0, andere chunk-volgorde), dus "Genest ..." uit
+    // een eerdere hergenereer-run en "Geneste ..." uit een latere run kwamen
+    // zonder dit nooit samen in dezelfde vergelijking (bug: bleven beide
+    // permanent naast elkaar staan). Bestaande namen worden er daarom als
+    // "altijd-winnende" pseudo-kandidaten (maxScore=Infinity) bijgevoegd: een
+    // nieuwe kandidaat die daarmee clustert wordt niet ingevoegd, de
+    // bestaande rij (met zijn eigen review_status/evidence) blijft intact.
+    let existingConceptRows = [];
+    if (conceptsHasCourseId) {
+      const { data } = await supabaseAdmin.from('concepts').select('id, name').eq('course_id', courseId);
+      existingConceptRows = data || [];
+    } else {
+      const { data } = await supabaseAdmin.from('concepts').select('id, name').contains('key_points', [courseMarker]);
+      existingConceptRows = data || [];
+    }
+
+    let dedupInput = acceptedResults;
+    let existingPseudoCount = 0;
+    if (existingConceptRows.length > 0) {
+      try {
+        const existingEmbeddings = await embedTextsServer(existingConceptRows.map((c) => c.name), null);
+        const pseudoExisting = existingConceptRows.map((c, i) => ({
+          concept: { name: c.name },
+          embedding: existingEmbeddings[i],
+          maxScore: Infinity,
+          __existing: true,
+        }));
+        dedupInput = [...pseudoExisting, ...acceptedResults];
+        existingPseudoCount = pseudoExisting.length;
+      } catch (embErr) {
+        console.error('[extract-concepts] Embedden van bestaande begripsnamen mislukt, dedup tegen bestaande begrippen overgeslagen:', embErr.message);
+      }
+    }
+
+    const { kept: keptRaw, merged: mergedRaw } = mergeNearDuplicateConcepts(dedupInput);
+    const dedupedResults = keptRaw.filter((r) => !r.__existing);
+    const mergedDuplicates = mergedRaw.filter((r) => !r.__existing);
+    for (const r of mergedDuplicates) {
+      // mergedIntoName kan nu ook een BESTAAND begrip zijn (niet alleen een
+      // andere nieuwe kandidaat) — apart labelen zodat de rapportage klopt.
+      const intoExisting = existingConceptRows.some((c) => c.name === r.mergedIntoName);
+      rejectedConcepts.push({ ...r, reason: intoExisting ? 'exists_in_course' : 'near_duplicate' });
+    }
+    if (existingPseudoCount > 0 && mergedDuplicates.length > 0) {
+      console.log(`[extract-concepts] ${mergedDuplicates.length} near-duplicates samengevoegd (tegen ${existingPseudoCount} bestaande + elkaar): ${mergedDuplicates.map((r) => `"${r.concept.name}" → "${r.mergedIntoName}"`).join(', ')}`);
+    } else if (mergedDuplicates.length > 0) {
+      console.log(`[extract-concepts] ${mergedDuplicates.length} near-duplicates samengevoegd: ${mergedDuplicates.map((r) => `"${r.concept.name}" → "${r.mergedIntoName}"`).join(', ')}`);
+    }
+
+    // Maximum aantal begrippen (docent-instelbaar in de Begrippen-tab, vlak
+    // vóór "Hergenereer begrippenlijst"): zonder cap kan een rijk document
+    // honderden begrippen opleveren waar een student door de bomen het bos
+    // niet meer ziet. capByBestMatch behoudt de begrippen met de sterkste
+    // RAG-matchkwaliteit. Dezelfde cap geldt ook bij hergenereren: een begrip
+    // dat er nu buiten valt, wordt door de bestaande keep-aware opruimstap
+    // verwijderd als het al bestond (net als een gewone RAG-verificatie-
+    // afwijzing) — géén apart opruimpad nodig.
+    const { kept: keptResults, cutOff: cappedOut } = capByBestMatch(dedupedResults, extractionSettings.max_concepts);
+    for (const r of cappedOut) {
+      rejectedConcepts.push({ ...r, reason: 'max_concepts_cap' });
+    }
+
+    const validConcepts = [];
+    // Task #243: map begripsnaam (genormaliseerd) → top-bewijschunks. Wordt na
+    // de insert/update gebruikt om de koppeling in concept_evidence te schrijven.
+    const evidenceByName = new Map();
+    for (const r of keptResults) {
+      validConcepts.push(r.concept);
+      evidenceByName.set(r.concept.name.toLowerCase().trim(), r.matched);
+    }
+
+    console.log(`[extract-concepts] Verificatie klaar: ${validConcepts.length} geaccepteerd, ${rejectedConcepts.length} afgewezen (${metaRejected.length} niet-vakterm, ${mergedDuplicates.length} near-duplicate, ${cappedOut.length} boven het maximum van ${extractionSettings.max_concepts || '∞'})`);
     if (rejectedConcepts.length > 0) {
       const sample = rejectedConcepts.slice(0, 8).map(r =>
         `"${r.concept.name}" (max=${r.maxScore.toFixed(3)}, kandidaten=${r.candidates})`
@@ -5410,18 +5597,35 @@ ${combinedText}`;
     if (conceptsHasCourseId) {
       const { data: existingForCourse } = await supabaseAdmin
         .from('concepts')
-        .select('id, name, key_points')
+        .select('id, name, key_points, concept_role, category, difficulty')
         .eq('course_id', courseId);
 
-      const alreadyByCourse = new Set(
-        (existingForCourse || []).map((c) => c.name.toLowerCase().trim())
+      const existingByName = new Map(
+        (existingForCourse || []).map((c) => [c.name.toLowerCase().trim(), c])
       );
 
       const toInsert = [];
+      // Verse role/difficulty-classificatie ook toepassen op begrippen die al
+      // bestonden voor deze cursus (skip-van-insert ≠ skip-van-refresh): anders
+      // blijft een begrip dat de LLM nu als 'example_instance' of 'hard'
+      // herkent op zijn oude/ontbrekende classificatie staan bij hergenereren.
+      const toRefresh = [];
       const seenInBatch = new Set();
       for (const c of validConcepts) {
         const key = c.name.toLowerCase().trim();
-        if (alreadyByCourse.has(key)) { skipped++; continue; }
+        const existing = existingByName.get(key);
+        if (existing) {
+          if (existing.concept_role !== c.concept_role || existing.difficulty !== c.difficulty) {
+            toRefresh.push({
+              id: existing.id,
+              concept_role: c.concept_role,
+              category: existing.category || c.category,
+              difficulty: c.difficulty,
+            });
+          }
+          skipped++;
+          continue;
+        }
         if (seenInBatch.has(key)) { skipped++; continue; }
         seenInBatch.add(key);
         toInsert.push({
@@ -5430,22 +5634,62 @@ ${combinedText}`;
           key_points: [ragMarker],
           examples: [],
           course_id: courseId,
+          category: c.category,
+          concept_role: c.concept_role,
+          difficulty: c.difficulty,
         });
       }
 
-      if (toInsert.length > 0) {
-        // Gebruik upsert met ignoreDuplicates zodat begrippen met dezelfde naam
-        // die al bestaan (bv. in een andere cursus) worden overgeslagen in
-        // plaats van een constraint-fout te geven.
-        const { data: ins, error: insertError } = await supabaseAdmin
+      for (const u of toRefresh) {
+        const { error: roleErr } = await supabaseAdmin
           .from('concepts')
-          .upsert(toInsert, { onConflict: 'name', ignoreDuplicates: true })
-          .select('id, name, category, definition');
-        if (insertError) {
-          console.error('[extract-concepts] Insert error (course_id path):', insertError);
-          return res.status(500).json({ error: `Begrippen opslaan mislukt: ${insertError.message}` });
+          .update({ concept_role: u.concept_role, category: u.category, difficulty: u.difficulty })
+          .eq('id', u.id);
+        if (roleErr) console.error('[extract-concepts] concept_role/difficulty refresh mislukt:', roleErr.message);
+      }
+
+      if (toInsert.length > 0) {
+        // GEEN upsert/onConflict hier: de per-cursus uniekheid
+        // (concepts_name_course_unique) is een PARTIËLE index (WHERE
+        // course_id IS NOT NULL, naast een aparte globale index voor
+        // course_id IS NULL — nodig omdat dat twee verschillende
+        // uniekheidsregels zijn). PostgREST's upsert genereert altijd een
+        // ON CONFLICT zonder WHERE-predicaat, en dat matcht NOOIT een
+        // partiële index ("no unique or exclusion constraint matching the
+        // ON CONFLICT specification") — vandaar de fout die je zag.
+        // toInsert bevat sowieso alleen namen die al gededupliceerd zijn
+        // tegen bestaande cursusbegrippen (existingByName) en binnen deze
+        // batch (seenInBatch); een plain insert dekt dus het normale geval.
+        // Bij een echte race (twee gelijktijdige "Hergenereer"-runs) valt
+        // dit terug op rij-voor-rij zodat alleen de botsende naam wegvalt,
+        // niet de hele batch.
+        const { data: batchIns, error: batchErr } = await supabaseAdmin
+          .from('concepts')
+          .insert(toInsert)
+          .select('id, name, category, concept_role, difficulty, definition');
+        if (!batchErr) {
+          inserted = batchIns || [];
+        } else if (batchErr.code === '23505' || /duplicate key/i.test(batchErr.message || '')) {
+          console.warn('[extract-concepts] Insert-race (course_id path), val terug op rij-voor-rij:', batchErr.message);
+          const rowsOk = [];
+          for (const row of toInsert) {
+            const { data: single, error: singleErr } = await supabaseAdmin
+              .from('concepts')
+              .insert(row)
+              .select('id, name, category, concept_role, difficulty, definition')
+              .maybeSingle();
+            if (singleErr) {
+              const isDup = singleErr.code === '23505' || /duplicate key/i.test(singleErr.message || '');
+              if (!isDup) console.error('[extract-concepts] Rij-insert mislukt (course_id path):', singleErr.message);
+              continue;
+            }
+            if (single) rowsOk.push(single);
+          }
+          inserted = rowsOk;
+        } else {
+          console.error('[extract-concepts] Insert error (course_id path):', batchErr);
+          return res.status(500).json({ error: `Begrippen opslaan mislukt: ${batchErr.message}` });
         }
-        inserted = ins || [];
       }
     } else {
       // planConceptWrites herkent bestaande (gedeelde/handmatige) begrippen:
@@ -5454,7 +5698,7 @@ ${combinedText}`;
       // RAG-begrippen worden pas ná deze schrijfstap opgeruimd (keep-aware).
       const { data: allExisting } = await supabaseAdmin
         .from('concepts')
-        .select('id, name, key_points');
+        .select('id, name, key_points, concept_role, category, difficulty');
 
       const { toInsert, toUpdate, skipped: skippedCount } = planConceptWrites(
         validConcepts, allExisting, { courseMarker, ragMarker }
@@ -5464,7 +5708,7 @@ ${combinedText}`;
       for (const u of toUpdate) {
         const { error: updErr } = await supabaseAdmin
           .from('concepts')
-          .update({ key_points: u.key_points })
+          .update({ key_points: u.key_points, category: u.category, concept_role: u.concept_role, difficulty: u.difficulty })
           .eq('id', u.id);
         if (updErr) {
           // Hard falen vóór de opruimstap: een gedeeltelijke schrijfactie mag
@@ -5483,7 +5727,7 @@ ${combinedText}`;
         const { data: ins, error: insertError } = await supabaseAdmin
           .from('concepts')
           .upsert(toInsert, { onConflict: 'name', ignoreDuplicates: true })
-          .select('id, name, category, definition');
+          .select('id, name, category, concept_role, difficulty, definition');
         if (insertError) {
           console.error('[extract-concepts] Insert error (key_points path):', insertError);
           return res.status(500).json({ error: `Begrippen opslaan mislukt: ${insertError.message}` });
@@ -5570,19 +5814,35 @@ ${combinedText}`;
     }
 
     const totalAdded = inserted.length + updatedCount;
+    // netTotal = totalAdded + skipped is het aantal begrippen dat NA deze run
+    // echt voor de cursus bestaat (skipped = begrip bestond al en blijft
+    // gewoon staan, is dus NIET weggegooid). Bij een ingesteld maximum is dit
+    // exact dat maximum (of minder, als er binnen de batch een naam-botsing
+    // was) — dat was voor een docent niet duidelijk uit "X gegenereerd, Y
+    // overgeslagen", vandaar de expliciete "totaal voor deze cursus"-melding.
+    const netTotal = totalAdded + skipped;
 
     console.log(`[extract-concepts] Done for course ${courseId}: ${inserted.length} new, ${updatedCount} updated, ${skipped} already tagged, ${verificationRejected} afgewezen door verificatie`);
 
     await writeRegenTimestamp().catch(() => {});
 
-    const verifMsg = verificationRejected > 0
-      ? ` (${verificationRejected} kandidaten afgewezen door RAG-verificatie)`
-      : '';
+    // Splits de afwijzingsreden uit i.p.v. alles onder "RAG-verificatie" te
+    // groeperen: sinds de near-duplicate-merge en de max_concepts-cap zitten
+    // daar nu ook andere redenen in, en die op één hoop noemen als "RAG-
+    // verificatie" zou zelf weer verwarrend zijn (net als "overgeslagen").
+    const pureVerificationRejected = Math.max(0, rejectedConcepts.length - metaRejected.length - mergedDuplicates.length - cappedOut.length);
+    const reasonParts = [];
+    if (pureVerificationRejected > 0) reasonParts.push(`${pureVerificationRejected} onvoldoende RAG-bewijs`);
+    if (metaRejected.length > 0) reasonParts.push(`${metaRejected.length} geen vakterm`);
+    if (mergedDuplicates.length > 0) reasonParts.push(`${mergedDuplicates.length} samengevoegd als duplicaat`);
+    if (cappedOut.length > 0) reasonParts.push(`${cappedOut.length} boven het maximum`);
+    const verifMsg = reasonParts.length > 0 ? ` — ${reasonParts.join(', ')} afgewezen` : '';
 
     return res.json({
       concepts: inserted,
       updated: updatedCount,
       skipped,
+      netTotal,
       verificationRejected,
       candidatesFromLLM: rawValidConcepts.length,
       verificationThreshold: verifyThreshold,
@@ -5591,7 +5851,7 @@ ${combinedText}`;
       language: conceptLanguage,
       evidenceWritten,
       conceptsLinked,
-      message: `${totalAdded} begrippen toegevoegd/bijgewerkt voor deze cursus${verifMsg}`,
+      message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}`,
     });
   } catch (err) {
     console.error('[extract-concepts] Unexpected error:', err);
@@ -5604,7 +5864,7 @@ app.get('/api/concepts', async (req, res) => {
     return res.status(503).json({ error: 'Admin client not available' });
   }
 
-  const { courseId } = req.query;
+  const { courseId, scope } = req.query;
 
   const authHeader = req.headers['authorization'];
   if (!authHeader) {
@@ -5614,10 +5874,38 @@ app.get('/api/concepts', async (req, res) => {
     global: { headers: { Authorization: authHeader } },
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { error: userError } = await callerClient.auth.getUser();
-  if (userError) {
+  const { data: { user }, error: userError } = await callerClient.auth.getUser();
+  if (userError || !user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
+
+  // Filteren op DOEL van de aanroep, niet op wie er aanroept: Quiz en "Ik leg
+  // uit" moeten de door de docent goedgekeurde lijst tonen aan IEDEREEN — ook
+  // aan de docent zelf die op de Quiz-pagina kijkt — want dat is precies de
+  // lijst die ze proberen te controleren. Alleen de Begrippen-BEHEERTAB heeft
+  // de ongefilterde lijst nodig (om af te keuren begrippen te kunnen zien/
+  // beheren) en vraagt daarom expliciet ?scope=manage aan. Zonder die param
+  // wordt altijd gefilterd, ongeacht rol — dat voorkomt precies de bug waarbij
+  // een docent op de Quiz-pagina alsnog afgekeurde begrippen (bv. "alcohol-
+  // gebruik") zag omdat die aanroep als "docent" werd behandeld i.p.v. als
+  // "quiz-onderwerpenlijst". ?scope=manage wordt alleen gehonoreerd voor
+  // daadwerkelijke docenten/admins — een student kan de goedkeuring dus niet
+  // omzeilen door de param zelf mee te sturen.
+  let canUseManageScope = false;
+  if (scope === 'manage') {
+    try {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+      canUseManageScope = profile?.role === 'admin' || profile?.role === 'docent' || profile?.email === SUPERUSER_EMAIL;
+    } catch { /* best effort — val terug op gefilterd */ }
+  }
+  const isManageView = scope === 'manage' && canUseManageScope;
+
+  // Bestaande begrippen (van vóór de review_status-kolom, of nooit expliciet
+  // gecureerd) hebben review_status='approved' als DB-default — 'null' wordt
+  // hier defensief ook als goedgekeurd behandeld zodat een schema zonder deze
+  // kolom (oudere Supabase-instance) nooit alles verbergt.
+  const approvedOnly = (rows) => (rows || []).filter((c) => isManageView || c.review_status == null || c.review_status === 'approved');
 
   try {
     if (courseId) {
@@ -5634,7 +5922,7 @@ app.get('/api/concepts', async (req, res) => {
         }
 
         if (courseConcepts && courseConcepts.length > 0) {
-          return res.json({ concepts: courseConcepts, source: 'course' });
+          return res.json({ concepts: approvedOnly(courseConcepts), source: 'course' });
         }
 
         const { data: globalConcepts, error: globalErr } = await supabaseAdmin
@@ -5648,7 +5936,8 @@ app.get('/api/concepts', async (req, res) => {
           return res.status(500).json({ error: globalErr.message });
         }
 
-        return res.json({ concepts: globalConcepts || [], source: globalConcepts?.length ? 'global' : 'empty' });
+        const filteredGlobal = approvedOnly(globalConcepts);
+        return res.json({ concepts: filteredGlobal, source: filteredGlobal.length ? 'global' : 'empty' });
       } else {
         const courseMarker = `course_id:${courseId}`;
         const { data: courseConcepts, error: courseErr } = await supabaseAdmin
@@ -5663,7 +5952,7 @@ app.get('/api/concepts', async (req, res) => {
         }
 
         if (courseConcepts && courseConcepts.length > 0) {
-          return res.json({ concepts: courseConcepts, source: 'course' });
+          return res.json({ concepts: approvedOnly(courseConcepts), source: 'course' });
         }
 
         const { data: globalConcepts, error: globalErr } = await supabaseAdmin
@@ -5676,9 +5965,9 @@ app.get('/api/concepts', async (req, res) => {
           return res.status(500).json({ error: globalErr.message });
         }
 
-        const filtered = (globalConcepts || []).filter(
+        const filtered = approvedOnly((globalConcepts || []).filter(
           (c) => !(c.key_points || []).some((kp) => kp.startsWith('course_id:'))
-        );
+        ));
 
         return res.json({ concepts: filtered, source: filtered.length ? 'global' : 'empty' });
       }
@@ -5694,10 +5983,92 @@ app.get('/api/concepts', async (req, res) => {
       return res.status(500).json({ error: allErr.message });
     }
 
-    return res.json({ concepts: allConcepts || [], source: 'global' });
+    return res.json({ concepts: approvedOnly(allConcepts), source: 'global' });
   } catch (err) {
     console.error('[concepts] Unexpected error:', err);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/concepts/set-approval — docent-curatie: markeer PRECIES de
+// meegegeven begrip-id's als 'approved' voor quiz/"Ik leg uit" (via GET
+// /api/concepts, de enige bron die beide student-features voeden), en alle
+// overige begrippen van deze cursus als 'rejected'. Hergebruikt de bestaande
+// (tot nu toe ongebruikte) review_status-kolom i.p.v. een nieuwe kolom/tabel.
+// LET OP: review_status staat op de begrip-RIJ, niet per cursus — een begrip
+// dat via key_points met een andere cursus gedeeld wordt, verandert dus ook
+// daar van status. Bij naam-overlap tussen cursussen is dit een bewuste
+// afweging (hergebruik van bestaand schema) i.p.v. een nieuwe join-tabel.
+app.post('/api/admin/concepts/set-approval', async (req, res) => {
+  if (!supabaseAdmin) {
+    return res.status(503).json({ error: 'Admin client not available — SUPABASE_SERVICE_ROLE_KEY missing' });
+  }
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authorization header required' });
+  }
+  const { courseId, approvedIds } = req.body || {};
+  if (!courseId) {
+    return res.status(400).json({ error: 'courseId is required' });
+  }
+  if (!Array.isArray(approvedIds)) {
+    return res.status(400).json({ error: 'approvedIds moet een array zijn (leeg mag)' });
+  }
+
+  try {
+    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    if (userError || !user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('role, email')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (profileError || !profile) {
+      return res.status(403).json({ error: 'Could not verify user role' });
+    }
+    const isAdmin = profile.role === 'admin' || profile.email === SUPERUSER_EMAIL;
+    const isDocent = !isAdmin && await isCourseTeacher(user.id, courseId);
+    if (!isAdmin && !isDocent) {
+      return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
+    }
+
+    let courseConceptIds;
+    if (conceptsHasCourseId) {
+      const { data, error } = await supabaseAdmin.from('concepts').select('id').eq('course_id', courseId);
+      if (error) return res.status(500).json({ error: error.message });
+      courseConceptIds = (data || []).map((c) => c.id);
+    } else {
+      const courseMarker = `course_id:${courseId}`;
+      const { data, error } = await supabaseAdmin.from('concepts').select('id').contains('key_points', [courseMarker]);
+      if (error) return res.status(500).json({ error: error.message });
+      courseConceptIds = (data || []).map((c) => c.id);
+    }
+
+    const approvedSet = new Set(approvedIds);
+    const toApprove = courseConceptIds.filter((id) => approvedSet.has(id));
+    const toReject = courseConceptIds.filter((id) => !approvedSet.has(id));
+
+    if (toApprove.length > 0) {
+      const { error } = await supabaseAdmin.from('concepts').update({ review_status: 'approved' }).in('id', toApprove);
+      if (error) return res.status(500).json({ error: `Goedkeuren mislukt: ${error.message}` });
+    }
+    if (toReject.length > 0) {
+      const { error } = await supabaseAdmin.from('concepts').update({ review_status: 'rejected' }).in('id', toReject);
+      if (error) return res.status(500).json({ error: `Afkeuren mislukt: ${error.message}` });
+    }
+
+    console.log(`[concepts/set-approval] course=${courseId} approved=${toApprove.length} rejected=${toReject.length} door ${user.id}`);
+    return res.json({ approved: toApprove.length, rejected: toReject.length });
+  } catch (err) {
+    console.error('[concepts/set-approval] Unexpected error:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
@@ -8108,6 +8479,7 @@ const QUIZ_PROMPT_DEFAULTS = {
   quiz_generate_strict: `Je bent een tentamenmaker aan de VU Amsterdam. Je formuleert vragen UITSLUITEND op basis van het meegeleverde cursusmateriaal. Verzin geen feiten die niet in de context staan. Spreek de student aan met "je"/"jij"/"jouw".`,
   quiz_generate_blended: `Je bent een tentamenmaker aan de VU Amsterdam. Je gebruikt het meegeleverde cursusmateriaal als hoofdbron, maar mag dit aanvullen met algemeen geaccepteerde kennis uit het vakgebied. Maak helder onderscheid tussen wat in de context staat en wat algemene vakkennis is. Spreek de student aan met "je"/"jij"/"jouw".`,
   quiz_generate_creative: `Je bent een creatieve tentamenmaker aan de VU Amsterdam. Je formuleert toepassingsvragen, casusvragen en transferopdrachten die studenten uitdagen om de leerstof in nieuwe contexten toe te passen. Gebruik realistische, relevante scenario's. Spreek de student aan met "je"/"jij"/"jouw".`,
+  quiz_verify: `Je bent een zeer kritische toetsdeskundige én expert in het vakgebied van de cursus, zoals dat vakgebied in het meegeleverde cursusmateriaal is vastgelegd. Je controleert quizvragen voordat studenten ze te zien krijgen: je lost ze eerst zelf onafhankelijk op en vergelijkt je uitkomst daarna met het officiële antwoord en de feedback. Je laat geen vage, dubbelzinnige, onjuiste of niet-toetsbare vraag door. Je antwoordt uitsluitend in het gevraagde JSON-formaat.`,
   quiz_evaluate_open: `Je bent een kritische maar constructieve beoordelaar van open antwoorden. Je geeft feedback in vier punten: (1) wat goed is, (2) wat ontbreekt, (3) misconcepties, (4) concrete verbeterpunten. Spreek de student direct aan met "je"/"jij"/"jouw" — gebruik NOOIT "de student" of "deze student".`,
 };
 
@@ -11695,7 +12067,7 @@ async function extractTextFromUpload(file) {
   if (OFFICE_EXT_RE.test(name)) {
     // officeparser herkent het type aan de inhoud van de buffer.
     const text = await parseOfficeAsync(file.buffer);
-    return String(text || '').trim();
+    return normalizeOfficeText(text);
   }
   throw new Error('Bestandstype niet ondersteund — kies .txt, .md, .csv, .tsv, .json, .pdf, .docx, .pptx, .xlsx, .odt, .ods of .odp');
 }

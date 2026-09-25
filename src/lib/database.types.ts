@@ -187,6 +187,9 @@ export type Database = {
           key_points: string[]
           examples: string[]
           course_id: string | null
+          concept_role: string | null
+          difficulty: string | null
+          review_status: string | null
           created_at: string
           updated_at: string
         }
@@ -198,6 +201,9 @@ export type Database = {
           key_points?: string[]
           examples?: string[]
           course_id?: string | null
+          concept_role?: string | null
+          difficulty?: string | null
+          review_status?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -209,6 +215,9 @@ export type Database = {
           key_points?: string[]
           examples?: string[]
           course_id?: string | null
+          concept_role?: string | null
+          difficulty?: string | null
+          review_status?: string | null
           created_at?: string
           updated_at?: string
         }

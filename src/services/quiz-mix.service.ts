@@ -21,6 +21,7 @@ import {
   type OpenQuestion,
   type QuizSource,
 } from './llm.service';
+import { verifyQuestions, hasCourseMaterial, type VerificationReport } from './quiz-verification.service';
 
 export interface SourceMix {
   pct_rag: number;
@@ -214,10 +215,58 @@ export function convertItembankOpenQuestion(q: ItembankRawOpenQuestion): OpenQue
   };
 }
 
+/** Maximaal aantal genereer+controleer-rondes per bron om afgekeurde vragen te vervangen. */
+export const MAX_FILL_ROUNDS = 3;
+
 /**
- * Genereer een quiz die de bronnen-mix respecteert. Vragen worden in een
- * willekeurige volgorde geretourneerd (gemixt over bronnen) en elk hebben
- * een `source`-tag.
+ * - 'ok'                 : precies het gevraagde aantal gecontroleerde vragen.
+ * - 'no_course_material' : geen passend cursusmateriaal → geen enkele vraag
+ *                          kan bij de cursus worden getoetst, dus geen quiz.
+ * - 'shortfall'          : ook na alle vervangrondes te weinig goedgekeurde vragen.
+ */
+export type MixedQuizStatus = 'ok' | 'no_course_material' | 'shortfall';
+
+/** Voortgang voor de wachtbalk in de UI. */
+export type QuizProgressPhase = 'writing' | 'checking' | 'repairing' | 'replacing' | 'done';
+export interface QuizProgressEvent {
+  phase: QuizProgressPhase;
+  /** Aantal tot nu toe goedgekeurde vragen (voorlopig, vóór ontdubbelen). */
+  approved: number;
+  target: number;
+}
+
+/** Samenvatting van de kwaliteitscontrole over alle bronnen, voor de UI. */
+export interface VerificationSummary {
+  accepted: number;
+  repaired: number;
+  /** Inhoudelijk afgekeurd. */
+  rejected: number;
+  /** Niet te controleren door een technische fout (niet doorgelaten). */
+  failed: number;
+  /** Laatste technische foutmelding, voor de "technische details" in de UI. */
+  lastError?: string;
+}
+
+function emptyVerificationSummary(): VerificationSummary {
+  return { accepted: 0, repaired: 0, rejected: 0, failed: 0 };
+}
+
+function addToSummary(sum: VerificationSummary, r: VerificationReport) {
+  sum.accepted += r.accepted;
+  sum.repaired += r.repaired;
+  sum.rejected += r.rejected.length;
+  sum.failed += r.failed.length;
+  if (r.failed.length > 0) sum.lastError = r.failed[r.failed.length - 1].reason;
+}
+
+// Vervangvragen mogen geen kopie zijn van een vraag die al in de quiz zit.
+const questionKey = (q: QuizQuestion) => (q.question || '').trim().toLowerCase().replace(/\s+/g, ' ');
+
+/**
+ * Genereer een quiz die de bronnen-mix respecteert. Elke vraag doorloopt de
+ * kwaliteitscontrole (quiz-verification.service); afgekeurde vragen worden
+ * vervangen tot het gevraagde aantal is bereikt. Vragen worden in een
+ * willekeurige volgorde geretourneerd en hebben elk een `source`-tag.
  */
 export async function generateMixedQuiz(args: {
   courseId: string | null;
@@ -229,94 +278,138 @@ export async function generateMixedQuiz(args: {
   ragContext?: string;
   ragStrictMode?: boolean;
   mix?: SourceMix;
-}): Promise<{ questions: QuizQuestion[]; counts: MixCounts; effectiveMix: SourceMix }> {
+  onProgress?: (e: QuizProgressEvent) => void;
+}): Promise<{
+  questions: QuizQuestion[];
+  counts: MixCounts;
+  effectiveMix: SourceMix;
+  verification: VerificationSummary;
+  status: MixedQuizStatus;
+}> {
   const mix = args.mix || (await fetchSourceMix(args.courseId));
-  const counts = distributeMix(args.numQuestions, mix, args.questionType);
+  const verification = emptyVerificationSummary();
+
+  // Zonder passend cursusmateriaal zou elke vraag worden afgekeurd; sla de
+  // (dure) generatie dan helemaal over en meld het eerlijk.
+  if (!hasCourseMaterial(args.ragContext)) {
+    return {
+      questions: [],
+      counts: { rag: 0, itembank: 0, llm: 0 },
+      effectiveMix: mix,
+      verification,
+      status: 'no_course_material',
+    };
+  }
+
+  const target = args.numQuestions;
+  const counts = distributeMix(target, mix, args.questionType);
 
   // Task #412: geef de beheerde quiz-prompt-NAAM per bron door aan generateQuiz;
   // de server resolvet die naam server-side naar de vertrouwde prompt (default +
-  // actieve DB-override). Strict bij RAG met context + strict-mode, anders
-  // blended bij RAG-bron, en creative bij de LLM-bron.
-  const ragPersona = args.ragContext && args.ragStrictMode
-    ? 'quiz_generate_strict'
-    : 'quiz_generate_blended';
+  // actieve DB-override). Strict bij strict-mode, anders blended bij de
+  // RAG-bron, en creative bij de LLM-bron.
+  const ragPersona = args.ragStrictMode ? 'quiz_generate_strict' : 'quiz_generate_blended';
   const llmPersona = 'quiz_generate_creative';
+  // Het cursusmateriaal gaat bij ÉLKE controle mee — ook bij creatieve vragen —
+  // zodat de controleur als vakexpert van déze cursus oordeelt.
+  let approved = 0;
+  const progress = (phase: QuizProgressPhase) => {
+    try { args.onProgress?.({ phase, approved: Math.min(approved, target), target }); } catch { /* UI-fout mag de quiz niet breken */ }
+  };
+  const verifyOpts = {
+    ragContext: args.ragContext,
+    topics: args.topicNames,
+    onRepair: () => progress('repairing'),
+    onChecked: (kept: boolean) => { if (kept) approved++; progress('checking'); },
+  };
+  const seen = new Set<string>();
 
-  const out: QuizQuestion[] = [];
-
-  // 1) ItemBank
-  let itembankActual = 0;
+  // 1) ItemBank — alleen passendheid bij het cursusmateriaal controleren.
+  const itembankKept: QuizQuestion[] = [];
   if (counts.itembank > 0 && args.courseId) {
+    progress('checking');
     const ibQs = await fetchItembankQuestions(args.courseId, args.conceptIds, counts.itembank, args.questionType);
-    itembankActual = ibQs.length;
-    out.push(...ibQs);
-  }
-
-  // Bij tekort aan itembank-vragen: vul aan met LLM.
-  const itembankShortfall = counts.itembank - itembankActual;
-  const llmCount = counts.llm + itembankShortfall;
-
-  // 2) RAG (LLM met context)
-  // Sla de RAG-aanroep over als strict-mode aan staat maar er geen context
-  // beschikbaar is — anders genereert het model een "weigerings-vraag".
-  // De geplande RAG-vragen vallen dan terug naar de LLM-creatieve bron.
-  const ragContextMissing = args.ragStrictMode && !args.ragContext;
-  const llmCountWithRagFallback = llmCount + (ragContextMissing ? counts.rag : 0);
-
-  let ragActual = 0;
-  if (counts.rag > 0 && !ragContextMissing) {
-    try {
-      const ragQs = await generateQuiz(
-        args.topicNames,
-        args.difficulty,
-        args.questionType,
-        counts.rag,
-        args.ragContext,
-        args.ragStrictMode,
-        ragPersona,
-      );
-      ragQs.forEach(q => { (q as MCQQuestion).source = 'rag'; });
-      ragActual = ragQs.length;
-      out.push(...ragQs);
-    } catch (err) {
-      console.warn('[quiz-mix] RAG-bron mislukt:', err);
+    const report = await verifyQuestions(ibQs, 'itembank', verifyOpts);
+    addToSummary(verification, report);
+    for (const q of report.kept) {
+      if (itembankKept.length >= counts.itembank || seen.has(questionKey(q))) continue;
+      seen.add(questionKey(q));
+      itembankKept.push(q);
     }
   }
 
-  // 3) LLM-creatief (zonder context)
-  let llmActual = 0;
-  if (llmCountWithRagFallback > 0) {
-    try {
-      const llmQs = await generateQuiz(
-        args.topicNames,
-        args.difficulty,
-        args.questionType,
-        llmCountWithRagFallback,
-        undefined,
-        false,
-        llmPersona,
-      );
-      llmQs.forEach(q => { (q as MCQQuestion).source = 'llm'; });
-      llmActual = llmQs.length;
-      out.push(...llmQs);
-    } catch (err) {
-      console.warn('[quiz-mix] LLM-creatieve bron mislukt:', err);
+  // Genereer + controleer tot `needed` goedgekeurde vragen voor deze bron, met
+  // hooguit MAX_FILL_ROUNDS rondes. Afgekeurde vragen worden zo vervangen.
+  const fill = async (source: 'rag' | 'llm', needed: number): Promise<QuizQuestion[]> => {
+    const kept: QuizQuestion[] = [];
+    for (let round = 0; round < MAX_FILL_ROUNDS && kept.length < needed; round++) {
+      const n = needed - kept.length;
+      progress(round === 0 ? 'writing' : 'replacing');
+      let candidates: QuizQuestion[];
+      try {
+        candidates = await generateQuiz(
+          args.topicNames,
+          args.difficulty,
+          args.questionType,
+          n,
+          source === 'rag' ? args.ragContext : undefined,
+          source === 'rag' ? args.ragStrictMode : false,
+          source === 'rag' ? ragPersona : llmPersona,
+        );
+      } catch (err) {
+        console.warn(`[quiz-mix] ${source}-bron genereren mislukt (ronde ${round + 1}):`, err);
+        continue;
+      }
+      candidates = candidates.filter(q => !seen.has(questionKey(q))).slice(0, n);
+      candidates.forEach(q => { (q as MCQQuestion).source = source; });
+      progress('checking');
+      const report = await verifyQuestions(candidates, 'generated', verifyOpts);
+      addToSummary(verification, report);
+      for (const q of report.kept) {
+        if (kept.length >= needed || seen.has(questionKey(q))) continue;
+        seen.add(questionKey(q));
+        kept.push(q);
+      }
     }
+    return kept;
+  };
+
+  // 2) RAG en creatief parallel (scheelt wachttijd). Een tekort aan
+  // ItemBank-vragen wordt, zoals voorheen, door de creatieve bron aangevuld.
+  const llmPlanned = counts.llm + (counts.itembank - itembankKept.length);
+  const [ragKept, llmKept] = await Promise.all([
+    counts.rag > 0 ? fill('rag', counts.rag) : Promise.resolve([]),
+    llmPlanned > 0 ? fill('llm', llmPlanned) : Promise.resolve([]),
+  ]);
+
+  // 3) Nog steeds te weinig? Vul aan uit de bronnen die de docent in de mix
+  // heeft opgenomen (cursusmateriaal eerst), zodat de student precies het
+  // gevraagde aantal krijgt.
+  const topUpSources: Array<'rag' | 'llm'> = [];
+  if (counts.rag > 0) topUpSources.push('rag');
+  if (llmPlanned > 0 || topUpSources.length === 0) topUpSources.push('llm');
+  for (const src of topUpSources) {
+    const missing = target - (itembankKept.length + ragKept.length + llmKept.length);
+    if (missing <= 0) break;
+    (src === 'rag' ? ragKept : llmKept).push(...(await fill(src, missing)));
   }
 
+  const out = [...itembankKept, ...ragKept, ...llmKept];
+  approved = out.length;
+  progress('done');
   // Shuffle voor afwisseling van bronnen tijdens de quiz.
   for (let i = out.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [out[i], out[j]] = [out[j], out[i]];
   }
 
-  // Rapporteer de werkelijk geleverde aantallen per bron — niet de
-  // geplande. Zo ziet de UI eerlijk dat ItemBank is aangevuld door LLM
-  // en hoeveel RAG/LLM daadwerkelijk hebben opgeleverd.
+  // Rapporteer de werkelijk geleverde aantallen per bron — niet de geplande.
   return {
     questions: out,
-    counts: { rag: ragActual, itembank: itembankActual, llm: llmActual },
+    counts: { rag: ragKept.length, itembank: itembankKept.length, llm: llmKept.length },
     effectiveMix: mix,
+    verification,
+    status: out.length === target ? 'ok' : 'shortfall',
   };
 }
 

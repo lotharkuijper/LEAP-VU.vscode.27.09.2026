@@ -58,7 +58,11 @@ export function ChatExcerptCard({ attachment, onRemove }: ChatExcerptCardProps) 
     >
       <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-100/70 text-amber-800 text-xs font-semibold">
         <Quote className="w-3.5 h-3.5 shrink-0" />
-        <span className="truncate">{t('studiecafe.attachment.chatExcerpt')}</span>
+        <span className="truncate">
+          {attachment.meta?.module === 'quiz'
+            ? t('studiecafe.attachment.quizExcerpt')
+            : t('studiecafe.attachment.chatExcerpt')}
+        </span>
         <div className="ml-auto flex items-center gap-1 shrink-0">
           <button
             type="button"

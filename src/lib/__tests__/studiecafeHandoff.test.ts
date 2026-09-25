@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   stashStudiecafeHandoff,
   takeStudiecafeHandoff,
+  CROSS_TAB_TTL_MS,
   type StudiecafeHandoff,
 } from '../studiecafeHandoff';
 import { type ChatExcerptAttachment } from '../../components/ChatExcerptCard';
@@ -82,5 +83,34 @@ describe('studiecafeHandoff — ongeldige payloads worden geweigerd', () => {
     sessionStorage.setItem(KEY, JSON.stringify({ v: 99 }));
     expect(takeStudiecafeHandoff()).toBeNull();
     expect(sessionStorage.getItem(KEY)).toBeNull();
+  });
+});
+
+describe('studiecafeHandoff — overdracht naar een nieuw tabblad (quiz)', () => {
+  const CROSS_KEY = 'leapvu:studiecafe-handoff-crosstab';
+  beforeEach(() => { try { localStorage.clear(); } catch { /* noop */ } });
+
+  it('levert een crossTab-overdracht af in een tabblad zonder sessionStorage-kopie, eenmalig', () => {
+    const h = makeHandoff();
+    stashStudiecafeHandoff(h, { crossTab: true });
+    // Nieuw tabblad: sessionStorage is leeg.
+    expect(sessionStorage.getItem(KEY)).toBeNull();
+    expect(takeStudiecafeHandoff()).toEqual(h);
+    expect(localStorage.getItem(CROSS_KEY)).toBeNull();
+    expect(takeStudiecafeHandoff()).toBeNull();
+  });
+
+  it('negeert een verlopen crossTab-overdracht', () => {
+    localStorage.setItem(CROSS_KEY, JSON.stringify({ at: Date.now() - CROSS_TAB_TTL_MS - 1, handoff: makeHandoff() }));
+    expect(takeStudiecafeHandoff()).toBeNull();
+    expect(localStorage.getItem(CROSS_KEY)).toBeNull();
+  });
+
+  it('geeft de tab-eigen overdracht voorrang boven een crossTab-overdracht', () => {
+    const own = makeHandoff();
+    const other = { ...makeHandoff(), category: 'vraag' };
+    stashStudiecafeHandoff(other, { crossTab: true });
+    stashStudiecafeHandoff(own);
+    expect(takeStudiecafeHandoff()).toEqual(own);
   });
 });

@@ -37,8 +37,9 @@ export function chunkPlainText(text, {
   maxTokens = 380,
   overlapTokens = 60,
 } = {}) {
-  const paragraphs = stripRunningHeaders(text)
-    .split(/\n\n+/)
+  const normalized = stripRunningHeaders(text).replace(/\r/g, '');
+  const paragraphs = normalized
+    .split(/\n\s*\n+/)
     .map((p) => p.trim())
     .filter(Boolean);
 
@@ -72,6 +73,42 @@ export function chunkPlainText(text, {
       if (piece) result.push(piece);
     }
   }
+
+  // Zodra een rijk document nog steeds als 1 blok vastzit, is dat een
+  // ernstige regressie: de embedding-kwaliteit valt dan weg omdat de tekst
+  // geen semantische segmenten heeft. In dat geval hersegmenteren we op
+  // zin-niveau zodat het document in bruikbare RAG-chunks valt.
+  if (result.length === 1) {
+    const sentenceBreaks = normalized
+      .split(/(?<=[.!?])\s+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (sentenceBreaks.length > 3) {
+      const sentenceChunks = [];
+      let buffer = '';
+      for (const sentence of sentenceBreaks) {
+        const candidate = buffer ? `${buffer} ${sentence}` : sentence;
+        if (estimatePlainTokens(candidate) > targetTokens && buffer) {
+          sentenceChunks.push(buffer.trim());
+          buffer = sentence;
+        } else {
+          buffer = candidate;
+        }
+      }
+      if (buffer.trim()) sentenceChunks.push(buffer.trim());
+      if (sentenceChunks.length > 1) return sentenceChunks;
+    }
+
+    const words = normalized.split(/\s+/).filter(Boolean);
+    const fallbackChunks = [];
+    for (let i = 0; i < words.length; i += wordsPerChunk) {
+      const piece = words.slice(i, i + wordsPerChunk).join(' ').trim();
+      if (piece) fallbackChunks.push(piece);
+    }
+    if (fallbackChunks.length > 1) return fallbackChunks;
+  }
+
   return result.filter(Boolean);
 }
 

@@ -8,7 +8,7 @@ vi.mock('../../lib/supabase', () => ({
   },
 }));
 
-import { sendChatMessage, evaluateExplanation } from '../llm.service';
+import { sendChatMessage, evaluateExplanation, generateQuiz } from '../llm.service';
 
 const fetchMock = vi.fn();
 
@@ -60,5 +60,33 @@ describe('evaluateExplanation learningLevel-bedrading', () => {
   it('laat learningLevel undefined wanneer het niet wordt meegegeven', async () => {
     await evaluateExplanation('Begrip', 'Mijn uitleg', 'Definitie', ['kernpunt 1']);
     expect(lastBody()).not.toHaveProperty('learningLevel');
+  });
+});
+
+describe('quiz generation safety', () => {
+  const ONE_MCQ = [{ type: 'mcq', question: 'Vraag?', options: ['A', 'B', 'C', 'D'], correctAnswer: 0, explanation: 'Uitleg' }];
+
+  it('houdt de LLM-temperatuur voor quizvragen extreem laag om hallucinaties te beperken', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ choices: [{ message: { content: JSON.stringify(ONE_MCQ) } }] }),
+    });
+
+    await generateQuiz(['Epidemiologie'], 'medium', 'mcq', 1, 'Context', true);
+
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).temperature).toBe(0.2);
+  });
+
+  it('doet zelf geen (strict-afhankelijke) validatie meer — dat doet quiz-verification.service voor elke bron', async () => {
+    for (const strict of [true, false]) {
+      fetchMock.mockReset();
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ choices: [{ message: { content: JSON.stringify(ONE_MCQ) } }] }),
+      });
+      const questions = await generateQuiz(['Epidemiologie'], 'medium', 'mcq', 1, 'Context over risicofactoren.', strict);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(questions).toHaveLength(1);
+    }
   });
 });

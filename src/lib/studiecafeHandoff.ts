@@ -6,6 +6,12 @@ import { type ChatExcerptAttachment } from '../components/ChatExcerptCard';
 // (niet de URL) omdat de inhoud markdown/KaTeX bevat en te groot/gevoelig is
 // voor een query-string.
 const KEY = 'leapvu:studiecafe-handoff';
+// Overdracht naar een NIEUW tabblad (quiz → Studiecafé): sessionStorage wordt
+// niet betrouwbaar naar een nieuw tabblad gekopieerd, dus die variant loopt via
+// localStorage met een korte houdbaarheid. Zo blijft de lopende quiz in het
+// oorspronkelijke tabblad intact.
+const CROSS_TAB_KEY = 'leapvu:studiecafe-handoff-crosstab';
+export const CROSS_TAB_TTL_MS = 2 * 60 * 1000;
 
 export interface StudiecafeHandoff {
   v: 1;
@@ -24,23 +30,45 @@ export interface StudiecafeHandoff {
   targetThreadId?: string;
 }
 
-export function stashStudiecafeHandoff(h: StudiecafeHandoff): void {
+export function stashStudiecafeHandoff(h: StudiecafeHandoff, opts: { crossTab?: boolean } = {}): void {
   try {
-    sessionStorage.setItem(KEY, JSON.stringify(h));
-  } catch { /* sessionStorage niet beschikbaar */ }
+    if (opts.crossTab) {
+      localStorage.setItem(CROSS_TAB_KEY, JSON.stringify({ at: Date.now(), handoff: h }));
+    } else {
+      sessionStorage.setItem(KEY, JSON.stringify(h));
+    }
+  } catch { /* storage niet beschikbaar */ }
 }
 
-// Leest én verwijdert de overdracht (eenmalig). Geeft null als er niets (geldigs) staat.
-export function takeStudiecafeHandoff(): StudiecafeHandoff | null {
+function isValidHandoff(parsed: any): parsed is StudiecafeHandoff {
+  return !!parsed && parsed.v === 1 && !!parsed.attachment && parsed.attachment.type === 'chat_excerpt';
+}
+
+function takeCrossTab(): StudiecafeHandoff | null {
   try {
-    const raw = sessionStorage.getItem(KEY);
+    const raw = localStorage.getItem(CROSS_TAB_KEY);
     if (!raw) return null;
-    sessionStorage.removeItem(KEY);
+    localStorage.removeItem(CROSS_TAB_KEY);
+    const wrapped = JSON.parse(raw);
+    if (!wrapped || typeof wrapped.at !== 'number' || Date.now() - wrapped.at > CROSS_TAB_TTL_MS) return null;
+    return isValidHandoff(wrapped.handoff) ? wrapped.handoff : null;
+  } catch {
+    return null;
+  }
+}
+
+// Leest én verwijdert de overdracht (eenmalig). Eerst de tab-eigen variant,
+// daarna de variant uit een ander tabblad. Geeft null als er niets (geldigs) staat.
+export function takeStudiecafeHandoff(): StudiecafeHandoff | null {
+  let raw: string | null = null;
+  try {
+    raw = sessionStorage.getItem(KEY);
+    if (raw) sessionStorage.removeItem(KEY);
+  } catch { raw = null; }
+  if (!raw) return takeCrossTab();
+  try {
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.v !== 1 || !parsed.attachment || parsed.attachment.type !== 'chat_excerpt') {
-      return null;
-    }
-    return parsed as StudiecafeHandoff;
+    return isValidHandoff(parsed) ? parsed : null;
   } catch {
     return null;
   }
