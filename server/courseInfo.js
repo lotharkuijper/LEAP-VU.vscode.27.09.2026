@@ -232,7 +232,7 @@ export function registerCourseInfoRoutes(app, deps) {
       if (!folderIds.length) return res.json({ files: [] });
       const { data: docs } = await supabaseAdmin
         .from('documents')
-        .select('id, title, filename, file_type, file_size, folder_id, document_folders(name)')
+        .select('id, title, filename, file_type, file_size, folder_id, purpose, document_folders(name)')
         .in('folder_id', folderIds)
         .order('created_at', { ascending: false });
       const { data: linked } = await supabaseAdmin
@@ -242,6 +242,8 @@ export function registerCourseInfoRoutes(app, deps) {
       const linkedSet = new Set((linked || []).map((l) => l.document_id));
       const files = (docs || [])
         .filter((d) => !linkedSet.has(d.id))
+        // "Alleen voor docenten" hoort nooit op het dashboard van studenten.
+        .filter((d) => d.purpose !== 'teacher_only')
         .map((d) => ({
           id: d.id,
           title: d.title,
@@ -275,10 +277,10 @@ export function registerCourseInfoRoutes(app, deps) {
       const folderIds = new Set(await getCourseFolderIds(courseId));
       const { data: validDocs } = await supabaseAdmin
         .from('documents')
-        .select('id, folder_id')
+        .select('id, folder_id, purpose')
         .in('id', ids);
       const valid = (validDocs || [])
-        .filter((d) => d.folder_id && folderIds.has(d.folder_id))
+        .filter((d) => d.folder_id && folderIds.has(d.folder_id) && d.purpose !== 'teacher_only')
         .map((d) => d.id);
       if (!valid.length) {
         return res.status(400).json({ error: 'Geen geldige cursusbestanden geselecteerd.' });
@@ -456,10 +458,14 @@ export function registerCourseInfoRoutes(app, deps) {
       if (!link) return res.status(404).json({ error: 'Dit bestand is niet gekoppeld aan deze cursus.' });
       const { data: doc } = await supabaseAdmin
         .from('documents')
-        .select('id, title, filename, file_path, bucket, mime_type, file_type')
+        .select('id, title, filename, file_path, bucket, mime_type, file_type, purpose')
         .eq('id', documentId)
         .maybeSingle();
       if (!doc) return res.status(404).json({ error: 'Document niet gevonden.' });
+      // Een bestand dat (later) "Alleen voor docenten" is geworden, nooit aan studenten geven.
+      if (doc.purpose === 'teacher_only' && !(await isStaffForCourse(auth.user, auth.profile, courseId))) {
+        return res.status(403).json({ error: 'Dit bestand is alleen voor docenten.' });
+      }
       const filename = String(doc.filename || doc.title || 'download').replace(/[\r\n"]/g, '_');
       const mimeType = doc.mime_type || getFileMimeType((doc.file_type || '').toLowerCase());
       if (!doc.file_path && pgPool) {

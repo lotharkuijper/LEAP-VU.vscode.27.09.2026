@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '../i18n';
 import { Download, Search, FileText, BookOpen, FolderOpen, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { STORAGE_CONFIG } from '../config/storage.config';
 import { formatFileSize, getFileIcon } from '../services/dataset.service';
 import { useActiveCourse } from "../contexts/ActiveCourseContext";
 
@@ -51,35 +50,32 @@ export function ResourcesPage() {
   const [ragFiles, setRagFiles] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const { activeCourse, activeCourseRagFolderIds } = useActiveCourse();
+  const { activeCourse, activeCourseId, activeCourseRagFolderIds } = useActiveCourse();
 
   useEffect(() => {
     loadOtherDocs();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCourseId]);
 
   useEffect(() => {
     loadRagFiles();
   }, [activeCourseRagFolderIds]);
 
-  const fetchFromBucket = async (bucket: string): Promise<Resource[]> => {
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*, document_folders (name)')
-      .eq('bucket', bucket)
-      .eq('processing_status', 'completed')
-      .order('created_at', { ascending: false });
-    if (error) { console.error(`[Bronnen] fout bij ophalen ${bucket}:`, error.message); return []; }
-    return (data || []).map(toResource);
-  };
-
+  // Gedeelde bestanden van de ACTIEVE cursus (doel "Alleen delen" + oudere
+  // downloadbestanden). Voorheen werden alle datasets/docs_general-bestanden van
+  // alle openbare cursussen getoond; nu alleen die van deze cursus en nooit
+  // bestanden die "Alleen voor docenten" zijn.
   const loadOtherDocs = async () => {
     setLoading(true);
     try {
-      const [datasets, docs] = await Promise.all([
-        fetchFromBucket(STORAGE_CONFIG.buckets.DATASETS),
-        fetchFromBucket(STORAGE_CONFIG.buckets.DOCS_GENERAL),
-      ]);
-      setOtherDocs([...datasets, ...docs]);
+      if (!activeCourseId) { setOtherDocs([]); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`/api/courses/${activeCourseId}/shared-files`, {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
+      if (!res.ok) { console.error('[Bronnen] fout bij ophalen gedeelde bestanden:', res.status); setOtherDocs([]); return; }
+      const body = await res.json();
+      setOtherDocs((body.files || []).map((d: any) => toResource({ ...d, document_folders: { name: d.folder_name } })));
     } finally {
       setLoading(false);
     }

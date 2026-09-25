@@ -576,14 +576,21 @@ export function registerCourseFilesRoutes(app, deps) {
       if (!(await deps.userHasCourseAccess(auth.user, auth.profile, courseId))) {
         return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
       }
+      // Gedeelde bestanden van DEZE cursus: doel "shared", plus nog niet
+      // beoordeelde bestanden in de oude download-buckets (datasets/docs_general)
+      // zodat er niets verdwijnt. Nooit teacher_only, nooit andere cursussen.
       const scope = await courseScope(courseId);
-      const shared = scope.folders.filter(f => (f.description || '').includes(PURPOSE_FOLDERS.shared.marker)).map(f => f.id);
-      const { data } = shared.length
+      const folderIds = [...scope.ids];
+      const { data } = folderIds.length
         ? await supabaseAdmin.from('documents')
-          .select('id, title, filename, file_type, file_size, file_path, bucket, created_at')
-          .in('folder_id', shared).eq('purpose', 'shared').order('title')
+          .select('id, title, filename, description, file_type, file_size, file_path, bucket, folder_id, purpose, created_at, processing_status')
+          .in('folder_id', folderIds).eq('processing_status', 'completed').order('created_at', { ascending: false })
         : { data: [] };
-      return res.json({ files: data || [] });
+      const files = (data || [])
+        .filter(d => d.purpose === 'shared' || (!d.purpose && ['docs_general', 'datasets'].includes(d.bucket)))
+        .filter(d => d.bucket && d.file_path)
+        .map(d => ({ ...d, folder_name: scope.byId.get(d.folder_id)?.name || null }));
+      return res.json({ files });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

@@ -4,7 +4,7 @@ import { intlLocale } from '../i18n/languages';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Users, UserPlus, FileUp, BookOpen, Settings, Search, Upload, File, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Eye, Tag, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText } from 'lucide-react';
+import { Users, UserPlus, FileUp, BookOpen, Settings, Search, Upload, File, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Eye, Tag, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Database } from '../lib/database.types';
 import { DocumentUploadModal } from '../components/DocumentUploadModal';
@@ -21,6 +21,10 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { classifyConceptForTeacher, getDifficultyTier, type ConceptClass, type DifficultyTier } from '../lib/conceptClassification';
 
 import DocumentsPage from '../pages/DocumentsPage';
+import { CourseMaterialWorkspace, MATERIAL_STEPS } from '../components/material/CourseMaterialWorkspace';
+import { ConceptDetailDrawer } from '../components/material/ConceptDetailDrawer';
+import type { MaterialStep } from '../components/material/ReadinessStep';
+import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset } from '../lib/ragPresets';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -49,7 +53,7 @@ interface ChatbotPrompt {
   updated_at: string;
 }
 
-type TabType = 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'personas' | 'projects_admin' | 'course_info' | 'learning_levels';
+type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'personas' | 'projects_admin' | 'course_info' | 'learning_levels';
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -100,10 +104,11 @@ interface ConceptCardProps {
   onDeleteCancel: () => void;
   isSelected?: boolean;
   onToggleSelect?: (id: string) => void;
+  onOpenDetails?: (id: string) => void;
   lang: string;
 }
 
-function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deletingConceptId, onDeleteRequest, onDeleteConfirm, onDeleteCancel, isSelected, onToggleSelect, lang }: ConceptCardProps) {
+function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deletingConceptId, onDeleteRequest, onDeleteConfirm, onDeleteCancel, isSelected, onToggleSelect, onOpenDetails, lang }: ConceptCardProps) {
   const { t } = useLanguage();
   // Detecteer of de (op 2 regels afgeknotte) definitie daadwerkelijk is
   // afgekapt, zodat we alleen dán een hover-tooltip met de volledige tekst
@@ -136,7 +141,18 @@ function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deleting
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-gray-900">{concept.name}</h3>
+              {onOpenDetails ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenDetails(concept.id)}
+                  className="font-semibold text-gray-900 text-left hover:text-sky-700 hover:underline"
+                  data-testid={`button-concept-details-${concept.id}`}
+                >
+                  {concept.name}
+                </button>
+              ) : (
+                <h3 className="font-semibold text-gray-900">{concept.name}</h3>
+              )}
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sourceBg}`}>
                 {sourceLabel}
               </span>
@@ -216,11 +232,28 @@ export function AdminPage() {
     let t = searchParams.get('tab') as TabType | null;
     // Backward-compat: oude deep-links naar de losse ShareStats-tab komen nu op de Imports-hub.
     if ((t as string | null) === 'sharestats_import') t = 'imports';
-    const allowed: TabType[] = ['users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','personas','projects_admin','course_info','learning_levels'];
+    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','personas','projects_admin','course_info','learning_levels'];
     if (t && allowed.includes(t)) return t;
-    return isAdmin ? 'users' : 'documents';
+    return isAdmin ? 'users' : 'material';
   })();
   const [activeTab, setActiveTabState] = useState<TabType>(initialTab);
+  // Werkruimte Cursusmateriaal: stap via ?step= (deelbare links), begrip-zijpaneel,
+  // en een teller die de werkruimte laat verversen na wijzigingen in begrippen.
+  const initialStep = (() => {
+    const st = searchParams.get('step') as MaterialStep | null;
+    return st && (MATERIAL_STEPS as string[]).includes(st) ? st : 'files';
+  })();
+  const [materialStep, setMaterialStepState] = useState<MaterialStep>(initialStep);
+  const setMaterialStep = (st: MaterialStep) => {
+    setMaterialStepState(st);
+    const next = new URLSearchParams(searchParams);
+    next.set('tab', 'material');
+    next.set('step', st);
+    setSearchParams(next, { replace: true });
+  };
+  const [conceptDrawerId, setConceptDrawerId] = useState<string | null>(null);
+  const [materialRefresh, setMaterialRefresh] = useState(0);
+  const [classicOpen, setClassicOpen] = useState(() => ['documents', 'rag_beheer', 'concepts'].includes(initialTab));
   const setActiveTab = (t: TabType) => {
     setActiveTabState(t);
     const next = new URLSearchParams(searchParams);
@@ -242,7 +275,7 @@ export function AdminPage() {
     }
     const t = raw as TabType | null;
     if (t && t !== activeTab) {
-      const allowed: TabType[] = ['users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','personas','projects_admin','course_info','learning_levels'];
+      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','personas','projects_admin','course_info','learning_levels'];
       if (allowed.includes(t)) setActiveTabState(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -422,7 +455,7 @@ export function AdminPage() {
   useEffect(() => {
     if (activeTab === 'users') loadUsers();
     if (activeTab === 'documents') loadDocuments();
-    if (activeTab === 'concepts') { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); loadMaxConceptsSetting(); }
+    if (activeTab === 'concepts' || activeTab === 'material') { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); loadMaxConceptsSetting(); }
     if (activeTab === 'rag_beheer') { loadConceptsMeta(); }
     if (activeTab === 'prompts') {
       loadPrompts();
@@ -533,6 +566,7 @@ export function AdminPage() {
         setCourseConcepts([]);
         setGlobalConcepts(all.filter(isGlobalSeed));
       }
+      setMaterialRefresh(x => x + 1);
     } catch (err) {
       console.error('Error loading concepts:', err);
     }
@@ -1432,6 +1466,7 @@ export function AdminPage() {
     );
 
 const tabs = [
+  { id: 'material' as TabType, label: t('admin.tabs.material'), icon: Library, show: true },
   { id: 'users' as TabType, label: t('admin.tabs.users'), icon: Users, show: isAdmin },
   { id: 'add_users' as TabType, label: t('admin.tabs.addUsers'), icon: UserPlus, show: isAdmin || isDocent },
   { id: 'documents' as TabType, label: t('admin.tabs.documents'), icon: FolderTree, show: true },
@@ -1448,11 +1483,14 @@ const tabs = [
   { id: 'settings' as TabType, label: t('admin.tabs.settings'), icon: Settings, show: isAdmin },
 ].filter(tab => tab.show);
 
+// Herinrichting 2026-09-25: alles voor één cursus onder "Mijn cursus", met
+// Cursusmateriaal voorop; systeemzaken apart (admin); de vorige indeling blijft
+// bereikbaar als ingeklapte "Klassieke weergave".
 const tabGroups = [
-  { label: t('admin.tabGroups.courseContent'), ids: ['documents', 'rag_beheer', 'rag_settings', 'concepts', 'course_info'] },
-  { label: t('admin.tabGroups.learningEnv'), ids: ['prompts', 'quiz_sources', 'projects_admin', 'personas', 'learning_levels'] },
-  { label: t('admin.tabGroups.system'), ids: ['users', 'imports', 'settings'] },
-].map(g => ({ label: g.label, items: tabs.filter(tab => g.ids.includes(tab.id)) }))
+  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'personas', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
+  { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'], collapsible: false },
+  { key: 'classic', label: t('admin.tabGroups.classic'), ids: ['documents', 'rag_beheer', 'concepts'], collapsible: true },
+].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
  .filter(g => g.items.length > 0);
 
 
@@ -1556,11 +1594,26 @@ const tabGroups = [
         {/* Desktop: verticale zijbalk */}
         <nav className="hidden md:block w-52 flex-shrink-0 chic-card overflow-hidden self-start sticky top-4">
           {tabGroups.map((group, gi) => (
-            <div key={group.label} className={gi > 0 ? 'border-t border-gray-100' : ''}>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1">
-                {group.label}
-              </p>
-              {group.items.map(tab => {
+            <div key={group.key} className={gi > 0 ? 'border-t border-gray-100' : ''}>
+              {group.collapsible ? (
+                <button
+                  type="button"
+                  onClick={() => setClassicOpen(o => !o)}
+                  className="w-full flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1 hover:text-gray-600"
+                  title={t('admin.tabGroups.classicHint')}
+                  aria-expanded={classicOpen}
+                  data-testid="button-toggle-classic"
+                >
+                  <History className="w-3.5 h-3.5" />
+                  {group.label}
+                  {classicOpen ? <ChevronDown className="w-3.5 h-3.5 ml-auto" /> : <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
+                </button>
+              ) : (
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1">
+                  {group.label}
+                </p>
+              )}
+              {(!group.collapsible || classicOpen) && group.items.map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button
@@ -1954,8 +2007,28 @@ const tabGroups = [
 )}
 
 
-          {activeTab === 'concepts' && (
-            <div className="space-y-4">
+          {activeTab === 'material' && (
+            <CourseMaterialWorkspace
+              step={materialStep}
+              onStepChange={setMaterialStep}
+              onOpenConcept={setConceptDrawerId}
+              onGoToTab={(tab) => setActiveTab(tab)}
+              onConceptsChanged={() => { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); }}
+              refreshKey={materialRefresh}
+            />
+          )}
+          {conceptDrawerId && activeCourseId && (
+            <ConceptDetailDrawer
+              conceptId={conceptDrawerId}
+              courseId={activeCourseId}
+              onClose={() => setConceptDrawerId(null)}
+              onChanged={() => { loadConcepts(); }}
+              onGoToQuizSources={() => { setConceptDrawerId(null); setActiveTab('quiz_sources'); }}
+            />
+          )}
+
+          {(activeTab === 'concepts' || (activeTab === 'material' && materialStep === 'concepts')) && (
+            <div className={`space-y-4 ${activeTab === 'material' ? 'mt-4' : ''}`}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600">{t('admin.concepts.subtitle')}</p>
@@ -2397,6 +2470,7 @@ const tabGroups = [
                                                   onDeleteRequest={(id) => { setDeleteConfirmId(id); setDeleteError(null); }}
                                                   onDeleteConfirm={handleDeleteConcept}
                                                   onDeleteCancel={() => setDeleteConfirmId(null)}
+                                                  onOpenDetails={activeCourseId ? setConceptDrawerId : undefined}
                                                   isSelected={selectedConceptIds.has(concept.id)}
                                                   onToggleSelect={(id) => setSelectedConceptIds(prev => {
                                                     const next = new Set(prev);
@@ -3036,9 +3110,21 @@ const tabGroups = [
                 </div>
               </div>
 
+              <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4" data-testid="block-rag-presets-intro">
+                <h3 className="font-semibold text-sky-900">{t('ragPresets.title')}</h3>
+                <p className="text-sm text-sky-900 mt-1">{t('ragPresets.intro')}</p>
+              </div>
               {(['chat', 'explain', 'quiz', 'project'] as const).map(mod => {
                 const labels: Record<string, string> = { chat: t('admin.ragSettings.modules.chat'), explain: t('admin.ragSettings.modules.explain'), quiz: t('admin.ragSettings.modules.quiz'), project: t('admin.ragSettings.modules.project') };
                 const s = ragSettingsState[mod];
+                const currentPreset = detectPreset(mod, s);
+                const presetLabel: Record<RagPreset, string> = { broad: t('ragPresets.broad'), balanced: t('ragPresets.balanced'), strict: t('ragPresets.strict') };
+                const presetDesc: Record<RagPreset, string> = { broad: t('ragPresets.broadDesc'), balanced: t('ragPresets.balancedDesc'), strict: t('ragPresets.strictDesc') };
+                const applyPreset = (pr: RagPreset) => {
+                  const v = presetValues(mod, pr);
+                  updateRagModule(mod, 'similarity_threshold', v.similarity_threshold);
+                  updateRagModule(mod, 'match_count', v.match_count);
+                };
                 return (
                   <div key={mod} className="border border-gray-200 rounded-xl p-5 space-y-4 bg-gray-50">
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -3046,7 +3132,31 @@ const tabGroups = [
                       {labels[mod]}
                     </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2" role="radiogroup" aria-label={labels[mod]}>
+                      <div className="grid gap-2 sm:grid-cols-3">
+                        {RAG_PRESETS.map(pr => (
+                          <button
+                            key={pr}
+                            type="button"
+                            role="radio"
+                            aria-checked={currentPreset === pr}
+                            onClick={() => applyPreset(pr)}
+                            className={`text-left rounded-xl border px-3 py-2 transition-all ${currentPreset === pr ? 'border-sky-400 bg-white ring-2 ring-sky-200' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+                            data-testid={`preset-${mod}-${pr}`}
+                          >
+                            <div className="text-sm font-semibold text-gray-900">{presetLabel[pr]}</div>
+                            <div className="text-xs text-gray-600">{presetDesc[pr]}</div>
+                          </button>
+                        ))}
+                      </div>
+                      {currentPreset === 'custom' && (
+                        <p className="text-xs text-gray-600" data-testid={`preset-${mod}-custom`}>{t('ragPresets.custom')}: {t('ragPresets.customDesc')}</p>
+                      )}
+                    </div>
+
+                    <details className="rounded-lg border border-gray-200 bg-white px-4 py-3" data-testid={`details-advanced-${mod}`}>
+                      <summary className="cursor-pointer text-sm font-medium text-gray-700">{t('ragPresets.advanced')}</summary>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t('admin.ragSettings.modules.thresholdLabel')} (<span className="font-mono">{s.similarity_threshold.toFixed(2)}</span>)
@@ -3108,6 +3218,7 @@ const tabGroups = [
                         </button>
                       </div>
                     </div>
+                    </details>
 
                     {mod === 'explain' && (
                       <div className="border-t border-gray-200 pt-4">
@@ -3225,6 +3336,23 @@ const tabGroups = [
 
                 {diagnosticResult && (
                   <div className="space-y-3" data-testid="diagnostic-results">
+                    <ul className="text-sm text-gray-800 space-y-1 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2" data-testid="diagnostic-plain-language">
+                      {(['chat', 'explain', 'quiz', 'project'] as const).map(mod => {
+                        const scores = diagnosticResult.chunks.map(c => c.similarity);
+                        const pr = detectPreset(mod, ragSettingsState[mod]);
+                        const shown = pr === 'custom' ? 'balanced' : pr;
+                        const presetName = pr === 'custom' ? t('ragPresets.custom') : t(`ragPresets.${shown}` as 'ragPresets.balanced');
+                        const n = pr === 'custom'
+                          ? Math.min(ragSettingsState[mod].match_count, scores.filter(x => x >= ragSettingsState[mod].similarity_threshold).length)
+                          : passagesFound(mod, shown, scores);
+                        return (
+                          <li key={mod}>
+                            <strong>{t(`ragPresets.module.${mod}` as 'ragPresets.module.chat')}:</strong>{' '}
+                            {t('ragPresets.tryResult', { preset: presetName, n: String(n), term: diagnosticResult.query, best: String(Math.round(diagnosticResult.maxScore * 100)) })}
+                          </li>
+                        );
+                      })}
+                    </ul>
                     <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700">
                       <span>{t('admin.ragSettings.diagnostic.resultFor')} <strong>"{diagnosticResult.query}"</strong>:</span>
                       <span className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-mono">
