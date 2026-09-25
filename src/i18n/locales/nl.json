@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Begrippen",
   "admin.tabs.imports": "Imports",
   "admin.tabs.quizSources": "Quiz-bronnen",
-  "admin.tabs.prompts": "Chatbot Prompts",
-  "admin.tabs.ragSettings": "RAG Instellingen",
+  "admin.tabs.prompts": "Chat-instructies",
+  "admin.tabs.ragSettings": "Zoekgevoeligheid AI",
   "admin.tabs.projects": "Projecten",
   "admin.tabs.personas": "Persona's",
   "admin.tabs.courseInfo": "Cursus-info",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "Ik leg uit",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Projectbegeleiding"
+  "ragPresets.module.project": "Projectbegeleiding",
+  "material.warning.docsChanged.title": "Er is leerstof bijgekomen of gewijzigd sinds de begrippen zijn bepaald",
+  "material.warning.docsChanged.desc": "Zoek nieuwe begrippen bij Begrippen — je bestaande begrippen en keuzes blijven staan.",
+  "material.upload.nextConcepts": "Zodra de leerstof is ingelezen, kun je bij Begrippen nieuwe begrippen laten zoeken."
 }

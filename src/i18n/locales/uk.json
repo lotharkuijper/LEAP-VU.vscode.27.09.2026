@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Поняття",
   "admin.tabs.imports": "Імпорти",
   "admin.tabs.quizSources": "Джерела вікторин",
-  "admin.tabs.prompts": "Промпти чатбота",
-  "admin.tabs.ragSettings": "Налаштування RAG",
+  "admin.tabs.prompts": "Інструкції чату",
+  "admin.tabs.ragSettings": "Чутливість пошуку AI",
   "admin.tabs.projects": "Проєкти",
   "admin.tabs.personas": "Персони",
   "admin.tabs.courseInfo": "Інформація про курс",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Чат",
   "ragPresets.module.explain": "Я пояснюю",
   "ragPresets.module.quiz": "Тест",
-  "ragPresets.module.project": "Супровід проєкту"
+  "ragPresets.module.project": "Супровід проєкту",
+  "material.warning.docsChanged.title": "Навчальні матеріали було додано або змінено після визначення понять",
+  "material.warning.docsChanged.desc": "Знайди нові поняття в розділі «Поняття» — твої наявні поняття й вибори залишаться без змін.",
+  "material.upload.nextConcepts": "Щойно навчальні матеріали буде зчитано, ти зможеш у розділі «Поняття» запустити пошук нових понять."
 }

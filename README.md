@@ -13,9 +13,19 @@ LEAP-VU is een webapplicatie van de VU Amsterdam waarin studenten met AI-onderst
 - **Bronnen** (`/resources`) en **feedback** (`/feedback`).
 
 ### Voor docenten en admins
+- **Cursusmateriaal** (`/admin?tab=material`) — één werkruimte per cursus in vier stappen: *Bestanden → Verwerking → Begrippen → Klaar voor studenten*. Elk bestand krijgt een **doel**, dat bepaalt wie het ziet en wat de AI ermee doet:
+
+  | Doel | Voorbeelden | AI-gebruik | Studenten |
+  |---|---|---|---|
+  | Leerstof | colleges, slides, syllabus | chat, Ik leg uit, quiz, begrippen | ja |
+  | Cursusinformatie | studiehandleiding, rooster | alleen praktische vragen in de chat | ja |
+  | Projectmateriaal | opdracht, data, literatuur (per project) | projectbegeleiding | in het project |
+  | Alleen delen | formats, sjablonen | geen | download via Bronnen |
+  | Alleen voor docenten | antwoordmodellen, tentamens | nooit | nooit (afgeschermd in de database) |
+
+  LEAP stelt bij uploaden een doel voor op basis van naam en inhoud. Bestaande bestanden gaan één keer door een controle. Leerstof en cursusinformatie worden omgezet naar platte tekst, in chunks verdeeld (~380 tokens met 60 tokens overlap), voorzien van embeddings en opgeslagen in pgvector. "Klaar voor studenten" toont waarschuwingen (bijv. begrippen zonder bronfragment, zichtbare antwoordmodellen) en laat je een voorbeeldvraag maken als student.
 - **Cursusbeheer** (`/admin/courses`) — cursussen, zichtbaarheid, banners en leden beheren.
-- **Documentbeheer** (`/admin/documenten`) — uploaden van PDF, Word, PowerPoint en tekst, en importeren van webpagina's. Documenten worden omgezet naar platte tekst, in chunks verdeeld (~380 tokens met 60 tokens overlap), voorzien van embeddings en opgeslagen in pgvector. Daarna volgen conceptextractie en een controle tegen het brondocument.
-- **Beheer** (`/admin`) — gebruikers en rollen (ook bulkaccounts), bronnenmix voor quizzen, leerniveaus, persona-bibliotheek, projecten, itembank (CSV-import) en documentreview/-vertaling.
+- **Beheer** (`/admin`) — onder *Mijn cursus*: quizbronnen, projecten, cursus-info, leerniveaus, persona's, chat-instructies, zoekgevoeligheid (Ruim / Gebalanceerd / Streng), imports en gebruikers toevoegen. Onder *Systeembeheer* (admin): gebruikers en instellingen. De vorige indeling (Documenten, RAG Beheer, Begrippen) staat ingeklapt onder *Klassieke weergave*.
 
 ### Meertaligheid
 De interface is beschikbaar in 20 talen (o.a. Nederlands, Engels, Duits, Frans, Chinees, Arabisch); zie `src/i18n/locales/`. De AI antwoordt in de gekozen taal.
@@ -122,7 +132,11 @@ npx vitest run server/__tests__/ragProcessing.test.js  # ingestie/chunking
 npx vitest run server/__tests__/conceptExtraction.test.js
 ```
 
-Sommige `*.integration.test.js`-bestanden hebben een werkende databaseverbinding nodig.
+Sommige `*.integration.test.js`-bestanden hebben een werkende databaseverbinding nodig. `chatConfig.endpoints.test.js` en `translateContentEndpoint.test.js` testen gedrag zónder Azure-configuratie; ze falen zolang er een `.env` met Azure-sleutels in de projectmap staat (`server/index.js` laadt die opnieuw in).
+
+## Migraties en terugdraaien
+
+Databasewijzigingen staan in `supabase/migrations/`; voer ze uit met `node scripts/run-sql.mjs <bestand>`. Voor de bestandsdoelen (`20260925100000_document_purposes.sql`) staat een terugdraaiscript in `supabase/rollback/`. De code van vóór de herinrichting van het beheer staat onder de git-tag `pre-beheer-redesign`.
 
 ## Troubleshooting
 

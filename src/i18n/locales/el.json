@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Έννοιες",
   "admin.tabs.imports": "Εισαγωγές",
   "admin.tabs.quizSources": "Πηγές κουίζ",
-  "admin.tabs.prompts": "Προτροπές chatbot",
-  "admin.tabs.ragSettings": "Ρυθμίσεις RAG",
+  "admin.tabs.prompts": "Οδηγίες συνομιλίας",
+  "admin.tabs.ragSettings": "Ευαισθησία αναζήτησης AI",
   "admin.tabs.projects": "Έργα",
   "admin.tabs.personas": "Persona's",
   "admin.tabs.courseInfo": "Πληροφορίες μαθήματος",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Συνομιλία",
   "ragPresets.module.explain": "Εξηγώ",
   "ragPresets.module.quiz": "Κουίζ",
-  "ragPresets.module.project": "Καθοδήγηση έργου"
+  "ragPresets.module.project": "Καθοδήγηση έργου",
+  "material.warning.docsChanged.title": "Έχει προστεθεί ή αλλάξει εκπαιδευτικό υλικό από τότε που καθορίστηκαν οι έννοιες",
+  "material.warning.docsChanged.desc": "Αναζήτησε νέες έννοιες στις Έννοιες — οι υπάρχουσες έννοιες και επιλογές σου θα παραμείνουν.",
+  "material.upload.nextConcepts": "Μόλις διαβαστεί το εκπαιδευτικό υλικό, μπορείς στις Έννοιες να ζητήσεις αναζήτηση νέων εννοιών."
 }

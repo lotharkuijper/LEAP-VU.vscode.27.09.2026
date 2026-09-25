@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Pojmovi",
   "admin.tabs.imports": "Uvozi",
   "admin.tabs.quizSources": "Izvori kvizova",
-  "admin.tabs.prompts": "Promptovi chatbota",
-  "admin.tabs.ragSettings": "RAG postavke",
+  "admin.tabs.prompts": "Upute za chat",
+  "admin.tabs.ragSettings": "Osjetljivost pretraživanja AI",
   "admin.tabs.projects": "Projekti",
   "admin.tabs.personas": "Persone",
   "admin.tabs.courseInfo": "Informacije o kolegiju",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "Objašnjavam",
   "ragPresets.module.quiz": "Kviz",
-  "ragPresets.module.project": "Vođenje projekta"
+  "ragPresets.module.project": "Vođenje projekta",
+  "material.warning.docsChanged.title": "Gradivo je dodano ili izmijenjeno otkako su pojmovi određeni",
+  "material.warning.docsChanged.desc": "Potraži nove pojmove u Pojmovima — tvoji postojeći pojmovi i odabiri ostaju sačuvani.",
+  "material.upload.nextConcepts": "Čim se gradivo učita, u Pojmovima možeš pokrenuti pretraživanje novih pojmova."
 }

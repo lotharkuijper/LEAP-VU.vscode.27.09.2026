@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Notions",
   "admin.tabs.imports": "Imports",
   "admin.tabs.quizSources": "Sources de quiz",
-  "admin.tabs.prompts": "Prompts du chatbot",
-  "admin.tabs.ragSettings": "Paramètres RAG",
+  "admin.tabs.prompts": "Instructions de chat",
+  "admin.tabs.ragSettings": "Sensibilité de recherche de l’IA",
   "admin.tabs.projects": "Projets",
   "admin.tabs.personas": "Personas",
   "admin.tabs.courseInfo": "Infos du cours",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "J’explique",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Accompagnement de projet"
+  "ragPresets.module.project": "Accompagnement de projet",
+  "material.warning.docsChanged.title": "Du contenu d’apprentissage a été ajouté ou modifié depuis que les concepts ont été définis",
+  "material.warning.docsChanged.desc": "Recherche de nouveaux concepts dans Concepts — tes concepts et choix existants restent conservés.",
+  "material.upload.nextConcepts": "Une fois le contenu d’apprentissage chargé, tu peux lancer la recherche de nouveaux concepts dans Concepts."
 }

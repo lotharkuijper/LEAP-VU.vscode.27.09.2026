@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Konsep",
   "admin.tabs.imports": "Impor",
   "admin.tabs.quizSources": "Sumber Kuis",
-  "admin.tabs.prompts": "Prompt Chatbot",
-  "admin.tabs.ragSettings": "Pengaturan RAG",
+  "admin.tabs.prompts": "Instruksi chat",
+  "admin.tabs.ragSettings": "Sensitivitas pencarian AI",
   "admin.tabs.projects": "Proyek",
   "admin.tabs.personas": "Persona",
   "admin.tabs.courseInfo": "Info Kursus",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "Saya menjelaskan",
   "ragPresets.module.quiz": "Kuis",
-  "ragPresets.module.project": "Bimbingan proyek"
+  "ragPresets.module.project": "Bimbingan proyek",
+  "material.warning.docsChanged.title": "Ada materi pembelajaran yang ditambahkan atau diubah sejak konsep ditentukan",
+  "material.warning.docsChanged.desc": "Cari konsep baru di Konsep — konsep dan pilihanmu yang sudah ada tetap tersimpan.",
+  "material.upload.nextConcepts": "Setelah materi pembelajaran dibaca, kamu bisa meminta pencarian konsep baru di Konsep."
 }

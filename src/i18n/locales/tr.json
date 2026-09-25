@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Kavramlar",
   "admin.tabs.imports": "İçe aktarmalar",
   "admin.tabs.quizSources": "Quiz kaynakları",
-  "admin.tabs.prompts": "Chatbot istemleri",
-  "admin.tabs.ragSettings": "RAG ayarları",
+  "admin.tabs.prompts": "Sohbet talimatları",
+  "admin.tabs.ragSettings": "Yapay zekâ arama hassasiyeti",
   "admin.tabs.projects": "Projeler",
   "admin.tabs.personas": "Personalar",
   "admin.tabs.courseInfo": "Ders bilgisi",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Sohbet",
   "ragPresets.module.explain": "Açıklıyorum",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Proje rehberliği"
+  "ragPresets.module.project": "Proje rehberliği",
+  "material.warning.docsChanged.title": "Kavramlar belirlendikten sonra öğrenme materyali eklendi veya değiştirildi",
+  "material.warning.docsChanged.desc": "Kavramlar bölümünde yeni kavramları ara — mevcut kavramların ve seçimlerin korunur.",
+  "material.upload.nextConcepts": "Öğrenme materyali içe aktarıldığında, Kavramlar bölümünde yeni kavramların aranmasını sağlayabilirsin."
 }

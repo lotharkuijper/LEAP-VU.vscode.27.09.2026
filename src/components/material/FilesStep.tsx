@@ -105,7 +105,10 @@ export function FilesStep({
     setUploading(false);
     setQueue([]);
     setSuggested(null);
-    setNotice(errors.length ? { kind: 'error', text: [ok ? t('material.upload.done', { n: String(ok) }) : '', ...errors].filter(Boolean).join(' · ') } : { kind: 'ok', text: t('material.upload.done', { n: String(ok) }) });
+    const next = ok && target.purpose === 'course_material' ? ` ${t('material.upload.nextConcepts')}` : '';
+    setNotice(errors.length
+      ? { kind: 'error', text: [ok ? t('material.upload.done', { n: String(ok) }) + next : '', ...errors].filter(Boolean).join(' · ') }
+      : { kind: 'ok', text: t('material.upload.done', { n: String(ok) }) + next });
     onChanged();
   };
 

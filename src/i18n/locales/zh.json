@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "概念",
   "admin.tabs.imports": "导入",
   "admin.tabs.quizSources": "测验来源",
-  "admin.tabs.prompts": "聊天机器人提示词",
-  "admin.tabs.ragSettings": "RAG 设置",
+  "admin.tabs.prompts": "聊天指令",
+  "admin.tabs.ragSettings": "AI 搜索灵敏度",
   "admin.tabs.projects": "项目",
   "admin.tabs.personas": "人物设定",
   "admin.tabs.courseInfo": "课程信息",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "聊天",
   "ragPresets.module.explain": "我来解释",
   "ragPresets.module.quiz": "测验",
-  "ragPresets.module.project": "项目指导"
+  "ragPresets.module.project": "项目指导",
+  "material.warning.docsChanged.title": "自确定概念以来，学习材料已有新增或更改",
+  "material.warning.docsChanged.desc": "在“概念”中查找新概念——你现有的概念和选择会保留。",
+  "material.upload.nextConcepts": "学习材料读取完成后，你可以在“概念”中让系统查找新概念。"
 }

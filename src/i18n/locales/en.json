@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Concepts",
   "admin.tabs.imports": "Imports",
   "admin.tabs.quizSources": "Quiz Sources",
-  "admin.tabs.prompts": "Chatbot Prompts",
-  "admin.tabs.ragSettings": "RAG Settings",
+  "admin.tabs.prompts": "Chat instructions",
+  "admin.tabs.ragSettings": "AI search sensitivity",
   "admin.tabs.projects": "Projects",
   "admin.tabs.personas": "Personas",
   "admin.tabs.courseInfo": "Course info",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "I explain",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Project guidance"
+  "ragPresets.module.project": "Project guidance",
+  "material.warning.docsChanged.title": "Learning material has been added or changed since the concepts were determined",
+  "material.warning.docsChanged.desc": "Find new concepts under Concepts — your existing concepts and choices will remain.",
+  "material.upload.nextConcepts": "Once the learning material has been processed, you can have new concepts found under Concepts."
 }

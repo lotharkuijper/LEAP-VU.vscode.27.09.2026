@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "概念",
   "admin.tabs.imports": "匯入",
   "admin.tabs.quizSources": "測驗來源",
-  "admin.tabs.prompts": "聊天機械人提示詞",
-  "admin.tabs.ragSettings": "RAG 設定",
+  "admin.tabs.prompts": "聊天指示",
+  "admin.tabs.ragSettings": "AI 搜尋敏感度",
   "admin.tabs.projects": "項目",
   "admin.tabs.personas": "角色設定",
   "admin.tabs.courseInfo": "課程資訊",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "聊天",
   "ragPresets.module.explain": "我嚟解釋",
   "ragPresets.module.quiz": "測驗",
-  "ragPresets.module.project": "項目指導"
+  "ragPresets.module.project": "項目指導",
+  "material.warning.docsChanged.title": "自從概念確定之後，學習材料有新增或更改",
+  "material.warning.docsChanged.desc": "去「概念」搜尋新概念 — 你現有嘅概念同選擇會保留。",
+  "material.upload.nextConcepts": "學習材料讀取完成後，你可以去「概念」搵新概念。"
 }

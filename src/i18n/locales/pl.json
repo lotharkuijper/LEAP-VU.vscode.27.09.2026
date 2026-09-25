@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Pojęcia",
   "admin.tabs.imports": "Importy",
   "admin.tabs.quizSources": "Źródła quizów",
-  "admin.tabs.prompts": "Prompty chatbota",
-  "admin.tabs.ragSettings": "Ustawienia RAG",
+  "admin.tabs.prompts": "Instrukcje czatu",
+  "admin.tabs.ragSettings": "Czułość wyszukiwania AI",
   "admin.tabs.projects": "Projekty",
   "admin.tabs.personas": "Persony",
   "admin.tabs.courseInfo": "Informacje o kursie",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Czat",
   "ragPresets.module.explain": "Wyjaśniam",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Wsparcie projektu"
+  "ragPresets.module.project": "Wsparcie projektu",
+  "material.warning.docsChanged.title": "Od czasu ustalenia pojęć dodano lub zmieniono materiał do nauki",
+  "material.warning.docsChanged.desc": "Wyszukaj nowe pojęcia w sekcji Pojęcia — Twoje istniejące pojęcia i wybory pozostaną zachowane.",
+  "material.upload.nextConcepts": "Gdy materiał do nauki zostanie wczytany, możesz w sekcji Pojęcia zlecić wyszukanie nowych pojęć."
 }

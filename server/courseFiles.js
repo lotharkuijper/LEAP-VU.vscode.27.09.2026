@@ -60,8 +60,15 @@ export function planPurposeChange({ from, to, isWeb = false, ext = '' }) {
   return { ok: true, kind: 'toNonRag', dropChunks: fromRag, docChanged: fromRag };
 }
 
+/** Pure: is de leerstof gewijzigd na de laatste keer dat begrippen zijn bepaald? */
+export function docsChangedSinceConcepts({ lastDocChange, lastConceptsRun }) {
+  if (!lastDocChange) return false;
+  if (!lastConceptsRun) return true;
+  return new Date(lastDocChange).getTime() > new Date(lastConceptsRun).getTime();
+}
+
 /** Pure: waarschuwingen voor het gereedheidsoverzicht. */
-export function buildReadinessWarnings({ files, concepts, projects }) {
+export function buildReadinessWarnings({ files, concepts, projects, docsChanged = false }) {
   const warnings = [];
   const add = (code, severity, step, items) => {
     if (items.length > 0) warnings.push({ code, severity, step, count: items.length, items: items.slice(0, 8) });
@@ -82,6 +89,8 @@ export function buildReadinessWarnings({ files, concepts, projects }) {
   const visible = concepts.filter(c => c.visible);
   add('conceptsWithoutEvidence', 'warning', 'concepts', visible.filter(c => !c.quizReady).map(c => c.name));
   add('noConcepts', 'warning', 'concepts', material.length > 0 && concepts.length === 0 ? ['—'] : []);
+  // Vervolgstap na nieuwe/gewijzigde leerstof: nieuwe begrippen zoeken.
+  add('docsChanged', 'warning', 'concepts', docsChanged && concepts.length > 0 ? ['—'] : []);
   add('projectWithoutDocuments', 'info', 'files', projects.filter(p => p.documents.length === 0).map(p => p.title));
   return warnings;
 }
@@ -541,7 +550,18 @@ export function registerCourseFilesRoutes(app, deps) {
       for (const f of files) counts[f.purpose] = (counts[f.purpose] || 0) + 1;
       counts.project = (counts.project || 0) + projects.reduce((n, p) => n + p.documents.length, 0);
 
-      const warnings = buildReadinessWarnings({ files, concepts, projects });
+      // Zelfde bronnen als /api/admin/concepts-meta: registratie van
+      // documentwijzigingen + nieuwste leerstof vs. laatste begrippen-run.
+      const { data: metaRows } = await supabaseAdmin.from('chatbot_prompts')
+        .select('name, content').in('name', [`__doc_mutation_${courseId}__`, `__concepts_regen_${courseId}__`]);
+      const parse = (name, key) => {
+        try { return JSON.parse((metaRows || []).find(r => r.name === name)?.content || '{}')[key] || null; } catch { return null; }
+      };
+      const newestMaterial = files.filter(f => f.purpose === 'course_material').map(f => f.created_at).sort().pop() || null;
+      const lastDocChange = [parse(`__doc_mutation_${courseId}__`, 'lastMutationAt'), newestMaterial].filter(Boolean).sort().pop() || null;
+      const docsChanged = docsChangedSinceConcepts({ lastDocChange, lastConceptsRun: parse(`__concepts_regen_${courseId}__`, 'lastRegenAt') });
+
+      const warnings = buildReadinessWarnings({ files, concepts, projects, docsChanged });
       return res.json({ counts, concepts, projects, warnings });
     } catch (err) {
       return res.status(500).json({ error: err.message });

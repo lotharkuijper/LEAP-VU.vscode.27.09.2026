@@ -50,7 +50,7 @@ export interface ReadinessConcept {
 
 export type WarningCode =
   | 'unconfirmedPurposes' | 'noCourseMaterial' | 'sensitiveVisible' | 'processingFailed' | 'processingBusy'
-  | 'noChunks' | 'singleGiantChunk' | 'conceptsWithoutEvidence' | 'noConcepts' | 'projectWithoutDocuments';
+  | 'noChunks' | 'singleGiantChunk' | 'conceptsWithoutEvidence' | 'noConcepts' | 'projectWithoutDocuments' | 'docsChanged';
 
 export interface ReadinessWarning {
   code: WarningCode;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planPurposeChange, buildReadinessWarnings } from '../courseFiles.js';
+import { planPurposeChange, buildReadinessWarnings, docsChangedSinceConcepts } from '../courseFiles.js';
 
 describe('planPurposeChange', () => {
   it('leerstof ↔ cursusinformatie: alleen het label, fragmenten blijven; naar cursusinfo vervalt het bewijs', () => {
@@ -36,6 +36,21 @@ describe('planPurposeChange', () => {
   it('zelfde doel = alleen bevestigen; ongeldig doel geweigerd', () => {
     expect(planPurposeChange({ from: 'course_material', to: 'course_material' })).toMatchObject({ ok: true, kind: 'noop' });
     expect(planPurposeChange({ from: 'course_material', to: 'iets' })).toMatchObject({ ok: false, error: 'invalidPurpose' });
+  });
+});
+
+describe('docsChangedSinceConcepts', () => {
+  it('meldt nieuwe leerstof na de laatste begrippen-run', () => {
+    expect(docsChangedSinceConcepts({ lastDocChange: '2026-09-25T10:00:00Z', lastConceptsRun: '2026-09-18T13:26:21Z' })).toBe(true);
+    expect(docsChangedSinceConcepts({ lastDocChange: '2026-09-18T12:12:45Z', lastConceptsRun: '2026-09-18T13:26:21Z' })).toBe(false);
+    expect(docsChangedSinceConcepts({ lastDocChange: null, lastConceptsRun: null })).toBe(false);
+    expect(docsChangedSinceConcepts({ lastDocChange: '2026-09-25T10:00:00Z', lastConceptsRun: null })).toBe(true);
+  });
+  it('wordt een waarschuwing bij de stap Begrippen (alleen als er al begrippen zijn)', () => {
+    const f = { title: 'x', filename: 'x.pdf', purpose: 'course_material', purposeConfirmed: true, processing_status: 'completed', total_chunks: 5, file_size: 1, isWeb: false };
+    const w = buildReadinessWarnings({ files: [f], concepts: [{ name: 'A', visible: true, quizReady: true }], projects: [], docsChanged: true });
+    expect(w.find(x => x.code === 'docsChanged')).toMatchObject({ step: 'concepts' });
+    expect(buildReadinessWarnings({ files: [f], concepts: [], projects: [], docsChanged: true }).some(x => x.code === 'docsChanged')).toBe(false);
   });
 });
 

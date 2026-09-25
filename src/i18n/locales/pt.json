@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Conceitos",
   "admin.tabs.imports": "Importações",
   "admin.tabs.quizSources": "Fontes de quizzes",
-  "admin.tabs.prompts": "Prompts do chatbot",
-  "admin.tabs.ragSettings": "Definições de RAG",
+  "admin.tabs.prompts": "Instruções do chat",
+  "admin.tabs.ragSettings": "Sensibilidade de pesquisa da IA",
   "admin.tabs.projects": "Projetos",
   "admin.tabs.personas": "Personas",
   "admin.tabs.courseInfo": "Informações do curso",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "Eu explico",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Orientação de projeto"
+  "ragPresets.module.project": "Orientação de projeto",
+  "material.warning.docsChanged.title": "Foi adicionado ou alterado material de estudo desde que os conceitos foram determinados",
+  "material.warning.docsChanged.desc": "Procura novos conceitos em Conceitos — os teus conceitos e escolhas existentes permanecem.",
+  "material.upload.nextConcepts": "Assim que o material de estudo tiver sido importado, podes mandar procurar novos conceitos em Conceitos."
 }

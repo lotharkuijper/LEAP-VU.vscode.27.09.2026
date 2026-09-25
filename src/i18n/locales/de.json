@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Begriffe",
   "admin.tabs.imports": "Importe",
   "admin.tabs.quizSources": "Quiz-Quellen",
-  "admin.tabs.prompts": "Chatbot-Prompts",
-  "admin.tabs.ragSettings": "RAG-Einstellungen",
+  "admin.tabs.prompts": "Chat-Anweisungen",
+  "admin.tabs.ragSettings": "KI-Suchsensibilität",
   "admin.tabs.projects": "Projekte",
   "admin.tabs.personas": "Personas",
   "admin.tabs.courseInfo": "Kursinfo",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "Ich erkläre",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Projektbetreuung"
+  "ragPresets.module.project": "Projektbetreuung",
+  "material.warning.docsChanged.title": "Seit der Ermittlung der Begriffe wurde Lernmaterial hinzugefügt oder geändert",
+  "material.warning.docsChanged.desc": "Suche unter Begriffe nach neuen Begriffen — deine vorhandenen Begriffe und Auswahl bleiben erhalten.",
+  "material.upload.nextConcepts": "Sobald das Lernmaterial eingelesen wurde, kannst du unter Begriffe neue Begriffe suchen lassen."
 }

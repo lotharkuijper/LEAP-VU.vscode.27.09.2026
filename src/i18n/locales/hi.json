@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "अवधारणाएँ",
   "admin.tabs.imports": "आयात",
   "admin.tabs.quizSources": "क्विज़ स्रोत",
-  "admin.tabs.prompts": "चैटबॉट प्रॉम्प्ट",
-  "admin.tabs.ragSettings": "RAG सेटिंग्स",
+  "admin.tabs.prompts": "चैट निर्देश",
+  "admin.tabs.ragSettings": "AI खोज संवेदनशीलता",
   "admin.tabs.projects": "प्रोजेक्ट",
   "admin.tabs.personas": "पर्सोना",
   "admin.tabs.courseInfo": "कोर्स जानकारी",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "चैट",
   "ragPresets.module.explain": "मैं समझाता हूँ",
   "ragPresets.module.quiz": "क्विज़",
-  "ragPresets.module.project": "प्रोजेक्ट मार्गदर्शन"
+  "ragPresets.module.project": "प्रोजेक्ट मार्गदर्शन",
+  "material.warning.docsChanged.title": "अवधारणाएँ तय किए जाने के बाद से अध्ययन सामग्री जोड़ी गई है या बदली गई है",
+  "material.warning.docsChanged.desc": "अवधारणाएँ में नई अवधारणाएँ खोजो — तुम्हारी मौजूदा अवधारणाएँ और चयन बने रहेंगे।",
+  "material.upload.nextConcepts": "जैसे ही अध्ययन सामग्री पढ़ ली जाएगी, तुम अवधारणाएँ में नई अवधारणाएँ खोजवा सकते हो।"
 }

@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "المفاهيم",
   "admin.tabs.imports": "عمليات الاستيراد",
   "admin.tabs.quizSources": "مصادر الاختبارات",
-  "admin.tabs.prompts": "مطالبات روبوت الدردشة",
-  "admin.tabs.ragSettings": "إعدادات RAG",
+  "admin.tabs.prompts": "تعليمات الدردشة",
+  "admin.tabs.ragSettings": "حساسية البحث للذكاء الاصطناعي",
   "admin.tabs.projects": "المشاريع",
   "admin.tabs.personas": "الشخصيات",
   "admin.tabs.courseInfo": "معلومات المقرر",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "دردشة",
   "ragPresets.module.explain": "أشرح",
   "ragPresets.module.quiz": "اختبار",
-  "ragPresets.module.project": "إرشاد المشروع"
+  "ragPresets.module.project": "إرشاد المشروع",
+  "material.warning.docsChanged.title": "تمت إضافة مواد تعليمية أو تعديلها منذ تحديد المفاهيم",
+  "material.warning.docsChanged.desc": "ابحث عن مفاهيم جديدة في المفاهيم — ستبقى مفاهيمك واختياراتك الحالية كما هي.",
+  "material.upload.nextConcepts": "بمجرد قراءة المواد التعليمية، يمكنك في المفاهيم طلب البحث عن مفاهيم جديدة."
 }

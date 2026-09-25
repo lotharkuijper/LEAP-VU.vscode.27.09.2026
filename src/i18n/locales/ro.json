@@ -831,8 +831,8 @@
   "admin.tabs.concepts": "Concepte",
   "admin.tabs.imports": "Importuri",
   "admin.tabs.quizSources": "Surse de quiz",
-  "admin.tabs.prompts": "Prompturi pentru chatbot",
-  "admin.tabs.ragSettings": "Setări RAG",
+  "admin.tabs.prompts": "Instrucțiuni pentru chat",
+  "admin.tabs.ragSettings": "Sensibilitatea căutării AI",
   "admin.tabs.projects": "Proiecte",
   "admin.tabs.personas": "Persona",
   "admin.tabs.courseInfo": "Informații despre curs",
@@ -2021,5 +2021,8 @@
   "ragPresets.module.chat": "Chat",
   "ragPresets.module.explain": "Eu explic",
   "ragPresets.module.quiz": "Quiz",
-  "ragPresets.module.project": "Îndrumare de proiect"
+  "ragPresets.module.project": "Îndrumare de proiect",
+  "material.warning.docsChanged.title": "Materialul de învățare a fost adăugat sau modificat de când au fost stabilite conceptele",
+  "material.warning.docsChanged.desc": "Caută concepte noi la Concepte — conceptele și alegerile tale existente rămân păstrate.",
+  "material.upload.nextConcepts": "După ce materialul de învățare a fost procesat, poți solicita căutarea unor concepte noi la Concepte."
 }
