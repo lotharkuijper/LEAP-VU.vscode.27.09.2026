@@ -3,6 +3,7 @@ import { getAccessibleFolders } from './permissions.service';
 import { generateEmbeddings } from './llm.service';
 import { STORAGE_CONFIG } from '../config/storage.config';
 import { expandQuery, type QueryExpansionOptions } from './queryExpansion';
+import { purposeAllowsModule } from '../../server/filePurpose.js';
 
 export interface DocumentChunk {
   id: string;
@@ -203,10 +204,14 @@ export async function searchRelevantChunksWithStats(
     if (allowedFolderIds.length > 0) {
       const { data: scopedDocs } = await supabase
         .from('documents')
-        .select('id')
+        .select('id, purpose')
         .in('folder_id', allowedFolderIds)
         .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
-      filterDocumentIds = (scopedDocs || []).map((d) => d.id);
+      // Bestandsdoel: cursusinformatie (studiehandleiding, rooster) alleen voor
+      // de chat, niet voor Ik leg uit en quiz. Leeg doel = leerstof (oud gedrag).
+      filterDocumentIds = (scopedDocs || [])
+        .filter((d: { purpose?: string | null }) => purposeAllowsModule(d.purpose, moduleType || 'general'))
+        .map((d: { id: string }) => d.id);
       if (filterDocumentIds.length === 0) {
         console.log('[RAG] No RAG documents in allowed folders — skipping RAG');
         return { ...baseStats, searchPerformed: true };

@@ -130,6 +130,8 @@ import {
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
+import { registerCourseFilesRoutes } from './courseFiles.js';
+import { purposeAllowsModule } from './filePurpose.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
   groupPendingByUser,
@@ -352,7 +354,9 @@ const RAG_EXTRACTION_DEFAULTS = {
 //   null / undefined  → geen folderfilter (alle chunks)
 //   []                → expliciet geen toegang (geen resultaten)
 //   [id, id, ...]     → alleen chunks uit deze folders
-async function searchChunksServerSide(queryText, threshold, matchCount, allowedFolderIds, expansion, lang = 'nl') {
+// `module` (optioneel, bv. 'concepts'): sluit documenten uit waarvan het
+// bestandsdoel die module niet toestaat (cursusinformatie levert geen begrippen).
+async function searchChunksServerSide(queryText, threshold, matchCount, allowedFolderIds, expansion, lang = 'nl', module = null) {
   if (!AZURE_EMBEDDINGS_READY || !supabaseAdmin) return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery: queryText };
 
   // Expliciet lege toegestane mappen → geen toegang
@@ -395,9 +399,11 @@ async function searchChunksServerSide(queryText, threshold, matchCount, allowedF
     if (Array.isArray(allowedFolderIds) && allowedFolderIds.length > 0) {
       const { data: docs } = await supabaseAdmin
         .from('documents')
-        .select('id, folder_id')
+        .select('id, folder_id, purpose')
         .in('folder_id', allowedFolderIds);
-      filterDocumentIds = (docs || []).map(d => d.id);
+      filterDocumentIds = (docs || [])
+        .filter(d => !module || purposeAllowsModule(d.purpose, module))
+        .map(d => d.id);
       // Geen documenten in de toegestane mappen → niets te vinden.
       if (filterDocumentIds.length === 0) {
         return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery };
@@ -5212,11 +5218,14 @@ app.post('/api/admin/extract-concepts', async (req, res) => {
 
     const ragFolderIds = ragFolders.map((f) => f.id);
 
-    const { data: docs, error: docsError } = await supabaseAdmin
+    const { data: allDocs, error: docsError } = await supabaseAdmin
       .from('documents')
-      .select('id')
+      .select('id, purpose')
       .in('folder_id', ragFolderIds)
       .eq('processing_status', 'completed');
+    // Alleen leerstof levert begrippen: cursusinformatie (studiehandleiding,
+    // rooster) zou anders "Herkansing" of "Deadline" als begrip opleveren.
+    const docs = (allDocs || []).filter((d) => purposeAllowsModule(d.purpose, 'concepts'));
 
     if (docsError) {
       console.error('[extract-concepts] docs query error:', docsError);
@@ -5434,7 +5443,8 @@ ${combinedText}`;
         const result = await searchChunksServerSide(
           c.name, verifyThreshold, 10, ragFolderIds,
           { enabled: true, definition: c.definition },
-          conceptLanguage === 'en' ? 'en' : 'nl'
+          conceptLanguage === 'en' ? 'en' : 'nl',
+          'concepts'
         );
         return {
           concept: c,
@@ -6097,6 +6107,21 @@ registerStudiecafeRoutes(app, {
   userHasCourseAccess,
   isStaffForCourse,
   pgPool,
+});
+
+// Cursusmateriaal met bestandsdoelen (herinrichting docentenbeheer 2026-09-25):
+// bestanden per doel, eenmalige controle, "klaar voor studenten". Zie
+// server/courseFiles.js en supabase/migrations/20260925100000_document_purposes.sql.
+registerCourseFilesRoutes(app, {
+  supabaseAdmin,
+  pgPool,
+  requireAuthUser,
+  isStaffForCourse,
+  userHasCourseAccess,
+  ensureCourseRagFolder,
+  processRagDocumentById,
+  createProjectDocumentFromBuffer: (...a) => createProjectDocumentFromBuffer(...a),
+  getFileMimeType,
 });
 
 app.delete('/api/admin/concepts/:id', async (req, res) => {
@@ -12668,6 +12693,103 @@ async function findOrCreateProjectSubfolder(projectId, projectTitle, uploadedByI
   }
 }
 
+// Kern van het uploaden van een projectdocument, los van HTTP, zodat ook het
+// cursusmateriaal-beheer (doel "Projectmateriaal", server/courseFiles.js) een
+// bestand exact op dezelfde manier aan een project kan toevoegen. De aanroeper
+// controleert zelf de staff-rechten (requireProjectStaff).
+// Gooit { status, message } bij een gebruikersfout.
+async function createProjectDocumentFromBuffer({ projectId, projectTitle, userId, filename, buffer, mimeType, size, materialKind }) {
+  const isBinaryDownload = BINARY_DOWNLOAD_EXT_RE.test(filename);
+  let text = null;
+  if (!isBinaryDownload) {
+    try { text = await extractTextFromUpload({ buffer, originalname: filename, mimetype: mimeType, size }); }
+    catch (e) { throw { status: 400, message: e.message || 'Kon tekst niet uit bestand halen' }; }
+    if (!text || text.length === 0) throw { status: 400, message: 'Geen leesbare tekst gevonden in dit bestand' };
+    if (text.length > MAX_DOC_CHARS) {
+      text = text.slice(0, MAX_DOC_CHARS) + `
+
+…[afgekapt op ${MAX_DOC_CHARS.toLocaleString('nl-NL')} tekens]`;
+    }
+  }
+
+  let documentRefId = null;
+
+  if (isBinaryDownload) {
+    // Binaire bestanden worden in de `documents`-tabel opgeslagen zodat ze
+    // zichtbaar zijn in de cursusboom. We gebruiken de directe pg-verbinding
+    // zodat de bytea-kolom correct wordt gevuld (PostgREST snapt geen raw
+    // Buffer via JSON).
+    if (!pgPool) throw { status: 503, message: 'Directe DB-verbinding niet beschikbaar' };
+
+    const folderId = await findOrCreateProjectSubfolder(projectId, projectTitle, userId);
+    const mime = mimeType || 'application/octet-stream';
+    const safeFilename = String(filename).slice(0, 200);
+
+    const docResult = await pgPool.query(
+      `INSERT INTO documents
+         (title, filename, file_path, file_type, file_size, folder_id,
+          uploaded_by, processing_status, total_chunks, file_bytes, mime_type)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed', 0, $8, $9)
+       RETURNING id`,
+      [
+        safeFilename,
+        safeFilename,
+        '',                          // lege placeholder (file_path heeft default '')
+        mime,
+        size || 0,
+        folderId,                    // null is ok als map niet aangemaakt kon worden
+        userId,
+        buffer,                      // pg stuurt Buffer direct als bytea
+        mime,
+      ]
+    );
+    documentRefId = docResult.rows[0]?.id;
+    if (!documentRefId) throw { status: 500, message: 'Kon bestandsrecord niet aanmaken' };
+  } else if (pgPool && text) {
+    // Tekst-bestanden krijgen ook een `documents`-tabel-entry zodat ze
+    // zichtbaar zijn in de Projectdata-submap van de bestandsbeheerder.
+    // Geen file_bytes — de inhoud wordt als content_text in project_documents
+    // bewaard en via die rij gedownload.
+    try {
+      const folderId = await findOrCreateProjectSubfolder(projectId, projectTitle, userId);
+      const mime = mimeType || 'text/plain';
+      const safeFilename = String(filename).slice(0, 200);
+      const docResult = await pgPool.query(
+        `INSERT INTO documents
+           (title, filename, file_path, file_type, file_size, folder_id,
+            uploaded_by, processing_status, total_chunks, mime_type)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed', 0, $8)
+         RETURNING id`,
+        [safeFilename, safeFilename, '', mime, size || 0, folderId, userId, mime]
+      );
+      documentRefId = docResult.rows[0]?.id || null;
+      if (!documentRefId) console.warn('[project-doc upload] tekst-doc folder-entry aangemaakt maar geen id teruggekregen');
+    } catch (e) {
+      // Niet fataal: document_ref_id blijft null, bestand is wel opgeslagen.
+      console.warn('[project-doc upload] tekst-doc folder-entry mislukt:', e.message);
+    }
+  }
+
+  // Sla op in project_documents voor de project-eigen boekhoudingslijst.
+  const row = {
+    project_id: projectId,
+    filename: String(filename).slice(0, 200),
+    content_text: text,
+    byte_size: size || (text ? Buffer.byteLength(text, 'utf8') : 0),
+    mime_type: mimeType || (isBinaryDownload ? 'application/octet-stream' : null),
+    uploaded_by: userId,
+    document_ref_id: documentRefId,
+    is_visible_to_students: true,
+  };
+  if (materialKind) row.material_kind = materialKind;
+  const { data, error: e } = await supabaseAdmin
+    .from('project_documents').insert(row)
+    .select('id, filename, byte_size, mime_type, document_ref_id, is_visible_to_students, uploaded_by, created_at').single();
+  if (e) throw { status: 500, message: e.message };
+  const folderLinkFailed = !isBinaryDownload && text && !data.document_ref_id;
+  return { document: data, ...(folderLinkFailed ? { warning: 'Bestand opgeslagen, maar kon niet in de Projectdata-map worden geplaatst (controleer de serverlogs).' } : {}) };
+}
+
 app.post('/api/projects/:projectId/documents', docUpload.single('file'), async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
@@ -12675,98 +12797,27 @@ app.post('/api/projects/:projectId/documents', docUpload.single('file'), async (
   const { projectId } = req.params;
   if (!req.file) return res.status(400).json({ error: 'Geen bestand ontvangen (veld "file")' });
   const filename = req.file.originalname || 'upload';
-  const isBinaryDownload = BINARY_DOWNLOAD_EXT_RE.test(filename);
-  let text = null;
-  if (!isBinaryDownload) {
-    try { text = await extractTextFromUpload(req.file); }
-    catch (e) { return res.status(400).json({ error: e.message || 'Kon tekst niet uit bestand halen' }); }
-    if (!text || text.length === 0) return res.status(400).json({ error: 'Geen leesbare tekst gevonden in dit bestand' });
-    if (text.length > MAX_DOC_CHARS) {
-      text = text.slice(0, MAX_DOC_CHARS) + `\n\n…[afgekapt op ${MAX_DOC_CHARS.toLocaleString('nl-NL')} tekens]`;
-    }
-  }
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
-
-    let documentRefId = null;
-
-    if (isBinaryDownload) {
-      // Binaire bestanden worden in de `documents`-tabel opgeslagen zodat ze
-      // zichtbaar zijn in de cursusboom. We gebruiken de directe pg-verbinding
-      // zodat de bytea-kolom correct wordt gevuld (PostgREST snapt geen raw
-      // Buffer via JSON).
-      if (!pgPool) return res.status(503).json({ error: 'Directe DB-verbinding niet beschikbaar' });
-
-      const folderId = await findOrCreateProjectSubfolder(projectId, access.project?.title, auth.user.id);
-      const mimeType = req.file.mimetype || 'application/octet-stream';
-      const safeFilename = String(filename).slice(0, 200);
-
-      const docResult = await pgPool.query(
-        `INSERT INTO documents
-           (title, filename, file_path, file_type, file_size, folder_id,
-            uploaded_by, processing_status, total_chunks, file_bytes, mime_type)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed', 0, $8, $9)
-         RETURNING id`,
-        [
-          safeFilename,
-          safeFilename,
-          '',                          // lege placeholder (file_path heeft default '')
-          mimeType,
-          req.file.size || 0,
-          folderId,                    // null is ok als map niet aangemaakt kon worden
-          auth.user.id,
-          req.file.buffer,             // pg stuurt Buffer direct als bytea
-          mimeType,
-        ]
-      );
-      documentRefId = docResult.rows[0]?.id;
-      if (!documentRefId) return res.status(500).json({ error: 'Kon bestandsrecord niet aanmaken' });
-    } else if (pgPool && text) {
-      // Tekst-bestanden krijgen ook een `documents`-tabel-entry zodat ze
-      // zichtbaar zijn in de Projectdata-submap van de bestandsbeheerder.
-      // Geen file_bytes — de inhoud wordt als content_text in project_documents
-      // bewaard en via die rij gedownload.
-      try {
-        const folderId = await findOrCreateProjectSubfolder(projectId, access.project?.title, auth.user.id);
-        const mimeType = req.file.mimetype || 'text/plain';
-        const safeFilename = String(filename).slice(0, 200);
-        const docResult = await pgPool.query(
-          `INSERT INTO documents
-             (title, filename, file_path, file_type, file_size, folder_id,
-              uploaded_by, processing_status, total_chunks, mime_type)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, 'completed', 0, $8)
-           RETURNING id`,
-          [safeFilename, safeFilename, '', mimeType, req.file.size || 0, folderId, auth.user.id, mimeType]
-        );
-        documentRefId = docResult.rows[0]?.id || null;
-        if (!documentRefId) console.warn('[project-doc upload] tekst-doc folder-entry aangemaakt maar geen id teruggekregen');
-      } catch (e) {
-        // Niet fataal: document_ref_id blijft null, bestand is wel opgeslagen.
-        console.warn('[project-doc upload] tekst-doc folder-entry mislukt:', e.message);
-      }
-    }
-
-    // Sla op in project_documents voor de project-eigen boekhoudingslijst.
-    const { data, error: e } = await supabaseAdmin
-      .from('project_documents').insert({
-        project_id: projectId,
-        filename: String(filename).slice(0, 200),
-        content_text: text,
-        byte_size: req.file.size || (text ? Buffer.byteLength(text, 'utf8') : 0),
-        mime_type: req.file.mimetype || (isBinaryDownload ? 'application/octet-stream' : null),
-        uploaded_by: auth.user.id,
-        document_ref_id: documentRefId,
-        is_visible_to_students: true,
-      }).select('id, filename, byte_size, mime_type, document_ref_id, is_visible_to_students, uploaded_by, created_at').single();
-    if (e) return res.status(500).json({ error: e.message });
-    const folderLinkFailed = !isBinaryDownload && text && !data.document_ref_id;
-    return res.json({ document: data, ...(folderLinkFailed ? { warning: 'Bestand opgeslagen, maar kon niet in de Projectdata-map worden geplaatst (controleer de serverlogs).' } : {}) });
+    const materialKind = ['assignment', 'data', 'literature', 'other'].includes(req.body?.material_kind) ? req.body.material_kind : undefined;
+    const result = await createProjectDocumentFromBuffer({
+      projectId,
+      projectTitle: access.project?.title,
+      userId: auth.user.id,
+      filename,
+      buffer: req.file.buffer,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      materialKind,
+    });
+    return res.json(result);
   } catch (err) {
-    console.error('[project-doc upload]', err.message);
-    return res.status(500).json({ error: err.message });
+    if (err && typeof err.status === 'number') return res.status(err.status).json({ error: err.message });
+    console.error('[project-doc upload]', err?.message || err);
+    return res.status(500).json({ error: err?.message || String(err) });
   }
 });
 
@@ -12833,14 +12884,28 @@ app.get('/api/projects/:projectId/documents/:docId/download', async (req, res) =
   }
 });
 
-// PATCH /api/projects/:projectId/documents/:docId — zichtbaarheid voor studenten wijzigen
+// PATCH /api/projects/:projectId/documents/:docId — zichtbaarheid voor studenten
+// en/of soort materiaal (material_kind: assignment/data/literature/other) wijzigen.
 app.patch('/api/projects/:projectId/documents/:docId', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, docId } = req.params;
-  const { is_visible_to_students } = req.body;
-  if (typeof is_visible_to_students !== 'boolean') {
+  const { is_visible_to_students, material_kind } = req.body || {};
+  const update = {};
+  if (is_visible_to_students !== undefined) {
+    if (typeof is_visible_to_students !== 'boolean') {
+      return res.status(400).json({ error: 'is_visible_to_students moet een boolean zijn' });
+    }
+    update.is_visible_to_students = is_visible_to_students;
+  }
+  if (material_kind !== undefined) {
+    if (material_kind !== null && !['assignment', 'data', 'literature', 'other'].includes(material_kind)) {
+      return res.status(400).json({ error: 'Ongeldige material_kind' });
+    }
+    update.material_kind = material_kind;
+  }
+  if (Object.keys(update).length === 0) {
     return res.status(400).json({ error: 'is_visible_to_students moet een boolean zijn' });
   }
   try {
@@ -12850,9 +12915,9 @@ app.patch('/api/projects/:projectId/documents/:docId', async (req, res) => {
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const { data, error: e } = await supabaseAdmin
       .from('project_documents')
-      .update({ is_visible_to_students })
+      .update(update)
       .eq('id', docId).eq('project_id', projectId)
-      .select('id, is_visible_to_students').single();
+      .select(Object.prototype.hasOwnProperty.call(update, 'material_kind') ? 'id, is_visible_to_students, material_kind' : 'id, is_visible_to_students').single();
     if (e) return res.status(500).json({ error: e.message });
     return res.json({ document: data });
   } catch (err) {

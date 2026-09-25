@@ -21,6 +21,7 @@
 import { supabase } from '../lib/supabase';
 import { getAccessibleFolders } from './permissions.service';
 import { STORAGE_CONFIG } from '../config/storage.config';
+import { purposeAllowsModule } from '../../server/filePurpose.js';
 import {
   searchRelevantChunksWithStats,
   fetchConceptEvidence,
@@ -65,10 +66,13 @@ async function defaultAllowedDocumentIds(courseId: string, role: Role): Promise<
   if (scoped.length === 0) return new Set();
   const { data } = await supabase
     .from('documents')
-    .select('id')
+    .select('id, purpose')
     .in('folder_id', scoped)
     .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
-  return new Set((data || []).map((d: { id: string }) => d.id));
+  // Cursusinformatie levert geen quizbewijs (zie server/filePurpose.js).
+  return new Set((data || [])
+    .filter((d: { purpose?: string | null }) => purposeAllowsModule(d.purpose, 'quiz'))
+    .map((d: { id: string }) => d.id));
 }
 
 const DEFAULT_DEPS: QuizContextDeps = {
