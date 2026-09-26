@@ -2538,7 +2538,10 @@ const tabGroups = [
 
 
           {activeTab === 'imports' && (
-            <ImportsHubPanel onNavigateToQuizSources={() => setActiveTab('quiz_sources')} />
+            <ImportsHubPanel
+              onNavigateToQuizSources={() => setActiveTab('quiz_sources')}
+              onNavigateToMaterial={() => { setActiveTabState('material'); setMaterialStep('files'); }}
+            />
           )}
 
           {activeTab === 'quiz_sources' && <QuizSourcesAdminPanel />}

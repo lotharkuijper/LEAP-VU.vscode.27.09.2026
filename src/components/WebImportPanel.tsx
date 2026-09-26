@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Globe, Loader2, CheckCircle, AlertTriangle, XCircle, Info, X, Search, Download, Link2 } from 'lucide-react';
 import {
   discoverWebPages,
@@ -7,6 +7,7 @@ import {
   type DiscoveredPage,
   type WebImportResult,
   type WebImportProgress,
+  type WebImportPurpose,
 } from '../services/web-import.service';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLanguage } from '../i18n';
@@ -24,9 +25,50 @@ const NOTICE_STYLES: Record<NoticeKind, { box: string; icon: string }> = {
   success: { box: 'bg-emerald-50 border-emerald-200 text-emerald-900', icon: 'text-emerald-600' },
 };
 
-export function WebImportPanel() {
-  const { activeCourseId, activeCourse } = useActiveCourse();
+/**
+ * Groepeer ontdekte pagina's per map direct onder de start-URL (bv. alle
+ * pagina's onder `/hoofdstuk-3/`), zodat een docent een heel onderdeel in één
+ * keer aan of uit kan zetten. Pagina's direct onder de start-URL vallen in ''.
+ */
+export function groupPagesBySection(pages: DiscoveredPage[], baseUrl: string): Array<{ section: string; pages: DiscoveredPage[] }> {
+  let basePath = '/';
+  try { basePath = new URL(baseUrl).pathname.replace(/[^/]*$/, ''); } catch { /* ongeldige base: alles in één groep */ }
+  const groups = new Map<string, DiscoveredPage[]>();
+  for (const p of pages) {
+    let section = '';
+    try {
+      const path = new URL(p.url).pathname;
+      const rest = path.startsWith(basePath) ? path.slice(basePath.length) : path.replace(/^\//, '');
+      const slash = rest.indexOf('/');
+      section = slash > 0 ? rest.slice(0, slash) : '';
+    } catch { /* laat in hoofdgroep */ }
+    if (!groups.has(section)) groups.set(section, []);
+    groups.get(section)!.push(p);
+  }
+  return [...groups.entries()]
+    .sort(([a], [b]) => (a === '' ? -1 : b === '' ? 1 : a.localeCompare(b)))
+    .map(([section, list]) => ({ section, pages: list }));
+}
+
+const WEB_PURPOSES: WebImportPurpose[] = ['course_material', 'course_info'];
+
+export function WebImportPanel({
+  courseId: courseIdProp,
+  embedded = false,
+  onImported,
+}: {
+  /** Doelcursus; standaard de actieve cursus. */
+  courseId?: string;
+  /** In de werkruimte Cursusmateriaal: zonder uitlegblok en cursus-indicator. */
+  embedded?: boolean;
+  /** Na een (ook gedeeltelijk) geslaagde import, zodat de lijst ververst. */
+  onImported?: (result: WebImportResult | null) => void;
+} = {}) {
+  const { activeCourseId: contextCourseId, activeCourse } = useActiveCourse();
+  const activeCourseId = courseIdProp || contextCourseId;
   const { t } = useLanguage();
+  const tk = (k: string) => t(k as Parameters<typeof t>[0]);
+  const [purpose, setPurpose] = useState<WebImportPurpose>('course_material');
   const [url, setUrl] = useState('');
   const [baseUrl, setBaseUrl] = useState('');
   const [discovering, setDiscovering] = useState(false);
@@ -88,6 +130,20 @@ export function WebImportPanel() {
     else setSelected(new Set(pages.map((p) => p.url)));
   };
 
+  const sections = useMemo(() => groupPagesBySection(pages, baseUrl), [pages, baseUrl]);
+
+  const toggleSection = (list: DiscoveredPage[]) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const allOn = list.every((p) => next.has(p.url));
+      for (const p of list) {
+        if (allOn) next.delete(p.url);
+        else next.add(p.url);
+      }
+      return next;
+    });
+  };
+
   const handleImport = async () => {
     if (!activeCourseId) {
       setNotice({ kind: 'warning', message: t('admin.imports.web.noticeNoCourse') });
@@ -103,8 +159,9 @@ export function WebImportPanel() {
     setProgress(null);
     setNotice({ kind: 'info', message: t('admin.imports.web.noticeImportStarted', { count: String(chosen.length) }) });
     try {
-      const res = await importWebPages(activeCourseId, baseUrl, chosen, setProgress);
+      const res = await importWebPages(activeCourseId, baseUrl, chosen, setProgress, { purpose });
       setResult(res);
+      onImported?.(res);
       setNotice({
         kind: 'success',
         message: t('admin.imports.web.noticeDone', {
@@ -126,6 +183,7 @@ export function WebImportPanel() {
             total: String(err.total),
           }),
         });
+        onImported?.(null);
       } else {
         setNotice({
           kind: 'error',
@@ -169,25 +227,31 @@ export function WebImportPanel() {
         </div>
       )}
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <Globe className="w-5 h-5 text-blue-700 mt-0.5" />
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1">{t('admin.imports.web.title')}</h3>
-            <p className="text-sm text-gray-700">{t('admin.imports.web.intro')}</p>
+      {embedded ? (
+        <p className="text-sm text-gray-700">{t('admin.imports.web.intro')}</p>
+      ) : (
+        <>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Globe className="w-5 h-5 text-blue-700 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-900 mb-1">{t('admin.imports.web.title')}</h3>
+                <p className="text-sm text-gray-700">{t('admin.imports.web.intro')}</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Cursus-indicator */}
-      <div className="flex items-start gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg p-3" data-testid="text-web-active-course">
-        <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-blue-900">
-          {activeCourseId && activeCourse
-            ? t('admin.imports.web.targetCourse', { course: activeCourse.name })
-            : t('admin.imports.web.noCourse')}
-        </div>
-      </div>
+          {/* Cursus-indicator */}
+          <div className="flex items-start gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg p-3" data-testid="text-web-active-course">
+            <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="text-blue-900">
+              {activeCourseId && activeCourse
+                ? t('admin.imports.web.targetCourse', { course: activeCourse.name })
+                : t('admin.imports.web.noCourse')}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* URL-invoer */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-3">
@@ -233,27 +297,81 @@ export function WebImportPanel() {
             </button>
           </div>
 
-          <div className="max-h-96 overflow-y-auto divide-y divide-gray-100 border border-gray-100 rounded-lg mb-6">
-            {pages.map((p) => (
-              <label
-                key={p.url}
-                className="flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors"
-                data-testid={`label-web-page-${p.url}`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selected.has(p.url)}
-                  onChange={() => toggle(p.url)}
-                  className="w-4 h-4 mt-0.5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  data-testid={`checkbox-web-page-${p.url}`}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-800 truncate">{p.title || p.url}</p>
-                  <p className="text-xs text-gray-400 truncate">{p.url}</p>
+          <div className="max-h-96 overflow-y-auto border border-gray-100 rounded-lg mb-6">
+            {sections.map(({ section, pages: list }) => {
+              const on = list.filter((p) => selected.has(p.url)).length;
+              return (
+                <div key={section || '__root'} data-testid={`web-section-${section || 'root'}`}>
+                  {sections.length > 1 && (
+                    <label className="sticky top-0 z-10 flex items-center gap-3 px-3 py-2 bg-gray-50 border-b border-gray-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={on === list.length}
+                        ref={(el) => { if (el) el.indeterminate = on > 0 && on < list.length; }}
+                        onChange={() => toggleSection(list)}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        data-testid={`checkbox-web-section-${section || 'root'}`}
+                      />
+                      <span className="text-sm font-semibold text-gray-800">
+                        {section ? `/${section}/` : t('admin.imports.web.sectionRoot')}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {t('admin.imports.web.selectedCount', { selected: String(on), total: String(list.length) })}
+                      </span>
+                    </label>
+                  )}
+                  <div className="divide-y divide-gray-100">
+                    {list.map((p) => (
+                      <label
+                        key={p.url}
+                        className={`flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors ${sections.length > 1 ? 'pl-8' : ''}`}
+                        data-testid={`label-web-page-${p.url}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected.has(p.url)}
+                          onChange={() => toggle(p.url)}
+                          className="w-4 h-4 mt-0.5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                          data-testid={`checkbox-web-page-${p.url}`}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-800 truncate">{p.title || p.url}</p>
+                          <p className="text-xs text-gray-400 truncate">{p.url}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              </label>
-            ))}
+              );
+            })}
           </div>
+
+          {/* Doel: een website is leerstof of cursusinformatie */}
+          <fieldset className="mb-6" data-testid="fieldset-web-purpose">
+            <legend className="text-sm font-medium text-gray-800 mb-2">{t('admin.imports.web.purposeQuestion')}</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {WEB_PURPOSES.map((p) => (
+                <label
+                  key={p}
+                  className={`flex items-start gap-2 rounded-lg border px-3 py-2 cursor-pointer ${purpose === p ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                >
+                  <input
+                    type="radio"
+                    name="web-purpose"
+                    value={p}
+                    checked={purpose === p}
+                    onChange={() => setPurpose(p)}
+                    className="mt-1"
+                    data-testid={`radio-web-purpose-${p}`}
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-gray-900">{tk(`filePurpose.${p}.label`)}</span>
+                    <span className="block text-xs text-gray-600">{tk(`filePurpose.${p}.desc`)}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           {importing && progress && (
             <div
@@ -328,7 +446,9 @@ export function WebImportPanel() {
               {result.results.filter((r) => r.status !== 'imported').map((r) => {
                 // Ongewijzigde pagina's krijgen een gelokaliseerd label i.p.v. het
                 // ruwe server-bericht ('Ongewijzigd'), zodat het in elke UI-taal klopt.
-                const detail = r.unchanged ? t('admin.imports.web.statusUnchanged') : r.message;
+                const detail = r.unchanged
+                  ? t('admin.imports.web.statusUnchanged')
+                  : r.notFound ? t('admin.imports.web.statusNotFound') : r.message;
                 return (
                   <div key={r.url} className="truncate">
                     <span className={r.status === 'error' ? 'text-red-600' : 'text-yellow-700'}>

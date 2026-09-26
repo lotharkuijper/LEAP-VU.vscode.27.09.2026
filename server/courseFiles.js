@@ -60,6 +60,50 @@ export function planPurposeChange({ from, to, isWeb = false, ext = '' }) {
   return { ok: true, kind: 'toNonRag', dropChunks: fromRag, docChanged: fromRag };
 }
 
+// Een websitebron kan alleen leerstof of cursusinformatie zijn (de pagina's
+// bestaan alleen als tekstfragmenten; er is geen bestand om te delen).
+export const WEB_SOURCE_PURPOSES = ['course_material', 'course_info'];
+
+// Na zoveel dagen zonder ophaling meldt "Klaar voor studenten" dat een site
+// mogelijk verouderd is.
+export const WEB_SOURCE_STALE_DAYS = 120;
+
+/**
+ * Pure: vat de per-pagina-resultaten van een web-import samen voor
+ * web_sources.last_sync_summary. `notFound` telt pagina's die de site niet meer
+ * levert (404/410); die worden bewust NIET verwijderd, zodat een tijdelijk
+ * kapotte site geen leerstof laat verdwijnen.
+ */
+export function summarizeWebSync(results) {
+  const s = { total: results.length, imported: 0, unchanged: 0, skipped: 0, errors: 0, notFound: 0 };
+  for (const r of results) {
+    if (r.status === 'imported') s.imported++;
+    else if (r.status === 'error') { s.errors++; if (r.notFound) s.notFound++; }
+    else if (r.unchanged) s.unchanged++;
+    else s.skipped++;
+  }
+  return s;
+}
+
+/** Pure: bouw de websitebron-overzichten uit de bronrijen en de bestandenlijst. */
+export function buildWebSourceList(sources, files) {
+  return (sources || []).map(src => {
+    const pages = files.filter(f => f.webSourceId === src.id);
+    return {
+      id: src.id,
+      baseUrl: src.base_url,
+      title: src.title || src.base_url,
+      purpose: src.purpose,
+      createdAt: src.created_at,
+      lastSyncedAt: src.last_synced_at,
+      lastSync: src.last_sync_summary || null,
+      pageCount: pages.length,
+      chunkCount: pages.reduce((n, p) => n + (p.total_chunks || 0), 0),
+      failedPages: pages.filter(p => p.processing_status === 'failed').length,
+    };
+  });
+}
+
 /** Pure: is de leerstof gewijzigd na de laatste keer dat begrippen zijn bepaald? */
 export function docsChangedSinceConcepts({ lastDocChange, lastConceptsRun }) {
   if (!lastDocChange) return false;
@@ -68,7 +112,7 @@ export function docsChangedSinceConcepts({ lastDocChange, lastConceptsRun }) {
 }
 
 /** Pure: waarschuwingen voor het gereedheidsoverzicht. */
-export function buildReadinessWarnings({ files, concepts, projects, docsChanged = false }) {
+export function buildReadinessWarnings({ files, concepts, projects, docsChanged = false, webSources = [], now = Date.now() }) {
   const warnings = [];
   const add = (code, severity, step, items) => {
     if (items.length > 0) warnings.push({ code, severity, step, count: items.length, items: items.slice(0, 8) });
@@ -92,7 +136,23 @@ export function buildReadinessWarnings({ files, concepts, projects, docsChanged 
   // Vervolgstap na nieuwe/gewijzigde leerstof: nieuwe begrippen zoeken.
   add('docsChanged', 'warning', 'concepts', docsChanged && concepts.length > 0 ? ['—'] : []);
   add('projectWithoutDocuments', 'info', 'files', projects.filter(p => p.documents.length === 0).map(p => p.title));
+  // Websites: pagina's die bij de laatste ophaling mislukten of niet meer
+  // bestaan, en sites die lang niet zijn bijgewerkt.
+  add('webSourceProblems', 'warning', 'files',
+    webSources.filter(w => (w.lastSync?.errors || 0) > 0).map(w => w.title));
+  const staleMs = WEB_SOURCE_STALE_DAYS * 24 * 3600 * 1000;
+  add('webSourceStale', 'info', 'files',
+    webSources.filter(w => w.lastSyncedAt && now - new Date(w.lastSyncedAt).getTime() > staleMs).map(w => w.title));
   return warnings;
+}
+
+/** Registreer dat de cursusdocumenten zijn gewijzigd (voedt "nieuwe begrippen zoeken"). */
+export async function recordDocMutation(supabaseAdmin, courseId) {
+  const key = `__doc_mutation_${courseId}__`;
+  const content = JSON.stringify({ lastMutationAt: new Date().toISOString() });
+  const { data: existing } = await supabaseAdmin.from('chatbot_prompts').select('id').eq('name', key).maybeSingle();
+  if (existing) await supabaseAdmin.from('chatbot_prompts').update({ content, updated_at: new Date().toISOString() }).eq('name', key);
+  else await supabaseAdmin.from('chatbot_prompts').insert({ name: key, content, is_active: false });
 }
 
 export function registerCourseFilesRoutes(app, deps) {
@@ -106,6 +166,9 @@ export function registerCourseFilesRoutes(app, deps) {
     createProjectDocumentFromBuffer,
     getFileMimeType,
   } = deps;
+  // Is de migratie 20260926100000_web_sources toegepast? Zonder die tabel werkt
+  // alles zoals voorheen: webpagina's staan als losse bestanden in de lijst.
+  const webSourcesReady = () => (typeof deps.webSourcesReady === 'function' ? deps.webSourcesReady() : false);
 
   async function requireStaff(req, res) {
     const auth = await requireAuthUser(req, res);
@@ -132,13 +195,7 @@ export function registerCourseFilesRoutes(app, deps) {
     return { ids, folders, byId: new Map(folders.map(f => [f.id, f])), assigned: new Set(assigned) };
   }
 
-  async function recordDocMutation(courseId) {
-    const key = `__doc_mutation_${courseId}__`;
-    const content = JSON.stringify({ lastMutationAt: new Date().toISOString() });
-    const { data: existing } = await supabaseAdmin.from('chatbot_prompts').select('id').eq('name', key).maybeSingle();
-    if (existing) await supabaseAdmin.from('chatbot_prompts').update({ content, updated_at: new Date().toISOString() }).eq('name', key);
-    else await supabaseAdmin.from('chatbot_prompts').insert({ name: key, content, is_active: false });
-  }
+  const markDocsChanged = (courseId) => recordDocMutation(supabaseAdmin, courseId);
 
   async function courseName(courseId) {
     const { data } = await supabaseAdmin.from('courses').select('name').eq('id', courseId).maybeSingle();
@@ -236,7 +293,7 @@ export function registerCourseFilesRoutes(app, deps) {
     if (plan.kind === 'relabel') {
       if (plan.dropEvidence) await supabaseAdmin.from('concept_evidence').delete().eq('document_id', doc.id);
       await supabaseAdmin.from('documents').update({ purpose: to, purpose_confirmed_at: now }).eq('id', doc.id);
-      await recordDocMutation(courseId);
+      await markDocsChanged(courseId);
       return { purpose: to };
     }
 
@@ -253,7 +310,7 @@ export function registerCourseFilesRoutes(app, deps) {
       });
       await supabaseAdmin.from('documents').delete().eq('id', doc.id); // chunks/evidence cascaden
       await removeStorageObject(doc);
-      if (plan.docChanged) await recordDocMutation(courseId);
+      if (plan.docChanged) await markDocsChanged(courseId);
       return { purpose: 'project', projectDocument: created.document };
     }
 
@@ -274,7 +331,7 @@ export function registerCourseFilesRoutes(app, deps) {
       );
       await removeStorageObject(doc);
       startProcessing(doc.id);
-      await recordDocMutation(courseId);
+      await markDocsChanged(courseId);
       return { purpose: to, reprocessing: true };
     }
 
@@ -301,7 +358,7 @@ export function registerCourseFilesRoutes(app, deps) {
       );
     }
     await removeStorageObject(doc);
-    if (plan.docChanged) await recordDocMutation(courseId);
+    if (plan.docChanged) await markDocsChanged(courseId);
     return { purpose: to };
   }
 
@@ -329,9 +386,12 @@ export function registerCourseFilesRoutes(app, deps) {
   async function listFiles(courseId) {
     const scope = await courseScope(courseId);
     const folderIds = [...scope.ids];
+    const withSources = webSourcesReady();
+    const cols = 'id, title, filename, file_path, file_type, file_size, folder_id, bucket, mime_type, purpose, purpose_confirmed_at, processing_status, total_chunks, created_at'
+      + (withSources ? ', web_source_id' : '');
     const { data: docs, error } = folderIds.length
       ? await supabaseAdmin.from('documents')
-        .select('id, title, filename, file_type, file_size, folder_id, bucket, mime_type, purpose, purpose_confirmed_at, processing_status, total_chunks, created_at')
+        .select(cols)
         .in('folder_id', folderIds).order('created_at', { ascending: false })
       : { data: [], error: null };
     if (error) throw new Error(error.message);
@@ -358,6 +418,8 @@ export function registerCourseFilesRoutes(app, deps) {
         processing_status: d.processing_status,
         total_chunks: d.total_chunks,
         isWeb: d.file_type === 'web',
+        url: d.file_type === 'web' ? d.file_path || null : null,
+        webSourceId: d.web_source_id || null,
         folderName: folder?.name || null,
         purpose,
         purposeConfirmed: !!d.purpose_confirmed_at,
@@ -366,7 +428,15 @@ export function registerCourseFilesRoutes(app, deps) {
         }),
       };
     });
-    return { files, projects, scope };
+    let webSources = [];
+    if (withSources) {
+      const { data: srcRows, error: srcErr } = await supabaseAdmin.from('web_sources')
+        .select('id, base_url, title, purpose, created_at, last_synced_at, last_sync_summary')
+        .eq('course_id', courseId).order('created_at', { ascending: true });
+      if (srcErr) throw new Error(srcErr.message);
+      webSources = buildWebSourceList(srcRows, files);
+    }
+    return { files, projects, scope, webSources };
   }
 
   // ── GET: alle bestanden van de cursus met doel + projecten ──────────────────
@@ -374,8 +444,8 @@ export function registerCourseFilesRoutes(app, deps) {
     const auth = await requireStaff(req, res);
     if (!auth) return;
     try {
-      const { files, projects } = await listFiles(req.params.courseId);
-      return res.json({ files, projects, unconfirmedCount: files.filter(f => !f.purposeConfirmed).length });
+      const { files, projects, webSources } = await listFiles(req.params.courseId);
+      return res.json({ files, projects, webSources, unconfirmedCount: files.filter(f => !f.purposeConfirmed).length });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -435,7 +505,7 @@ export function registerCourseFilesRoutes(app, deps) {
       if (!docId) return res.status(500).json({ error: 'Kon bestand niet registreren' });
       if (isRagPurpose(purpose)) {
         startProcessing(docId);
-        await recordDocMutation(courseId);
+        await markDocsChanged(courseId);
       }
       return res.json({ purpose, documentId: docId, processing: isRagPurpose(purpose) });
     } catch (err) {
@@ -468,6 +538,73 @@ export function registerCourseFilesRoutes(app, deps) {
     }
   });
 
+  /** Websitebron van deze cursus + de pagina's ervan die binnen de cursusscope vallen. */
+  async function loadWebSource(courseId, sourceId) {
+    const { data: src, error } = await supabaseAdmin.from('web_sources')
+      .select('id, course_id, base_url, title, purpose').eq('id', sourceId).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!src || src.course_id !== courseId) return null;
+    const scope = await courseScope(courseId);
+    const { data: pages, error: pErr } = await supabaseAdmin.from('documents')
+      .select('id, title, filename, file_path, file_type, file_size, folder_id, bucket, mime_type, purpose, purpose_confirmed_at, processing_status, total_chunks')
+      .eq('web_source_id', sourceId);
+    if (pErr) throw new Error(pErr.message);
+    return { src, scope, pages: (pages || []).filter(p => scope.ids.has(p.folder_id)) };
+  }
+
+  // ── PATCH: doel van een hele website wijzigen ──────────────────────────────
+  app.patch('/api/admin/course-files/:courseId/web-sources/:sourceId', async (req, res) => {
+    const auth = await requireStaff(req, res);
+    if (!auth) return;
+    if (!webSourcesReady()) return res.status(503).json({ error: 'Websitebronnen zijn nog niet gemigreerd', code: 'webSourcesUnavailable' });
+    const { courseId, sourceId } = req.params;
+    const purpose = req.body?.purpose;
+    if (!WEB_SOURCE_PURPOSES.includes(purpose)) return res.status(400).json({ error: 'Ongeldig doel', code: 'webPageOnlyRag' });
+    try {
+      const found = await loadWebSource(courseId, sourceId);
+      if (!found) return res.status(404).json({ error: 'Website niet gevonden in deze cursus' });
+      let failed = 0;
+      for (const doc of found.pages) {
+        try {
+          await applyPurpose({ courseId, doc, folder: found.scope.byId.get(doc.folder_id), to: purpose, userId: auth.user.id });
+        } catch (err) {
+          failed++;
+          console.error(`[course-files] doel van webpagina ${doc.id} niet gewijzigd:`, err?.message || err);
+        }
+      }
+      const { error: updErr } = await supabaseAdmin.from('web_sources').update({ purpose }).eq('id', sourceId);
+      if (updErr) return res.status(500).json({ error: updErr.message });
+      return res.json({ purpose, pages: found.pages.length, failed });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
+  // ── DELETE: hele website verwijderen (pagina's, fragmenten en bewijs) ──────
+  app.delete('/api/admin/course-files/:courseId/web-sources/:sourceId', async (req, res) => {
+    const auth = await requireStaff(req, res);
+    if (!auth) return;
+    if (!webSourcesReady()) return res.status(503).json({ error: 'Websitebronnen zijn nog niet gemigreerd', code: 'webSourcesUnavailable' });
+    const { courseId, sourceId } = req.params;
+    try {
+      const found = await loadWebSource(courseId, sourceId);
+      if (!found) return res.status(404).json({ error: 'Website niet gevonden in deze cursus' });
+      const ids = found.pages.map(p => p.id);
+      if (ids.length) {
+        await supabaseAdmin.from('concept_evidence').delete().in('document_id', ids);
+        await supabaseAdmin.from('document_chunks').delete().in('document_id', ids);
+        const { error: delErr } = await supabaseAdmin.from('documents').delete().in('id', ids);
+        if (delErr) return res.status(500).json({ error: delErr.message });
+      }
+      const { error: srcErr } = await supabaseAdmin.from('web_sources').delete().eq('id', sourceId);
+      if (srcErr) return res.status(500).json({ error: srcErr.message });
+      if (ids.length) await markDocsChanged(courseId);
+      return res.json({ deleted: ids.length });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
   // ── POST: eenmalige controle — meerdere besluiten tegelijk toepassen ───────
   app.post('/api/admin/course-files/:courseId/review', async (req, res) => {
     const auth = await requireStaff(req, res);
@@ -496,7 +633,7 @@ export function registerCourseFilesRoutes(app, deps) {
     if (!auth) return;
     const { courseId } = req.params;
     try {
-      const { files, projects, scope } = await listFiles(courseId);
+      const { files, projects, scope, webSources } = await listFiles(courseId);
 
       // Documenten die de quiz mag gebruiken: RAG-mappen van de cursus met een
       // actieve quiz-koppeling (zelfde regel als /api/rag-enabled-folders,
@@ -561,7 +698,7 @@ export function registerCourseFilesRoutes(app, deps) {
       const lastDocChange = [parse(`__doc_mutation_${courseId}__`, 'lastMutationAt'), newestMaterial].filter(Boolean).sort().pop() || null;
       const docsChanged = docsChangedSinceConcepts({ lastDocChange, lastConceptsRun: parse(`__concepts_regen_${courseId}__`, 'lastRegenAt') });
 
-      const warnings = buildReadinessWarnings({ files, concepts, projects, docsChanged });
+      const warnings = buildReadinessWarnings({ files, concepts, projects, docsChanged, webSources });
       return res.json({ counts, concepts, projects, warnings });
     } catch (err) {
       return res.status(500).json({ error: err.message });

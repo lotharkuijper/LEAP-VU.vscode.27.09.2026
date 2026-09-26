@@ -180,6 +180,8 @@ beforeAll(async () => {
   // hier expliciet aan zodat de top-up/skip-paden getest worden (de in-memory
   // stub kent de kolom en geeft geen fout terug).
   await mod.detectDocumentsContentHash();
+  // Idem voor websitebronnen: de stub kent de tabel web_sources.
+  await mod.detectWebSources();
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
 });
@@ -218,6 +220,9 @@ function seed({ user = ADMIN, teacherCourses = [], course = true } = {}) {
     folder_permissions: [],
     documents: [],
     document_chunks: [],
+    web_sources: [],
+    concept_evidence: [],
+    chatbot_prompts: [],
   };
   harness.resetDb(tables);
 }
@@ -792,5 +797,107 @@ describe('POST /api/admin/import-web/import', () => {
     expect(embedCalls).toBe(1);
     expect(harness.state.db.tables.documents.length).toBe(0);
     expect(harness.state.db.tables.document_chunks.length).toBe(0);
+  });
+});
+
+// ===========================================================================
+// DOEL + WEBSITEBRON (herinrichting 2026-09-26)
+// ===========================================================================
+describe('web-import: doel en websitebron', () => {
+  const BASE = 'https://example.com/book/';
+
+  // Regressie: pagina's kregen geen doel en belandden allemaal als
+  // "onbevestigd" in de eenmalige controle van Cursusmateriaal.
+  it('geeft elke geïmporteerde pagina een bevestigd doel (default leerstof)', async () => {
+    seed({ user: ADMIN });
+    mockFetch({ [BASE + 'a.html']: page('A'), [BASE + 'b.html']: page('B') });
+    const res = await post('/api/admin/import-web/import', {
+      courseId: COURSE_ID, baseUrl: BASE, pages: [{ url: BASE + 'a.html' }, { url: BASE + 'b.html' }],
+    });
+    expect(res.status).toBe(200);
+    const docs = harness.state.db.tables.documents;
+    expect(docs).toHaveLength(2);
+    for (const d of docs) {
+      expect(d.purpose).toBe('course_material');
+      expect(d.purpose_confirmed_at).toBeTruthy();
+    }
+  });
+
+  it('neemt een gekozen doel (cursusinformatie) over', async () => {
+    seed({ user: ADMIN });
+    mockFetch({ [BASE + 'a.html']: page('A') });
+    const res = await post('/api/admin/import-web/import', {
+      courseId: COURSE_ID, baseUrl: BASE, purpose: 'course_info', pages: [{ url: BASE + 'a.html' }],
+    });
+    expect(res.status).toBe(200);
+    expect(harness.state.db.tables.documents[0].purpose).toBe('course_info');
+    expect(harness.state.db.tables.web_sources[0].purpose).toBe('course_info');
+  });
+
+  it('weigert een doel dat voor webpagina\'s niet kan (400)', async () => {
+    seed({ user: ADMIN });
+    const res = await post('/api/admin/import-web/import', {
+      courseId: COURSE_ID, baseUrl: BASE, purpose: 'shared', pages: [{ url: BASE + 'a.html' }],
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('webPageOnlyRag');
+  });
+
+  it('groepeert de pagina\'s onder één websitebron, ook bij een tweede import', async () => {
+    seed({ user: ADMIN });
+    mockFetch({ [BASE + 'a.html']: page('A'), [BASE + 'b.html']: page('B') });
+    await post('/api/admin/import-web/import', { courseId: COURSE_ID, baseUrl: BASE, pages: [{ url: BASE + 'a.html' }] });
+    const second = await post('/api/admin/import-web/import', { courseId: COURSE_ID, baseUrl: BASE, pages: [{ url: BASE + 'b.html' }] });
+    const sources = harness.state.db.tables.web_sources;
+    expect(sources).toHaveLength(1);
+    expect(sources[0]).toMatchObject({ course_id: COURSE_ID, base_url: BASE, title: 'example.com/book' });
+    expect(second.body.webSourceId).toBe(sources[0].id);
+    expect(harness.state.db.tables.documents.every((d) => d.web_source_id === sources[0].id)).toBe(true);
+    expect(sources[0].last_synced_at).toBeTruthy();
+    expect(sources[0].last_sync_summary).toMatchObject({ total: 1, imported: 1, errors: 0 });
+  });
+
+  it('opnieuw ophalen: haalt alle bekende pagina\'s op en meldt verdwenen pagina\'s zonder ze te verwijderen', async () => {
+    seed({ user: ADMIN });
+    mockFetch({ [BASE + 'a.html']: page('A'), [BASE + 'b.html']: page('B') });
+    const first = await post('/api/admin/import-web/import', {
+      courseId: COURSE_ID, baseUrl: BASE, pages: [{ url: BASE + 'a.html' }, { url: BASE + 'b.html' }],
+    });
+    const sourceId = first.body.webSourceId;
+    const chunksBefore = harness.state.db.tables.document_chunks.length;
+
+    // b.html bestaat niet meer (404), a.html is gewijzigd.
+    mockFetch({ [BASE + 'a.html']: page('A — herzien') });
+    const res = await post('/api/admin/import-web/import', { courseId: COURSE_ID, webSourceId: sourceId, resync: true, pages: [] });
+    expect(res.status).toBe(200);
+    expect(res.body.summary).toMatchObject({ total: 2, imported: 1, errors: 1, notFound: 1 });
+    // De verdwenen pagina blijft staan, met haar fragmenten.
+    expect(harness.state.db.tables.documents).toHaveLength(2);
+    const bDoc = harness.state.db.tables.documents.find((d) => d.file_path === BASE + 'b.html');
+    expect(harness.state.db.tables.document_chunks.some((c) => c.document_id === bDoc.id)).toBe(true);
+    expect(harness.state.db.tables.document_chunks.length).toBeGreaterThanOrEqual(chunksBefore - 1);
+    expect(harness.state.db.tables.web_sources[0].last_sync_summary.notFound).toBe(1);
+  });
+
+  it('opnieuw ophalen weigert een websitebron van een andere cursus (404)', async () => {
+    seed({ user: ADMIN });
+    harness.state.db.tables.web_sources.push({ id: 'src-x', course_id: 'andere-cursus', base_url: BASE, purpose: 'course_material' });
+    const res = await post('/api/admin/import-web/import', { courseId: COURSE_ID, webSourceId: 'src-x', resync: true, pages: [] });
+    expect(res.status).toBe(404);
+  });
+
+  it('naar cursusinformatie bij her-import: bewijs voor begrippen vervalt, ook als de pagina ongewijzigd is', async () => {
+    seed({ user: ADMIN });
+    mockFetch({ [BASE + 'a.html']: page('A') });
+    await post('/api/admin/import-web/import', { courseId: COURSE_ID, baseUrl: BASE, pages: [{ url: BASE + 'a.html' }] });
+    const doc = harness.state.db.tables.documents[0];
+    harness.state.db.tables.concept_evidence.push({ id: 'ev1', concept_id: 'c1', document_id: doc.id });
+
+    const res = await post('/api/admin/import-web/import', {
+      courseId: COURSE_ID, baseUrl: BASE, purpose: 'course_info', pages: [{ url: BASE + 'a.html' }],
+    });
+    expect(res.body.skipped).toBe(1); // ongewijzigd: niet opnieuw geëmbed
+    expect(harness.state.db.tables.documents[0].purpose).toBe('course_info');
+    expect(harness.state.db.tables.concept_evidence).toHaveLength(0);
   });
 });

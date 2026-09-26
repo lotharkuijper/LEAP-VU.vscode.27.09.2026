@@ -130,7 +130,7 @@ import {
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
-import { registerCourseFilesRoutes } from './courseFiles.js';
+import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
 import { purposeAllowsModule } from './filePurpose.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
@@ -540,6 +540,24 @@ async function detectDocumentsContentHash() {
   } catch (e) {
     documentsHasContentHash = false;
     console.warn('[API Server] documents.content_hash detectie mislukt:', e.message);
+  }
+}
+
+// Websitebronnen (migratie 20260926100000_web_sources): groeperen de pagina's
+// van één website zodat de docent ze in één keer kan bijwerken, van doel
+// wisselen of verwijderen. Zonder de migratie werkt de web-import als voorheen
+// (losse pagina's), maar krijgen pagina's wél een bevestigd doel.
+let webSourcesAvailable = false;
+async function detectWebSources() {
+  if (!supabaseAdmin) return;
+  try {
+    const { error } = await supabaseAdmin.from('web_sources').select('id').limit(1);
+    const { error: colErr } = await supabaseAdmin.from('documents').select('web_source_id').limit(1);
+    webSourcesAvailable = !error && !colErr;
+    console.log(`[API Server] web_sources: ${webSourcesAvailable ? 'beschikbaar' : 'niet gemigreerd — webpagina\'s verschijnen als losse bestanden'}`);
+  } catch (e) {
+    webSourcesAvailable = false;
+    console.warn('[API Server] web_sources detectie mislukt:', e.message);
   }
 }
 
@@ -2979,20 +2997,34 @@ app.post('/api/admin/import-web/discover', async (req, res) => {
 });
 
 // POST /api/admin/import-web/import — importeer geselecteerde pagina's als
-// RAG-bronnen in de cursus (Task #234). Body: { courseId, baseUrl, pages: [{url,title?}] }.
+// RAG-bronnen in de cursus (Task #234). Body: { courseId, baseUrl, pages: [{url,title?}],
+// purpose?, webSourceId?, resync? }.
 // Per pagina: ophalen → schone tekst → chunks → embeddings → opslaan als
 // documents-rij (file_type='web', file_path=url) + document_chunks. Idempotent
 // per (folder, url): bestaande web-bron wordt hergebruikt en bijgewerkt.
+// Elke pagina krijgt een BEVESTIGD doel (leerstof of cursusinformatie, default
+// leerstof) en — als de migratie er is — hangt aan één websitebron per
+// (cursus, baseUrl). `resync: true` + `webSourceId` haalt alle bekende pagina's
+// van die bron opnieuw op (ongewijzigde worden overgeslagen).
 app.post('/api/admin/import-web/import', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'DB niet beschikbaar' });
   const r = await resolveAdminUser(req);
   if (r.error) return res.status(r.error.status).json(r.error.body);
 
   const courseId = req.body?.courseId;
-  const baseUrl = String(req.body?.baseUrl || '').trim();
-  const pages = Array.isArray(req.body?.pages) ? req.body.pages : [];
+  let baseUrl = String(req.body?.baseUrl || '').trim();
+  let pages = Array.isArray(req.body?.pages) ? req.body.pages : [];
+  const requestedPurpose = req.body?.purpose;
+  const webSourceId = typeof req.body?.webSourceId === 'string' ? req.body.webSourceId : null;
+  const resync = req.body?.resync === true;
   if (!courseId) return res.status(400).json({ error: 'courseId is verplicht.' });
-  if (pages.length === 0) return res.status(400).json({ error: 'Geen pagina\'s geselecteerd om te importeren.' });
+  if (requestedPurpose !== undefined && !WEB_SOURCE_PURPOSES.includes(requestedPurpose)) {
+    return res.status(400).json({ error: 'Een website kan alleen leerstof of cursusinformatie zijn.', code: 'webPageOnlyRag' });
+  }
+  if (resync && (!webSourceId || !webSourcesAvailable)) {
+    return res.status(400).json({ error: 'Opnieuw ophalen kan alleen voor een bestaande websitebron.' });
+  }
+  if (pages.length === 0 && !resync) return res.status(400).json({ error: 'Geen pagina\'s geselecteerd om te importeren.' });
 
   if (!(await isStaffForCourse(r.user, r.profile, courseId))) {
     return res.status(403).json({ error: 'Je bent geen docent van deze cursus.' });
@@ -3011,7 +3043,18 @@ app.post('/api/admin/import-web/import', async (req, res) => {
       .from('courses').select('id, name').eq('id', courseId).maybeSingle();
     if (!course) return res.status(404).json({ error: 'Cursus niet gevonden.' });
 
-    const { folderId } = await ensureCourseRagFolder(courseId, course.name, r.user.id);
+    // Bestaande websitebron (bijwerken/opnieuw ophalen): de scope en het doel
+    // komen dan uit de bron zelf, niet uit de client.
+    let source = null;
+    let createdSource = false;
+    if (webSourceId && webSourcesAvailable) {
+      const { data: src, error: srcErr } = await supabaseAdmin.from('web_sources')
+        .select('id, course_id, base_url, title, purpose').eq('id', webSourceId).maybeSingle();
+      if (srcErr) throw new Error(`Kon websitebron niet opzoeken: ${srcErr.message}`);
+      if (!src || src.course_id !== courseId) return res.status(404).json({ error: 'Website niet gevonden in deze cursus.' });
+      source = src;
+      baseUrl = src.base_url;
+    }
 
     // De baseUrl bepaalt de toegestane scope: alleen pagina's binnen dezelfde
     // webomgeving mogen geïmporteerd worden. Zonder geldige baseUrl weigeren we,
@@ -3019,6 +3062,39 @@ app.post('/api/admin/import-web/import', async (req, res) => {
     const scope = normalizeWebUrl(baseUrl);
     if (!scope || isBlockedWebHost(scope)) {
       return res.status(400).json({ error: 'Ongeldige of niet-toegestane baseUrl.' });
+    }
+
+    const { folderId } = await ensureCourseRagFolder(courseId, course.name, r.user.id);
+    const purpose = requestedPurpose || source?.purpose || 'course_material';
+
+    if (webSourcesAvailable && !source) {
+      // Eén bron per (cursus, baseUrl): een tweede import van dezelfde site vult
+      // de bestaande bron aan in plaats van een nieuwe te maken.
+      const { data: existingSrc, error: exErr } = await supabaseAdmin.from('web_sources')
+        .select('id, course_id, base_url, title, purpose').eq('course_id', courseId).eq('base_url', scope).maybeSingle();
+      if (exErr) throw new Error(`Kon websitebron niet opzoeken: ${exErr.message}`);
+      if (existingSrc) {
+        source = existingSrc;
+      } else {
+        const u = new URL(scope);
+        const { data: created, error: insErr } = await supabaseAdmin.from('web_sources')
+          .insert({ course_id: courseId, base_url: scope, title: (u.host + u.pathname).replace(/\/$/, ''), purpose, created_by: r.user.id })
+          .select('id, course_id, base_url, title, purpose').single();
+        if (insErr || !created) throw new Error(`Kon websitebron niet aanmaken: ${insErr?.message || 'onbekend'}`);
+        source = created;
+        createdSource = true;
+      }
+    }
+    if (source && source.purpose !== purpose) {
+      await supabaseAdmin.from('web_sources').update({ purpose }).eq('id', source.id);
+    }
+
+    if (resync) {
+      const { data: known, error: knownErr } = await supabaseAdmin.from('documents')
+        .select('file_path, title').eq('web_source_id', source.id).eq('file_type', 'web');
+      if (knownErr) throw new Error(`Kon pagina's van de website niet ophalen: ${knownErr.message}`);
+      pages = (known || []).map((d) => ({ url: d.file_path, title: d.title || '' }));
+      if (pages.length === 0) return res.status(400).json({ error: 'Deze website heeft nog geen pagina\'s om bij te werken.' });
     }
 
     // Pagina-URL's normaliseren, ontdubbelen, binnen de scope houden en niet naar
@@ -3035,6 +3111,7 @@ app.post('/api/admin/import-web/import', async (req, res) => {
       if (targets.length >= WEB_IMPORT_LIMITS.MAX_PAGES) break;
     }
     if (targets.length === 0) {
+      if (createdSource) await supabaseAdmin.from('web_sources').delete().eq('id', source.id);
       return res.status(400).json({ error: 'Geen geldige pagina\'s binnen de opgegeven website-scope.' });
     }
 
@@ -3095,10 +3172,39 @@ app.post('/api/admin/import-web/import', async (req, res) => {
     // 'completed'-staat met geldige chunks ongemoeid laat. De rij wordt pas op
     // 'completed' + total_chunks + content_hash gezet NÁ een geslaagde chunk-insert,
     // zodat geldt: completed + total_chunks>0 ⟺ er bestaan chunks.
+    // Doel + bron die elke geïmporteerde pagina krijgt (zelfde bevestiging als een
+    // upload met doel), zodat webpagina's niet als "onbevestigd" in de
+    // eenmalige controle belanden.
+    const webPageLabels = {
+      purpose,
+      purpose_confirmed_at: new Date().toISOString(),
+      ...(source ? { web_source_id: source.id } : {}),
+    };
+    // Cursusinformatie mag geen bewijs voor begrippen/quiz leveren (zelfde regel
+    // als planPurposeChange 'relabel').
+    const dropEvidenceIfBecameCourseInfo = async (doc) => {
+      if (purpose === 'course_info' && (doc.purpose || 'course_material') !== 'course_info') {
+        await supabaseAdmin.from('concept_evidence').delete().eq('document_id', doc.id);
+      }
+    };
+    // Een ongewijzigde pagina krijgt wél het (eventueel nieuwe) doel en de bron.
+    const applyWebPageLabels = async (doc) => {
+      const same = doc.purpose === purpose && doc.purpose_confirmed_at
+        && (!source || doc.web_source_id === source.id);
+      if (same) return;
+      await dropEvidenceIfBecameCourseInfo(doc);
+      const { error: labelErr } = await supabaseAdmin.from('documents').update(webPageLabels).eq('id', doc.id);
+      if (labelErr) throw new Error(`Kon doel van pagina niet bijwerken: ${labelErr.message}`);
+    };
+
     const processPage = async (target) => {
       const resp = await fetchWebPage(target.url, safeWebFetch, { scope, lookup: resolveHostAddresses });
       if (!resp.ok) {
-        return { url: target.url, status: 'error', counter: 'errors', message: resp.error || `HTTP ${resp.status || 'netwerkfout'}` };
+        // 404/410: de site levert de pagina niet meer. We verwijderen de bestaande
+        // leerstof NIET (een tijdelijk kapotte site mag niets laten verdwijnen),
+        // maar melden het apart zodat de docent kan beslissen.
+        const notFound = resp.status === 404 || resp.status === 410;
+        return { url: target.url, status: 'error', counter: 'errors', message: resp.error || `HTTP ${resp.status || 'netwerkfout'}`, ...(notFound ? { notFound: true } : {}) };
       }
       // Verdedigend: ook al checkt fetchWebPage redirects tegen de scope, valideer
       // de uiteindelijke URL nog eens zodat content buiten de webomgeving nooit
@@ -3117,9 +3223,9 @@ app.post('/api/admin/import-web/import', async (req, res) => {
       }
 
       // Idempotent: bestaande web-bron voor dezelfde URL in deze map opzoeken.
-      const selectCols = documentsHasContentHash
-        ? 'id, content_hash, processing_status, total_chunks'
-        : 'id';
+      const selectCols = (documentsHasContentHash
+        ? 'id, purpose, purpose_confirmed_at, content_hash, processing_status, total_chunks'
+        : 'id, purpose, purpose_confirmed_at') + (webSourcesAvailable ? ', web_source_id' : '');
       const { data: existingDoc, error: existingErr } = await supabaseAdmin
         .from('documents')
         .select(selectCols)
@@ -3150,6 +3256,7 @@ app.post('/api/admin/import-web/import', async (req, res) => {
         existingDoc.processing_status === 'completed' &&
         Number(existingDoc.total_chunks) > 0
       ) {
+        await applyWebPageLabels(existingDoc);
         return { url: target.url, status: 'skipped', counter: 'skipped', message: 'Ongewijzigd', title, unchanged: true };
       }
 
@@ -3180,6 +3287,7 @@ app.post('/api/admin/import-web/import', async (req, res) => {
           processing_status: 'processing',
           total_chunks: 0,
           uploaded_by: r.user.id,
+          ...webPageLabels,
         };
         const { data: newDoc, error: docErr } = await supabaseAdmin
           .from('documents').insert(insertRow).select('id').single();
@@ -3205,8 +3313,10 @@ app.post('/api/admin/import-web/import', async (req, res) => {
         mime_type: 'text/html',
         processing_status: 'completed',
         total_chunks: chunks.length,
+        ...webPageLabels,
       };
       if (documentsHasContentHash) finalizeUpd.content_hash = contentHash;
+      if (existingDoc) await dropEvidenceIfBecameCourseInfo(existingDoc);
       const { error: finErr } = await supabaseAdmin.from('documents').update(finalizeUpd).eq('id', docId);
       if (finErr) throw new Error(`Kon document niet afronden: ${finErr.message}`);
 
@@ -3245,8 +3355,19 @@ app.post('/api/admin/import-web/import', async (req, res) => {
     }
 
     if (heartbeat) { clearInterval(heartbeat); heartbeat = null; }
+    // Ook bij een afgekapte stream vastleggen wat er wél is opgehaald, zodat de
+    // bron in Cursusmateriaal een eerlijke "laatst bijgewerkt" toont.
+    const summary = summarizeWebSync(results);
+    if (source) {
+      const { error: syncErr } = await supabaseAdmin.from('web_sources')
+        .update({ last_synced_at: new Date().toISOString(), last_sync_summary: summary }).eq('id', source.id);
+      if (syncErr) console.warn(`[import-web/import] ophaalstatus niet opgeslagen (${source.id}):`, syncErr.message);
+    }
+    if (imported > 0) {
+      try { await recordDocMutation(supabaseAdmin, courseId); } catch (e) { console.warn('[import-web/import] documentwijziging niet geregistreerd:', e.message); }
+    }
     if (!clientGone) {
-      safeEmit({ type: 'done', imported, skipped, errors, outOfScope, totalChunks, folderId, courseName: course.name, results });
+      safeEmit({ type: 'done', imported, skipped, errors, outOfScope, totalChunks, folderId, courseName: course.name, results, webSourceId: source?.id || null, purpose, summary });
     } else {
       console.warn(`[import-web/import] client verbroken — ${imported} geïmporteerd, ${skipped} overgeslagen van ${targets.length} pagina's voor de verbinding sloot. Her-import slaat ongewijzigde pagina's over.`);
     }
@@ -6122,6 +6243,7 @@ registerCourseFilesRoutes(app, {
   processRagDocumentById,
   createProjectDocumentFromBuffer: (...a) => createProjectDocumentFromBuffer(...a),
   getFileMimeType,
+  webSourcesReady: () => webSourcesAvailable,
 });
 
 app.delete('/api/admin/concepts/:id', async (req, res) => {
@@ -14559,6 +14681,7 @@ if (process.env.NODE_ENV !== 'test') {
     detectQuizSourcesSchema();
     detectConceptEvidenceSchema();
     detectDocumentsContentHash();
+    detectWebSources();
     initChatbotPromptSection();
     // Wacht kort tot promptsHasSection geinitialiseerd is alvorens quiz-prompts
     // aan te maken (initChatbotPromptSection draait async).
@@ -14580,4 +14703,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-export { app, detectDocumentsContentHash };
+export { app, detectDocumentsContentHash, detectWebSources };

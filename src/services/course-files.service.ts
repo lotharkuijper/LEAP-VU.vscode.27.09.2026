@@ -14,10 +14,37 @@ export interface CourseFile {
   processing_status: 'pending' | 'processing' | 'completed' | 'failed' | string;
   total_chunks: number | null;
   isWeb: boolean;
+  /** Adres van een webpagina (alleen bij isWeb). */
+  url?: string | null;
+  /** Websitebron waar deze pagina bij hoort (null = losse pagina of geen migratie). */
+  webSourceId?: string | null;
   folderName: string | null;
   purpose: Purpose;
   purposeConfirmed: boolean;
   suggestion: PurposeSuggestion | null;
+}
+
+export interface WebSyncSummary {
+  total: number;
+  imported: number;
+  unchanged: number;
+  skipped: number;
+  errors: number;
+  notFound: number;
+}
+
+/** Een website als één bron: alle pagina's samen. */
+export interface WebSource {
+  id: string;
+  baseUrl: string;
+  title: string;
+  purpose: 'course_material' | 'course_info';
+  createdAt: string;
+  lastSyncedAt: string | null;
+  lastSync: WebSyncSummary | null;
+  pageCount: number;
+  chunkCount: number;
+  failedPages: number;
 }
 
 export interface ProjectDocument {
@@ -50,7 +77,8 @@ export interface ReadinessConcept {
 
 export type WarningCode =
   | 'unconfirmedPurposes' | 'noCourseMaterial' | 'sensitiveVisible' | 'processingFailed' | 'processingBusy'
-  | 'noChunks' | 'singleGiantChunk' | 'conceptsWithoutEvidence' | 'noConcepts' | 'projectWithoutDocuments' | 'docsChanged';
+  | 'noChunks' | 'singleGiantChunk' | 'conceptsWithoutEvidence' | 'noConcepts' | 'projectWithoutDocuments' | 'docsChanged'
+  | 'webSourceProblems' | 'webSourceStale';
 
 export interface ReadinessWarning {
   code: WarningCode;
@@ -98,7 +126,7 @@ async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const fetchCourseFiles = (courseId: string) =>
-  request<{ files: CourseFile[]; projects: CourseProject[]; unconfirmedCount: number }>(`/api/admin/course-files/${courseId}`);
+  request<{ files: CourseFile[]; projects: CourseProject[]; webSources?: WebSource[]; unconfirmedCount: number }>(`/api/admin/course-files/${courseId}`);
 
 export const fetchReadiness = (courseId: string) =>
   request<Readiness>(`/api/admin/course-readiness/${courseId}`);
@@ -108,6 +136,15 @@ export const changePurpose = (courseId: string, docId: string, d: Omit<PurposeDe
     method: 'PATCH',
     body: JSON.stringify(d),
   });
+
+export const changeWebSourcePurpose = (courseId: string, sourceId: string, purpose: WebSource['purpose']) =>
+  request<{ purpose: WebSource['purpose']; pages: number; failed: number }>(`/api/admin/course-files/${courseId}/web-sources/${sourceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ purpose }),
+  });
+
+export const deleteWebSource = (courseId: string, sourceId: string) =>
+  request<{ deleted: number }>(`/api/admin/course-files/${courseId}/web-sources/${sourceId}`, { method: 'DELETE' });
 
 export const applyReview = (courseId: string, decisions: PurposeDecision[]) =>
   request<{ ok: boolean; results: Array<{ docId: string; ok: boolean; error?: string }> }>(`/api/admin/course-files/${courseId}/review`, {

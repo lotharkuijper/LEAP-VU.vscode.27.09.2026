@@ -9,6 +9,7 @@ import {
   type CourseFile,
   type CourseProject,
   type Readiness,
+  type WebSource,
 } from '../../services/course-files.service';
 import { RAGDocumentStatusPanel } from '../RAGDocumentStatusPanel';
 import { FilesStep } from './FilesStep';
@@ -44,6 +45,7 @@ export function CourseMaterialWorkspace({
   const { activeCourseId, activeCourse } = useActiveCourse();
   const [files, setFiles] = useState<CourseFile[] | null>(null);
   const [projects, setProjects] = useState<CourseProject[]>([]);
+  const [webSources, setWebSources] = useState<WebSource[]>([]);
   const [readiness, setReadiness] = useState<Readiness | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,6 +89,7 @@ export function CourseMaterialWorkspace({
       const [f, r] = await Promise.all([fetchCourseFiles(activeCourseId), fetchReadiness(activeCourseId)]);
       setFiles(f.files);
       setProjects(f.projects);
+      setWebSources(f.webSources || []);
       setReadiness(r);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -182,7 +185,7 @@ export function CourseMaterialWorkspace({
       {files && step === 'files' && (
         <>
           <WarningList warnings={warningsFor('files').filter(w => w.code !== 'unconfirmedPurposes')} onGoTo={onStepChange} />
-          <FilesStep courseId={activeCourseId} files={files} projects={projects} onChanged={() => void load()} onGoToProjects={() => onGoToTab('projects_admin')} />
+          <FilesStep courseId={activeCourseId} files={files} projects={projects} webSources={webSources} onChanged={() => void load()} onGoToProjects={() => onGoToTab('projects_admin')} />
         </>
       )}
 

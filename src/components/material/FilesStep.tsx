@@ -10,10 +10,13 @@ import {
   type CourseFile,
   type CourseProject,
   type Purpose,
+  type WebSource,
 } from '../../services/course-files.service';
 import { suggestPurpose } from '../../../server/filePurpose.js';
 import { PURPOSE_ORDER, PURPOSE_STYLE, formatBytes } from './purposeUi';
 import { PurposePicker, type PurposeValue } from './PurposePicker';
+import { WebSourceRow } from './WebSourceRow';
+import { WebImportPanel } from '../WebImportPanel';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -37,12 +40,14 @@ export function FilesStep({
   courseId,
   files,
   projects,
+  webSources = [],
   onChanged,
   onGoToProjects,
 }: {
   courseId: string;
   files: CourseFile[];
   projects: CourseProject[];
+  webSources?: WebSource[];
   onChanged: () => void;
   onGoToProjects: () => void;
 }) {
@@ -59,13 +64,17 @@ export function FilesStep({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [addingWebsite, setAddingWebsite] = useState(false);
 
+  // Pagina's van een bekende websitebron staan onder die bron, niet als losse rij.
+  const sourceIds = useMemo(() => new Set(webSources.map(s => s.id)), [webSources]);
   const byPurpose = useMemo(() => {
     const m = new Map<Purpose, CourseFile[]>();
     for (const p of PURPOSE_ORDER) m.set(p, []);
-    for (const f of files) m.get(f.purpose)?.push(f);
+    for (const f of files) if (!(f.webSourceId && sourceIds.has(f.webSourceId))) m.get(f.purpose)?.push(f);
     return m;
-  }, [files]);
+  }, [files, sourceIds]);
+  const pagesOf = (id: string) => files.filter(f => f.webSourceId === id);
 
   const errorText = (err: unknown) => {
     if (err instanceof CourseFilesError && err.code) {
@@ -165,7 +174,18 @@ export function FilesStep({
     <div className="space-y-6">
       {/* Uploaden met doel */}
       <section className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4" data-testid="panel-upload">
-        <h3 className="font-semibold text-gray-900">{t('material.upload.title')}</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="font-semibold text-gray-900">{t('material.upload.title')}</h3>
+          <button
+            type="button"
+            onClick={() => setAddingWebsite(true)}
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium border border-sky-300 text-sky-800 bg-white hover:bg-sky-50"
+            data-testid="button-add-website"
+          >
+            <Globe className="w-4 h-4" />
+            {t('material.web.add')}
+          </button>
+        </div>
         <div
           onClick={() => inputRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragOver(true); }}
@@ -236,6 +256,7 @@ export function FilesStep({
         const s = PURPOSE_STYLE[p];
         const Icon = s.icon;
         const list = byPurpose.get(p) || [];
+        const sources = webSources.filter(w => w.purpose === p);
         const projectDocCount = p === 'project' ? projects.reduce((n, pr) => n + pr.documents.length, 0) : 0;
         return (
           <section key={p} className={`rounded-2xl border ${s.ring} bg-white`} data-testid={`section-purpose-${p}`}>
@@ -245,6 +266,9 @@ export function FilesStep({
                 <h3 className="font-semibold text-gray-900">
                   {tk(`filePurpose.${p}.label`)}{' '}
                   <span className="text-xs font-normal text-gray-500">{t('material.files.count', { n: String(list.length + projectDocCount) })}</span>
+                  {sources.length > 0 && (
+                    <span className="text-xs font-normal text-gray-500"> · {t('material.web.count', { n: String(sources.length) })}</span>
+                  )}
                 </h3>
                 <p className="text-xs text-gray-600">{tk(`filePurpose.${p}.desc`)}</p>
               </div>
@@ -277,7 +301,15 @@ export function FilesStep({
               </div>
             )}
 
-            {list.length === 0 && p !== 'project' ? (
+            {sources.length > 0 && (
+              <ul className="divide-y divide-gray-100 border-b border-gray-100" data-testid={`list-web-sources-${p}`}>
+                {sources.map(src => (
+                  <WebSourceRow key={src.id} courseId={courseId} source={src} pages={pagesOf(src.id)} onChanged={onChanged} />
+                ))}
+              </ul>
+            )}
+
+            {list.length === 0 && sources.length === 0 && p !== 'project' ? (
               <p className="px-5 py-3 text-sm text-gray-500">{t('material.files.empty')}</p>
             ) : list.length > 0 && (
               <ul className="divide-y divide-gray-100">
@@ -325,6 +357,23 @@ export function FilesStep({
           </section>
         );
       })}
+
+      {/* Website toevoegen */}
+      {addingWebsite && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="title-add-website" data-testid="dialog-add-website">
+          <div className="chic-card max-w-3xl w-full p-6 space-y-4 my-8">
+            <div className="flex items-start justify-between gap-3">
+              <h3 id="title-add-website" className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Globe className="w-5 h-5 text-sky-600" />{t('material.web.addTitle')}
+              </h3>
+              <button type="button" onClick={() => setAddingWebsite(false)} className="p-1 rounded-lg hover:bg-gray-100" aria-label={t('material.files.cancel')} data-testid="button-close-add-website">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <WebImportPanel courseId={courseId} embedded onImported={() => onChanged()} />
+          </div>
+        </div>
+      )}
 
       {/* Doel wijzigen */}
       {moving && (

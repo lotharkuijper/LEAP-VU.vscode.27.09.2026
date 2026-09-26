@@ -21,6 +21,9 @@ export interface PageImportResult {
   title?: string;
   chunks?: number;
   message?: string;
+  // True wanneer de site de pagina niet meer levert (404/410); de bestaande
+  // leerstof blijft staan.
+  notFound?: boolean;
   // True wanneer de pagina ongewijzigd was sinds de vorige import (content-hash
   // match) en daarom is overgeslagen zonder opnieuw te embedden.
   unchanged?: boolean;
@@ -35,6 +38,20 @@ export interface WebImportResult {
   folderId: string;
   courseName: string;
   results: PageImportResult[];
+  // Websitebron waar de pagina's nu bij horen (null zonder migratie).
+  webSourceId?: string | null;
+  purpose?: WebImportPurpose;
+  summary?: { total: number; imported: number; unchanged: number; skipped: number; errors: number; notFound: number };
+}
+
+// Een website kan alleen leerstof of cursusinformatie zijn.
+export type WebImportPurpose = 'course_material' | 'course_info';
+
+export interface WebImportOptions {
+  purpose?: WebImportPurpose;
+  // Bestaande websitebron: aanvullen of (met resync) alle pagina's opnieuw ophalen.
+  webSourceId?: string;
+  resync?: boolean;
 }
 
 async function authHeaders(): Promise<Record<string, string>> {
@@ -97,11 +114,12 @@ export async function importWebPages(
   baseUrl: string,
   pages: DiscoveredPage[],
   onProgress?: (p: WebImportProgress) => void,
+  options: WebImportOptions = {},
 ): Promise<WebImportResult> {
   const res = await fetch('/api/admin/import-web/import', {
     method: 'POST',
     headers: await authHeaders(),
-    body: JSON.stringify({ courseId, baseUrl, pages }),
+    body: JSON.stringify({ courseId, baseUrl, pages, ...options }),
   });
   if (!res.ok) throw new Error(await parseError(res));
   if (!res.body) throw new Error('Geen stream-antwoord van de server.');

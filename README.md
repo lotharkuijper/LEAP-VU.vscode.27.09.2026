@@ -24,8 +24,10 @@ LEAP-VU is een webapplicatie van de VU Amsterdam waarin studenten met AI-onderst
   | Alleen voor docenten | antwoordmodellen, tentamens | nooit | nooit (afgeschermd in de database) |
 
   LEAP stelt bij uploaden een doel voor op basis van naam en inhoud. Bestaande bestanden gaan één keer door een controle. Leerstof en cursusinformatie worden omgezet naar platte tekst, in chunks verdeeld (~380 tokens met 60 tokens overlap), voorzien van embeddings en opgeslagen in pgvector. "Klaar voor studenten" toont waarschuwingen (bijv. begrippen zonder bronfragment, zichtbare antwoordmodellen) en laat je een voorbeeldvraag maken als student.
+
+  **Websites als bron:** met *Website toevoegen* (in *Bestanden*) plak je het adres van een leeromgeving of documentatiesite (bijv. een Quarto-boek). LEAP zoekt de pagina's (sitemap of links, max. 80), je vinkt ze per pagina of per map aan en kiest *Leerstof* of *Cursusinformatie*. De site verschijnt daarna als één bron met aantal pagina's, fragmenten en datum van laatste ophaling. *Opnieuw ophalen* verwerkt alleen gewijzigde pagina's opnieuw; pagina's die de site niet meer levert worden gemeld maar niet stilzwijgend verwijderd. Doel wijzigen en verwijderen gaan per hele site (tabel `web_sources`, migratie `20260926100000_web_sources.sql`).
 - **Cursusbeheer** (`/admin/courses`) — cursussen, zichtbaarheid, banners en leden beheren.
-- **Beheer** (`/admin`) — onder *Mijn cursus*: quizbronnen, projecten, cursus-info, leerniveaus, persona's, chat-instructies, zoekgevoeligheid (Ruim / Gebalanceerd / Streng), imports en gebruikers toevoegen. Onder *Systeembeheer* (admin): gebruikers en instellingen. De vorige indeling (Documenten, RAG Beheer, Begrippen) staat ingeklapt onder *Klassieke weergave*.
+- **Beheer** (`/admin`) — onder *Mijn cursus*: quizbronnen, projecten, cursus-info, leerniveaus, persona's, chat-instructies, zoekgevoeligheid (Ruim / Gebalanceerd / Streng), imports (externe vraagbanken zoals ShareStats) en gebruikers toevoegen. Onder *Systeembeheer* (admin): gebruikers en instellingen. De vorige indeling (Documenten, RAG Beheer, Begrippen) staat ingeklapt onder *Klassieke weergave*.
 
 ### Meertaligheid
 De interface is beschikbaar in 20 talen (o.a. Nederlands, Engels, Duits, Frans, Chinees, Arabisch); zie `src/i18n/locales/`. De AI antwoordt in de gekozen taal.

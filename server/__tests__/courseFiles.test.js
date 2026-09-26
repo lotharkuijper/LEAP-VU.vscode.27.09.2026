@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planPurposeChange, buildReadinessWarnings, docsChangedSinceConcepts } from '../courseFiles.js';
+import { planPurposeChange, buildReadinessWarnings, docsChangedSinceConcepts, summarizeWebSync, buildWebSourceList } from '../courseFiles.js';
 
 describe('planPurposeChange', () => {
   it('leerstof ↔ cursusinformatie: alleen het label, fragmenten blijven; naar cursusinfo vervalt het bewijs', () => {
@@ -103,5 +103,40 @@ describe('buildReadinessWarnings', () => {
     });
     const item = w.find(x => x.code === 'conceptsWithoutEvidence');
     expect(item.items).toEqual(['Ecologisch onderzoek']);
+  });
+});
+
+describe('websitebronnen', () => {
+  it('summarizeWebSync telt verdwenen pagina\'s apart binnen de fouten', () => {
+    expect(summarizeWebSync([
+      { status: 'imported' },
+      { status: 'skipped', unchanged: true },
+      { status: 'skipped' },
+      { status: 'error', notFound: true },
+      { status: 'error' },
+    ])).toEqual({ total: 5, imported: 1, unchanged: 1, skipped: 1, errors: 2, notFound: 1 });
+  });
+
+  it('buildWebSourceList telt pagina\'s en fragmenten per bron', () => {
+    const files = [
+      { webSourceId: 's1', total_chunks: 4, processing_status: 'completed' },
+      { webSourceId: 's1', total_chunks: 2, processing_status: 'failed' },
+      { webSourceId: null, total_chunks: 9, processing_status: 'completed' },
+    ];
+    const [s] = buildWebSourceList([{ id: 's1', base_url: 'https://x.nl/boek/', title: 'x.nl/boek', purpose: 'course_material' }], files);
+    expect(s).toMatchObject({ id: 's1', title: 'x.nl/boek', pageCount: 2, chunkCount: 6, failedPages: 1 });
+  });
+
+  it('meldt mislukte en verouderde websites in "Klaar voor studenten"', () => {
+    const now = new Date('2026-09-26').getTime();
+    const w = buildReadinessWarnings({
+      files: [], concepts: [], projects: [], now,
+      webSources: [
+        { title: 'kapot', lastSyncedAt: '2026-09-20', lastSync: { errors: 2 } },
+        { title: 'oud', lastSyncedAt: '2026-01-01', lastSync: { errors: 0 } },
+      ],
+    });
+    expect(w.find(x => x.code === 'webSourceProblems')).toMatchObject({ severity: 'warning', items: ['kapot'] });
+    expect(w.find(x => x.code === 'webSourceStale')).toMatchObject({ severity: 'info', items: ['oud'] });
   });
 });

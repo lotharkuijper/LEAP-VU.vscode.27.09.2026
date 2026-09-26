@@ -4,7 +4,6 @@ import { Download, ArrowRight, Library, Sparkles, Info, Globe } from 'lucide-rea
 import type { LucideIcon } from 'lucide-react';
 import { useLanguage } from '../i18n';
 import { ShareStatsImportPanel } from './ShareStatsImportPanel';
-import { WebImportPanel } from './WebImportPanel';
 
 // Een importbron = één bibliotheek die app-breed aan LEAP-VU gekoppeld is.
 // Nieuwe bibliotheken voeg je toe door één entry aan `sources` toe te voegen
@@ -19,9 +18,11 @@ interface ImportSource {
 
 interface ImportsHubPanelProps {
   onNavigateToQuizSources: () => void;
+  /** Websites horen sinds 2026-09-26 bij Cursusmateriaal (het is leerstof). */
+  onNavigateToMaterial?: () => void;
 }
 
-export function ImportsHubPanel({ onNavigateToQuizSources }: ImportsHubPanelProps) {
+export function ImportsHubPanel({ onNavigateToQuizSources, onNavigateToMaterial }: ImportsHubPanelProps) {
   const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -38,7 +39,24 @@ export function ImportsHubPanel({ onNavigateToQuizSources }: ImportsHubPanelProp
       label: t('admin.imports.sources.website.label'),
       description: t('admin.imports.sources.website.desc'),
       icon: Globe,
-      render: () => <WebImportPanel />,
+      // Een website is leerstof of cursusinformatie van één cursus, geen
+      // app-brede bibliotheek; toevoegen gebeurt daarom in Cursusmateriaal.
+      render: () => (
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-5 space-y-3" data-testid="panel-web-moved">
+          <p className="text-sm text-sky-900">{t('admin.imports.web.movedToMaterial')}</p>
+          {onNavigateToMaterial && (
+            <button
+              type="button"
+              onClick={onNavigateToMaterial}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-700 hover:text-sky-900"
+              data-testid="link-imports-to-material"
+            >
+              {t('admin.imports.web.toMaterial')}
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -108,10 +126,12 @@ export function ImportsHubPanel({ onNavigateToQuizSources }: ImportsHubPanelProp
         </div>
 
         <div className="flex-1 min-w-0" data-testid={`panel-import-source-${active.id}`}>
-          <div className="mb-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-            <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-900">{t('admin.imports.usageNote')}</p>
-          </div>
+          {active.id === 'sharestats' && (
+            <div className="mb-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
+              <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-900">{t('admin.imports.usageNote')}</p>
+            </div>
+          )}
           {active.render()}
         </div>
       </div>
