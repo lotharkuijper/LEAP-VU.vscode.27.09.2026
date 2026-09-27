@@ -162,3 +162,12 @@ describe('postChatCompletionWithRetry', () => {
     expect(await resp.json()).toBeNull();
   });
 });
+
+describe('completionTokenBudget', () => {
+  it('geeft reasoning-modellen ruimte bovenop de bedoelde lengte; andere modellen niet', async () => {
+    const { completionTokenBudget, REASONING_TOKEN_HEADROOM } = await import('../openaiSampling.js');
+    expect(completionTokenBudget(700, true)).toBe(700 + REASONING_TOKEN_HEADROOM);
+    expect(completionTokenBudget(700, false)).toBe(700);
+    expect(completionTokenBudget(undefined, true)).toBeUndefined();
+  });
+});

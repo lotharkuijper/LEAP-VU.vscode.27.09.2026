@@ -37,6 +37,21 @@ export function isEmptyOrTruncatedCompletion(data) {
   return false;
 }
 
+// Extra tokenruimte bovenop de bedoelde antwoordlengte voor reasoning-modellen.
+// Bij gpt-5.x telt max_completion_tokens de interne reasoning mee, en een
+// antwoord dat het budget overschrijdt komt LEEG terug (finish_reason
+// "length", alle tokens als reasoning geteld) in plaats van afgekapt. Gemeten
+// 2026-09-27: een persona-antwoord van ~1300–1700 tokens bij een budget van
+// 700 gaf structureel "(Geen antwoord)". Alleen werkelijk gebruikte tokens
+// worden gerekend, dus ruimte geven kost niets extra.
+export const REASONING_TOKEN_HEADROOM = 2000;
+
+/** Pure: het max-tokens-budget dat we naar het model sturen. */
+export function completionTokenBudget(maxTokens, isReasoningModel) {
+  if (maxTokens == null) return maxTokens;
+  return isReasoningModel ? maxTokens + REASONING_TOKEN_HEADROOM : maxTokens;
+}
+
 // Gedeelde helper voor álle chat-completion-aanroepen (quiz, beoordeling,
 // project-evaluatie, samenvattingen, …). Doet de POST en, wanneer het model een
 // aangepaste temperature/top_p weigert met een 400, probeert het verzoek één

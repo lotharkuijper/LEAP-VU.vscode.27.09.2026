@@ -110,7 +110,7 @@ import { sanitizeText, sanitizeMetadata } from './sanitizeText.js';
 import { promises as dnsPromises } from 'node:dns';
 import { Agent as UndiciAgent } from 'undici';
 import { createHash } from 'node:crypto';
-import { isUnsupportedSamplingParamError, isEmptyOrTruncatedCompletion, postChatCompletionWithRetry } from './openaiSampling.js';
+import { isUnsupportedSamplingParamError, isEmptyOrTruncatedCompletion, postChatCompletionWithRetry, completionTokenBudget } from './openaiSampling.js';
 import { computeChatConfig } from './chatConfig.js';
 import {
   normalizeTargetLang,
@@ -286,9 +286,12 @@ const REASONING_EFFORT = 'low';
 // reasoning-modellen krijgen de meegegeven temperature. De juiste max-tokens-sleutel
 // (max_completion_tokens vs max_tokens) wordt altijd gezet. Het centrale /api/chat-
 // pad heeft zijn eigen, uitgebreidere afhandeling (retry + lege/afgekapte detectie).
+// `maxTokens` is de bedoelde antwoordlengte; reasoning-modellen krijgen daar
+// ruimte bovenop (completionTokenBudget), anders komt een te lang antwoord leeg
+// terug in plaats van afgekapt.
 function chatModelParams({ temperature, maxTokens, reasoningEffort } = {}) {
   const params = {};
-  if (maxTokens != null) params[MAX_TOKENS_PARAM] = maxTokens;
+  if (maxTokens != null) params[MAX_TOKENS_PARAM] = completionTokenBudget(maxTokens, IS_REASONING_MODEL);
   if (IS_REASONING_MODEL) {
     params.reasoning_effort = reasoningEffort || REASONING_EFFORT;
   } else if (temperature != null) {
@@ -10682,21 +10685,40 @@ app.post('/api/projects/persona-chat', async (req, res) => {
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
-    const chatResp = await openaiChatCompletion({
-      model: OPENAI_MODEL,
-      messages: [
-        { role: 'system', content: systemContent },
-        ...history.map(h => ({ role: h.role, content: h.content })),
-        { role: 'user', content: message },
-      ],
-      ...chatModelParams({ temperature: 0.7, maxTokens: 700 }),
-    });
-    if (!chatResp.ok) {
-      const txt = await chatResp.text();
-      return res.status(502).json({ error: `Taalmodel-fout (${chatResp.status})`, detail: txt.slice(0, 500) });
+    const personaMessages = [
+      { role: 'system', content: systemContent },
+      // Oude placeholder-antwoorden van vóór 2026-09-27 niet terugvoeren als
+      // "wat de persona zei".
+      ...history.filter(h => !(h.role === 'assistant' && h.content === '(Geen antwoord)'))
+        .map(h => ({ role: h.role, content: h.content })),
+      { role: 'user', content: message },
+    ];
+    const askPersona = async (maxTokens) => {
+      const r = await openaiChatCompletion({
+        model: OPENAI_MODEL,
+        messages: personaMessages,
+        ...chatModelParams({ temperature: 0.7, maxTokens }),
+      });
+      if (!r.ok) return { ok: false, status: r.status, text: await r.text() };
+      return { ok: true, data: await r.json() };
+    };
+    let chatResult = await askPersona(700);
+    if (!chatResult.ok) {
+      return res.status(502).json({ error: `Taalmodel-fout (${chatResult.status})`, detail: chatResult.text.slice(0, 500) });
     }
-    const chatData = await chatResp.json();
-    const reply = chatData.choices?.[0]?.message?.content || '(Geen antwoord)';
+    // Een reasoning-model geeft bij een te krap budget een LEGE 200 terug
+    // (finish_reason "length"). Eén keer opnieuw met ruim budget; lukt dat ook
+    // niet, dan een duidelijke fout — nooit een nep-antwoord in het gesprek.
+    if (!String(chatResult.data?.choices?.[0]?.message?.content || '').trim()) {
+      console.warn(`[persona-chat] Leeg antwoord (finish_reason=${chatResult.data?.choices?.[0]?.finish_reason}, usage=${JSON.stringify(chatResult.data?.usage?.completion_tokens_details || {})}) — opnieuw met ruimer budget.`);
+      const retry = await askPersona(4000);
+      if (retry.ok) chatResult = retry;
+    }
+    const reply = String(chatResult.data?.choices?.[0]?.message?.content || '').trim();
+    if (!reply) {
+      console.error(`[persona-chat] Leeg antwoord na herhaling (finish_reason=${chatResult.data?.choices?.[0]?.finish_reason}, model=${OPENAI_MODEL}).`);
+      return res.status(502).json({ error: 'De persona gaf geen antwoord. Probeer je bericht opnieuw te sturen.', code: 'emptyCompletion' });
+    }
 
     if (threadId) {
       await supabaseAdmin.from('group_persona_messages').insert({

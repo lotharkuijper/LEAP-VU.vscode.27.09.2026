@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import http from 'http';
 import { buildLevelInstructionBlock } from '../learningLevel.js';
+import { REASONING_TOKEN_HEADROOM } from '../openaiSampling.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Endpoint-test (Task #301) die bewaakt dat het adaptieve leerniveau-blok
@@ -289,5 +290,46 @@ describe('POST /api/projects/persona-chat — leerniveau-injectie (Task #301)', 
     expect(sys).not.toContain(LEVEL_MARKER_EN);
     expect(sys).not.toContain(LEVEL_MARKER_NL);
     expect(sys).toContain(LANG_MARKER);
+  });
+});
+
+// Regressie 2026-09-27: persona "Dr. C. Zemouri" gaf "(Geen antwoord)". Een
+// reasoning-model (gpt-5.x) telt de reasoning mee in max_completion_tokens en
+// geeft bij een te krap budget een LEGE 200 (finish_reason "length") terug.
+describe('POST /api/projects/persona-chat — lege antwoorden van reasoning-modellen', () => {
+  const BASE = { groupId: 'g1', personaId: '__default__', message: 'Wij dachten aan de relatie tussen slaap en stress.' };
+  const emptyLength = () => makeResp(200, {
+    choices: [{ message: { role: 'assistant', content: '' }, finish_reason: 'length' }],
+    usage: { completion_tokens: 700, completion_tokens_details: { reasoning_tokens: 700 } },
+  });
+
+  it('geeft het reasoning-model ruimte bovenop de bedoelde antwoordlengte', async () => {
+    const fetchMock = mockChatFetch();
+    const res = await postJson('/api/projects/persona-chat', BASE);
+    expect(res.status).toBe(200);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.max_completion_tokens).toBe(700 + REASONING_TOKEN_HEADROOM);
+  });
+
+  it('probeert een leeg antwoord één keer opnieuw met ruimer budget en geeft dan het echte antwoord', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(emptyLength())
+      .mockResolvedValueOnce(makeResp(200, chatCompletion('Laten we jullie vraag scherper maken.')));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await postJson('/api/projects/persona-chat', BASE);
+    expect(res.status).toBe(200);
+    expect(res.body.reply).toBe('Laten we jullie vraag scherper maken.');
+    const budgets = fetchMock.mock.calls.map((c) => JSON.parse(c[1].body).max_completion_tokens);
+    expect(budgets[1]).toBeGreaterThan(budgets[0]);
+  });
+
+  it('geeft een duidelijke fout in plaats van "(Geen antwoord)" als ook de herhaling leeg is', async () => {
+    const fetchMock = vi.fn(async () => emptyLength());
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await postJson('/api/projects/persona-chat', BASE);
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe('emptyCompletion');
+    expect(JSON.stringify(res.body)).not.toContain('Geen antwoord)');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
