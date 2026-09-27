@@ -6,6 +6,9 @@ import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { AdminHint } from '../../components/help/AdminHint';
 import { supabase } from '../../lib/supabase';
+import { PersonaAvatar } from '../../components/PersonaAvatar';
+import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
+import type { AvatarConfig } from '../../lib/personaAvatar';
 import { Bot, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 /** Per sjabloon: de titels van de projecten die er een kopie van hebben. */
@@ -30,6 +33,7 @@ interface CoursePersona {
   course_id: string;
   name: string;
   avatar_emoji: string;
+  avatar?: AvatarConfig | null;
   system_prompt: string;
   rag_enabled: boolean;
   rag_folder_ids: string[];
@@ -45,6 +49,7 @@ interface ProjectOption {
 const EMPTY_FORM = {
   name: '',
   avatar_emoji: '🤖',
+  avatar: null as AvatarConfig | null,
   system_prompt: '',
   rag_enabled: true,
   persona_type: 'conversational' as string,
@@ -73,6 +78,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
   const [copies, setCopies] = useState<Array<{ source_persona_id: string | null; project_id: string }>>([]);
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [savedNew, setSavedNew] = useState<CoursePersona | null>(null);
+  const [faceOpen, setFaceOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!activeCourseId) { setPersonas([]); return; }
@@ -134,17 +140,20 @@ export function PersonaLibraryTab({ onOpenProjects }: {
       id: p.id,
       name: p.name,
       avatar_emoji: p.avatar_emoji,
+      avatar: p.avatar ?? null,
       system_prompt: p.system_prompt,
       rag_enabled: p.rag_enabled,
       persona_type: p.persona_type || 'conversational',
     });
     setEditingId(p.id);
+    setFaceOpen(false);
     setError(null);
   };
 
   const startNew = () => {
     setForm({ ...EMPTY_FORM });
     setEditingId('new');
+    setFaceOpen(false);
     setError(null);
   };
 
@@ -272,7 +281,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
           <ul className="divide-y divide-gray-100">
             {personas.map(p => (
               <li key={p.id} className="py-3 flex items-start gap-3" data-testid={`persona-row-${p.id}`}>
-                <span className="text-2xl">{p.avatar_emoji}</span>
+                <PersonaAvatar avatar={p.avatar} name={p.name} size={40} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900 flex items-center gap-2">
                     {p.name}
@@ -364,6 +373,26 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                     data-testid="input-cp-emoji"
                   />
                 </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <PersonaAvatar avatar={form.avatar} name={form.name} size={40} />
+                  <button
+                    type="button"
+                    onClick={() => setFaceOpen(o => !o)}
+                    aria-expanded={faceOpen}
+                    className="px-2.5 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                    data-testid="button-cp-face"
+                  >
+                    {faceOpen ? t('persona.avatar.done') : t('persona.avatar.edit')}
+                  </button>
+                  <HelpTip id="personas.avatar" />
+                </div>
+                {faceOpen && (
+                  <div className="mt-2">
+                    <PersonaAvatarEditor value={form.avatar} name={form.name} onChange={avatar => setForm({ ...form, avatar })} />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.personaLib.fieldType')}</label>

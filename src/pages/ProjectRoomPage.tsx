@@ -9,6 +9,7 @@ import { useLearningLevel } from '../hooks/useLearningLevel';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
 import { PersonaMessageBody, personaSourcesFrom } from '../components/PersonaMessageBody';
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
+import { PersonaAvatar } from '../components/PersonaAvatar';
 // De viewer (met pdf.js) pas laden als een student een bron opent.
 const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m => ({ default: m.DocumentViewer })));
 import {
@@ -22,6 +23,7 @@ interface Persona {
   id: string;
   name: string;
   avatar_emoji: string;
+  avatar?: unknown;
   system_prompt: string;
   rag_enabled: boolean;
   rag_folder_ids: string[];
@@ -126,6 +128,7 @@ interface EvaluatorPersona {
   id: string;
   name: string;
   avatar_emoji: string | null;
+  avatar?: unknown;
   rubrics?: EvaluatorRubric[];
 }
 type ReviewVerdict = 'accepted' | 'conditional' | 'rejected';
@@ -164,6 +167,7 @@ interface RelationshipInfo {
   personaId: string;
   personaName: string;
   avatarEmoji: string | null;
+  avatar?: unknown;
   personaType: 'conversational' | 'evaluator';
   score: number | null;
   bucket: RelationshipBucket;
@@ -204,6 +208,7 @@ interface ClosedConversation {
   personaId: string;
   personaName: string;
   avatarEmoji: string;
+  avatar?: unknown;
   closedAt: string;
   topics: string[];
   agreements: string[];
@@ -1176,6 +1181,7 @@ export function ProjectRoomPage() {
               <label htmlFor="persona-select" className="text-xs font-medium text-gray-600 flex items-center gap-1">
                 <Bot className="w-4 h-4" /> {t('room.personaLabel')}
               </label>
+              {activePersona && <PersonaAvatar avatar={activePersona.avatar} name={activePersona.name} size={32} />}
               <select
                 id="persona-select"
                 value={activePersonaId || ''}
@@ -1282,12 +1288,15 @@ export function ProjectRoomPage() {
           <div ref={personaScrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
             {personaMessages.length === 0 && activePersona && (
               <div className="text-center text-gray-500 text-sm py-8">
-                <Bot className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                <PersonaAvatar avatar={activePersona.avatar} name={activePersona.name} size={72} className="mx-auto mb-2 block" />
                 <>{t('room.chatStartPromptBefore')} <strong>{activePersonaName}</strong>{t('room.chatStartPromptAfter')}</>  
               </div>
             )}
             {personaMessages.map(m => (
-              <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div key={m.id} className={`flex items-start gap-2 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {m.role === 'assistant' && activePersona && (
+                  <PersonaAvatar avatar={activePersona.avatar} name={activePersona.name} size={28} className="mt-0.5" />
+                )}
                 <div
                   className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
                     m.role === 'user' ? 'bg-blue-600 text-white whitespace-pre-wrap' : 'bg-gray-100 text-gray-900'
@@ -1306,7 +1315,8 @@ export function ProjectRoomPage() {
               </div>
             ))}
             {personaLoading && (
-              <div className="flex justify-start">
+              <div className="flex items-start gap-2 justify-start">
+                {activePersona && <PersonaAvatar avatar={activePersona.avatar} name={activePersona.name} size={28} className="mt-0.5" />}
                 <div className="bg-gray-100 px-4 py-2 rounded-2xl text-sm text-gray-500 flex items-center gap-2">
                   <Loader2 className="w-3 h-3 animate-spin" /> {t('room.thinking')}
                 </div>
@@ -1518,10 +1528,10 @@ export function ProjectRoomPage() {
                 )}
                 {!logbookLoading && conversationLog.length > 0 && (() => {
                   // Groepeer per persona, nieuwste gesprek bovenaan per map.
-                  const grouped = new Map<string, { personaName: string; avatarEmoji: string; conversations: ClosedConversation[] }>();
+                  const grouped = new Map<string, { personaName: string; avatarEmoji: string; avatar?: unknown; conversations: ClosedConversation[] }>();
                   for (const conv of conversationLog) {
                     if (!grouped.has(conv.personaId)) {
-                      grouped.set(conv.personaId, { personaName: conv.personaName, avatarEmoji: conv.avatarEmoji, conversations: [] });
+                      grouped.set(conv.personaId, { personaName: conv.personaName, avatarEmoji: conv.avatarEmoji, avatar: conv.avatar, conversations: [] });
                     }
                     grouped.get(conv.personaId)!.conversations.push(conv);
                   }
@@ -1529,7 +1539,7 @@ export function ProjectRoomPage() {
                   for (const g of grouped.values()) {
                     g.conversations.sort((a, b) => new Date(b.closedAt).getTime() - new Date(a.closedAt).getTime());
                   }
-                  return [...grouped.entries()].map(([personaId, { personaName, avatarEmoji, conversations }]) => {
+                  return [...grouped.entries()].map(([personaId, { personaName, avatar, conversations }]) => {
                     const folderOpen = openPersonaFolders.has(personaId);
                     const toggleFolder = () => setOpenPersonaFolders(prev => {
                       const next = new Set(prev);
@@ -1547,7 +1557,7 @@ export function ProjectRoomPage() {
                           {folderOpen
                             ? <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                             : <ChevronRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />}
-                          <span className="text-base leading-none">{avatarEmoji}</span>
+                          <PersonaAvatar avatar={avatar} name={personaName} size={20} />
                           <span className="font-semibold text-gray-800 text-xs flex-1 truncate">{personaName}</span>
                           <span className="text-[10px] bg-gray-100 text-gray-500 rounded-full px-1.5 py-0.5 font-medium shrink-0">
                             {conversations.length}
@@ -1765,7 +1775,7 @@ export function ProjectRoomPage() {
                                             title={`${ev.avatar_emoji || '🤖'} ${ev.name} — ${meta.label}${gradeStr ? ` — ${gradeStr}` : ''}`}
                                             data-testid={`badge-review-${d.id}-${ev.id}`}
                                           >
-                                            <span>{ev.avatar_emoji || '🤖'}</span>
+                                            <PersonaAvatar avatar={ev.avatar} name={ev.name} size={14} />
                                             <meta.Icon className="w-2.5 h-2.5" />
                                             <span className="hidden sm:inline">{ev.name}</span>
                                             {gradeStr && (
@@ -1781,7 +1791,7 @@ export function ProjectRoomPage() {
                                             title={`${ev.avatar_emoji || '🤖'} ${ev.name} — ${t('room.review.empty')}`}
                                             data-testid={`badge-review-pending-${d.id}-${ev.id}`}
                                           >
-                                            <span>{ev.avatar_emoji || '🤖'}</span>
+                                            <PersonaAvatar avatar={ev.avatar} name={ev.name} size={14} />
                                             <span className="hidden sm:inline">{ev.name}</span>
                                           </span>
                                         )}
@@ -1871,7 +1881,7 @@ export function ProjectRoomPage() {
                 <ul className="space-y-1">
                   {evaluators.flatMap(ev => (ev.rubrics || []).map(rubric => (
                     <li key={rubric.id} className="flex items-center gap-2 text-xs text-gray-600" data-testid={`evaluator-rubric-${rubric.id}`}>
-                      <span>{ev.avatar_emoji || '🧑‍⚖️'}</span>
+                      <PersonaAvatar avatar={ev.avatar} name={ev.name} size={18} />
                       <button
                         type="button"
                         onClick={() => downloadRubric(ev.id, rubric)}
@@ -1923,7 +1933,7 @@ export function ProjectRoomPage() {
                           return (
                             <tr key={rel.personaId} className="border-t border-gray-100 align-top" data-testid={`row-relationship-${rel.personaId}`}>
                               <td className="py-1 pr-2">
-                                <span className="mr-1">{rel.avatarEmoji || '🤖'}</span>
+                                <PersonaAvatar avatar={rel.avatar} name={rel.personaName} size={16} className="mr-1" />
                                 <span className="text-gray-800">{rel.personaName}</span>
                                 {rel.personaType === 'evaluator' && (
                                   <span className="ml-1 text-[9px] text-purple-600 uppercase">eval</span>
@@ -2005,11 +2015,10 @@ export function ProjectRoomPage() {
                       {consultations.map(c => {
                         const persona = personas.find(p => p.id === c.personaId);
                         const name = persona?.name || c.personaId;
-                        const emoji = persona?.avatar_emoji || '🤖';
                         return (
                           <tr key={c.personaId} className="border-t border-gray-100 align-top" data-testid={`row-consultations-${c.personaId}`}>
                             <td className="py-1 pr-2">
-                              <span className="mr-1">{emoji}</span>
+                              <PersonaAvatar avatar={persona?.avatar} name={name} size={16} className="mr-1" />
                               <span className="text-gray-800">{name}</span>
                             </td>
                             <td className="py-1 pr-2 font-mono" data-testid={`text-consultations-used-${c.personaId}`}>
@@ -2383,7 +2392,7 @@ export function ProjectRoomPage() {
                     {checkpointPreview.map(thread => (
                       <div key={thread.threadId} className="border border-gray-200 rounded-xl p-4 bg-gray-50">
                         <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xl">{thread.avatarEmoji}</span>
+                          <PersonaAvatar avatar={personas.find(p => p.id === thread.personaId)?.avatar} name={thread.personaName} size={28} />
                           <span className="font-semibold text-gray-800 text-sm">{thread.personaName}</span>
                         </div>
                         <label className="block text-xs font-medium text-gray-500 mb-1">{t('room.yourQuestions')}</label>

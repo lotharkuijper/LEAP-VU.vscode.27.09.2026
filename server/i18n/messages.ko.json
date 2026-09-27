@@ -341,6 +341,7 @@
   "Onbereikbaar": "접근할 수 없음",
   "Ongeldig doel": "잘못된 대상",
   "Ongeldig pad": "잘못된 경로",
+  "Ongeldige avatar": "유효하지 않은 아바타",
   "Ongeldige JSON: {0}": "잘못된 JSON: {0}",
   "Ongeldige material_kind": "잘못된 material_kind",
   "Ongeldige of niet-toegestane baseUrl.": "잘못되었거나 허용되지 않은 baseUrl.",

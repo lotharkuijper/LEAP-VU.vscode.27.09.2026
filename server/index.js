@@ -167,6 +167,7 @@ import {
   consultationLimitMessage as conLimitMessage,
 } from './consultationLimit.js';
 import { applyRelationshipDeltaImpl } from './threadClose.js';
+import { sanitizeAvatar } from './personaAvatar.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -10067,6 +10068,7 @@ async function ensureProjectPersonaFromCourse(projectId, coursePersonaId) {
       source_persona_id: cp.id, // herkomst (geen FK): "gebruikt in" bij sjablonen
       name: cp.name,
       avatar_emoji: cp.avatar_emoji,
+      avatar: cp.avatar ?? null,
       system_prompt: cp.system_prompt,
       rag_enabled: cp.rag_enabled,
       rag_folder_ids: cp.rag_folder_ids,
@@ -10344,7 +10346,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
     {
       const { data: evRows } = await supabaseAdmin
         .from('project_personas')
-        .select('id, name, avatar_emoji, persona_type')
+        .select('id, name, avatar_emoji, avatar, persona_type')
         .eq('project_id', projectId)
         .eq('persona_type', 'evaluator')
         .order('sort_order');
@@ -10383,7 +10385,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
         });
       }
       evaluators = (evRows || []).map(p => ({
-        id: p.id, name: p.name, avatar_emoji: p.avatar_emoji,
+        id: p.id, name: p.name, avatar_emoji: p.avatar_emoji, avatar: p.avatar ?? null,
         rubrics: rubricsByPersona.get(p.id) || [],
       }));
     }
@@ -11215,7 +11217,7 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
 
     const personaIds = [...new Set(threads.map(t => t.persona_id))];
     const { data: personas } = await supabaseAdmin
-      .from('project_personas').select('id, name, avatar_emoji').in('id', personaIds);
+      .from('project_personas').select('id, name, avatar_emoji, avatar').in('id', personaIds);
     const personaMap = Object.fromEntries((personas || []).map(p => [p.id, p]));
 
     // Task #172: voor staff koppelen we per thread de cue (delta + reden)
@@ -11253,6 +11255,7 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
         personaId: t.persona_id,
         personaName: p.name || 'Gesprek',
         avatarEmoji: p.avatar_emoji || '💬',
+        avatar: p.avatar ?? null,
         closedAt: t.closed_at,
         topics: t.topics || [],
         agreements: t.agreements || [],
@@ -11878,6 +11881,7 @@ app.post('/api/projects/copy-personas-from-library', async (req, res) => {
       source_persona_id: p.id, // herkomst (geen FK): "gebruikt in" bij sjablonen
       name: p.name,
       avatar_emoji: p.avatar_emoji,
+      avatar: p.avatar ?? null,
       system_prompt: p.system_prompt,
       rag_enabled: p.rag_enabled,
       rag_folder_ids: p.rag_folder_ids,
@@ -12016,7 +12020,7 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
       }
       row = {
         project_id: projectId, source_persona_id: cp.id,
-        name: cp.name, avatar_emoji: cp.avatar_emoji,
+        name: cp.name, avatar_emoji: cp.avatar_emoji, avatar: cp.avatar ?? null,
         system_prompt: cp.system_prompt, rag_enabled: cp.rag_enabled,
         rag_folder_ids: cp.rag_folder_ids, visible_from_phase: cp.visible_from_phase,
         sort_order: nextOrder,
@@ -12039,6 +12043,7 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
         project_id: projectId, source_persona_id: null,
         name: String(name).trim(),
         avatar_emoji: avatar_emoji || '🤖',
+        avatar: sanitizeAvatar(req.body?.avatar) ?? null,
         system_prompt: system_prompt || '',
         rag_enabled: rag_enabled !== false,
         rag_folder_ids: Array.isArray(rag_folder_ids) ? rag_folder_ids : [],
@@ -12110,6 +12115,7 @@ app.post('/api/projects/:projectId/personas/from-library/:coursePersonaId', asyn
       source_persona_id: cp.id, // herkomst (geen FK): "gebruikt in" bij sjablonen
       name: cp.name,
       avatar_emoji: cp.avatar_emoji,
+      avatar: cp.avatar ?? null,
       system_prompt: cp.system_prompt,
       rag_enabled: cp.rag_enabled,
       rag_folder_ids: cp.rag_folder_ids,
@@ -12163,6 +12169,12 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
     const allowed = ['name', 'avatar_emoji', 'system_prompt', 'rag_enabled', 'rag_folder_ids', 'sort_order', 'persona_type', 'cue_emission_enabled', 'max_consultations', 'auto_close_hours', 'badge_award_mode'];
     const patch = {};
     for (const k of allowed) if (k in (req.body || {})) patch[k] = req.body[k];
+    // Cartoon-gezicht: alleen een opgeschoonde configuratie (null = standaard-robotje).
+    if (req.body && 'avatar' in req.body) {
+      const avatar = sanitizeAvatar(req.body.avatar);
+      if (avatar === undefined) return res.status(400).json({ error: 'Ongeldige avatar' });
+      patch.avatar = avatar;
+    }
     if (patch.persona_type && !['conversational', 'evaluator'].includes(patch.persona_type)) {
       return res.status(400).json({ error: "persona_type moet 'conversational' of 'evaluator' zijn" });
     }
@@ -13621,7 +13633,7 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
     }
     const { data: personas } = await supabaseAdmin
       .from('project_personas')
-      .select('id, name, avatar_emoji, persona_type, sort_order')
+      .select('id, name, avatar_emoji, avatar, persona_type, sort_order')
       .eq('project_id', projectId)
       .order('sort_order');
     const personaList = personas || [];
@@ -13642,6 +13654,7 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
         personaId: p.id,
         personaName: p.name,
         avatarEmoji: p.avatar_emoji,
+        avatar: p.avatar ?? null,
         personaType: p.persona_type || 'conversational',
         score: isStaff ? score : null,
         bucket: relScoreToBucket(score),
@@ -14443,6 +14456,7 @@ app.post('/api/projects/:projectId/personas/:personaId/copy-to-library', async (
       course_id: project.course_id,
       name: pp.name,
       avatar_emoji: pp.avatar_emoji,
+      avatar: pp.avatar ?? null,
       system_prompt: pp.system_prompt,
       rag_enabled: pp.rag_enabled,
       rag_folder_ids: pp.rag_folder_ids,
@@ -14506,6 +14520,7 @@ app.post('/api/admin/course-personas', async (req, res) => {
       course_id,
       name: String(name).trim(),
       avatar_emoji: avatar_emoji || '🤖',
+      avatar: sanitizeAvatar(req.body?.avatar) ?? null,
       system_prompt: system_prompt || '',
       rag_enabled: rag_enabled !== false,
       rag_folder_ids: Array.isArray(rag_folder_ids) ? rag_folder_ids : [],
@@ -14543,6 +14558,11 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
     const patch = {};
     if (name !== undefined) patch.name = String(name).trim();
     if (avatar_emoji !== undefined) patch.avatar_emoji = avatar_emoji;
+    if (req.body && 'avatar' in req.body) {
+      const avatar = sanitizeAvatar(req.body.avatar);
+      if (avatar === undefined) return res.status(400).json({ error: 'Ongeldige avatar' });
+      patch.avatar = avatar;
+    }
     if (system_prompt !== undefined) patch.system_prompt = system_prompt;
     if (rag_enabled !== undefined) patch.rag_enabled = rag_enabled;
     if (rag_folder_ids !== undefined) patch.rag_folder_ids = Array.isArray(rag_folder_ids) ? rag_folder_ids : [];

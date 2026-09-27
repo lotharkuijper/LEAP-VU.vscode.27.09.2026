@@ -171,3 +171,9 @@ Zie ook [GIT_WORKFLOW.md](GIT_WORKFLOW.md) voor de git-werkwijze en [exports/LEA
 ## Licentie
 
 Ontwikkeld voor educatief gebruik aan de VU Amsterdam.
+
+### Persona-gezichten
+
+De avatars van persona's worden gemaakt met [DiceBear](https://www.dicebear.com/) (MIT). Gebruikte stijlen:
+Bottts en Avataaars van Pablo Stanley (vrij voor persoonlijk en commercieel gebruik),
+Open Peeps van Pablo Stanley (CC0 1.0), Lorelei van Lisa Wischofsky (CC0 1.0) en Notionists van Zoish (CC0 1.0).

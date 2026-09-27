@@ -35,6 +35,7 @@ export const HELP_TOPICS = [
   'personas.fromTemplate',
   'personas.saveAsTemplate',
   'personas.evaluator',
+  'personas.avatar',
   // Quizbronnen, zoekgevoeligheid, leerniveaus, chat-instructies
   'quizSources.overview',
   'quizSources.mix',

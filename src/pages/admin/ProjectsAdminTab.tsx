@@ -9,6 +9,9 @@ import { PersonaLibraryTab } from './PersonaLibraryTab';
 import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { AdminHint } from '../../components/help/AdminHint';
+import { PersonaAvatar } from '../../components/PersonaAvatar';
+import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
+import type { AvatarConfig } from '../../lib/personaAvatar';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -56,6 +59,7 @@ interface ProjectPersona {
   source_persona_id: string | null;
   name: string;
   avatar_emoji: string;
+  avatar?: AvatarConfig | null;
   system_prompt: string;
   rag_enabled: boolean;
   rag_folder_ids: string[];
@@ -507,6 +511,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
   const [personas, setPersonas] = useState<ProjectPersona[]>([]);
   const [adding, setAdding] = useState(false);
   const [editingPersona, setEditingPersona] = useState<Partial<ProjectPersona> | null>(null);
+  const [ppFaceOpen, setPpFaceOpen] = useState(false);
+  useEffect(() => { setPpFaceOpen(false); }, [editingPersona?.id, editingPersona === null]);
   // Task #173 — per-cursus cue-bereik (1..5). Default 2 als kolom/cursus ontbreekt.
   const [courseCueDeltaMax, setCourseCueDeltaMax] = useState<number>(2);
   const [projectDocs, setProjectDocs] = useState<ProjectDoc[]>([]);
@@ -682,6 +688,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           name: editingPersona.name,
           system_prompt: editingPersona.system_prompt || '',
           avatar_emoji: editingPersona.avatar_emoji || '🤖',
+          avatar: editingPersona.avatar ?? null,
           rag_enabled: editingPersona.rag_enabled ?? true,
           persona_type: editingPersona.persona_type || 'conversational',
           cue_emission_enabled: (editingPersona.persona_type || 'conversational') === 'evaluator'
@@ -1079,7 +1086,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
               return (
                 <li key={p.id} className="py-3" data-testid={`pp-row-${p.id}`}>
                   <div className="flex items-start gap-3">
-                    <span className="text-2xl">{p.avatar_emoji || '🤖'}</span>
+                    <PersonaAvatar avatar={p.avatar} name={p.name} size={40} />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-gray-900 flex items-center gap-2">
                         {p.name}
@@ -1169,6 +1176,26 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                   <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldEmoji')}</label>
                   <input value={editingPersona.avatar_emoji || ''} onChange={e => setEditingPersona({ ...editingPersona, avatar_emoji: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-pp-emoji" />
                 </div>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <PersonaAvatar avatar={editingPersona.avatar} name={editingPersona.name || ''} size={40} />
+                  <button
+                    type="button"
+                    onClick={() => setPpFaceOpen(o => !o)}
+                    aria-expanded={ppFaceOpen}
+                    className="px-2.5 py-1 text-xs border border-gray-300 rounded-lg hover:bg-gray-50"
+                    data-testid="button-pp-face"
+                  >
+                    {ppFaceOpen ? t('persona.avatar.done') : t('persona.avatar.edit')}
+                  </button>
+                  <HelpTip id="personas.avatar" />
+                </div>
+                {ppFaceOpen && (
+                  <div className="mt-2">
+                    <PersonaAvatarEditor value={editingPersona.avatar} name={editingPersona.name || ''} onChange={avatar => setEditingPersona({ ...editingPersona, avatar })} />
+                  </div>
+                )}
               </div>
               <div>
                 <span className="flex items-center gap-1.5"><label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldType')}</label><HelpTip id="personas.evaluator" /></span>
