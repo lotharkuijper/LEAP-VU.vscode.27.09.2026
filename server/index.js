@@ -324,8 +324,10 @@ console.log(`[API Server] Azure embeddings ${AZURE_EMBEDDINGS_READY ? 'gereed' :
 // zodat ze (1) de Azure-auth-headers + Azure-URL gebruiken en (2) bij een 400 op
 // temperature/top_p één keer opnieuw proberen zonder die params. De body bevat
 // model/messages plus de via chatModelParams() opgebouwde sampling-parameters.
-function openaiChatCompletion(body) {
-  return postChatCompletionWithRetry({ url: OPENAI_CHAT_URL, headers: chatAuthHeaders(), body });
+// Een tijdelijke storing van Azure (429/5xx) wordt één keer opnieuw geprobeerd;
+// een aanroeper die snel moet reageren (persona-chat) geeft een timeoutMs mee.
+function openaiChatCompletion(body, { timeoutMs = null, transientRetries = 1 } = {}) {
+  return postChatCompletionWithRetry({ url: OPENAI_CHAT_URL, headers: chatAuthHeaders(), body, timeoutMs, transientRetries });
 }
 
 const FALLBACK_SYSTEM_PROMPT = `Je bent een Socratische tutor aan de VU Amsterdam. Je begeleidt studenten door een balans van korte uitleg en uitdagende vragen.
@@ -10693,18 +10695,26 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         .map(h => ({ role: h.role, content: h.content })),
       { role: 'user', content: message },
     ];
+    // Een student zit te wachten: breek na 75 s af in plaats van minutenlang
+    // "denkt na…" te tonen tot Azure zelf opgeeft (gezien 2026-09-27: HTTP 500
+    // na minuten). Een tijdelijke storing wordt één keer herhaald.
+    const PERSONA_TIMEOUT_MS = 75000;
     const askPersona = async (maxTokens) => {
       const r = await openaiChatCompletion({
         model: OPENAI_MODEL,
         messages: personaMessages,
         ...chatModelParams({ temperature: 0.7, maxTokens }),
-      });
-      if (!r.ok) return { ok: false, status: r.status, text: await r.text() };
+      }, { timeoutMs: PERSONA_TIMEOUT_MS });
+      if (!r.ok) return { ok: false, status: r.status, timedOut: r.timedOut, text: await r.text() };
       return { ok: true, data: await r.json() };
     };
     let chatResult = await askPersona(700);
     if (!chatResult.ok) {
-      return res.status(502).json({ error: `Taalmodel-fout (${chatResult.status})`, detail: chatResult.text.slice(0, 500) });
+      console.error(`[persona-chat] Taalmodel-fout HTTP ${chatResult.status}${chatResult.timedOut ? ' (time-out)' : ''}: ${String(chatResult.text || '').slice(0, 300)}`);
+      const friendly = chatResult.timedOut
+        ? 'De persona doet er te lang over om te antwoorden. Probeer je bericht opnieuw te sturen.'
+        : 'Het taalmodel heeft een storing. Probeer het over een minuut opnieuw.';
+      return res.status(502).json({ error: friendly, code: chatResult.timedOut ? 'timeout' : 'upstreamError', status: chatResult.status, detail: String(chatResult.text || '').slice(0, 500) });
     }
     // Een reasoning-model geeft bij een te krap budget een LEGE 200 terug
     // (finish_reason "length"). Eén keer opnieuw met ruim budget; lukt dat ook

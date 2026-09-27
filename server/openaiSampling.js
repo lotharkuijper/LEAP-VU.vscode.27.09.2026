@@ -64,13 +64,38 @@ export function completionTokenBudget(maxTokens, isReasoningModel) {
 // bestaande aanroepers — die `.ok`, `.status`, `await resp.json()` of
 // `await resp.text()` gebruiken — vrijwel ongewijzigd kunnen blijven. De body
 // wordt intern al gelezen; json()/text() leveren de gecachte waarde.
-export async function postChatCompletionWithRetry({ url, headers, body, fetchImpl = fetch }) {
+//
+// Optioneel (standaard uit, zodat bestaand gedrag gelijk blijft):
+//  * timeoutMs: breek een hangende aanroep af en geef status 504 terug
+//    (`timedOut: true`) i.p.v. minutenlang te wachten tot Azure zelf opgeeft;
+//  * transientRetries: probeer bij een tijdelijke storing (429/500/502/503/504
+//    van het model) nog zo vaak opnieuw, na een korte pauze. Een eigen
+//    time-out wordt NIET herhaald: dan zou de gebruiker twee keer zo lang wachten.
+export const TRANSIENT_STATUSES = new Set([429, 500, 502, 503, 504]);
+
+export async function postChatCompletionWithRetry({
+  url, headers, body, fetchImpl = fetch, timeoutMs = null, transientRetries = 0, retryDelayMs = 1500,
+}) {
   const doFetch = async (b) => {
-    const r = await fetchImpl(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(headers || {}) },
-      body: JSON.stringify(b),
-    });
+    const controller = timeoutMs ? new AbortController() : null;
+    const timer = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    let r;
+    try {
+      r = await fetchImpl(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(headers || {}) },
+        body: JSON.stringify(b),
+        ...(controller ? { signal: controller.signal } : {}),
+      });
+    } catch (err) {
+      if (controller && controller.signal.aborted) {
+        const rawText = JSON.stringify({ error: { code: 'timeout', message: `Geen antwoord van het taalmodel binnen ${Math.round(timeoutMs / 1000)} s` } });
+        return { r: { ok: false, status: 504 }, rawText, parsed: JSON.parse(rawText), timedOut: true };
+      }
+      throw err;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
     const rawText = await r.text();
     let parsed = null;
     try {
@@ -81,19 +106,28 @@ export async function postChatCompletionWithRetry({ url, headers, body, fetchImp
     return { r, rawText, parsed };
   };
 
-  let { r, rawText, parsed } = await doFetch(body);
+  let sendBody = body;
+  let { r, rawText, parsed, timedOut } = await doFetch(sendBody);
 
   if (!r.ok && r.status === 400 && isUnsupportedSamplingParamError(parsed)) {
     const { temperature: _t, top_p: _tp, ...retryBody } = body;
     console.warn(
       `[openai] Model ${body && body.model} accepteert geen aangepaste temperature/top_p — opnieuw zonder die parameters.`,
     );
-    ({ r, rawText, parsed } = await doFetch(retryBody));
+    sendBody = retryBody;
+    ({ r, rawText, parsed, timedOut } = await doFetch(sendBody));
+  }
+
+  for (let attempt = 0; attempt < transientRetries && !r.ok && !timedOut && TRANSIENT_STATUSES.has(r.status); attempt++) {
+    console.warn(`[openai] Tijdelijke fout van het taalmodel (HTTP ${r.status}) — opnieuw over ${retryDelayMs} ms (poging ${attempt + 2}).`);
+    if (retryDelayMs > 0) await new Promise((res) => setTimeout(res, retryDelayMs));
+    ({ r, rawText, parsed, timedOut } = await doFetch(sendBody));
   }
 
   return {
     ok: r.ok,
     status: r.status,
+    timedOut: !!timedOut,
     json: async () => parsed,
     text: async () => rawText,
   };

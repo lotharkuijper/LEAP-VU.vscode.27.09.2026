@@ -171,3 +171,48 @@ describe('completionTokenBudget', () => {
     expect(completionTokenBudget(undefined, true)).toBeUndefined();
   });
 });
+
+// Regressie 2026-09-27: persona-chat bleef minutenlang "denkt na…" en eindigde
+// met "Taalmodel-fout (500)". Er was geen time-out en geen herhaling.
+describe('postChatCompletionWithRetry — time-out en tijdelijke storingen', () => {
+  const url = 'https://example.test/chat';
+  const body = { model: 'gpt-5.5', messages: [{ role: 'user', content: 'hoi' }] };
+
+  it('probeert een tijdelijke storing (500) opnieuw als transientRetries aan staat', async () => {
+    const { fetchImpl, calls } = makeFetchStub([
+      { ok: false, status: 500, body: { error: { message: 'boom' } } },
+      { ok: true, status: 200, body: { choices: [{ message: { content: 'gelukt' }, finish_reason: 'stop' }] } },
+    ]);
+    const resp = await postChatCompletionWithRetry({ url, headers: {}, body, fetchImpl, transientRetries: 1, retryDelayMs: 0 });
+    expect(calls).toHaveLength(2);
+    expect(resp.ok).toBe(true);
+    expect((await resp.json()).choices[0].message.content).toBe('gelukt');
+  });
+
+  it('herhaalt geen blijvende fout (400) en niet meer dan transientRetries keer', async () => {
+    const one = makeFetchStub([{ ok: false, status: 400, body: { error: { message: 'bad' } } }]);
+    await postChatCompletionWithRetry({ url, headers: {}, body, fetchImpl: one.fetchImpl, transientRetries: 3, retryDelayMs: 0 });
+    expect(one.calls).toHaveLength(1);
+    const many = makeFetchStub([
+      { ok: false, status: 503, body: {} }, { ok: false, status: 503, body: {} }, { ok: false, status: 503, body: {} },
+    ]);
+    const resp = await postChatCompletionWithRetry({ url, headers: {}, body, fetchImpl: many.fetchImpl, transientRetries: 1, retryDelayMs: 0 });
+    expect(many.calls).toHaveLength(2);
+    expect(resp.status).toBe(503);
+  });
+
+  it('breekt een hangende aanroep af na timeoutMs (504, timedOut) en herhaalt die niet', async () => {
+    let calls = 0;
+    const fetchImpl = (u, opts) => new Promise((_, reject) => {
+      calls++;
+      opts.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
+    });
+    const t0 = Date.now();
+    const resp = await postChatCompletionWithRetry({ url, headers: {}, body, fetchImpl, timeoutMs: 50, transientRetries: 2, retryDelayMs: 0 });
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(resp.ok).toBe(false);
+    expect(resp.status).toBe(504);
+    expect(resp.timedOut).toBe(true);
+    expect(calls).toBe(1);
+  });
+});

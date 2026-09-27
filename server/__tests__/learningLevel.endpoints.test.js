@@ -333,3 +333,26 @@ describe('POST /api/projects/persona-chat — lege antwoorden van reasoning-mode
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('POST /api/projects/persona-chat — tijdelijke storing van het taalmodel', () => {
+  const BASE = { groupId: 'g1', personaId: '__default__', message: 'Hoe sterk is de relatie tussen stress en slaap?' };
+
+  it('herhaalt een 500 van Azure één keer en geeft dan gewoon het antwoord', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(makeResp(500, { error: { message: 'The server had an error while processing your request.' } }))
+      .mockResolvedValueOnce(makeResp(200, chatCompletion('Goede vraag — laten we leeftijd als effectmodificator bekijken.')));
+    vi.stubGlobal('fetch', fetchMock);
+    const res = await postJson('/api/projects/persona-chat', BASE);
+    expect(res.status).toBe(200);
+    expect(res.body.reply).toMatch(/effectmodificator/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('geeft een begrijpelijke melding (geen kale "Taalmodel-fout (500)") als de storing aanhoudt', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => makeResp(500, { error: { message: 'boom' } })));
+    const res = await postJson('/api/projects/persona-chat', BASE);
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe('upstreamError');
+    expect(res.body.error).toMatch(/storing/);
+  });
+});
