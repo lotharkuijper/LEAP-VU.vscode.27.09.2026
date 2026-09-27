@@ -95,6 +95,25 @@ Losse onderdelen: `npm run dev:server` of `npm run dev:frontend`.
 
 Overige scripts: `npm run build`, `npm run lint`, `npm run typecheck`.
 
+**LibreOffice (alleen op de server).** De documentviewer zet Word- en PowerPoint-bronnen om naar pdf, en Word-bronnen krijgen daarmee bij het inlezen paginanummers ("naar de juiste pagina"). Daarvoor moet LibreOffice op de machine staan die de server draait; gebruikers hebben alleen een browser nodig. Replit installeert het via `replit.nix`. Op Windows: `winget install TheDocumentFoundation.LibreOffice` — de server vindt `soffice.exe` in Program Files vanzelf (of zet `SOFFICE_BIN`). Bij het opstarten meldt de server welke LibreOffice hij gebruikt. Zonder LibreOffice toont de viewer Office-bestanden als tekst ("Vereenvoudigde weergave").
+
+## Hosting (bijv. binnen het VU-domein)
+
+LEAP draait als één container: de Express-server serveert ook de gebouwde frontend. De `Dockerfile` bevat Node 22, LibreOffice zonder grafische schil en de lettertypen Carlito/Caladea (maat-compatibel met Calibri/Cambria, zodat de paginering van Word-documenten klopt).
+
+```bash
+docker build \
+  --build-arg VITE_PUBLIC_SUPABASE_URL=https://<project>.supabase.co \
+  --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY=<anon-key> \
+  -t leap-vu .
+docker run -p 3001:3001 --env-file .env leap-vu
+```
+
+- De twee `VITE_`-waarden komen in de frontendbundel (publiek). Alle geheimen (`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `AZURE_OPENAI_*`, `RESEND_API_KEY`) gaan alleen als runtime-omgeving mee, nooit in de image. Zet `APP_PUBLIC_URL` op het publieke adres.
+- **Weergaveversies worden bij het uploaden gemaakt.** Een Word-bron wordt bij het inlezen al naar pdf omgezet (voor de paginanummers); die pdf wordt bewaard als weergaveversie. PowerPoint-bronnen krijgen hun pdf direct na het inlezen, op de achtergrond. Studenten openen dus altijd een kant-en-klare pdf. De versies staan in de opslag onder `__renditions__/` en volgen het bronbestand: een vervangen bestand krijgt vanzelf een nieuwe.
+- **Bestaande bronnen** die op een server zonder LibreOffice zijn ingelezen, bereid je eenmalig voor met `node scripts/prepare-office-sources.mjs` (maakt de weergaveversies en vult paginanummers aan zonder opnieuw in te lezen; `--dry-run` om eerst te tellen).
+- Later kan de omzetting via Microsoft 365 (Graph) lopen; de plek daarvoor is `convertOfficeToPdf` in `server/documentRender.js`.
+
 ## Rollen
 
 - **Student** — standaardrol bij registratie. Toegang tot chat, uitleg, quiz, Studiecafé en projecten van zichtbare cursussen.

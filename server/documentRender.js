@@ -5,6 +5,7 @@
 // in de weg zitten.
 
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -98,11 +99,19 @@ export function buildSofficeArgs({ profileDir, outDir, inputPath }) {
 }
 
 // Cache-sleutel (opslagpad) voor de PDF-rendition van een Office-bron.
-// updated_at zit in de sleutel zodat een vervangen bron een verse rendition
-// krijgt i.p.v. de oude PDF te blijven tonen.
-export function renditionCachePath(documentId, updatedAt) {
-  const stamp = updatedAt ? String(Date.parse(updatedAt) || '') : '';
-  return `__renditions__/${documentId}${stamp ? `-${stamp}` : ''}.pdf`;
+// De sleutel volgt het BRONBESTAND (bucket + file_path), niet updated_at: een
+// trigger zet updated_at bij élke wijziging (status, doel, titel), waardoor een
+// bij het uploaden gemaakte rendition meteen "verouderd" zou zijn. Een vervangen
+// bestand krijgt altijd een nieuw file_path, en dus een verse rendition.
+export function renditionSourceKey(doc) {
+  if (!doc || !doc.file_path) return '';
+  return `${doc.bucket || ''}/${doc.file_path}`;
+}
+
+export function renditionCachePath(documentId, sourceKey) {
+  const key = String(sourceKey || '');
+  const tag = key ? `-${createHash('sha1').update(key).digest('hex').slice(0, 12)}` : '';
+  return `__renditions__/${documentId}${tag}.pdf`;
 }
 
 // Bron-type-label voor de viewer: presentatie-formaten tonen als 'pptx',

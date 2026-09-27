@@ -25,6 +25,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "fflate": "^0.8.3",
     "jsdom": "^29.1.1",
     "katex": "^0.16.47",
     "lucide-react": "^0.344.0",
@@ -41,6 +42,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "tiptap-markdown": "^0.9.0",
+    "undici": "^7.30.0",
     "vitest": "^4.1.5"
   },
   "devDependencies": {

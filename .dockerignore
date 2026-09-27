@@ -1,0 +1,13 @@
+node_modules
+dist
+.git
+.env
+.env.*
+supabase/.temp
+exports
+attached_assets
+.claude
+.agents
+.bolt
+.canvas
+*.log

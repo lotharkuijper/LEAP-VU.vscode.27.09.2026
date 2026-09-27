@@ -5,6 +5,7 @@ import {
   sofficePdfOutputName,
   buildSofficeArgs,
   renditionCachePath,
+  renditionSourceKey,
   renditionSourceType,
   normalizeExt,
   CONVERT_TO_PDF_EXT,
@@ -80,21 +81,26 @@ describe('renditionCachePath', () => {
     expect(p).toBe('__renditions__/doc-123.pdf');
   });
 
-  it('verwerkt updated_at als cache-buster in de sleutel', () => {
-    const iso = '2026-06-24T10:00:00.000Z';
-    const stamp = Date.parse(iso);
-    expect(renditionCachePath('doc-123', iso)).toBe(`__renditions__/doc-123-${stamp}.pdf`);
+  // 2026-09-27: de sleutel volgt het bronbestand i.p.v. updated_at. Een trigger
+  // zet updated_at bij élke wijziging, waardoor een vooraf gemaakte rendition
+  // meteen ongeldig werd.
+  it('volgt het bronbestand: zelfde bestand = zelfde sleutel, ook na andere wijzigingen', () => {
+    const doc = { bucket: 'rag_sources', file_path: 'f1/1700000000000_college.docx' };
+    const a = renditionCachePath('doc-123', renditionSourceKey(doc));
+    const b = renditionCachePath('doc-123', renditionSourceKey({ ...doc, updated_at: '2026-09-27T10:00:00Z', purpose: 'course_info' }));
+    expect(a).toBe(b);
+    expect(a).toMatch(/^__renditions__\/doc-123-[0-9a-f]{12}\.pdf$/);
   });
 
-  it('geeft een verse sleutel wanneer de bron wordt vervangen (andere updated_at)', () => {
-    const a = renditionCachePath('doc-123', '2026-06-24T10:00:00.000Z');
-    const b = renditionCachePath('doc-123', '2026-06-25T10:00:00.000Z');
+  it('geeft een verse sleutel wanneer het bestand wordt vervangen (ander file_path)', () => {
+    const a = renditionCachePath('doc-123', renditionSourceKey({ bucket: 'rag_sources', file_path: 'f1/1_college.docx' }));
+    const b = renditionCachePath('doc-123', renditionSourceKey({ bucket: 'rag_sources', file_path: 'f1/2_college.docx' }));
     expect(a).not.toBe(b);
   });
 
-  it('valt terug op een stabiele sleutel zonder updated_at en bij onparseerbare datum', () => {
+  it('valt terug op een stabiele sleutel zonder bronbestand', () => {
     expect(renditionCachePath('doc-123', '')).toBe('__renditions__/doc-123.pdf');
-    expect(renditionCachePath('doc-123', 'niet-een-datum')).toBe('__renditions__/doc-123.pdf');
+    expect(renditionCachePath('doc-123', renditionSourceKey({ file_path: '' }))).toBe('__renditions__/doc-123.pdf');
   });
 });
 

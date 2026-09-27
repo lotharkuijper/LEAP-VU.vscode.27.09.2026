@@ -142,7 +142,7 @@ import {
   getEmailConfig,
   sendEmailViaResend,
 } from './notifications.js';
-import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceType, resolveSofficeBin } from './documentRender.js';
+import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceKey, renditionSourceType, resolveSofficeBin } from './documentRender.js';
 import { planConceptReplace, planConceptWrites, classifyConceptRole, normalizeConceptRole, classifyConceptDifficulty, normalizeDifficulty, isMetaCommentaryName, capByBestMatch, mergeNearDuplicateConcepts } from './conceptExtraction.js';
 import {
   scoreToLabel as relScoreToLabel,
@@ -1946,9 +1946,10 @@ app.get('/api/rag/documents/:documentId/view', async (req, res) => {
 
     if (CONVERT_TO_PDF_EXT.has(ext)) {
       const bucket = doc.bucket || 'rag_sources';
-      // Cache-sleutel bevat updated_at zodat een vervangen bron een verse
-      // rendition krijgt en niet de oude PDF blijft tonen.
-      const renditionPath = renditionCachePath(documentId, doc.updated_at);
+      // Cache-sleutel volgt het bronbestand: een vervangen bron (nieuw
+      // file_path) krijgt een verse rendition. Normaal is die al bij het
+      // inlezen gemaakt; ontbreekt hij, dan maken we hem nu eenmalig.
+      const renditionPath = renditionCachePath(documentId, renditionSourceKey(doc));
       let signed = (await supabaseAdmin.storage.from(bucket).createSignedUrl(renditionPath, 600)).data;
       if (!signed?.signedUrl) {
         // Nog geen rendition in cache — eenmalig converteren en opslaan.
@@ -1965,10 +1966,11 @@ app.get('/api/rag/documents/:documentId/view', async (req, res) => {
           if (!text.trim()) throw convErr;
           return res.json({ kind: 'text', title, sourceType: renditionSourceType(ext), text, fallback: true });
         }
-        const { error: upErr } = await supabaseAdmin.storage
-          .from(bucket)
-          .upload(renditionPath, pdfBuffer, { contentType: 'application/pdf', upsert: true });
-        if (upErr) return res.status(500).json({ error: 'Kon de weergaveversie niet opslaan.' });
+        try {
+          await storeRendition({ ...doc, id: documentId }, pdfBuffer);
+        } catch {
+          return res.status(500).json({ error: 'Kon de weergaveversie niet opslaan.' });
+        }
         signed = (await supabaseAdmin.storage.from(bucket).createSignedUrl(renditionPath, 600)).data;
         if (!signed?.signedUrl) return res.status(500).json({ error: 'Kon geen weergavelink aanmaken.' });
       }
@@ -2501,8 +2503,8 @@ async function semanticChunkDeck(slides, openaiKey, lang = 'nl') {
 // een Error met optionele `.status` voor de HTTP-respons van de caller.
 // Thin wrapper: de kernlogica leeft in ./ragProcessing.js (testbaar via
 // dependency injection). Hier injecteren we de echte server-afhankelijkheden.
-function processPptxCore(doc, openaiKey, lang = 'nl') {
-  return processPptxCoreImpl(doc, openaiKey, lang, {
+async function processPptxCore(doc, openaiKey, lang = 'nl') {
+  const result = await processPptxCoreImpl(doc, openaiKey, lang, {
     supabaseAdmin,
     pgPool,
     extractPptxStructured,
@@ -2512,6 +2514,36 @@ function processPptxCore(doc, openaiKey, lang = 'nl') {
     embedTextsServer,
     log: (...a) => console.log(...a),
   });
+  // Dia's worden zonder PDF ingelezen; maak de weergaveversie daarna op de
+  // achtergrond, zodat studenten de presentatie direct kunnen bekijken.
+  prerenderRenditionInBackground(doc);
+  return result;
+}
+
+// ── Weergaveversies (PDF) van Office-bronnen ─────────────────────────────────
+// Opgeslagen in de bucket van de bron onder __renditions__/, met een sleutel die
+// het bronbestand volgt (renditionSourceKey). Gemaakt bij het inlezen; /view
+// maakt ze alleen nog zelf als ze ontbreken (bv. bij oudere bestanden).
+async function storeRendition(doc, pdfBuffer) {
+  const bucket = doc.bucket || 'rag_sources';
+  const renditionPath = renditionCachePath(doc.id, renditionSourceKey(doc));
+  const { error } = await supabaseAdmin.storage.from(bucket)
+    .upload(renditionPath, pdfBuffer, { contentType: 'application/pdf', upsert: true });
+  if (error) throw new Error(`opslaan mislukt: ${error.message}`);
+  return renditionPath;
+}
+
+function prerenderRenditionInBackground(doc) {
+  const ext = normalizeExt(doc.file_type || String(doc.filename || '').split('.').pop());
+  if (!CONVERT_TO_PDF_EXT.has(ext) || !doc.file_path || !doc.bucket) return;
+  (async () => {
+    const { data, error } = await supabaseAdmin.storage.from(doc.bucket).download(doc.file_path);
+    if (error || !data) throw new Error(`bronbestand niet leesbaar: ${error?.message || 'leeg'}`);
+    const bytes = Buffer.from(await data.arrayBuffer());
+    const pdf = await queueConversion(() => convertOfficeToPdf(bytes, ext));
+    await storeRendition(doc, pdf);
+    console.log(`[rendition] doc=${doc.id} weergaveversie gemaakt`);
+  })().catch((e) => console.warn(`[rendition] doc=${doc.id} niet gemaakt (de viewer valt terug op tekst): ${e.message}`));
 }
 
 // Kernverwerking voor platte-tekstbronnen (.pdf/.docx/.txt/.xlsx/...): download,
@@ -2534,11 +2566,18 @@ function processPlainRagDocument(doc, openaiKey) {
 // LibreOffice naar PDF, extraheert per-pagina tekst en koppelt elke chunk aan
 // zijn paginanummer(s) zodat bronkaarten "p. 12" tonen en de viewer naar de
 // juiste pagina springt (Task #377). Thin wrapper rond de kern in ragProcessing.
+// De PDF die hier voor de paginanummers wordt gemaakt, bewaren we meteen als
+// weergaveversie: zo opent de viewer de bron direct, zonder dat LibreOffice op
+// het moment van bekijken nodig is.
 function processDocxCore(doc, openaiKey) {
   return processDocxCoreImpl(doc, openaiKey, {
     supabaseAdmin,
     pgPool,
-    convertToPdf: (buf, ext) => queueConversion(() => convertOfficeToPdf(buf, ext)),
+    convertToPdf: async (buf, ext) => {
+      const pdf = await queueConversion(() => convertOfficeToPdf(buf, ext));
+      storeRendition(doc, pdf).catch((e) => console.warn(`[rendition] doc=${doc.id} niet opgeslagen: ${e.message}`));
+      return pdf;
+    },
     extractPdfPageTexts,
     chunkPlainText,
     assignPdfPages,
