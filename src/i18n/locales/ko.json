@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "마스크",
   "persona.avatar.part.background": "배경",
   "help.personas.avatar.title": "페르소나에 얼굴 만들기",
-  "help.personas.avatar.body": "각 페르소나는 자동으로 작은 로봇을 갖게 돼. 여기서 다른 스타일을 고르고, 화살표로 각 부분을 넘겨보거나 \"나를 놀라게 해줘\"를 클릭해. 학생들은 대화에서 이름 옆과 각 답변마다 이 얼굴을 보게 돼."
+  "help.personas.avatar.body": "각 페르소나는 자동으로 작은 로봇을 갖게 돼. 여기서 다른 스타일을 고르고, 화살표로 각 부분을 넘겨보거나 \"나를 놀라게 해줘\"를 클릭해. 학생들은 대화에서 이름 옆과 각 답변마다 이 얼굴을 보게 돼.",
+  "learningLevel.levelUp": "레벨 업: {label}!"
 }

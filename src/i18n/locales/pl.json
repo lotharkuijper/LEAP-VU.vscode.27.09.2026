@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Maseczka",
   "persona.avatar.part.background": "Tło",
   "help.personas.avatar.title": "Twarz dla twojej persony",
-  "help.personas.avatar.body": "Każda persona automatycznie otrzymuje robocika. Wybierz tutaj inny styl, przeglądaj poszczególne elementy strzałkami albo kliknij „Zaskocz mnie”. Studenci zobaczą tę twarz obok imienia oraz przy każdej odpowiedzi w rozmowie."
+  "help.personas.avatar.body": "Każda persona automatycznie otrzymuje robocika. Wybierz tutaj inny styl, przeglądaj poszczególne elementy strzałkami albo kliknij „Zaskocz mnie”. Studenci zobaczą tę twarz obok imienia oraz przy każdej odpowiedzi w rozmowie.",
+  "learningLevel.levelUp": "Poziom wyżej: {label}!"
 }

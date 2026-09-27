@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Masker",
   "persona.avatar.part.background": "Latar belakang",
   "help.personas.avatar.title": "Wajah untuk personamu",
-  "help.personas.avatar.body": "Setiap persona otomatis mendapat robot kecil. Pilih gaya lain di sini, jelajahi tiap bagian dengan panah, atau klik \"Kejutkan aku\". Mahasiswa melihat wajah ini di samping nama dan pada setiap jawaban dalam percakapan."
+  "help.personas.avatar.body": "Setiap persona otomatis mendapat robot kecil. Pilih gaya lain di sini, jelajahi tiap bagian dengan panah, atau klik \"Kejutkan aku\". Mahasiswa melihat wajah ini di samping nama dan pada setiap jawaban dalam percakapan.",
+  "learningLevel.levelUp": "Naik level: {label}!"
 }

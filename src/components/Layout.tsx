@@ -20,6 +20,7 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import ActiveCourseBadge from "./ActiveCourseBadge";
 import { useLanguage } from '../i18n';
 import { LanguageSelector } from './LanguageSelector';
+import { SECTION_COLORS } from '../lib/sectionColors';
 import { useStudiecafeUnread } from '../hooks/useStudiecafeUnread';
 
 interface LayoutProps {
@@ -87,17 +88,17 @@ export function Layout({ children }: LayoutProps) {
 
   const navItems = useMemo(() => {
     const items = [
-      { to: '/dashboard', icon: GraduationCap, label: t('nav.dashboard'), color: 'from-gray-600 to-gray-700' },
-      { to: '/chat', icon: MessageSquare, label: t('nav.chat'), color: 'from-green-500 to-emerald-600' },
-      { to: '/explain', icon: BookOpen, label: t('nav.explain'), color: 'from-blue-500 to-blue-600' },
-      { to: '/quiz', icon: FileQuestion, label: t('nav.quiz'), color: 'from-cyan-500 to-cyan-600' },
-      { to: '/projects', icon: BarChart3, label: t('nav.projects'), color: 'from-orange-500 to-orange-600' },
-      { to: '/studiecafe', icon: Coffee, label: t('nav.studiecafe'), color: 'from-amber-500 to-rose-500' },
-      { to: '/feedback', icon: BookText, label: t('nav.feedback'), color: 'from-teal-500 to-teal-600' },
-      { to: '/resources', icon: Package, label: t('nav.resources'), color: 'from-purple-500 to-purple-600' },
+      { to: '/dashboard', icon: GraduationCap, label: t('nav.dashboard'), color: SECTION_COLORS.dashboard.gradient },
+      { to: '/chat', icon: MessageSquare, label: t('nav.chat'), color: SECTION_COLORS.chat.gradient },
+      { to: '/explain', icon: BookOpen, label: t('nav.explain'), color: SECTION_COLORS.explain.gradient },
+      { to: '/quiz', icon: FileQuestion, label: t('nav.quiz'), color: SECTION_COLORS.quiz.gradient },
+      { to: '/projects', icon: BarChart3, label: t('nav.projects'), color: SECTION_COLORS.projects.gradient },
+      { to: '/studiecafe', icon: Coffee, label: t('nav.studiecafe'), color: SECTION_COLORS.studiecafe.gradient },
+      { to: '/feedback', icon: BookText, label: t('nav.feedback'), color: SECTION_COLORS.journal.gradient },
+      { to: '/resources', icon: Package, label: t('nav.resources'), color: SECTION_COLORS.resources.gradient },
     ];
     if (isDocent || isAdmin) {
-      items.push({ to: '/admin', icon: Settings, label: t('nav.admin'), color: 'from-slate-600 to-slate-700' });
+      items.push({ to: '/admin', icon: Settings, label: t('nav.admin'), color: SECTION_COLORS.admin.gradient });
     }
     return items;
   }, [isDocent, isAdmin, t]);

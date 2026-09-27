@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Maske",
   "persona.avatar.part.background": "Arka plan",
   "help.personas.avatar.title": "Personan için bir yüz",
-  "help.personas.avatar.body": "Her persona otomatik olarak küçük bir robot alır. Buradan farklı bir stil seç, oklarla her bölüme göz at veya \"Beni şaşırt\"a tıkla. Öğrenciler bu yüzü adın yanında ve konuşmadaki her yanıtta görür."
+  "help.personas.avatar.body": "Her persona otomatik olarak küçük bir robot alır. Buradan farklı bir stil seç, oklarla her bölüme göz at veya \"Beni şaşırt\"a tıkla. Öğrenciler bu yüzü adın yanında ve konuşmadaki her yanıtta görür.",
+  "learningLevel.levelUp": "Seviye yükseldi: {label}!"
 }

@@ -19,6 +19,7 @@ import { useLanguage } from '../i18n';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { CourseBannerFrame, type CourseBanner } from '../components/CourseBannerFrame';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
+import { SECTION_COLORS, type SectionKey } from '../lib/sectionColors';
 import { useContentTranslation } from '../hooks/useContentTranslation';
 
 type TileKey = 'chat' | 'explain' | 'quiz' | 'project';
@@ -59,16 +60,18 @@ interface TileSpec {
   ctaKey: string;
 }
 
+/** Tegelkleuren = kleur van het onderdeel (zelfde als menu en pagina). */
+function tileColors(section: SectionKey) {
+  const c = SECTION_COLORS[section];
+  return { accent: c.bar, iconBg: c.iconBg, iconText: c.iconText, border: c.border, hoverBorder: c.hoverBorder };
+}
+
 const TILES: TileSpec[] = [
   {
     key: 'chat',
     to: '/chat',
     icon: MessageSquare,
-    accent: 'from-emerald-50 to-emerald-100',
-    iconBg: 'bg-emerald-100',
-    iconText: 'text-emerald-700',
-    border: 'border-emerald-200',
-    hoverBorder: 'hover:border-emerald-400',
+    ...tileColors('chat'),
     titleKey: 'dashboard.tile.chat.title',
     emptyKey: 'dashboard.tile.chat.empty',
     ctaKey: 'dashboard.tile.chat.cta',
@@ -77,11 +80,7 @@ const TILES: TileSpec[] = [
     key: 'explain',
     to: '/explain',
     icon: Lightbulb,
-    accent: 'from-amber-50 to-amber-100',
-    iconBg: 'bg-amber-100',
-    iconText: 'text-amber-700',
-    border: 'border-amber-200',
-    hoverBorder: 'hover:border-amber-400',
+    ...tileColors('explain'),
     titleKey: 'dashboard.tile.explain.title',
     emptyKey: 'dashboard.tile.explain.empty',
     ctaKey: 'dashboard.tile.explain.cta',
@@ -90,11 +89,7 @@ const TILES: TileSpec[] = [
     key: 'quiz',
     to: '/quiz',
     icon: GraduationCap,
-    accent: 'from-sky-50 to-sky-100',
-    iconBg: 'bg-sky-100',
-    iconText: 'text-sky-700',
-    border: 'border-sky-200',
-    hoverBorder: 'hover:border-sky-400',
+    ...tileColors('quiz'),
     titleKey: 'dashboard.tile.quiz.title',
     emptyKey: 'dashboard.tile.quiz.empty',
     ctaKey: 'dashboard.tile.quiz.cta',
@@ -103,11 +98,7 @@ const TILES: TileSpec[] = [
     key: 'project',
     to: '/projects',
     icon: BarChart3,
-    accent: 'from-orange-50 to-orange-100',
-    iconBg: 'bg-orange-100',
-    iconText: 'text-orange-700',
-    border: 'border-orange-200',
-    hoverBorder: 'hover:border-orange-400',
+    ...tileColors('projects'),
     titleKey: 'dashboard.tile.project.title',
     emptyKey: 'dashboard.tile.project.empty',
     ctaKey: 'dashboard.tile.project.cta',
@@ -517,24 +508,24 @@ export function DashboardPage() {
 
       {/* Journal snippet */}
       <section
-        className="rounded-2xl border border-emerald-200/70 bg-white/70 backdrop-blur-md p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-16px_rgba(16,185,129,0.25)] ring-1 ring-emerald-100/60"
+        className="rounded-2xl border border-teal-200/70 bg-white/70 backdrop-blur-md p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-16px_rgba(20,184,166,0.25)] ring-1 ring-teal-100/60"
         data-testid="section-journal-snippet"
         aria-label={t('dashboard.journal.title')}
       >
         <div className="flex items-start justify-between gap-4 flex-wrap">
           {loading ? (
             <div className="flex items-start gap-3 min-w-0 flex-1">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700 flex-shrink-0">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${SECTION_COLORS.journal.iconBg} ${SECTION_COLORS.journal.iconText} flex-shrink-0`}>
                 <BookText className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="text-base font-semibold text-slate-900">{t('dashboard.journal.title')}</h2>
-                <div className="mt-2 h-4 w-2/3 rounded bg-green-100 animate-pulse" />
+                <div className="mt-2 h-4 w-2/3 rounded bg-teal-100 animate-pulse" />
               </div>
             </div>
           ) : data.journal ? (
             <div className="flex items-start gap-3 min-w-0 flex-1">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-100 text-green-700 flex-shrink-0">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${SECTION_COLORS.journal.iconBg} ${SECTION_COLORS.journal.iconText} flex-shrink-0`}>
                 <BookText className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1" data-testid="text-journal-last">
@@ -556,7 +547,7 @@ export function DashboardPage() {
           <Link
             to="/feedback"
             data-testid="btn-journal-write"
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:from-green-600 hover:to-emerald-700 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+            className={`inline-flex items-center gap-2 rounded-lg bg-gradient-to-r ${SECTION_COLORS.journal.gradient} px-4 py-2 text-sm font-semibold text-white shadow-sm ${SECTION_COLORS.journal.gradientHover} transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 ${SECTION_COLORS.journal.focusRing}`}
           >
             <PenLine className="h-4 w-4" />
             {t('dashboard.journal.write')}

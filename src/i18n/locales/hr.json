@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Maska za lice",
   "persona.avatar.part.background": "Pozadina",
   "help.personas.avatar.title": "Lice za tvoju personu",
-  "help.personas.avatar.body": "Svaka persona automatski dobiva robotića. Ovdje odaberi drugi stil, pregledavaj po dijelovima pomoću strelica ili klikni na \"Iznenadi me\". Studenti vide ovo lice pokraj imena i uz svaki odgovor u razgovoru."
+  "help.personas.avatar.body": "Svaka persona automatski dobiva robotića. Ovdje odaberi drugi stil, pregledavaj po dijelovima pomoću strelica ili klikni na \"Iznenadi me\". Studenti vide ovo lice pokraj imena i uz svaki odgovor u razgovoru.",
+  "learningLevel.levelUp": "Razina gore: {label}!"
 }

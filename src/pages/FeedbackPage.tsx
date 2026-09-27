@@ -403,7 +403,7 @@ export function FeedbackPage() {
         <button
           onClick={() => (showForm ? resetForm() : openFormForSection('reflection'))}
           data-testid="btn-toggle-form"
-          className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg flex items-center gap-2"
+          className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           {t('feedback.newEntry')}
@@ -475,7 +475,7 @@ export function FeedbackPage() {
                 type="submit"
                 disabled={loading}
                 data-testid="btn-submit-entry"
-                className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg disabled:opacity-50"
+                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg disabled:opacity-50"
               >
                 {loading ? t('feedback.saving') : editingEntry ? t('feedback.update') : t('feedback.save')}
               </button>
@@ -493,9 +493,9 @@ export function FeedbackPage() {
       )}
 
       {entries.length === 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-5 flex items-start gap-3" data-testid="empty-journal-banner">
-          <BookText className="w-5 h-5 text-green-700 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-green-800">
+        <div className="bg-teal-50 border border-teal-200 rounded-2xl p-5 flex items-start gap-3" data-testid="empty-journal-banner">
+          <BookText className="w-5 h-5 text-teal-700 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-teal-800">
             {t('feedback.emptyBanner')}
           </p>
         </div>
@@ -562,7 +562,7 @@ export function FeedbackPage() {
                           type="button"
                           onClick={() => openFormForSection(group.activityType)}
                           data-testid={`btn-add-note-empty-${group.key}`}
-                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 transition-colors"
+                          className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors"
                         >
                           <Plus className="w-4 h-4" />
                           {t('feedback.addOwnNoteFull')}
@@ -630,7 +630,7 @@ export function FeedbackPage() {
                                     <button
                                       onClick={() => handleEdit(entry)}
                                       data-testid={`btn-edit-${entry.id}`}
-                                      className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                      className="p-2 text-gray-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                                       title={t('feedback.editAction')}
                                     >
                                       <Edit2 className="w-4 h-4" />

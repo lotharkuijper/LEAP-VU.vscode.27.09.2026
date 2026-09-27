@@ -722,7 +722,7 @@ export function StudiecafePage() {
   if (!courseId) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20" data-testid="studiecafe-no-course">
-        <Coffee className="w-12 h-12 mx-auto text-amber-500 mb-4" />
+        <Coffee className="w-12 h-12 mx-auto text-violet-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('studiecafe.title')}</h1>
         <p className="text-gray-500">{t('studiecafe.noCourse')}</p>
       </div>
@@ -775,7 +775,7 @@ export function StudiecafePage() {
   return (
     <div className="max-w-3xl mx-auto" data-testid="page-studiecafe">
       {/* HEADER */}
-      <div className="rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 text-white p-6 shadow-md mb-6">
+      <div className="rounded-2xl bg-gradient-to-r from-violet-400 to-purple-500 text-white p-6 shadow-md mb-6">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
             <Coffee className="w-6 h-6" />
@@ -816,7 +816,7 @@ export function StudiecafePage() {
                   <label className="flex items-start gap-3 py-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="mt-0.5 w-4 h-4 accent-amber-500"
+                      className="mt-0.5 w-4 h-4 accent-violet-500"
                       checked={notifPrefs.emailReplies}
                       disabled={!notifPrefsLoaded || savingNotifPrefs}
                       onChange={(e) => saveNotifPref({ emailReplies: e.target.checked })}
@@ -830,7 +830,7 @@ export function StudiecafePage() {
                   <label className="flex items-start gap-3 py-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      className="mt-0.5 w-4 h-4 accent-amber-500"
+                      className="mt-0.5 w-4 h-4 accent-violet-500"
                       checked={notifPrefs.emailAnnouncements}
                       disabled={!notifPrefsLoaded || savingNotifPrefs}
                       onChange={(e) => saveNotifPref({ emailAnnouncements: e.target.checked })}
@@ -911,7 +911,7 @@ export function StudiecafePage() {
               onChange={(e) => setNewTitle(e.target.value)}
               maxLength={200}
               placeholder={t('studiecafe.compose.titlePlaceholder')}
-              className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none"
+              className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none"
               data-testid="input-thread-title"
             />
             <textarea
@@ -921,7 +921,7 @@ export function StudiecafePage() {
               maxLength={8000}
               rows={4}
               placeholder={t('studiecafe.compose.bodyPlaceholder')}
-              className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none resize-y"
+              className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none resize-y"
               data-testid="input-thread-body"
             />
             <FormulaEditor
@@ -970,7 +970,7 @@ export function StudiecafePage() {
               <button
                 onClick={createThread}
                 disabled={posting || !newTitle.trim() || !newBody.trim()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-400 to-purple-500 text-white font-medium disabled:opacity-50 hover:opacity-90 transition-opacity"
                 data-testid="button-submit-thread"
               >
                 {posting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -1011,7 +1011,7 @@ export function StudiecafePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('studiecafe.search.placeholder')}
-            className="w-full pl-9 pr-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none text-sm bg-white"
+            className="w-full pl-9 pr-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none text-sm bg-white"
             data-testid="input-search"
           />
         </div>
@@ -1020,7 +1020,7 @@ export function StudiecafePage() {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none text-sm bg-white text-slate-700"
+            className="px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none text-sm bg-white text-slate-700"
             data-testid="select-sort"
           >
             {sortOptions.map((o) => (
@@ -1106,7 +1106,7 @@ export function StudiecafePage() {
                         value={editingThread.title}
                         onChange={(e) => setEditingThread((s) => (s ? { ...s, title: e.target.value } : s))}
                         maxLength={200}
-                        className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none text-sm"
+                        className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none text-sm"
                         data-testid={`input-edit-thread-title-${th.id}`}
                       />
                       <textarea
@@ -1114,7 +1114,7 @@ export function StudiecafePage() {
                         onChange={(e) => setEditingThread((s) => (s ? { ...s, body: e.target.value } : s))}
                         maxLength={8000}
                         rows={4}
-                        className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none resize-y text-sm"
+                        className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none resize-y text-sm"
                         data-testid={`input-edit-thread-body-${th.id}`}
                       />
                       <div className="flex flex-wrap items-center gap-2">
@@ -1270,7 +1270,7 @@ export function StudiecafePage() {
                                 onChange={(e) => setEditingReply((s) => (s ? { ...s, body: e.target.value } : s))}
                                 maxLength={8000}
                                 rows={3}
-                                className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none resize-y text-sm bg-white"
+                                className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none resize-y text-sm bg-white"
                                 data-testid={`input-edit-reply-${rp.id}`}
                               />
                               <div className="flex justify-end gap-2">
@@ -1365,7 +1365,7 @@ export function StudiecafePage() {
                             rows={1}
                             maxLength={8000}
                             placeholder={t('studiecafe.replyPlaceholder')}
-                            className="flex-1 px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-400 outline-none resize-y text-sm bg-white"
+                            className="flex-1 px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none resize-y text-sm bg-white"
                             data-testid={`input-reply-${th.id}`}
                           />
                           <button

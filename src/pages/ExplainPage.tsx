@@ -580,7 +580,7 @@ export function ExplainPage() {
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={() => window.location.reload()}
-                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg"
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg"
                 >
                   <RefreshCw className="w-5 h-5" />
                   {t('chat.refreshPage')}
@@ -603,7 +603,7 @@ export function ExplainPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             <p className="text-gray-600 font-medium">{t('chat.profileLoading')}</p>
             <p className="text-sm text-gray-500 mt-2">{t('chat.profileLoadingWait')}</p>
           </div>
@@ -668,7 +668,7 @@ export function ExplainPage() {
                   }}
                   className={`w-full text-left p-3 rounded-lg transition-all ${
                     selectedConcept?.id === concept.id
-                      ? 'bg-gradient-to-r from-blue-100 to-blue-200 text-blue-900 font-medium'
+                      ? 'bg-gradient-to-r from-amber-100 to-amber-200 text-amber-900 font-medium'
                       : 'hover:bg-gray-100 text-gray-700'
                   }`}
                   data-testid={`button-concept-${concept.id}`}
@@ -687,7 +687,7 @@ export function ExplainPage() {
             if (conceptsLoading) {
               return (
                 <div className="text-center py-6">
-                  <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                   <p className="text-xs text-gray-500">{t('explain.loadingConcepts')}</p>
                 </div>
               );
@@ -789,7 +789,7 @@ export function ExplainPage() {
                 {total > shortList.length && (
                   <button
                     onClick={() => setShowAllConcepts(v => !v)}
-                    className="w-full text-center text-sm text-blue-700 hover:underline py-1"
+                    className="w-full text-center text-sm text-amber-700 hover:underline py-1"
                     data-testid="button-toggle-all-concepts"
                   >
                     {showAllConcepts
@@ -805,7 +805,7 @@ export function ExplainPage() {
         <div className="chic-card p-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <History className="w-5 h-5 text-blue-600" />
+              <History className="w-5 h-5 text-amber-600" />
               {t('explain.previouslyExplained')}
             </h2>
             {history.length > 0 && (
@@ -819,7 +819,7 @@ export function ExplainPage() {
           <div className="space-y-2 max-h-[400px] overflow-y-auto">
             {historyLoading && (
               <div className="text-center py-4">
-                <Loader2 className="w-5 h-5 animate-spin mx-auto text-blue-400" />
+                <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-400" />
               </div>
             )}
             {!historyLoading && history.length === 0 && (
@@ -837,7 +837,7 @@ export function ExplainPage() {
                   data-testid={`history-item-${item.id}`}
                   className={`group relative rounded-lg transition-all border ${
                     isActive
-                      ? 'bg-gradient-to-r from-blue-100 to-blue-200 border-blue-300'
+                      ? 'bg-gradient-to-r from-amber-100 to-amber-200 border-amber-300'
                       : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                   }`}
                 >
@@ -848,12 +848,12 @@ export function ExplainPage() {
                     className="w-full text-left p-3 pr-16 disabled:opacity-50"
                   >
                     <div className="flex items-start gap-2">
-                      <BookOpen className="w-4 h-4 mt-0.5 flex-shrink-0 text-blue-700" />
+                      <BookOpen className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-700" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-gray-900 truncate">{item.conceptName}</span>
                           {item.version > 1 && (
-                            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">v{item.version}</span>
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">v{item.version}</span>
                           )}
                         </div>
                         {item.conceptCategory && (
@@ -942,7 +942,7 @@ export function ExplainPage() {
                       onChange={(e) => setExplanation(e.target.value)}
                       placeholder={t('explain.typingPlaceholder')}
                       rows={8}
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none"
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all outline-none resize-none"
                     />
                     <div className="flex justify-between items-center mt-2">
                       <span className={`text-sm ${wordCount >= 50 ? 'text-green-600' : 'text-gray-500'}`}>
@@ -960,7 +960,7 @@ export function ExplainPage() {
                   <button
                     onClick={handleSubmitExplanation}
                     disabled={loading}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-xl hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

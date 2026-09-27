@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Face mask",
   "persona.avatar.part.background": "Background",
   "help.personas.avatar.title": "A face for your persona",
-  "help.personas.avatar.body": "Every persona automatically gets a robot. Choose another style here, browse each feature with the arrows or click \"Surprise me\". Students see this face next to the name and beside every answer in the chat."
+  "help.personas.avatar.body": "Every persona automatically gets a robot. Choose another style here, browse each feature with the arrows or click \"Surprise me\". Students see this face next to the name and beside every answer in the chat.",
+  "learningLevel.levelUp": "Level up: {label}!"
 }

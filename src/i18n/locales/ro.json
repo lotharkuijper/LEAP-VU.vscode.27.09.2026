@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Mască de protecție",
   "persona.avatar.part.background": "Fundal",
   "help.personas.avatar.title": "O față pentru persona ta",
-  "help.personas.avatar.body": "Fiecare persona primește automat un roboțel. Alege aici un alt stil, răsfoiește pe componente cu săgețile sau apasă pe „Surprinde-mă”. Studenții vor vedea această față lângă nume și la fiecare răspuns din conversație."
+  "help.personas.avatar.body": "Fiecare persona primește automat un roboțel. Alege aici un alt stil, răsfoiește pe componente cu săgețile sau apasă pe „Surprinde-mă”. Studenții vor vedea această față lângă nume și la fiecare răspuns din conversație.",
+  "learningLevel.levelUp": "Nivel crescut: {label}!"
 }

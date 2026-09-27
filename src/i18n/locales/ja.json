@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "マスク",
   "persona.avatar.part.background": "背景",
   "help.personas.avatar.title": "ペルソナに顔を設定",
-  "help.personas.avatar.body": "各ペルソナには自動的にロボットが割り当てられます。ここで別のスタイルを選ぶか、矢印で各パーツを切り替えるか、「おまかせ」をクリックしてね。学生には、名前の横と会話内の各回答にこの顔が表示されます。"
+  "help.personas.avatar.body": "各ペルソナには自動的にロボットが割り当てられます。ここで別のスタイルを選ぶか、矢印で各パーツを切り替えるか、「おまかせ」をクリックしてね。学生には、名前の横と会話内の各回答にこの顔が表示されます。",
+  "learningLevel.levelUp": "レベルアップ：{label}!"
 }

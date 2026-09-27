@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "口罩",
   "persona.avatar.part.background": "背景",
   "help.personas.avatar.title": "為你嘅 persona 揀個樣",
-  "help.personas.avatar.body": "每個 persona 都會自動獲分配一個小機械人。你可以喺度揀另一種風格，用箭咀逐個部分瀏覽，或者撳「畀個驚喜我」。學生會喺名稱旁邊同對話中每個回應旁邊見到呢個樣。"
+  "help.personas.avatar.body": "每個 persona 都會自動獲分配一個小機械人。你可以喺度揀另一種風格，用箭咀逐個部分瀏覽，或者撳「畀個驚喜我」。學生會喺名稱旁邊同對話中每個回應旁邊見到呢個樣。",
+  "learningLevel.levelUp": "等級提升：{label}!"
 }

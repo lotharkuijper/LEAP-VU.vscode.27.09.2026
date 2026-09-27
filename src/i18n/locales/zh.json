@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "口罩",
   "persona.avatar.part.background": "背景",
   "help.personas.avatar.title": "为你的角色选择一个头像",
-  "help.personas.avatar.body": "每个角色都会自动获得一个小机器人头像。你可以在这里选择其他风格，用箭头逐项浏览，或点击“给我惊喜”。学生会在名称旁边以及对话中每个回答旁看到这个头像。"
+  "help.personas.avatar.body": "每个角色都会自动获得一个小机器人头像。你可以在这里选择其他风格，用箭头逐项浏览，或点击“给我惊喜”。学生会在名称旁边以及对话中每个回答旁看到这个头像。",
+  "learningLevel.levelUp": "等级提升：{label}！"
 }

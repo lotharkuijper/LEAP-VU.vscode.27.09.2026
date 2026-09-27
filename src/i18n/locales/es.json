@@ -2608,5 +2608,6 @@
   "persona.avatar.part.mask": "Mascarilla",
   "persona.avatar.part.background": "Fondo",
   "help.personas.avatar.title": "Un rostro para tu persona",
-  "help.personas.avatar.body": "Cada persona recibe automáticamente un robotito. Elige aquí otro estilo, navega por cada parte con las flechas o haz clic en \"Sorpréndeme\". Los estudiantes verán este rostro junto al nombre y en cada respuesta de la conversación."
+  "help.personas.avatar.body": "Cada persona recibe automáticamente un robotito. Elige aquí otro estilo, navega por cada parte con las flechas o haz clic en \"Sorpréndeme\". Los estudiantes verán este rostro junto al nombre y en cada respuesta de la conversación.",
+  "learningLevel.levelUp": "¡Nivel superado: {label}!"
 }
