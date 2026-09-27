@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
-import { Bot, FolderOpen, Trash2, Pencil, Plus, Save, X, Download } from 'lucide-react';
+import { Bot, FolderOpen, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 /** Per sjabloon: de titels van de projecten die er een kopie van hebben. */
 export function usageBySource(
@@ -47,7 +47,10 @@ const EMPTY_FORM = {
   persona_type: 'conversational' as string,
 };
 
-export function PersonaLibraryTab() {
+export function PersonaLibraryTab({ onOpenProjects }: {
+  /** Naar het tabblad Projecten (bv. als de cursus nog geen projecten heeft). */
+  onOpenProjects?: () => void;
+} = {}) {
   const { isAdmin, isDocent, session } = useAuth();
   // Docenten beheren de sjablonen van hun eigen cursus; de server controleert
   // per cursus (isStaffForCourse).
@@ -62,10 +65,11 @@ export function PersonaLibraryTab() {
   const [saving, setSaving] = useState(false);
   const [fetchTarget, setFetchTarget] = useState<CoursePersona | null>(null);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [fetching, setFetching] = useState(false);
   const [fetchMsg, setFetchMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [usage, setUsage] = useState<Map<string, string[]>>(new Map());
+  const [copies, setCopies] = useState<Array<{ source_persona_id: string | null; project_id: string }>>([]);
+  const [addingTo, setAddingTo] = useState<string | null>(null);
+  const [savedNew, setSavedNew] = useState<CoursePersona | null>(null);
 
   const load = useCallback(async () => {
     if (!activeCourseId) { setPersonas([]); return; }
@@ -82,27 +86,19 @@ export function PersonaLibraryTab() {
   // "Gebruikt in": kopieën in de projecten van deze cursus onthouden hun
   // herkomst (project_personas.source_persona_id, geen FK).
   const loadUsage = useCallback(async () => {
-    if (!activeCourseId) { setUsage(new Map()); return; }
-    const { data: projs } = await supabase.from('projects').select('id, title').eq('course_id', activeCourseId);
+    if (!activeCourseId) { setUsage(new Map()); setCopies([]); return; }
+    const { data: projs } = await supabase.from('projects').select('id, title').eq('course_id', activeCourseId).order('created_at', { ascending: false });
+    setProjects((projs as any) || []);
     const ids = (projs || []).map((p: { id: string }) => p.id);
-    if (!ids.length) { setUsage(new Map()); return; }
-    const { data: copies } = await supabase.from('project_personas').select('source_persona_id, project_id').in('project_id', ids);
-    setUsage(usageBySource((copies as any) || [], (projs as any) || []));
+    if (!ids.length) { setUsage(new Map()); setCopies([]); return; }
+    const { data: rows } = await supabase.from('project_personas').select('source_persona_id, project_id').in('project_id', ids);
+    setCopies((rows as any) || []);
+    setUsage(usageBySource((rows as any) || [], (projs as any) || []));
   }, [activeCourseId]);
 
   useEffect(() => { loadUsage(); }, [loadUsage, personas]);
 
-  const loadProjects = useCallback(async () => {
-    if (!activeCourseId) return;
-    const { data } = await supabase
-      .from('projects')
-      .select('id, title')
-      .eq('course_id', activeCourseId)
-      .order('created_at', { ascending: false });
-    setProjects((data as any) || []);
-  }, [activeCourseId]);
-
-  const authHeader = () =>
+  const authHeader = (): Record<string, string> =>
     session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
 
   const removePersona = async (p: CoursePersona) => {
@@ -164,11 +160,13 @@ export function PersonaLibraryTab() {
         headers: { 'Content-Type': 'application/json', ...authHeader() },
         body: JSON.stringify(body),
       });
+      const d = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
         setError(d.error || t('admin.personaLib.err.saveFailed'));
       } else {
         setEditingId(null);
+        // Na een NIEUW sjabloon meteen de logische vervolgstap aanbieden.
+        setSavedNew(isNew && d.persona ? d.persona : null);
         await load();
       }
     } catch (err: any) {
@@ -178,28 +176,26 @@ export function PersonaLibraryTab() {
     }
   };
 
-  const openFetchModal = async (p: CoursePersona) => {
+  const openFetchModal = (p: CoursePersona) => {
     setFetchTarget(p);
-    setSelectedProjectId('');
     setFetchMsg(null);
     setError(null);
-    await loadProjects();
+    setSavedNew(null);
+    loadUsage();
   };
-
-  useEffect(() => {
-    if (projects.length === 1 && fetchTarget && !selectedProjectId) {
-      setSelectedProjectId(projects[0].id);
-    }
-  }, [projects, fetchTarget, selectedProjectId]);
 
   const closeFetchModal = () => { setFetchTarget(null); setFetchMsg(null); };
 
-  const fetchToProject = async () => {
-    if (!fetchTarget || !selectedProjectId) return;
-    setFetching(true);
+  // Projecten waarin dit sjabloon al een kopie heeft.
+  const projectsWith = (templateId: string) =>
+    new Set(copies.filter(c => c.source_persona_id === templateId).map(c => c.project_id));
+
+  const addToProject = async (projectId: string, projectTitle: string) => {
+    if (!fetchTarget) return;
+    setAddingTo(projectId);
     setFetchMsg(null);
     try {
-      const res = await fetch(`/api/projects/${selectedProjectId}/personas/from-library/${fetchTarget.id}`, {
+      const res = await fetch(`/api/projects/${projectId}/personas/from-library/${fetchTarget.id}`, {
         method: 'POST',
         headers: { ...authHeader() },
       });
@@ -207,13 +203,13 @@ export function PersonaLibraryTab() {
       if (!res.ok) {
         setFetchMsg({ ok: false, text: d.error || t('admin.personaLib.err.addFailed') });
       } else {
-        setFetchMsg({ ok: true, text: t('admin.personaLib.addedToProject', { name: fetchTarget.name }) });
-        loadUsage();
+        setFetchMsg({ ok: true, text: t('admin.personaLib.addedToProject', { name: fetchTarget.name, project: projectTitle }) });
+        await loadUsage();
       }
     } catch (err: any) {
       setFetchMsg({ ok: false, text: err.message });
     } finally {
-      setFetching(false);
+      setAddingTo(null);
     }
   };
 
@@ -255,6 +251,17 @@ export function PersonaLibraryTab() {
           <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm mb-3">{error}</div>
         )}
 
+        {savedNew && (
+          <div className="bg-green-50 border border-green-200 text-green-800 px-3 py-2 rounded text-sm mb-3 flex flex-wrap items-center gap-2" data-testid="notice-cp-saved">
+            <Check className="w-4 h-4" />
+            <span className="flex-1">{t('admin.personaLib.savedNext', { name: savedNew.name })}</span>
+            <button onClick={() => openFetchModal(savedNew)} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-green-700 text-white rounded hover:bg-green-800" data-testid="button-saved-add-to-project">
+              {t('admin.personaLib.addToProjectBtn')}<ArrowRight className="w-3 h-3" />
+            </button>
+            <button onClick={() => setSavedNew(null)} className="p-1 rounded hover:bg-green-100" aria-label={t('common.close')}><X className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
         {personas.length === 0 ? (
           <p className="text-sm text-gray-500">{t('admin.personaLib.empty')}</p>
         ) : (
@@ -283,7 +290,7 @@ export function PersonaLibraryTab() {
                     data-testid={`button-fetch-cp-${p.id}`}
                   >
                     <Download className="w-3 h-3" />
-                    {t('admin.personaLib.useInProject')}
+                    {t('admin.personaLib.addToProjectBtn')}
                   </button>
                   {canEdit && (
                     <>
@@ -401,11 +408,11 @@ export function PersonaLibraryTab() {
       )}
 
       {fetchTarget && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" data-testid="dialog-add-to-project">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold">
-                {t('admin.personaLib.useInProject')}
+                {t('admin.personaLib.addToProjectTitle', { name: fetchTarget.name })}
               </h3>
               <button onClick={closeFetchModal} className="p-1 hover:bg-gray-100 rounded" data-testid="button-close-fetch">
                 <X className="w-4 h-4" />
@@ -415,44 +422,47 @@ export function PersonaLibraryTab() {
               {t('admin.personaLib.fetchDesc', { name: fetchTarget.name })}
             </p>
             {fetchMsg && (
-              <div className={`px-3 py-2 rounded text-sm mb-3 ${fetchMsg.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-700'}`}>
+              <div className={`px-3 py-2 rounded text-sm mb-3 ${fetchMsg.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-700'}`} data-testid="text-add-to-project-msg">
                 {fetchMsg.text}
               </div>
             )}
             {projects.length === 0 ? (
-              <p className="text-sm text-gray-500 mb-3">
-                {t('admin.personaLib.noProjects')}
-              </p>
+              <div className="rounded-lg border border-dashed border-gray-300 p-4 text-sm text-gray-600 space-y-2" data-testid="empty-add-to-project">
+                <p>{t('admin.personaLib.noProjects')}</p>
+                {onOpenProjects && (
+                  <button onClick={() => { closeFetchModal(); onOpenProjects(); }} className="inline-flex items-center gap-1 text-blue-700 font-medium hover:underline" data-testid="button-go-to-projects">
+                    {t('admin.personaLib.goToProjects')}<ArrowRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             ) : (
-              <select
-                value={selectedProjectId}
-                onChange={e => setSelectedProjectId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm mb-3"
-                data-testid="select-fetch-project"
-              >
-                <option value="">{t('admin.personaLib.selectProjectOption')}</option>
-                {projects.map(pr => (
-                  <option key={pr.id} value={pr.id}>{pr.title}</option>
-                ))}
-              </select>
+              <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg max-h-72 overflow-y-auto">
+                {projects.map(pr => {
+                  const already = projectsWith(fetchTarget.id).has(pr.id);
+                  return (
+                    <li key={pr.id} className="px-3 py-2 flex items-center gap-3" data-testid={`row-add-to-project-${pr.id}`}>
+                      <span className="flex-1 text-sm text-gray-900">{pr.title}</span>
+                      {already && (
+                        <span className="inline-flex items-center gap-1 text-xs text-green-700"><Check className="w-3.5 h-3.5" />{t('admin.personaLib.alreadyAdded')}</span>
+                      )}
+                      <button
+                        onClick={() => addToProject(pr.id, pr.title)}
+                        disabled={addingTo !== null}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded disabled:opacity-40 ${already ? 'text-gray-600 border border-gray-200 hover:bg-gray-50' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                        data-testid={`button-add-to-project-${pr.id}`}
+                      >
+                        {addingTo === pr.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                        {already ? t('admin.personaLib.addAnotherCopy') : t('admin.personaLib.addBtn')}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end mt-4">
               <button onClick={closeFetchModal} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                 {t('common.close')}
               </button>
-              {projects.length > 0 && !fetchMsg?.ok && (
-                <button
-                  onClick={fetchToProject}
-                  disabled={!selectedProjectId || fetching}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-40"
-                  data-testid="button-confirm-fetch"
-                >
-                  <Download className="w-4 h-4" />
-                  {fetching
-                    ? t('admin.personaLib.adding')
-                    : t('admin.personaLib.addToProject')}
-                </button>
-              )}
             </div>
           </div>
         </div>

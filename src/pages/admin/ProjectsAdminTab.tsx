@@ -173,14 +173,14 @@ export function ProjectsAdminTab() {
     return (
       <div className="space-y-4">
         <ProjectsViewSwitch view={view} onChange={setView} />
-        <PersonaLibraryTab />
+        <PersonaLibraryTab onOpenProjects={() => setView('projects')} />
       </div>
     );
   }
-  return <ProjectsListView switcher={<ProjectsViewSwitch view={view} onChange={setView} />} />;
+  return <ProjectsListView switcher={<ProjectsViewSwitch view={view} onChange={setView} />} onOpenTemplates={() => setView('templates')} />;
 }
 
-function ProjectsListView({ switcher }: { switcher: ReactNode }) {
+function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; onOpenTemplates: () => void }) {
   const { session } = useAuth();
   const { activeCourseId, activeCourse } = useActiveCourse();
   const { lang, t } = useLanguage();
@@ -313,6 +313,7 @@ function ProjectsListView({ switcher }: { switcher: ReactNode }) {
       onBack={() => { setDetailProject(null); load(); }}
       onError={(m) => setError(m)}
       onInfo={(m) => setInfo(m)}
+      onOpenTemplates={onOpenTemplates}
     />;
   }
 
@@ -490,9 +491,11 @@ function ProjectsListView({ switcher }: { switcher: ReactNode }) {
   );
 }
 
-function ProjectDetailPanel({ project, token, onBack, onError, onInfo }: {
+function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTemplates }: {
   project: ProjectRow; token: string;
   onBack: () => void; onError: (m: string) => void; onInfo: (m: string) => void;
+  /** Naar Projecten → Persona-sjablonen (bv. als er nog geen sjablonen zijn). */
+  onOpenTemplates?: () => void;
 }) {
   const { t, lang } = useLanguage();
   const [personas, setPersonas] = useState<ProjectPersona[]>([]);
@@ -1005,9 +1008,20 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo }: {
             <Plus className="w-4 h-4" />{t('admin.projects.personas.addBtn')}
           </button>
         </div>
-        {libPersonas.length > 0 && (
+        {/* Uit sjabloon: altijd zichtbaar, zodat de docent weet dat sjablonen bestaan. */}
+        {libPersonas.length === 0 ? (
+          <div className="flex flex-wrap items-center gap-2 mb-3 p-2 bg-gray-50 border border-dashed border-gray-300 rounded-lg text-sm text-gray-600" data-testid="empty-lib-personas">
+            <Bot className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <span className="flex-1">{t('admin.projects.personas.noTemplates')}</span>
+            {onOpenTemplates && (
+              <button onClick={onOpenTemplates} className="text-blue-700 font-medium hover:underline" data-testid="button-open-templates">
+                {t('admin.projects.personas.toTemplates')}
+              </button>
+            )}
+          </div>
+        ) : (
           <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-            <Download className="w-4 h-4 text-gray-500 flex-shrink-0" />
+            <span className="text-xs font-medium text-gray-600 flex-shrink-0">{t('admin.projects.personas.fromTemplateLabel')}</span>
             <select
               value={selectedLibId}
               onChange={e => setSelectedLibId(e.target.value)}
@@ -1018,6 +1032,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo }: {
               {libPersonas.map(lp => (
                 <option key={lp.id} value={lp.id}>
                   {lp.avatar_emoji} {lp.name}{lp.persona_type === 'evaluator' ? ` (${t('admin.projects.personas.typeEvaluator').toLowerCase()})` : ''}
+                  {personas.some(pp => pp.source_persona_id === lp.id) ? ` — ${t('admin.projects.personas.alreadyInProject')}` : ''}
                 </option>
               ))}
             </select>
@@ -1028,7 +1043,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo }: {
               data-testid="button-import-from-lib"
             >
               {importingLib ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-              {t('admin.projects.personas.addBtn')}
+              {t('admin.projects.personas.addFromTemplateBtn')}
             </button>
           </div>
         )}
