@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { NoticeBanner, ConfirmDialog, useNotice } from './Notice';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
 
 interface FolderTreeViewProps {
   rootFolder: FolderWithDocumentCount;
@@ -91,16 +92,19 @@ function FolderNode({ folder, level, onSelect, selectedFolderId, onRefresh, lang
         onClick={handleSelect}
       >
         {(hasChildren || folder.folder_type === 'course' || folder.folder_type === 'root') && (
-          <button
-            onClick={handleToggle}
-            className="p-0.5 hover:bg-gray-200 rounded transition-colors"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
-          </button>
+          <Tooltip label={isExpanded ? t('folderTree.collapse') : t('folderTree.expand')}>
+            <button
+              onClick={handleToggle}
+              className="p-0.5 hover:bg-gray-200 rounded transition-colors"
+              aria-expanded={isExpanded}
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+          </Tooltip>
         )}
         {!(hasChildren || folder.folder_type === 'course' || folder.folder_type === 'root') && (
           <div className="w-5" />

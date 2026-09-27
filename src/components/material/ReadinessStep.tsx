@@ -8,6 +8,7 @@ import { buildContextWithCap } from '../../services/rag.service';
 import { generateMixedQuiz } from '../../services/quiz-mix.service';
 import type { MCQQuestion } from '../../services/llm.service';
 import { PURPOSE_ORDER, PurposeChip } from './purposeUi';
+import { AdminHint } from '../help/AdminHint';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 export type MaterialStep = 'files' | 'processing' | 'concepts' | 'ready';
@@ -117,7 +118,7 @@ export function ReadinessStep({
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-700">{t('material.ready.intro')}</p>
+      <AdminHint variant="intro">{t('material.ready.intro')}</AdminHint>
 
       {readiness.warnings.length === 0 ? (
         <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-emerald-900 font-medium" data-testid="text-ready-all-good">
@@ -224,7 +225,7 @@ export function ReadinessStep({
                 )}
                 <div className="flex justify-end">
                   <button type="button" onClick={() => setTryResult(null)} className="px-4 py-2 rounded-xl text-sm bg-gray-100 hover:bg-gray-200" data-testid="button-close-try">
-                    {t('material.drawer.close')}
+                    {t('common.close')}
                   </button>
                 </div>
               </>

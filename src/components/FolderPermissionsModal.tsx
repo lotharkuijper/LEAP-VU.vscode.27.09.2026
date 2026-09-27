@@ -7,6 +7,8 @@ import {
   setRAGAssignment,
 } from '../services/permissions.service';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
+import { AdminHint } from './help/AdminHint';
 
 interface FolderPermissionsModalProps {
   folderId: string;
@@ -97,9 +99,11 @@ export default function FolderPermissionsModal({ folderId, folderName, onClose }
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">{t('folderPermissions.title', { name: folderName })}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
+          <Tooltip label={t('common.close')} side="bottom">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="p-6 space-y-6">
@@ -143,17 +147,17 @@ export default function FolderPermissionsModal({ folderId, folderName, onClose }
                   </div>
                 </div>
               ))}
-              <div className="p-3 bg-gray-50 rounded text-sm text-gray-600">
+              <AdminHint variant="tip">
                 {t('folderPermissions.adminsFullAccess')}
-              </div>
+              </AdminHint>
             </div>
           </div>
 
           <div>
             <h3 className="font-semibold mb-3">{t('folderPermissions.chatModuleAssignments')}</h3>
-            <p className="text-sm text-gray-600 mb-3">
+            <AdminHint variant="intro" className="mb-3">
               {t('folderPermissions.chatModuleHint')}
-            </p>
+            </AdminHint>
             <div className="space-y-2">
               {[
                 { key: 'general' as ModuleType, label: t('folderPermissions.moduleGeneral') },
@@ -185,14 +189,14 @@ export default function FolderPermissionsModal({ folderId, folderName, onClose }
             onClick={onClose}
             className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md"
           >
-            {t('documents.cancel')}
+            {t('common.cancelAction')}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? t('admin.saving') : t('common.save')}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </div>

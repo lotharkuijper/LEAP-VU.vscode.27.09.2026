@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { retryFailedDocument, UploadProgress } from '../services/document-upload.service';
 import { NoticeBanner, ConfirmDialog, useNotice } from './Notice';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
 
 export function DocumentRetryPanel() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -143,7 +144,7 @@ export function DocumentRetryPanel() {
                       : 'bg-yellow-100 text-yellow-700'
                   }`}
                 >
-                  {doc.processing_status === 'failed' ? t('addUsers.status.failed') : t('room.checkpointing')}
+                  {doc.processing_status === 'failed' ? t('common.failed') : t('common.busy')}
                 </span>
                 <span className="text-xs text-gray-500">
                   {t('documentRetry.chunkCount', { n: String(doc.total_chunks || 0) })}
@@ -151,17 +152,18 @@ export function DocumentRetryPanel() {
               </div>
             </div>
 
-            <button
-              onClick={() => handleRetry(doc.id)}
-              disabled={retryingDocId !== null}
-              className="p-3 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title={t('documentRetry.retryOne')}
-              data-testid={`button-retry-${doc.id}`}
-            >
-              <RefreshCw
-                className={`w-5 h-5 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
-              />
-            </button>
+            <Tooltip label={t('documentRetry.retryOne')}>
+              <button
+                onClick={() => handleRetry(doc.id)}
+                disabled={retryingDocId !== null}
+                className="p-3 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                data-testid={`button-retry-${doc.id}`}
+              >
+                <RefreshCw
+                  className={`w-5 h-5 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
+                />
+              </button>
+            </Tooltip>
           </div>
         ))}
       </div>
@@ -170,7 +172,7 @@ export function DocumentRetryPanel() {
         open={confirmRetryAll}
         title={t('documentRetry.confirmAllTitle')}
         description={t(documents.length !== 1 ? 'documentRetry.confirmAllDescOther' : 'documentRetry.confirmAllDescOne', { n: String(documents.length) })}
-        confirmLabel={t('chooseCourse.continue')}
+        confirmLabel={t('common.continue')}
         onConfirm={() => { void runRetryAll(); }}
         onCancel={() => setConfirmRetryAll(false)}
       />

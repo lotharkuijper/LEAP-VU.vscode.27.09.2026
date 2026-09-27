@@ -11,6 +11,8 @@ import {
 } from '../services/web-import.service';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLanguage } from '../i18n';
+import { AdminHint } from './help/AdminHint';
+import { Tooltip } from './help/Tooltip';
 
 type NoticeKind = 'info' | 'warning' | 'error' | 'success';
 interface Notice {
@@ -215,20 +217,22 @@ export function WebImportPanel({
         >
           {renderNoticeIcon(notice.kind, `w-5 h-5 mt-0.5 ${NOTICE_STYLES[notice.kind].icon}`)}
           <p className="flex-1 text-sm">{notice.message}</p>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="opacity-70 hover:opacity-100"
-            aria-label={t('admin.imports.web.dismiss')}
-            data-testid="button-dismiss-web-notice"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <Tooltip label={t('admin.imports.web.dismiss')}>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="opacity-70 hover:opacity-100"
+              aria-label={t('admin.imports.web.dismiss')}
+              data-testid="button-dismiss-web-notice"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       )}
 
       {embedded ? (
-        <p className="text-sm text-gray-700">{t('admin.imports.web.intro')}</p>
+        <AdminHint variant="intro">{t('admin.imports.web.intro')}</AdminHint>
       ) : (
         <>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -236,7 +240,7 @@ export function WebImportPanel({
               <Globe className="w-5 h-5 text-blue-700 mt-0.5" />
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 mb-1">{t('admin.imports.web.title')}</h3>
-                <p className="text-sm text-gray-700">{t('admin.imports.web.intro')}</p>
+                <AdminHint variant="intro">{t('admin.imports.web.intro')}</AdminHint>
               </div>
             </div>
           </div>

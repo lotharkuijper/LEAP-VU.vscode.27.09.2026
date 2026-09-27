@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
 
 export type NoticeKind = 'info' | 'warning' | 'error' | 'success';
 
@@ -43,15 +44,16 @@ export function NoticeBanner({ notice, onDismiss, className }: NoticeBannerProps
     >
       <NoticeIcon kind={notice.kind} className={`w-5 h-5 mt-0.5 flex-shrink-0 ${s.icon}`} />
       <p className="flex-1 text-sm whitespace-pre-wrap">{notice.message}</p>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="opacity-70 hover:opacity-100"
-        aria-label={t('admin.imports.web.dismiss')}
-        data-testid="button-dismiss-notice"
-      >
-        <X className="w-4 h-4" />
-      </button>
+      <Tooltip label={t('common.dismiss')}>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="opacity-70 hover:opacity-100"
+          data-testid="button-dismiss-notice"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -130,7 +132,7 @@ export function ConfirmDialog({
             className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
             data-testid="button-confirm-cancel"
           >
-            {cancelLabel ?? t('admin.ragSetup.import.confirmCancel')}
+            {cancelLabel ?? t('common.cancelAction')}
           </button>
           <button
             type="button"
@@ -139,7 +141,7 @@ export function ConfirmDialog({
             className={`px-4 py-2 text-white font-medium rounded-lg transition-colors disabled:opacity-50 ${confirmBtnClass}`}
             data-testid="button-confirm-ok"
           >
-            {busy ? t('room.checkpointing') : (confirmLabel ?? t('common.confirm'))}
+            {busy ? t('common.busy') : (confirmLabel ?? t('common.confirm'))}
           </button>
         </div>
       </div>

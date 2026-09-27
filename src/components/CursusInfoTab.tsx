@@ -19,6 +19,8 @@ import { RichTextEditor } from './RichTextEditor';
 import { MarkdownMessage } from './MarkdownMessage';
 import { CourseBannerFrame, type CourseBanner } from './CourseBannerFrame';
 import { formatFileSize } from '../config/storage.config';
+import { AdminHint } from './help/AdminHint';
+import { Tooltip } from './help/Tooltip';
 
 interface InfoDoc {
   id: string;
@@ -380,9 +382,9 @@ export default function CursusInfoTab() {
     <div className="space-y-6" data-testid="tab-courseinfo">
       <div>
         <h2 className="text-lg font-semibold text-slate-900">{t('courseInfo.title')}</h2>
-        <p className="text-sm text-slate-600">
+        <AdminHint variant="intro">
           {t('courseInfo.intro', { course: activeCourse?.name || '' })}
-        </p>
+        </AdminHint>
       </div>
 
       {error && (
@@ -424,7 +426,7 @@ export default function CursusInfoTab() {
         <h3 className="text-sm font-semibold text-slate-900 mb-1 flex items-center gap-2">
           <ImageIcon className="h-4 w-4 text-slate-500" /> {t('courseInfo.banner.title')}
         </h3>
-        <p className="text-sm text-slate-600 mb-3">{t('courseInfo.banner.intro')}</p>
+        <AdminHint variant="intro" className="mb-3">{t('courseInfo.banner.intro')}</AdminHint>
 
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -602,28 +604,30 @@ export default function CursusInfoTab() {
               >
                 <span className="flex items-center gap-2 min-w-0">
                   <span className="flex flex-col flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => reorderDocs(index, index - 1)}
-                      disabled={index === 0}
-                      title={t('courseInfo.moveUp')}
-                      aria-label={t('courseInfo.moveUp')}
-                      className="inline-flex items-center justify-center h-4 w-5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                      data-testid={`button-moveup-linked-${d.id}`}
-                    >
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => reorderDocs(index, index + 1)}
-                      disabled={index === docs.length - 1}
-                      title={t('courseInfo.moveDown')}
-                      aria-label={t('courseInfo.moveDown')}
-                      className="inline-flex items-center justify-center h-4 w-5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                      data-testid={`button-movedown-linked-${d.id}`}
-                    >
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    </button>
+                    <Tooltip label={t('courseInfo.moveUp')}>
+                      <button
+                        type="button"
+                        onClick={() => reorderDocs(index, index - 1)}
+                        disabled={index === 0}
+                        aria-label={t('courseInfo.moveUp')}
+                        className="inline-flex items-center justify-center h-4 w-5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                        data-testid={`button-moveup-linked-${d.id}`}
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label={t('courseInfo.moveDown')} side="bottom">
+                      <button
+                        type="button"
+                        onClick={() => reorderDocs(index, index + 1)}
+                        disabled={index === docs.length - 1}
+                        aria-label={t('courseInfo.moveDown')}
+                        className="inline-flex items-center justify-center h-4 w-5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent"
+                        data-testid={`button-movedown-linked-${d.id}`}
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </Tooltip>
                   </span>
                   <FileText className="h-4 w-4 text-slate-400 flex-shrink-0" />
                   <span className="truncate text-sm text-slate-800">{d.title || d.filename}</span>
@@ -636,7 +640,7 @@ export default function CursusInfoTab() {
                     className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-sky-700 hover:bg-sky-50"
                     data-testid={`button-download-linked-${d.id}`}
                   >
-                    <Download className="h-3.5 w-3.5" /> {t('resources.download')}
+                    <Download className="h-3.5 w-3.5" /> {t('common.download')}
                   </button>
                   <button
                     type="button"
@@ -686,14 +690,16 @@ export default function CursusInfoTab() {
         <div className="rounded border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-slate-900">{t('courseInfo.availableFiles')}</h3>
-            <button
-              type="button"
-              onClick={() => setPicking(false)}
-              className="text-sm text-slate-500 hover:text-slate-700"
-              data-testid="button-close-filepicker"
-            >
-              ✕
-            </button>
+            <Tooltip label={t('common.close')}>
+              <button
+                type="button"
+                onClick={() => setPicking(false)}
+                className="text-sm text-slate-500 hover:text-slate-700"
+                data-testid="button-close-filepicker"
+              >
+                ✕
+              </button>
+            </Tooltip>
           </div>
           {availableLoading ? (
             <p className="text-sm text-slate-500"><Loader2 className="inline h-4 w-4 animate-spin" /></p>

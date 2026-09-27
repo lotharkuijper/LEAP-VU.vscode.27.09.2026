@@ -12,6 +12,9 @@ import {
   deriveMixState,
   type SourceMix,
 } from './quizSourcesLogic';
+import { AdminHint } from './help/AdminHint';
+import { HelpTip } from './help/HelpTip';
+import { Tooltip } from './help/Tooltip';
 
 interface Concept {
   id: string;
@@ -611,14 +614,14 @@ export function QuizSourcesAdminPanel() {
   return (
     <div className="space-y-5" data-testid="panel-quiz-sources">
       <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <h2 className="text-lg font-bold text-gray-900 mb-1">{t('admin.quizSources.title', { name: activeCourse?.name || '' })}</h2>
-        <p className="text-sm text-gray-600">{t('admin.quizSources.desc')}</p>
+        <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">{t('admin.quizSources.title', { name: activeCourse?.name || '' })}<HelpTip id="quizSources.overview" /></h2>
+        <AdminHint variant="intro">{t('admin.quizSources.desc')}</AdminHint>
       </div>
 
       {!schemaReady && (
-        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl text-sm text-yellow-900">
+        <AdminHint variant="warning">
           {t('admin.quizSources.schemaNotReady')}
-        </div>
+        </AdminHint>
       )}
 
       {msg && (
@@ -637,6 +640,7 @@ export function QuizSourcesAdminPanel() {
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3" data-testid="section-source-mix">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
           <Sparkles className="w-4 h-4" /> {t('admin.quizSources.mix.title')}
+          <HelpTip id="quizSources.mix" />
           {mixConfigured ? (
             <span className="ml-2 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700" data-testid="badge-mix-configured">
               {t('admin.quizSources.mix.savedBadge')}
@@ -647,7 +651,7 @@ export function QuizSourcesAdminPanel() {
             </span>
           )}
         </h3>
-        <p className="text-xs text-gray-600">{t('admin.quizSources.mix.desc')}</p>
+        <AdminHint variant="intro">{t('admin.quizSources.mix.desc')}</AdminHint>
         {!mixConfigured && (
           <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-2" data-testid="text-mix-default-hint">
             {t('admin.quizSources.mix.defaultHint')}
@@ -685,11 +689,11 @@ export function QuizSourcesAdminPanel() {
 
       {/* Dekkings-overzicht */}
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3" data-testid="section-coverage">
-        <h3 className="font-semibold text-gray-900">
+        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
           <button
             type="button"
             onClick={() => toggleCollapsed('coverage')}
-            className="flex items-center gap-2 w-full text-left"
+            className="flex items-center gap-2 flex-1 text-left"
             aria-expanded={!collapsed.coverage}
             title={collapsed.coverage ? t('admin.quizSources.toggleExpand') : t('admin.quizSources.toggleCollapse')}
             data-testid="button-toggle-coverage"
@@ -702,9 +706,10 @@ export function QuizSourcesAdminPanel() {
               </span>
             )}
           </button>
+          <HelpTip id="quizSources.coverage" />
         </h3>
         {!collapsed.coverage && (<>
-        <p className="text-xs text-gray-600">{t('admin.quizSources.coverage.desc')}</p>
+        <AdminHint variant="intro">{t('admin.quizSources.coverage.desc')}</AdminHint>
         {coverage.length === 0 ? null : coverageGaps > 0 ? (
           <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-2 inline-flex items-center gap-1" data-testid="text-coverage-gaps">
             <AlertCircle className="w-3.5 h-3.5" /> {t('admin.quizSources.coverage.gaps', { count: String(coverageGaps) })}
@@ -758,8 +763,9 @@ export function QuizSourcesAdminPanel() {
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3" data-testid="section-itembank-mappings">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
           <Database className="w-4 h-4" /> {t('admin.quizSources.itembank.title')}
+          <HelpTip id="quizSources.itembank" />
         </h3>
-        <p className="text-xs text-gray-600">{t('admin.quizSources.itembank.desc')}</p>
+        <AdminHint variant="intro">{t('admin.quizSources.itembank.desc')}</AdminHint>
 
         {/* Automatische bulk-matching */}
         {sections.length > 0 && (
@@ -769,7 +775,7 @@ export function QuizSourcesAdminPanel() {
                 <p className="text-sm font-semibold text-violet-900 inline-flex items-center gap-1">
                   <Wand2 className="w-4 h-4" /> {t('admin.quizSources.bulk.title')}
                 </p>
-                <p className="text-[11px] text-violet-800 mt-0.5">{t('admin.quizSources.bulk.desc')}</p>
+                <AdminHint variant="intro" className="mt-0.5">{t('admin.quizSources.bulk.desc')}</AdminHint>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <div className="flex items-center gap-3">
@@ -986,12 +992,14 @@ export function QuizSourcesAdminPanel() {
                             data-testid={`mapping-tag-${concept.id}-${key}`}
                           >
                             {m.exsection_path.join(' / ')}
-                            <button
-                              onClick={() => removeMapping(concept.id, key)}
-                              className="hover:text-red-600"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                            <Tooltip label={t('admin.quizSources.itembank.removeMapping')}>
+                              <button
+                                onClick={() => removeMapping(concept.id, key)}
+                                className="hover:text-red-600"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </Tooltip>
                           </span>
                         );
                       })}
@@ -1139,9 +1147,9 @@ export function QuizSourcesAdminPanel() {
       {/* CSV-import eigen itembank */}
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3" data-testid="section-csv-import">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <Upload className="w-4 h-4" /> {t('admin.quizSources.csv.title')}
+          <Upload className="w-4 h-4" /> {t('admin.quizSources.csv.title')}<HelpTip id="quizSources.csvImport" />
         </h3>
-        <p className="text-xs text-gray-600">{t('admin.quizSources.csv.desc')}</p>
+        <AdminHint variant="intro">{t('admin.quizSources.csv.desc')}</AdminHint>
         <button
           type="button"
           onClick={() => setShowCsvHelp(v => !v)}
@@ -1225,9 +1233,9 @@ export function QuizSourcesAdminPanel() {
       {/* RAG-folder mapping */}
       <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3" data-testid="section-rag-folder-mapping">
         <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <FolderOpen className="w-4 h-4" /> {t('admin.quizSources.rag.title')}
+          <FolderOpen className="w-4 h-4" /> {t('admin.quizSources.rag.title')}<HelpTip id="quizSources.ragFolders" />
         </h3>
-        <p className="text-xs text-gray-600">{t('admin.quizSources.rag.desc')}</p>
+        <AdminHint variant="intro">{t('admin.quizSources.rag.desc')}</AdminHint>
         <ConceptAccordion concepts={concepts} testIdPrefix="rag" renderConcept={concept => {
             const current = ragSources.find(s => s.concept_id === concept.id);
             return (
@@ -1275,7 +1283,7 @@ export function QuizSourcesAdminPanel() {
           </button>
         </h3>
         {!collapsed.prompts && (<>
-        <p className="text-xs text-gray-600">{t('admin.quizSources.prompts.desc')}</p>
+        <AdminHint variant="intro">{t('admin.quizSources.prompts.desc')}</AdminHint>
         {prompts.length === 0 && !loading && (
           <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 inline-flex items-center gap-1">
             <Plus className="w-3 h-3" /> {t('admin.quizSources.prompts.noPrompts')}

@@ -4,6 +4,7 @@ import { validateDocumentFile } from '../services/document-processor.service';
 import { uploadMultipleDocuments, MultiFileProgress } from '../services/document-upload.service';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
 
 interface DocumentUploadModalProps {
   onClose: () => void;
@@ -162,9 +163,11 @@ export function DocumentUploadModal({ onClose, onSuccess, folderId = null }: Doc
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white">
           <h2 className="text-xl font-semibold">{t('docUpload.title')}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
+          <Tooltip label={t('common.close')} side="bottom">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
+          </Tooltip>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -213,13 +216,15 @@ export function DocumentUploadModal({ onClose, onSuccess, folderId = null }: Doc
                       <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => removeFile(index)}
-                    className="ml-2 p-1 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </button>
+                  <Tooltip label={t('docUpload.removeFile')}>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="ml-2 p-1 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-600" />
+                    </button>
+                  </Tooltip>
                 </div>
               ))}
             </div>
@@ -239,7 +244,7 @@ export function DocumentUploadModal({ onClose, onSuccess, folderId = null }: Doc
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               {isUploading && <Loader2 className="w-4 h-4 animate-spin" />}
-              <span>Upload {files.length > 0 && `(${files.length})`}</span>
+              <span>{t('common.upload')} {files.length > 0 && `(${files.length})`}</span>
             </button>
           </div>
         </form>

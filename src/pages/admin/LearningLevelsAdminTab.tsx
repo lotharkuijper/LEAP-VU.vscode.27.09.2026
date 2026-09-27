@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { GraduationCap, RefreshCw, AlertTriangle, Lock } from 'lucide-react';
+import { GraduationCap, RefreshCw } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { LEVEL_MIN, LEVEL_MAX } from '../../hooks/useLearningLevel';
+import { AdminHint } from '../../components/help/AdminHint';
+import { HelpTip } from '../../components/help/HelpTip';
 
 interface LevelRow {
   user_id: string;
@@ -100,10 +102,11 @@ export function LearningLevelsAdminTab() {
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <GraduationCap className="w-5 h-5 text-blue-600" />
             {t('admin.learningLevels.title')}
+            <HelpTip id="learningLevels.overview" />
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <AdminHint variant="intro" className="mt-1">
             {t('admin.learningLevels.intro', { course: activeCourse?.name || '' })}
-          </p>
+          </AdminHint>
         </div>
         <button
           onClick={load}
@@ -116,16 +119,14 @@ export function LearningLevelsAdminTab() {
         </button>
       </div>
 
-      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-        <Lock className="w-3.5 h-3.5" />
+      <AdminHint variant="tip">
         {t('admin.learningLevels.readonlyNote')}
-      </div>
+      </AdminHint>
 
       {data?.warning && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800" data-testid="banner-learning-levels-warning">
-          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>{t('admin.learningLevels.warning')}</span>
-        </div>
+        <AdminHint variant="warning" testId="banner-learning-levels-warning">
+          {t('admin.learningLevels.warning')}
+        </AdminHint>
       )}
 
       {error && (

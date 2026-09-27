@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
+import { AdminHint } from '../../components/help/AdminHint';
 import {
-  UserPlus, Upload, Loader2, CheckCircle, XCircle, AlertTriangle, Info, Users,
+  UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users,
 } from 'lucide-react';
 
 // Maximale batchgrootte per request — moet gelijk zijn aan MAX_BULK_BATCH in
@@ -160,14 +161,13 @@ export function AddUsersTab() {
           <UserPlus className="w-5 h-5 text-blue-600" />
           {t('addUsers.title')}
         </h2>
-        <p className="text-gray-600 text-sm mt-1">{t('addUsers.subtitle')}</p>
+        <AdminHint variant="intro" className="mt-1">{t('addUsers.subtitle')}</AdminHint>
       </div>
 
       {/* E-mail-voorwaarde-banner */}
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm flex gap-2" data-testid="banner-email-prereq">
-        <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-        <span>{t('addUsers.emailPrereq')}</span>
-      </div>
+      <AdminHint variant="warning" testId="banner-email-prereq">
+        {t('addUsers.emailPrereq')}
+      </AdminHint>
 
       {/* Cursuskeuze */}
       <div>

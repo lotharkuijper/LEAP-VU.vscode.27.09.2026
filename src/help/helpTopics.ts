@@ -35,6 +35,26 @@ export const HELP_TOPICS = [
   'personas.fromTemplate',
   'personas.saveAsTemplate',
   'personas.evaluator',
+  // Quizbronnen, zoekgevoeligheid, leerniveaus, chat-instructies
+  'quizSources.overview',
+  'quizSources.mix',
+  'quizSources.itembank',
+  'searchSensitivity.overview',
+  'searchSensitivity.tryTerm',
+  'learningLevels.overview',
+  'chatInstructions.overview',
+  // Verdieping (fase 2/3)
+  'quizSources.coverage',
+  'quizSources.csvImport',
+  'quizSources.ragFolders',
+  'searchSensitivity.courseOverride',
+  'searchSensitivity.extraction',
+  'chatInstructions.perCourse',
+  'projects.submissions',
+  'projects.docs',
+  'personas.consultationLimits',
+  'personas.hiddenRubric',
+  'courses.cueRange',
 ] as const;
 
 export type HelpId = (typeof HELP_TOPICS)[number];

@@ -14,6 +14,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 import type { TranslationKey } from '../i18n/translations';
+import { AdminHint } from './help/AdminHint';
+import { Tooltip } from './help/Tooltip';
 
 interface ImportResult {
   imported: number;
@@ -358,15 +360,17 @@ export function ShareStatsImportPanel() {
         >
           {renderNoticeIcon(notice.kind, `w-5 h-5 mt-0.5 ${NOTICE_STYLES[notice.kind].icon}`)}
           <p className="flex-1 text-sm">{notice.message}</p>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="opacity-70 hover:opacity-100"
-            aria-label={t('admin.imports.web.dismiss')}
-            data-testid="button-dismiss-notice"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <Tooltip label={t('common.dismiss')}>
+            <button
+              type="button"
+              onClick={() => setNotice(null)}
+              className="opacity-70 hover:opacity-100"
+              aria-label={t('common.dismiss')}
+              data-testid="button-dismiss-notice"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       )}
 
@@ -375,7 +379,7 @@ export function ShareStatsImportPanel() {
           <Download className="w-5 h-5 text-blue-700 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 mb-1">{t('shareStatsImport.title')}</h3>
-            <p className="text-sm text-gray-700">
+            <AdminHint variant="intro">
               {renderRich(t('shareStatsImport.intro'), {
                 mchoice: <code>mchoice</code>,
                 schoice: <code>schoice</code>,
@@ -384,7 +388,7 @@ export function ShareStatsImportPanel() {
                 cloze: <code>cloze</code>,
                 exsection: <code>exsection</code>,
               })}
-            </p>
+            </AdminHint>
           </div>
         </div>
       </div>
@@ -637,9 +641,9 @@ export function ShareStatsImportPanel() {
         </div>
       )}
 
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h4 className="font-semibold text-gray-900 mb-2">{t('shareStatsImport.aboutTitle')}</h4>
-        <ul className="text-sm text-gray-700 space-y-2">
+      <AdminHint variant="tip">
+        <h4 className="font-semibold mb-2">{t('shareStatsImport.aboutTitle')}</h4>
+        <ul className="space-y-2">
           <li>• {t('shareStatsImport.about.source')}</li>
           <li>• {renderRich(t('shareStatsImport.about.dutchOnly'), {
             nlSuffix: <code>-nl</code>,
@@ -656,7 +660,7 @@ export function ShareStatsImportPanel() {
           <li>• {renderRich(t('shareStatsImport.about.exsection'), { exsection: <code>exsection</code> })}</li>
           <li>• {t('shareStatsImport.about.validated')}</li>
         </ul>
-      </div>
+      </AdminHint>
     </div>
   );
 }

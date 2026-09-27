@@ -16,6 +16,9 @@ import {
 } from './ui/alert-dialog';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
+import { AdminHint } from './help/AdminHint';
+import { HelpTip } from './help/HelpTip';
 
 interface CourseRow {
   id: string;
@@ -652,11 +655,11 @@ export default function CoursesAdmin() {
           <BookOpen className="w-6 h-6 text-blue-600" />
           {t('admin.header.manageCourses')}
         </h1>
-        <p className="text-sm text-gray-600">
+        <AdminHint variant="intro">
           {isAdmin
             ? t('coursesAdmin.intro.admin')
             : t('coursesAdmin.intro.teacher')}
-        </p>
+        </AdminHint>
       </header>
 
       {isAdmin && (
@@ -734,7 +737,7 @@ export default function CoursesAdmin() {
         <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('coursesAdmin.list.title')}</h2>
         {loadingList ? (
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" /> {t('material.drawer.loading')}
+            <Loader2 className="w-4 h-4 animate-spin" /> {t('common.loading')}
           </div>
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500" data-testid="text-no-courses">
@@ -778,12 +781,15 @@ export default function CoursesAdmin() {
                         />
                       </div>
                       <div>
-                        <label
-                          htmlFor={`input-edit-cue-max-${c.id}`}
-                          className="block text-xs font-medium text-gray-700 mb-1"
-                        >
-                          {t('coursesAdmin.edit.cueMaxLabel')}
-                        </label>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <label
+                            htmlFor={`input-edit-cue-max-${c.id}`}
+                            className="text-xs font-medium text-gray-700"
+                          >
+                            {t('coursesAdmin.edit.cueMaxLabel')}
+                          </label>
+                          <HelpTip id="courses.cueRange" />
+                        </div>
                         <input
                           id={`input-edit-cue-max-${c.id}`}
                           type="number"
@@ -1357,14 +1363,16 @@ export default function CoursesAdmin() {
                   {t('coursesAdmin.members.help')}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setMembersTarget(null)}
-                className="p-1 hover:bg-gray-100 rounded"
-                data-testid="button-close-members-dialog"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+              <Tooltip label={t('common.close')} side="bottom">
+                <button
+                  type="button"
+                  onClick={() => setMembersTarget(null)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                  data-testid="button-close-members-dialog"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </Tooltip>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {membersError && (

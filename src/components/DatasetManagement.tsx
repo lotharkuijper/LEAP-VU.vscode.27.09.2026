@@ -12,6 +12,8 @@ import {
 import { getFolders, type Folder } from '../services/folder.service';
 import { NoticeBanner, ConfirmDialog, useNotice } from './Notice';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
+import { AdminHint } from './help/AdminHint';
 
 export function DatasetManagement() {
   const { t } = useLanguage();
@@ -139,9 +141,9 @@ export function DatasetManagement() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">{t('datasetManagement.title')}</h2>
-          <p className="text-gray-600 mt-1">
+          <AdminHint variant="intro" className="mt-1">
             {t('datasetManagement.subtitle')}
-          </p>
+          </AdminHint>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
@@ -209,22 +211,24 @@ export function DatasetManagement() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleDownload(dataset)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title={t('resources.download')}
-                    data-testid={`button-download-dataset-${dataset.id}`}
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(dataset)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title={t('common.delete')}
-                    data-testid={`button-delete-dataset-${dataset.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={t('common.download')}>
+                    <button
+                      onClick={() => handleDownload(dataset)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      data-testid={`button-download-dataset-${dataset.id}`}
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('common.delete')}>
+                    <button
+                      onClick={() => setDeleteTarget(dataset)}
+                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      data-testid={`button-delete-dataset-${dataset.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -237,12 +241,14 @@ export function DatasetManagement() {
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-gray-900">{t('datasetManagement.uploadDataset')}</h3>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <Tooltip label={t('common.close')} side="bottom">
+                <button
+                  onClick={() => setShowUploadModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </Tooltip>
             </div>
 
             <div className="p-6 space-y-4">
@@ -317,7 +323,7 @@ export function DatasetManagement() {
                   disabled={!uploadForm.file || !uploadForm.name || uploading}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {uploading ? t('datasetManagement.uploading') : t('room.upload')}
+                  {uploading ? t('datasetManagement.uploading') : t('common.upload')}
                 </button>
               </div>
             </div>
@@ -333,7 +339,7 @@ export function DatasetManagement() {
             ? t('datasetManagement.deleteConfirm', { name: deleteTarget.name })
             : ''
         }
-        confirmLabel={t('documents.delete')}
+        confirmLabel={t('common.deleteAction')}
         variant="danger"
         busy={deleting}
         onConfirm={() => { void confirmDeleteDataset(); }}

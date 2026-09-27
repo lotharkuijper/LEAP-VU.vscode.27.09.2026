@@ -16,6 +16,7 @@ import { FilesStep } from './FilesStep';
 import { PurposeReview } from './PurposeReview';
 import { ReadinessStep, WarningList, type MaterialStep } from './ReadinessStep';
 import { HelpTip } from '../help/HelpTip';
+import { AdminHint } from '../help/AdminHint';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -122,7 +123,7 @@ export function CourseMaterialWorkspace({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">{t('material.title')}<HelpTip id="material.overview" /></h2>
-          <p className="text-sm text-gray-600 mt-1">{t('material.subtitle', { course: activeCourse?.name || '' })}</p>
+          <AdminHint variant="intro" className="mt-1">{t('material.subtitle', { course: activeCourse?.name || '' })}</AdminHint>
         </div>
         <button type="button" onClick={() => void load()} className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50" data-testid="button-material-refresh">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
@@ -195,7 +196,7 @@ export function CourseMaterialWorkspace({
 
       {step === 'processing' && (
         <div className="space-y-4">
-          <p className="text-sm text-gray-700">{t('material.processing.intro')}</p>
+          <AdminHint variant="intro">{t('material.processing.intro')}</AdminHint>
           <WarningList warnings={warningsFor('processing')} onGoTo={onStepChange} />
           <RAGDocumentStatusPanel />
         </div>
@@ -203,7 +204,7 @@ export function CourseMaterialWorkspace({
 
       {step === 'concepts' && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-700">{t('material.concepts.intro')}</p>
+          <AdminHint variant="intro">{t('material.concepts.intro')}</AdminHint>
           <WarningList warnings={warningsFor('concepts')} onGoTo={onStepChange} />
           <div className="flex flex-wrap items-center gap-3">
             <button

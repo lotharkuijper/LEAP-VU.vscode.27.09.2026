@@ -18,6 +18,8 @@ import { PurposePicker, type PurposeValue } from './PurposePicker';
 import { WebSourceRow } from './WebSourceRow';
 import { WebImportPanel } from '../WebImportPanel';
 import { HelpTip } from '../help/HelpTip';
+import { Tooltip } from '../help/Tooltip';
+import { AdminHint } from '../help/AdminHint';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -216,9 +218,11 @@ export function FilesStep({
               {queue.map((f, i) => (
                 <li key={`${f.name}-${i}`} className="inline-flex items-center gap-1 text-xs bg-gray-100 rounded-full pl-3 pr-1 py-1">
                   {f.name}
-                  <button type="button" onClick={() => setQueue(q => q.filter((_, j) => j !== i))} aria-label={t('material.upload.remove')} className="p-0.5 rounded-full hover:bg-gray-200">
-                    <X className="w-3 h-3" />
-                  </button>
+                  <Tooltip label={t('material.upload.remove')}>
+                    <button type="button" onClick={() => setQueue(q => q.filter((_, j) => j !== i))} className="p-0.5 rounded-full hover:bg-gray-200">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Tooltip>
                 </li>
               ))}
             </ul>
@@ -227,7 +231,7 @@ export function FilesStep({
               <PurposePicker value={target} onChange={setTarget} projects={projects} suggested={suggested} idPrefix="upload-purpose" />
             </div>
             {(target.purpose === 'course_material' || target.purpose === 'course_info') && (
-              <p className="text-xs text-gray-500">{t('material.upload.ragTypesHint')}</p>
+              <AdminHint variant="tip">{t('material.upload.ragTypesHint')}</AdminHint>
             )}
             <div className="flex items-center gap-2">
               <button
@@ -274,7 +278,7 @@ export function FilesStep({
                     <span className="text-xs font-normal text-gray-500"> · {t('material.web.count', { n: String(sources.length) })}</span>
                   )}
                 </h3>
-                <p className="text-xs text-gray-600">{tk(`filePurpose.${p}.desc`)}</p>
+                <AdminHint variant="intro">{tk(`filePurpose.${p}.desc`)}</AdminHint>
               </div>
             </header>
 
@@ -345,13 +349,17 @@ export function FilesStep({
                           <ArrowRightLeft className="w-3.5 h-3.5" />{t('material.files.changePurpose')}
                         </button>
                         {!f.isWeb && (
-                          <button type="button" onClick={() => downloadCourseFile(f.id, f.filename || f.title).catch(err => setNotice({ kind: 'error', text: errorText(err) }))} className="p-1.5 rounded-lg hover:bg-gray-100" title={t('material.files.download')} aria-label={t('material.files.download')}>
-                            <Download className="w-4 h-4 text-gray-600" />
-                          </button>
+                          <Tooltip label={t('material.files.download')}>
+                            <button type="button" onClick={() => downloadCourseFile(f.id, f.filename || f.title).catch(err => setNotice({ kind: 'error', text: errorText(err) }))} className="p-1.5 rounded-lg hover:bg-gray-100">
+                              <Download className="w-4 h-4 text-gray-600" />
+                            </button>
+                          </Tooltip>
                         )}
-                        <button type="button" onClick={() => setConfirmDelete(f.id)} className="p-1.5 rounded-lg hover:bg-red-50" title={t('material.files.delete')} aria-label={t('material.files.delete')} data-testid={`button-delete-file-${f.id}`}>
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </button>
+                        <Tooltip label={t('material.files.delete')}>
+                          <button type="button" onClick={() => setConfirmDelete(f.id)} className="p-1.5 rounded-lg hover:bg-red-50" data-testid={`button-delete-file-${f.id}`}>
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </button>
+                        </Tooltip>
                       </div>
                     )}
                   </li>
@@ -370,9 +378,11 @@ export function FilesStep({
               <h3 id="title-add-website" className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Globe className="w-5 h-5 text-sky-600" />{t('material.web.addTitle')}
               </h3>
-              <button type="button" onClick={() => setAddingWebsite(false)} className="p-1 rounded-lg hover:bg-gray-100" aria-label={t('material.files.cancel')} data-testid="button-close-add-website">
-                <X className="w-5 h-5" />
-              </button>
+              <Tooltip label={t('material.files.cancel')} side="bottom">
+                <button type="button" onClick={() => setAddingWebsite(false)} className="p-1 rounded-lg hover:bg-gray-100" data-testid="button-close-add-website">
+                  <X className="w-5 h-5" />
+                </button>
+              </Tooltip>
             </div>
             <WebImportPanel courseId={courseId} embedded onImported={() => onChanged()} />
           </div>

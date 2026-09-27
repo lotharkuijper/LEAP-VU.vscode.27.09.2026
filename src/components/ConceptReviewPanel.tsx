@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Eye, FileText, Loader2 } from 'lucide-react';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
 import { intlLocale } from '../i18n/languages';
 import {
   getExtractedConceptsForReview,
@@ -248,22 +249,24 @@ export function ConceptReviewPanel() {
                 </div>
 
                 <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={() => handleApprove(concept.id)}
-                    className="p-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
-                    title={t('concepts.approve')}
-                    data-testid={`button-approve-concept-${concept.id}`}
-                  >
-                    <CheckCircle className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleReject(concept.id)}
-                    className="p-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
-                    title={t('concepts.reject')}
-                    data-testid={`button-reject-concept-${concept.id}`}
-                  >
-                    <XCircle className="w-5 h-5" />
-                  </button>
+                  <Tooltip label={t('concepts.approve')}>
+                    <button
+                      onClick={() => handleApprove(concept.id)}
+                      className="p-2 text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+                      data-testid={`button-approve-concept-${concept.id}`}
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('concepts.reject')}>
+                    <button
+                      onClick={() => handleReject(concept.id)}
+                      className="p-2 text-red-700 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                      data-testid={`button-reject-concept-${concept.id}`}
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -275,7 +278,7 @@ export function ConceptReviewPanel() {
         open={confirmExtractAll}
         title={t('concepts.extractAllConfirmTitle')}
         description={t('concepts.extractAllConfirmDesc')}
-        confirmLabel={t('chooseCourse.continue')}
+        confirmLabel={t('common.continue')}
         onConfirm={() => { void runExtractFromAll(); }}
         onCancel={() => setConfirmExtractAll(false)}
       />

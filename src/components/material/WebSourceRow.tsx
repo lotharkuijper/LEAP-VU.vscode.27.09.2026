@@ -10,6 +10,7 @@ import {
 } from '../../services/course-files.service';
 import { importWebPages, WebImportInterruptedError, type WebImportProgress } from '../../services/web-import.service';
 import { HelpTip } from '../help/HelpTip';
+import { Tooltip } from '../help/Tooltip';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 type WebPurpose = WebSource['purpose'];
@@ -170,9 +171,11 @@ export function WebSourceRow({
             >
               {t('material.web.makePurpose', { purpose: tk(`filePurpose.${otherPurpose}.label`) })}
             </button>
-            <button type="button" onClick={() => setConfirmDelete(true)} disabled={syncing} className="p-1.5 rounded-lg hover:bg-red-50" title={t('material.files.delete')} aria-label={t('material.files.delete')} data-testid={`button-delete-web-source-${source.id}`}>
-              <Trash2 className="w-4 h-4 text-red-600" />
-            </button>
+            <Tooltip label={t('material.files.delete')}>
+              <button type="button" onClick={() => setConfirmDelete(true)} disabled={syncing} className="p-1.5 rounded-lg hover:bg-red-50" data-testid={`button-delete-web-source-${source.id}`}>
+                <Trash2 className="w-4 h-4 text-red-600" />
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>
@@ -227,9 +230,11 @@ export function WebSourceRow({
                   <button type="button" onClick={() => setConfirmPage(null)} className="px-2 py-0.5 rounded bg-gray-200">{t('material.files.cancel')}</button>
                 </>
               ) : (
-                <button type="button" onClick={() => setConfirmPage(p.id)} className="p-1 rounded hover:bg-red-50" title={t('material.files.delete')} aria-label={t('material.files.delete')}>
-                  <Trash2 className="w-3.5 h-3.5 text-red-600" />
-                </button>
+                <Tooltip label={t('material.files.delete')}>
+                  <button type="button" onClick={() => setConfirmPage(p.id)} className="p-1 rounded hover:bg-red-50">
+                    <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                  </button>
+                </Tooltip>
               )}
             </li>
           ))}

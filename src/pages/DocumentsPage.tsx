@@ -6,6 +6,7 @@ import {
 import { NoticeBanner, ConfirmDialog, useNotice } from '../components/Notice';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
+import { Tooltip } from '../components/help/Tooltip';
 import { intlLocale } from '../i18n/languages';
 import { getActiveLang } from '../i18n/activeLang';
 
@@ -70,11 +71,11 @@ function formatDate(iso: string) {
 function FolderTypeBadge({ type }: { type: string }) {
   const { t } = useLanguage();
   if (type === 'rag_sources')
-    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">RAG</span>;
+    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">{t('documents.badge.rag')}</span>;
   if (type === 'data')
-    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium shrink-0">Data</span>;
+    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium shrink-0">{t('documents.badge.data')}</span>;
   if (type === 'course')
-    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium shrink-0">{t('addUsers.courseLabel')}</span>;
+    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium shrink-0">{t('common.course')}</span>;
   return null;
 }
 
@@ -110,6 +111,7 @@ function TreeNode({
   onToggle: (id: string) => void;
   depth: number;
 }) {
+  const { t } = useLanguage();
   const isExpanded = expandedIds.has(node.id);
   const isSelected = selectedId === node.id;
   const hasChildren = node.children.length > 0;
@@ -124,16 +126,28 @@ function TreeNode({
         style={{ paddingLeft: `${8 + depth * 16}px`, paddingRight: '8px' }}
         onClick={() => onSelect(node.id)}
       >
-        <button
-          className="w-4 h-4 flex items-center justify-center shrink-0 rounded hover:bg-gray-200"
-          onClick={(e) => { e.stopPropagation(); if (hasChildren) onToggle(node.id); }}
-        >
-          {hasChildren
-            ? isExpanded
-              ? <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
-              : <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
-            : <span className="w-3.5 h-3.5" />}
-        </button>
+        {hasChildren ? (
+          <Tooltip label={isExpanded ? t('documents.collapseFolder') : t('documents.expandFolder')}>
+            <button
+              className="w-4 h-4 flex items-center justify-center shrink-0 rounded hover:bg-gray-200"
+              onClick={(e) => { e.stopPropagation(); onToggle(node.id); }}
+              aria-expanded={isExpanded}
+            >
+              {isExpanded
+                ? <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
+                : <ChevronRight className="w-3.5 h-3.5 text-gray-500" />}
+            </button>
+          </Tooltip>
+        ) : (
+          <button
+            className="w-4 h-4 flex items-center justify-center shrink-0 rounded hover:bg-gray-200"
+            onClick={(e) => { e.stopPropagation(); }}
+            tabIndex={-1}
+            aria-hidden="true"
+          >
+            <span className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {isSelected && isExpanded
           ? <FolderOpen className="w-4 h-4 shrink-0 text-amber-500" />
@@ -192,9 +206,11 @@ function NewFolderModal({
           <h3 className="text-base font-semibold text-gray-900">
             {t('documents.newFolderTitle')}
           </h3>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
-            <X className="w-4 h-4" />
-          </button>
+          <Tooltip label={t('common.close')} side="bottom">
+            <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
         <p className="text-sm text-gray-500 mb-3">
           {t('documents.newFolderIn')} <strong>{parentName}</strong>
@@ -527,14 +543,15 @@ export default function DocumentsPage() {
               />
 
               {canDeleteFolder && (
-                <button
-                  onClick={() => setDeleteFolderId(selectedId)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
-                  data-testid="button-delete-folder"
-                  title={t('documents.deleteEmptyFolder')}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <Tooltip label={t('documents.deleteEmptyFolder')} side="bottom">
+                  <button
+                    onClick={() => setDeleteFolderId(selectedId)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                    data-testid="button-delete-folder"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               )}
             </div>
           )}
@@ -611,23 +628,25 @@ export default function DocumentsPage() {
                       <StatusPill status={doc.processing_status} />
                     </td>
                     <td className="py-2.5">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => downloadDocument(doc)}
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                          data-testid={`button-download-${doc.id}`}
-                          title={t('documents.download')}
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteDocId(doc.id)}
-                          className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          data-testid={`button-delete-doc-${doc.id}`}
-                          title={t('documents.delete')}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <Tooltip label={t('documents.download')}>
+                          <button
+                            onClick={() => downloadDocument(doc)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            data-testid={`button-download-${doc.id}`}
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label={t('documents.delete')}>
+                          <button
+                            onClick={() => setDeleteDocId(doc.id)}
+                            className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            data-testid={`button-delete-doc-${doc.id}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>

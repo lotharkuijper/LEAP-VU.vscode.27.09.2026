@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useLanguage } from "../i18n";
+import { Tooltip } from "../components/help/Tooltip";
 
 import { 
   getRootFolders, 
@@ -550,7 +551,7 @@ const moveItem = async (name: string, targetPath: string) => {
                 }}
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
               >
-                {t('documents.cancel')}
+                {t('common.cancelAction')}
               </button>
 
 <button
@@ -655,7 +656,7 @@ const moveItem = async (name: string, targetPath: string) => {
                   }}
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
-                  {t('documents.cancel')}
+                  {t('common.cancelAction')}
                 </button>
               </div>
             )}
@@ -677,25 +678,27 @@ const moveItem = async (name: string, targetPath: string) => {
                 </div>
 
                 <div className="relative">
-                  <button
-                    onClick={(e) => {
-                      const rect = (
-                        e.currentTarget as HTMLElement
-                      ).getBoundingClientRect();
-                      const spaceBelow =
-                        window.innerHeight - rect.bottom;
+                  <Tooltip label={t('fileManager.moreActions')}>
+                    <button
+                      onClick={(e) => {
+                        const rect = (
+                          e.currentTarget as HTMLElement
+                        ).getBoundingClientRect();
+                        const spaceBelow =
+                          window.innerHeight - rect.bottom;
 
-                      setMenuDirection(
-                        spaceBelow < 150 ? "up" : "down"
-                      );
-                      setOpenMenuFor(
-                        openMenuFor === item.name ? null : item.name
-                      );
-                    }}
-                    className="px-2 py-1 hover:bg-gray-200 rounded"
-                  >
-                    ⋯
-                  </button>
+                        setMenuDirection(
+                          spaceBelow < 150 ? "up" : "down"
+                        );
+                        setOpenMenuFor(
+                          openMenuFor === item.name ? null : item.name
+                        );
+                      }}
+                      className="px-2 py-1 hover:bg-gray-200 rounded"
+                    >
+                      ⋯
+                    </button>
+                  </Tooltip>
 
                   {openMenuFor === item.name && (
                     <div

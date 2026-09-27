@@ -9,6 +9,8 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { uploadDocument, UploadProgress } from '../services/document-upload.service';
 import { RAGDocumentStatusPanel } from './RAGDocumentStatusPanel';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
+import { AdminHint } from './help/AdminHint';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.txt'];
 
@@ -387,7 +389,7 @@ export function RAGSetupPanel() {
                 <RefreshCw className={`w-3 h-3 ${loadingProcessedDocs ? 'animate-spin' : ''}`} /> {t('admin.ragSetup.extract.refresh')}
               </button>
             </div>
-            <p className="text-xs text-gray-600 mt-0.5 mb-1">{t('admin.ragSetup.extract.desc')}</p>
+            <AdminHint variant="intro" className="mt-0.5 mb-1">{t('admin.ragSetup.extract.desc')}</AdminHint>
             <div className="flex flex-wrap gap-3 text-xs text-gray-500 mb-3">
               <span>{t(processedDocs.length === 1 ? 'admin.ragSetup.extract.docCountSingular' : 'admin.ragSetup.extract.docCountPlural', { count: String(processedDocs.length) })}</span>
               <span>·</span>
@@ -603,18 +605,19 @@ export function RAGSetupPanel() {
                         data-testid={`chip-doc-${id}`}
                       >
                         <span className="max-w-[140px] truncate">{doc.filename}</span>
-                        <button
-                          onClick={() => setSelectedDocIds(prev => {
-                            const next = new Set(prev);
-                            next.delete(id);
-                            return next;
-                          })}
-                          className="ml-0.5 text-purple-600 hover:text-purple-900 flex-shrink-0"
-                          data-testid={`chip-remove-doc-${id}`}
-                          aria-label={t('admin.ragSetup.extract.deselectFile', { name: doc.filename })}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
+                        <Tooltip label={t('admin.ragSetup.extract.deselectFile', { name: doc.filename })}>
+                          <button
+                            onClick={() => setSelectedDocIds(prev => {
+                              const next = new Set(prev);
+                              next.delete(id);
+                              return next;
+                            })}
+                            className="ml-0.5 text-purple-600 hover:text-purple-900 flex-shrink-0"
+                            data-testid={`chip-remove-doc-${id}`}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </Tooltip>
                       </span>
                     );
                   })}
@@ -765,7 +768,7 @@ function UploadSection({ folderId, userId, courseId, accessToken }: { folderId: 
                     </div>
                     {item.progress.currentChunk !== undefined && (
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Chunk {item.progress.currentChunk} / {item.progress.totalChunks}
+                        {t('common.chunkProgress', { current: String(item.progress.currentChunk), total: String(item.progress.totalChunks) })}
                       </p>
                     )}
                   </div>
@@ -785,12 +788,14 @@ function UploadSection({ folderId, userId, courseId, accessToken }: { folderId: 
                 {item.status === 'uploading' && <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />}
                 {item.status === 'error' && <AlertTriangle className="w-5 h-5 text-red-600" />}
                 {item.status === 'pending' && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={t('admin.ragSetup.upload.removeFile')}>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); removeItem(item.id); }}
+                      className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -952,9 +957,9 @@ function ImportSection({
   if (storageFiles.length === 0) {
     return (
       <div className="space-y-3">
-        <p className="text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2" data-testid="text-import-note">
+        <AdminHint variant="tip" testId="text-import-note">
           {t('admin.ragSetup.import.note')}
-        </p>
+        </AdminHint>
         <div className="text-center py-8 text-gray-500">
           <FolderOpen className="w-10 h-10 mx-auto mb-3 text-gray-300" />
           <p className="font-medium text-gray-700">{t('admin.ragSetup.import.noFiles')}</p>
@@ -972,9 +977,9 @@ function ImportSection({
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2" data-testid="text-import-note">
+      <AdminHint variant="tip" testId="text-import-note">
         {t('admin.ragSetup.import.note')}
-      </p>
+      </AdminHint>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-gray-700">
@@ -987,14 +992,15 @@ function ImportSection({
           )}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={loadFiles}
-            disabled={loadingFiles}
-            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-            title={t('admin.ragSetup.import.refresh')}
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingFiles ? 'animate-spin' : ''}`} />
-          </button>
+          <Tooltip label={t('admin.ragSetup.import.refresh')}>
+            <button
+              onClick={loadFiles}
+              disabled={loadingFiles}
+              className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingFiles ? 'animate-spin' : ''}`} />
+            </button>
+          </Tooltip>
           {notImported.length > 0 && !confirmBulkImport && (
             <button
               onClick={importAll}

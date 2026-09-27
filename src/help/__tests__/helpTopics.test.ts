@@ -47,7 +47,7 @@ describe('hulpteksten (HelpTip)', () => {
   });
 
   it('geen losse help.*-teksten in de vertaalbestanden zonder id in de centrale lijst', () => {
-    const known = new Set<string>(['help.buttonLabel', 'help.close']);
+    const known = new Set<string>(['help.buttonLabel', 'help.close', 'help.toggle.label', 'help.toggle.on', 'help.toggle.off']);
     for (const id of HELP_TOPICS) { known.add(helpTitleKey(id)); known.add(helpBodyKey(id)); }
     const stray = Object.keys(dicts.nl).filter((k) => k.startsWith('help.') && !known.has(k));
     expect(stray).toEqual([]);

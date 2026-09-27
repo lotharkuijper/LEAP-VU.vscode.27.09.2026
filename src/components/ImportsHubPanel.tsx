@@ -1,9 +1,10 @@
 import { type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, ArrowRight, Library, Sparkles, Info, Globe } from 'lucide-react';
+import { Download, ArrowRight, Library, Sparkles, Globe } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useLanguage } from '../i18n';
 import { ShareStatsImportPanel } from './ShareStatsImportPanel';
+import { AdminHint } from './help/AdminHint';
 
 // Een importbron = één bibliotheek die app-breed aan LEAP-VU gekoppeld is.
 // Nieuwe bibliotheken voeg je toe door één entry aan `sources` toe te voegen
@@ -76,7 +77,7 @@ export function ImportsHubPanel({ onNavigateToQuizSources, onNavigateToMaterial 
           <Library className="w-5 h-5 text-blue-600" />
           <h2 className="text-xl font-bold text-gray-900">{t('admin.imports.title')}</h2>
         </div>
-        <p className="text-sm text-gray-600 max-w-3xl">{t('admin.imports.intro')}</p>
+        <AdminHint variant="intro" className="max-w-3xl">{t('admin.imports.intro')}</AdminHint>
         <button
           type="button"
           onClick={onNavigateToQuizSources}
@@ -127,10 +128,9 @@ export function ImportsHubPanel({ onNavigateToQuizSources, onNavigateToMaterial 
 
         <div className="flex-1 min-w-0" data-testid={`panel-import-source-${active.id}`}>
           {active.id === 'sharestats' && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-              <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-900">{t('admin.imports.usageNote')}</p>
-            </div>
+            <AdminHint variant="tip" className="mb-4">
+              {t('admin.imports.usageNote')}
+            </AdminHint>
           )}
           {active.render()}
         </div>

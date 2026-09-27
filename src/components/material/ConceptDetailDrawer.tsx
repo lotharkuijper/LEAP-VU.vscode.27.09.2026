@@ -4,6 +4,7 @@ import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { fetchConceptEvidence, type DocumentChunk } from '../../services/rag.service';
 import { setConceptVisibility } from '../../services/course-files.service';
+import { Tooltip } from '../help/Tooltip';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -106,9 +107,11 @@ export function ConceptDetailDrawer({
             <p className="text-xs uppercase tracking-wide text-gray-500">{t('material.drawer.title')}</p>
             <h2 className="text-xl font-bold text-gray-900" data-testid="text-drawer-concept-name">{concept?.name || '…'}</h2>
           </div>
-          <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100" aria-label={t('material.drawer.close')} data-testid="button-close-drawer">
-            <X className="w-5 h-5" />
-          </button>
+          <Tooltip label={t('material.drawer.close')} side="bottom">
+            <button type="button" onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100" data-testid="button-close-drawer">
+              <X className="w-5 h-5" />
+            </button>
+          </Tooltip>
         </header>
 
         {!concept ? (

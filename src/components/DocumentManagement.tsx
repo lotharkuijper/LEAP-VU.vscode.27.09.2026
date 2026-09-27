@@ -163,7 +163,7 @@ export default function DocumentManagement({
       });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
-        setSubmissionsError(j.error || t('room.deleteFailed'));
+        setSubmissionsError(j.error || t('common.deleteFailed'));
         return;
       }
       setConfirmDeleteSubmission(null);
@@ -181,7 +181,7 @@ export default function DocumentManagement({
       const r = await fetch(`/api/projects/${s.project_id}/submissions/${s.id}/download`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      if (!r.ok) { setSubmissionsError(t('room.downloadFailed')); return; }
+      if (!r.ok) { setSubmissionsError(t('common.downloadFailed')); return; }
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -360,13 +360,13 @@ export default function DocumentManagement({
               onClick={selectedItem.type === 'folder' ? handleDeleteFolder : handleDeleteDocument}
               className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
             >
-              {t('documents.delete')}
+              {t('common.deleteAction')}
             </button>
             <button
               onClick={() => setSelectedItem(null)}
               className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
             >
-              {t('documents.cancel')}
+              {t('common.cancelAction')}
             </button>
           </div>
         </div>
@@ -407,14 +407,14 @@ export default function DocumentManagement({
                   className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1.5"
                   data-testid={`button-download-uploads-submission-${s.id}`}
                 >
-                  <Download className="w-4 h-4" /> {t('resources.download')}
+                  <Download className="w-4 h-4" /> {t('common.download')}
                 </button>
                 <button
                   onClick={() => setConfirmDeleteSubmission(s)}
                   className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1.5"
                   data-testid={`button-delete-uploads-submission-${s.id}`}
                 >
-                  <Trash2 className="w-4 h-4" /> {t('documents.delete')}
+                  <Trash2 className="w-4 h-4" /> {t('common.deleteAction')}
                 </button>
               </div>
             </div>
@@ -433,7 +433,7 @@ export default function DocumentManagement({
               })
             : ''
         }
-        confirmLabel={t('documents.delete')}
+        confirmLabel={t('common.deleteAction')}
         variant="danger"
         busy={deletingSubmission}
         onConfirm={() => { void deleteSubmissionConfirmed(); }}
@@ -503,7 +503,7 @@ export default function DocumentManagement({
                     {doc.processing_status === 'completed'
                       ? t('documentManagement.statusDone')
                       : doc.processing_status === 'failed'
-                      ? t('addUsers.status.failed')
+                      ? t('common.failed')
                       : t('documentManagement.statusProcessing')}
                   </span>
                 </div>
@@ -552,7 +552,7 @@ export default function DocumentManagement({
                   }}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  {t('documents.cancel')}
+                  {t('common.cancelAction')}
                 </button>
                 <button
                   onClick={handleCreateFolder}
@@ -575,7 +575,7 @@ export default function DocumentManagement({
             ? t('folderTree.deleteConfirm', { name: confirmDeleteFolder.name })
             : ''
         }
-        confirmLabel={t('documents.delete')}
+        confirmLabel={t('common.deleteAction')}
         variant="danger"
         busy={deletingFolder}
         onConfirm={() => { void confirmDeleteFolderAction(); }}
@@ -608,7 +608,7 @@ export default function DocumentManagement({
                   }}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  {t('documents.cancel')}
+                  {t('common.cancelAction')}
                 </button>
                 <button
                   onClick={handleRenameFolder}

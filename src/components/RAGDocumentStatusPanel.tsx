@@ -5,6 +5,7 @@ import { retryFailedDocument, UploadProgress, sessionExpiredMessage } from '../s
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n';
+import { Tooltip } from './help/Tooltip';
 
 interface DocumentWithChunkCount {
   id: string;
@@ -317,14 +318,15 @@ export function RAGDocumentStatusPanel() {
           >
             {filterMode === 'failed' ? t('ragStatus.panel.showAll') : t('ragStatus.panel.showProblems', { n: String(failedCount) })}
           </button>
-          <button
-            onClick={loadDocuments}
-            disabled={loading}
-            className="p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-            title={t('material.refresh')}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          <Tooltip label={t('common.refresh')}>
+            <button
+              onClick={loadDocuments}
+              disabled={loading}
+              className="p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -407,7 +409,7 @@ export function RAGDocumentStatusPanel() {
           </div>
           {retryProgress.currentChunk !== undefined && retryProgress.totalChunks !== undefined && (
             <p className="text-xs text-gray-600 mt-2">
-              Chunk {retryProgress.currentChunk} / {retryProgress.totalChunks}
+              {t('common.chunkProgress', { current: String(retryProgress.currentChunk), total: String(retryProgress.totalChunks) })}
             </p>
           )}
         </div>
@@ -465,30 +467,32 @@ export function RAGDocumentStatusPanel() {
                   )}
 
                   {doc.processing_status === 'completed' && /\.pdf$/i.test(doc.filename) && (
-                    <button
-                      onClick={() => handleReprocessCompleted(doc)}
-                      disabled={retryingDocId !== null}
-                      className="p-2 text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-                      title={t('rag.docStatus.reprocessPageTitle')}
-                      data-testid={`button-reprocess-doc-${doc.id}`}
-                    >
-                      <RefreshCw
-                        className={`w-4 h-4 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
-                      />
-                    </button>
+                    <Tooltip label={t('rag.docStatus.reprocessPageTitle')}>
+                      <button
+                        onClick={() => handleReprocessCompleted(doc)}
+                        disabled={retryingDocId !== null}
+                        className="p-2 text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                        data-testid={`button-reprocess-doc-${doc.id}`}
+                      >
+                        <RefreshCw
+                          className={`w-4 h-4 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
+                        />
+                      </button>
+                    </Tooltip>
                   )}
 
                   {needsAttention && (
-                    <button
-                      onClick={() => handleRetry(doc.id)}
-                      disabled={retryingDocId !== null}
-                      className="p-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-                      title={t('documentRetry.retryOne')}
-                    >
-                      <RefreshCw
-                        className={`w-4 h-4 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
-                      />
-                    </button>
+                    <Tooltip label={t('documentRetry.retryOne')}>
+                      <button
+                        onClick={() => handleRetry(doc.id)}
+                        disabled={retryingDocId !== null}
+                        className="p-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCw
+                          className={`w-4 h-4 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
+                        />
+                      </button>
+                    </Tooltip>
                   )}
 
                   {deleteConfirmId === doc.id ? (
@@ -499,7 +503,7 @@ export function RAGDocumentStatusPanel() {
                         className="px-2 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                         data-testid={`button-confirm-delete-doc-${doc.id}`}
                       >
-                        {deletingDocId === doc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('admin.yes')}
+                        {deletingDocId === doc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('common.yes')}
                       </button>
                       <button
                         onClick={() => setDeleteConfirmId(null)}
@@ -510,15 +514,16 @@ export function RAGDocumentStatusPanel() {
                       </button>
                     </div>
                   ) : (
-                    <button
-                      onClick={() => setDeleteConfirmId(doc.id)}
-                      disabled={deletingDocId !== null || retryingDocId !== null}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                      title={t('rag.docStatus.deleteTitle')}
-                      data-testid={`button-delete-doc-${doc.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <Tooltip label={t('rag.docStatus.deleteTitle')}>
+                      <button
+                        onClick={() => setDeleteConfirmId(doc.id)}
+                        disabled={deletingDocId !== null || retryingDocId !== null}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                        data-testid={`button-delete-doc-${doc.id}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </Tooltip>
                   )}
                 </div>
               </div>
@@ -560,7 +565,7 @@ function StatusBadge({
     return (
       <span className="flex items-center gap-1 text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
         <Loader2 className="w-3 h-3 animate-spin" />
-        {t('room.checkpointing')}
+        {t('common.busy')}
       </span>
     );
   }
@@ -578,7 +583,7 @@ function StatusBadge({
     return (
       <span className="flex items-center gap-1 text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
         <AlertTriangle className="w-3 h-3" />
-        {t('addUsers.status.failed')}
+        {t('common.failed')}
       </span>
     );
   }

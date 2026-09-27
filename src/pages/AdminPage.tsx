@@ -26,6 +26,10 @@ import { CourseMaterialWorkspace, MATERIAL_STEPS } from '../components/material/
 import { ConceptDetailDrawer } from '../components/material/ConceptDetailDrawer';
 import type { MaterialStep } from '../components/material/ReadinessStep';
 import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset } from '../lib/ragPresets';
+import { HelpToggle } from '../components/help/HelpToggle';
+import { Tooltip } from '../components/help/Tooltip';
+import { AdminHint } from '../components/help/AdminHint';
+import { HelpTip } from '../components/help/HelpTip';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 type Document = Database['public']['Tables']['documents']['Row'];
@@ -177,24 +181,25 @@ function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deleting
                     className="px-2 py-0.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                     data-testid={`button-confirm-delete-${concept.id}`}
                   >
-                    {deletingConceptId === concept.id ? <Loader2 className="w-3 h-3 animate-spin inline" /> : t('admin.yes')}
+                    {deletingConceptId === concept.id ? <Loader2 className="w-3 h-3 animate-spin inline" /> : t('common.yes')}
                   </button>
                   <button
                     onClick={onDeleteCancel}
                     className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                   >
-                    {t('admin.no')}
+                    {t('common.no')}
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={() => onDeleteRequest(concept.id)}
-                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  title={t('admin.delete')}
-                  data-testid={`button-delete-${concept.id}`}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <Tooltip label={t('common.deleteAction')}>
+                  <button
+                    onClick={() => onDeleteRequest(concept.id)}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    data-testid={`button-delete-${concept.id}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               )}
             </div>
           </div>
@@ -1536,13 +1541,16 @@ const tabGroups = [
 </div>
 
         </div>
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Home className="w-5 h-5" />
-          <span>{t('admin.header.backToDashboard')}</span>
-        </button>
+        <div className="flex flex-col items-end gap-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <Home className="w-5 h-5" />
+            <span>{t('admin.header.backToDashboard')}</span>
+          </button>
+          <HelpToggle />
+        </div>
       </div>
 
       {isAdmin && autoBackfillStatus && !autoBackfillBannerDismissed && (autoBackfillStatus.failed ?? 0) > 0 && (
@@ -1571,19 +1579,20 @@ const tabGroups = [
               {t('admin.backfill.fixText')}
             </p>
           </div>
-          <button
-            onClick={() => {
-              if (autoBackfillStatus?.ranAt) {
-                localStorage.setItem(BACKFILL_DISMISS_KEY, autoBackfillStatus.ranAt);
-              }
-              setAutoBackfillBannerDismissed(true);
-            }}
-            className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
-            title={t('common.close')}
-            data-testid="button-dismiss-backfill-banner"
-          >
-            <XCircle className="w-4 h-4" />
-          </button>
+          <Tooltip label={t('common.close')}>
+            <button
+              onClick={() => {
+                if (autoBackfillStatus?.ranAt) {
+                  localStorage.setItem(BACKFILL_DISMISS_KEY, autoBackfillStatus.ranAt);
+                }
+                setAutoBackfillBannerDismissed(true);
+              }}
+              className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
+              data-testid="button-dismiss-backfill-banner"
+            >
+              <XCircle className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       )}
 
@@ -1678,7 +1687,7 @@ const tabGroups = [
                         className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                         data-testid="button-cancel-last-teacher"
                       >
-                        {t('admin.cancel')}
+                        {t('common.cancelAction')}
                       </button>
                       <button
                         type="button"
@@ -1718,7 +1727,7 @@ const tabGroups = [
                         className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                         data-testid="button-cancel-delete-user"
                       >
-                        {t('admin.cancel')}
+                        {t('common.cancelAction')}
                       </button>
                       <button
                         type="button"
@@ -1758,9 +1767,9 @@ const tabGroups = [
                     className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     data-testid="button-confirm-role-change"
                   >
-                    {t('admin.confirm')}
+                    {t('common.confirm')}
                   </button>
-                  <button onClick={() => { setRoleConfirm(null); setRoleConfirmInput(''); }} className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-xs font-medium">{t('admin.cancel')}</button>
+                  <button onClick={() => { setRoleConfirm(null); setRoleConfirmInput(''); }} className="px-3 py-1 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-xs font-medium">{t('common.cancelAction')}</button>
                 </div>
               )}
               <div className="flex items-center gap-4">
@@ -2043,7 +2052,7 @@ const tabGroups = [
             <div className={`space-y-4 ${activeTab === 'material' ? 'mt-4' : ''}`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-gray-600">{t('admin.concepts.subtitle')}</p>
+                  <AdminHint variant="intro">{t('admin.concepts.subtitle')}</AdminHint>
                   {activeCourse && (
                     <p className="text-sm text-blue-600 mt-1 flex items-center gap-1">
                       <GraduationCap className="w-4 h-4" />
@@ -2225,13 +2234,13 @@ const tabGroups = [
                       className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 text-sm"
                       data-testid="button-save-concept"
                     >
-                      {addConceptLoading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : t('admin.save')}
+                      {addConceptLoading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : t('common.save')}
                     </button>
                     <button
                       onClick={() => { setAddConceptForm(false); setAddConceptError(null); }}
                       className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all text-sm"
                     >
-                      {t('admin.cancel')}
+                      {t('common.cancelAction')}
                     </button>
                   </div>
                 </div>
@@ -2241,11 +2250,9 @@ const tabGroups = [
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>
               )}
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-gray-700">
-                  <strong>{t('admin.tip')}</strong> {t('admin.concepts.tip')}
-                </p>
-              </div>
+              <AdminHint variant="tip">
+                <strong>{t('admin.tip')}</strong> {t('admin.concepts.tip')}
+              </AdminHint>
 
               {/* ── Selectie-toolbar ── */}
               {(courseConcepts.length > 0 || globalConcepts.length > 0) && (() => {
@@ -2294,7 +2301,7 @@ const tabGroups = [
                             onClick={() => setBulkDeleteConfirm(false)}
                             className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                           >
-                            {t('admin.cancel')}
+                            {t('common.cancelAction')}
                           </button>
                         </div>
                       ) : (
@@ -2333,7 +2340,7 @@ const tabGroups = [
                             onClick={() => setApproveConfirm(false)}
                             className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                           >
-                            {t('admin.cancel')}
+                            {t('common.cancelAction')}
                           </button>
                         </div>
                       ) : (
@@ -2562,17 +2569,22 @@ const tabGroups = [
 
           {activeTab === 'prompts' && (
             <div className="space-y-6">
-              <p className="text-gray-600">{t('admin.prompts.subtitle')}</p>
+              <div className="flex items-start gap-2">
+                <AdminHint variant="intro">{t('admin.prompts.subtitle')}</AdminHint>
+                <HelpTip id="chatInstructions.overview" />
+              </div>
 
               {isAdmin && promptsMigration && !promptsMigration.hasSection && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl space-y-2">
-                  <p className="text-sm font-semibold text-yellow-900">{t('admin.prompts.migrationTitle')}</p>
-                  <p className="text-sm text-yellow-800">{t('admin.prompts.migrationDesc')}</p>
-                  <code className="block bg-yellow-100 border border-yellow-300 rounded-lg px-3 py-2 text-xs font-mono text-yellow-900 select-all whitespace-pre-wrap">
-                    {promptsMigration.sqlToRun}
-                  </code>
-                  <p className="text-xs text-yellow-700">{t('admin.prompts.migrationAfter')}</p>
-                </div>
+                <AdminHint variant="warning">
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold">{t('admin.prompts.migrationTitle')}</p>
+                    <p className="text-sm">{t('admin.prompts.migrationDesc')}</p>
+                    <code className="block bg-white/70 border border-amber-300 rounded-lg px-3 py-2 text-xs font-mono select-all whitespace-pre-wrap">
+                      {promptsMigration.sqlToRun}
+                    </code>
+                    <p className="text-xs">{t('admin.prompts.migrationAfter')}</p>
+                  </div>
+                </AdminHint>
               )}
 
               {promptMsg && (
@@ -2622,14 +2634,14 @@ const tabGroups = [
                       className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-sm disabled:opacity-50"
                       data-testid="button-save-prompt"
                     >
-                      {loading ? t('admin.prompts.saving') : t('admin.save')}
+                      {loading ? t('admin.prompts.saving') : t('common.save')}
                     </button>
                     <button
                       onClick={() => { setEditingPrompt(null); setPromptContent(''); setEditingPromptName(''); }}
                       className="px-6 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
                       data-testid="button-cancel-prompt"
                     >
-                      {t('admin.cancel')}
+                      {t('common.cancelAction')}
                     </button>
                   </div>
                 </div>
@@ -2653,14 +2665,15 @@ const tabGroups = [
                               <p className="font-semibold text-gray-900 text-sm">{activeChatPrompt.name}</p>
                               <p className="text-xs text-gray-500 mt-1 line-clamp-2 font-mono">{activeChatPrompt.content}</p>
                             </div>
-                            <button
-                              onClick={() => { setEditingPrompt(activeChatPrompt); setPromptContent(activeChatPrompt.content); setEditingPromptName(activeChatPrompt.name); }}
-                              className="ml-4 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
-                              title={t('admin.edit')}
-                              data-testid={`button-edit-chat-${activeChatPrompt.id}`}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
+                            <Tooltip label={t('admin.edit')}>
+                              <button
+                                onClick={() => { setEditingPrompt(activeChatPrompt); setPromptContent(activeChatPrompt.content); setEditingPromptName(activeChatPrompt.name); }}
+                                className="ml-4 p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex-shrink-0"
+                                data-testid={`button-edit-chat-${activeChatPrompt.id}`}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                           </div>
                         ) : (
                           <p className="text-sm text-gray-400 italic">{t('admin.prompts.noChatPrompt')}</p>
@@ -2688,14 +2701,15 @@ const tabGroups = [
                               <p className="font-semibold text-gray-900 text-sm">{activeExplainPrompt.name}</p>
                               <p className="text-xs text-gray-500 mt-1 line-clamp-2 font-mono">{activeExplainPrompt.content}</p>
                             </div>
-                            <button
-                              onClick={() => { setEditingPrompt(activeExplainPrompt); setPromptContent(activeExplainPrompt.content); setEditingPromptName(activeExplainPrompt.name); }}
-                              className="ml-4 p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-100 rounded-lg transition-colors flex-shrink-0"
-                              title={t('admin.edit')}
-                              data-testid={`button-edit-explain-${activeExplainPrompt.id}`}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
+                            <Tooltip label={t('admin.edit')}>
+                              <button
+                                onClick={() => { setEditingPrompt(activeExplainPrompt); setPromptContent(activeExplainPrompt.content); setEditingPromptName(activeExplainPrompt.name); }}
+                                className="ml-4 p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-100 rounded-lg transition-colors flex-shrink-0"
+                                data-testid={`button-edit-explain-${activeExplainPrompt.id}`}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                           </div>
                         ) : (
                           <p className="text-sm text-gray-400 italic">{t('admin.prompts.noExplainPrompt')}</p>
@@ -2707,8 +2721,8 @@ const tabGroups = [
                     {/* ── Per-cursus uitleg-prompt (Task #28) ── */}
                     <div className="mt-4 p-4 border border-purple-200 bg-white rounded-xl space-y-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{t('admin.prompts.explainPerCourse.title')}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{t('admin.prompts.explainPerCourse.desc')}</p>
+                        <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">{t('admin.prompts.explainPerCourse.title')}<HelpTip id="chatInstructions.perCourse" /></p>
+                        <AdminHint variant="intro" className="mt-0.5">{t('admin.prompts.explainPerCourse.desc')}</AdminHint>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -2742,7 +2756,7 @@ const tabGroups = [
                           </div>
 
                           {explainLoading ? (
-                            <p className="text-sm text-gray-400 italic">{t('admin.loading')}</p>
+                            <p className="text-sm text-gray-400 italic">{t('common.loading')}</p>
                           ) : (
                             <textarea
                               value={explainOverrideContent}
@@ -2787,8 +2801,8 @@ const tabGroups = [
                     {/* ── Per-cursus tutor-chat-prompt (Task #334) ── */}
                     <div className="mt-4 p-4 border border-blue-200 bg-white rounded-xl space-y-3">
                       <div>
-                        <p className="text-sm font-semibold text-gray-900">{t('admin.prompts.chatPerCourse.title')}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{t('admin.prompts.chatPerCourse.desc')}</p>
+                        <p className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">{t('admin.prompts.chatPerCourse.title')}<HelpTip id="chatInstructions.perCourse" /></p>
+                        <AdminHint variant="intro" className="mt-0.5">{t('admin.prompts.chatPerCourse.desc')}</AdminHint>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -2822,7 +2836,7 @@ const tabGroups = [
                           </div>
 
                           {chatLoading ? (
-                            <p className="text-sm text-gray-400 italic">{t('admin.loading')}</p>
+                            <p className="text-sm text-gray-400 italic">{t('common.loading')}</p>
                           ) : (
                             <textarea
                               value={chatOverrideContent}
@@ -2886,9 +2900,9 @@ const tabGroups = [
                       )}
                     </div>
                     {promptsMigration?.hasSection === false && (
-                      <p className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 mb-3">
+                      <AdminHint variant="warning" className="mb-3">
                         {t('admin.prompts.agentPromptsAfterMigration')}
-                      </p>
+                      </AdminHint>
                     )}
 
                     {showNewProjectForm && (
@@ -2924,7 +2938,7 @@ const tabGroups = [
                             className="px-4 py-1.5 text-sm bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                             data-testid="button-cancel-new-project"
                           >
-                            {t('admin.cancel')}
+                            {t('common.cancelAction')}
                           </button>
                         </div>
                       </div>
@@ -2938,14 +2952,15 @@ const tabGroups = [
                             <p className="text-xs text-gray-500 mt-1 line-clamp-2 font-mono">{prompt.content}</p>
                           </div>
                           <div className="flex gap-1 ml-4 flex-shrink-0">
-                            <button
-                              onClick={() => { setEditingPrompt(prompt); setPromptContent(prompt.content); setEditingPromptName(prompt.name); }}
-                              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title={t('admin.edit')}
-                              data-testid={`button-edit-project-${prompt.id}`}
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
+                            <Tooltip label={t('admin.edit')}>
+                              <button
+                                onClick={() => { setEditingPrompt(prompt); setPromptContent(prompt.content); setEditingPromptName(prompt.name); }}
+                                className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                data-testid={`button-edit-project-${prompt.id}`}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                             {confirmDeletePromptId === prompt.id ? (
                               <div className="flex items-center gap-1">
                                 <span className="text-xs text-red-600 font-medium">{t('admin.prompts.deleteConfirm')}</span>
@@ -2955,25 +2970,26 @@ const tabGroups = [
                                   className="px-2 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
                                   data-testid={`button-confirm-delete-prompt-${prompt.id}`}
                                 >
-                                  {deletingPromptId === prompt.id ? '...' : t('admin.yes')}
+                                  {deletingPromptId === prompt.id ? '...' : t('common.yes')}
                                 </button>
                                 <button
                                   onClick={() => setConfirmDeletePromptId(null)}
                                   className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md hover:bg-gray-200"
                                   data-testid={`button-cancel-delete-prompt-${prompt.id}`}
                                 >
-                                  {t('admin.no')}
+                                  {t('common.no')}
                                 </button>
                               </div>
                             ) : (
-                              <button
-                                onClick={() => setConfirmDeletePromptId(prompt.id)}
-                                className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title={t('admin.delete')}
-                                data-testid={`button-delete-project-${prompt.id}`}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              <Tooltip label={t('common.deleteAction')}>
+                                <button
+                                  onClick={() => setConfirmDeletePromptId(prompt.id)}
+                                  className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  data-testid={`button-delete-project-${prompt.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </Tooltip>
                             )}
                           </div>
                         </div>
@@ -2992,14 +3008,17 @@ const tabGroups = [
           {activeTab === 'rag_settings' && (
             <div className="space-y-6 p-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-1">{t('admin.ragSettings.title')}</h2>
-                <p className="text-sm text-gray-600">{t('admin.ragSettings.subtitle')}</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                  {t('admin.ragSettings.title')}
+                  <HelpTip id="searchSensitivity.overview" />
+                </h2>
+                <AdminHint variant="intro">{t('admin.ragSettings.subtitle')}</AdminHint>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <Globe className="w-5 h-5 text-blue-600 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-blue-900">{t('admin.ragSettings.adjustFor')}</p>
+                  <p className="text-sm font-medium text-blue-900 flex items-center gap-1.5">{t('admin.ragSettings.adjustFor')}<HelpTip id="searchSensitivity.courseOverride" /></p>
                   <p className="text-xs text-blue-600 mt-0.5">{t('admin.ragSettings.overrideNote')}</p>
                 </div>
                 <div className="relative">
@@ -3071,10 +3090,11 @@ const tabGroups = [
                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                       <Sparkles className="w-4 h-4 text-purple-600" />
                       {t('admin.ragSettings.extraction.title')}
+                      <HelpTip id="searchSensitivity.extraction" />
                     </h3>
-                    <p className="text-xs text-gray-600 mt-1 max-w-2xl">
+                    <AdminHint variant="intro" className="mt-1 max-w-2xl">
                       {t('admin.ragSettings.extraction.desc')}
-                    </p>
+                    </AdminHint>
                   </div>
                 </div>
 
@@ -3127,7 +3147,7 @@ const tabGroups = [
 
               <div className="rounded-xl border border-sky-200 bg-sky-50 px-5 py-4" data-testid="block-rag-presets-intro">
                 <h3 className="font-semibold text-sky-900">{t('ragPresets.title')}</h3>
-                <p className="text-sm text-sky-900 mt-1">{t('ragPresets.intro')}</p>
+                <AdminHint variant="intro" className="mt-1">{t('ragPresets.intro')}</AdminHint>
               </div>
               {(['chat', 'explain', 'quiz', 'project'] as const).map(mod => {
                 const labels: Record<string, string> = { chat: t('admin.ragSettings.modules.chat'), explain: t('admin.ragSettings.modules.explain'), quiz: t('admin.ragSettings.modules.quiz'), project: t('admin.ragSettings.modules.project') };
@@ -3191,12 +3211,13 @@ const tabGroups = [
                           <span>{t('admin.ragSettings.modules.broad')}</span><span>{t('admin.ragSettings.strict')}</span>
                         </div>
                         {s.similarity_threshold < 0.20 && (
-                          <p
-                            className="mt-1.5 text-xs text-amber-700"
-                            data-testid={`warning-threshold-permissive-${mod}`}
+                          <AdminHint
+                            variant="warning"
+                            className="mt-1.5"
+                            testId={`warning-threshold-permissive-${mod}`}
                           >
                             {t('admin.ragSettings.modules.permissiveWarning')}
-                          </p>
+                          </AdminHint>
                         )}
                       </div>
 
@@ -3263,7 +3284,7 @@ const tabGroups = [
                   data-testid="button-save-rag-settings"
                 >
                   {ragSettingsSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {ragSettingsSaving ? t('admin.ragSettings.saving') : t('admin.save')}
+                  {ragSettingsSaving ? t('admin.ragSettings.saving') : t('common.save')}
                 </button>
                 <button
                   onClick={loadRagSettingsAdmin}
@@ -3282,15 +3303,15 @@ const tabGroups = [
                   <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Search className="w-4 h-4 text-gray-600" />
                     {t('admin.ragSettings.diagnostic.title')}
+                    <HelpTip id="searchSensitivity.tryTerm" />
                   </h3>
-                  <p className="text-xs text-gray-600 mt-1 max-w-2xl">
+                  <AdminHint variant="intro" className="mt-1 max-w-2xl">
                     {t('admin.ragSettings.diagnostic.desc')}
-                  </p>
+                  </AdminHint>
                   {!isAdmin && !ragSelectedCourseId && (
-                    <p className="text-xs text-amber-700 mt-2 flex items-center gap-1.5 bg-amber-50 border border-amber-200 px-2.5 py-1.5 rounded-md w-fit">
-                      <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <AdminHint variant="warning" className="mt-2 w-fit">
                       {t('admin.ragSettings.diagnostic.selectCourseFirst')}
-                    </p>
+                    </AdminHint>
                   )}
                 </div>
 
@@ -3442,13 +3463,13 @@ const tabGroups = [
 
           {activeTab === 'settings' && (
             <div className="space-y-4">
-              <p className="text-gray-600">{t('admin.settings.subtitle')}</p>
+              <AdminHint variant="intro">{t('admin.settings.subtitle')}</AdminHint>
               <div className="space-y-4">
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-2">{t('admin.settings.apiConfig')}</h3>
-                  <p className="text-sm text-gray-600">
+                  <AdminHint variant="intro">
                     {t('admin.settings.apiConfigDesc')}
-                  </p>
+                  </AdminHint>
                 </div>
               </div>
             </div>

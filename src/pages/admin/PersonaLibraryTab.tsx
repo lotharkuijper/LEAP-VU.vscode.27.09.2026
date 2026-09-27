@@ -3,8 +3,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
 import { HelpTip } from '../../components/help/HelpTip';
+import { Tooltip } from '../../components/help/Tooltip';
+import { AdminHint } from '../../components/help/AdminHint';
 import { supabase } from '../../lib/supabase';
-import { Bot, FolderOpen, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2 } from 'lucide-react';
+import { Bot, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 
 /** Per sjabloon: de titels van de projecten die er een kopie van hebben. */
 export function usageBySource(
@@ -228,9 +230,9 @@ export function PersonaLibraryTab({ onOpenProjects }: {
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Bot className="w-5 h-5" /> {t('admin.personaLib.title')}<HelpTip id="projects.templates" /></h2>
-            <p className="text-sm text-gray-500 max-w-3xl">
+            <AdminHint variant="intro" className="max-w-3xl">
               {t('admin.personaLib.intro', { course: activeCourse?.name || '' })}
-            </p>
+            </AdminHint>
           </div>
           {canEdit && (
             <button
@@ -243,10 +245,9 @@ export function PersonaLibraryTab({ onOpenProjects }: {
           )}
         </div>
 
-        <div className="bg-blue-50 border border-blue-100 text-blue-800 px-3 py-2 rounded text-xs flex items-start gap-2 mb-3">
-          <FolderOpen className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>{t('admin.personaLib.copyHint')}</span>
-        </div>
+        <AdminHint variant="tip" className="mb-3">
+          {t('admin.personaLib.copyHint')}
+        </AdminHint>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm mb-3">{error}</div>
@@ -259,7 +260,9 @@ export function PersonaLibraryTab({ onOpenProjects }: {
             <button onClick={() => openFetchModal(savedNew)} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-green-700 text-white rounded hover:bg-green-800" data-testid="button-saved-add-to-project">
               {t('admin.personaLib.addToProjectBtn')}<ArrowRight className="w-3 h-3" />
             </button>
-            <button onClick={() => setSavedNew(null)} className="p-1 rounded hover:bg-green-100" aria-label={t('common.close')}><X className="w-3.5 h-3.5" /></button>
+            <Tooltip label={t('common.close')}>
+              <button onClick={() => setSavedNew(null)} className="p-1 rounded hover:bg-green-100"><X className="w-3.5 h-3.5" /></button>
+            </Tooltip>
           </div>
         )}
 
@@ -295,23 +298,25 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   </button>
                   {canEdit && (
                     <>
-                      <button
-                        onClick={() => startEdit(p)}
-                        className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded"
-                        title={t('common.edit')}
-                        data-testid={`button-edit-cp-${p.id}`}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => removePersona(p)}
-                        disabled={deleting === p.id}
-                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
-                        title={t('admin.personaLib.removeFromLibrary')}
-                        data-testid={`button-delete-cp-${p.id}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <Tooltip label={t('common.edit')}>
+                        <button
+                          onClick={() => startEdit(p)}
+                          className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded"
+                          data-testid={`button-edit-cp-${p.id}`}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label={t('admin.personaLib.removeFromLibrary')}>
+                        <button
+                          onClick={() => removePersona(p)}
+                          disabled={deleting === p.id}
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
+                          data-testid={`button-delete-cp-${p.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </>
                   )}
                 </div>
@@ -330,9 +335,11 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   ? t('admin.personaLib.modalNewTitle')
                   : t('admin.personaLib.modalEditTitle')}
               </h3>
-              <button onClick={cancelEdit} className="p-1 hover:bg-gray-100 rounded" data-testid="button-cancel-cp">
-                <X className="w-4 h-4" />
-              </button>
+              <Tooltip label={t('common.close')} side="bottom">
+                <button onClick={cancelEdit} className="p-1 hover:bg-gray-100 rounded" data-testid="button-cancel-cp">
+                  <X className="w-4 h-4" />
+                </button>
+              </Tooltip>
             </div>
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm mb-3">{error}</div>
@@ -349,7 +356,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-700">Emoji</label>
+                  <label className="text-xs font-medium text-gray-700">{t('admin.personaLib.fieldEmoji')}</label>
                   <input
                     value={form.avatar_emoji}
                     onChange={e => setForm({ ...form, avatar_emoji: e.target.value })}
@@ -359,7 +366,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">Type</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.personaLib.fieldType')}</label>
                 <select
                   value={form.persona_type}
                   onChange={e => setForm({ ...form, persona_type: e.target.value })}
@@ -371,7 +378,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">System prompt</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.personaLib.fieldPrompt')}</label>
                 <textarea
                   value={form.system_prompt}
                   onChange={e => setForm({ ...form, system_prompt: e.target.value })}
@@ -387,7 +394,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   onChange={e => setForm({ ...form, rag_enabled: e.target.checked })}
                   data-testid="checkbox-cp-rag"
                 />
-                RAG aan (gebruikt cursusmateriaal)
+                {t('admin.personaLib.fieldRag')}
               </label>
             </div>
             <div className="flex justify-end gap-2 mt-4">
@@ -415,9 +422,11 @@ export function PersonaLibraryTab({ onOpenProjects }: {
               <h3 className="font-bold">
                 {t('admin.personaLib.addToProjectTitle', { name: fetchTarget.name })}
               </h3>
-              <button onClick={closeFetchModal} className="p-1 hover:bg-gray-100 rounded" data-testid="button-close-fetch">
-                <X className="w-4 h-4" />
-              </button>
+              <Tooltip label={t('common.close')} side="bottom">
+                <button onClick={closeFetchModal} className="p-1 hover:bg-gray-100 rounded" data-testid="button-close-fetch">
+                  <X className="w-4 h-4" />
+                </button>
+              </Tooltip>
             </div>
             <p className="text-sm text-gray-600 mb-3">
               {t('admin.personaLib.fetchDesc', { name: fetchTarget.name })}

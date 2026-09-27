@@ -7,6 +7,8 @@ import { supabase } from '../../lib/supabase';
 import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert, Bot } from 'lucide-react';
 import { PersonaLibraryTab } from './PersonaLibraryTab';
 import { HelpTip } from '../../components/help/HelpTip';
+import { Tooltip } from '../../components/help/Tooltip';
+import { AdminHint } from '../../components/help/AdminHint';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -351,9 +353,11 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                     <Settings className="w-4 h-4" />{t('admin.projects.manageBtn')}
                   </button>
                   <button onClick={() => startEdit(p)} className="px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded" data-testid={`button-edit-project-${p.id}`}>{t('admin.projects.editBtn')}</button>
-                  <button onClick={() => remove(p.id)} className="p-2 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-project-${p.id}`}>
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={t('admin.projects.deleteTitle')}>
+                    <button onClick={() => remove(p.id)} className="p-2 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-project-${p.id}`}>
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </div>
               </li>
             ))}
@@ -368,7 +372,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="w-4 h-4" /> {t('admin.projects.subs.courseTitle')}
               </h3>
-              <p className="text-xs text-gray-500">{t('admin.projects.subs.courseDesc')}</p>
+              <AdminHint variant="intro">{t('admin.projects.subs.courseDesc')}</AdminHint>
             </div>
             <button
               onClick={() => setShowCourseSubs(s => !s)}
@@ -398,14 +402,15 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                           {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
                         </div>
                       </div>
-                      <button
-                        onClick={() => downloadCourseSub(s)}
-                        className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                        title={t('admin.projects.subs.download')}
-                        data-testid={`button-download-course-submission-${s.id}`}
-                      >
-                        <Download className="w-4 h-4" />
-                      </button>
+                      <Tooltip label={t('admin.projects.subs.download')}>
+                        <button
+                          onClick={() => downloadCourseSub(s)}
+                          className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                          data-testid={`button-download-course-submission-${s.id}`}
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </li>
                   ))}
                 </ul>
@@ -845,12 +850,14 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       <div className="chic-card p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded" data-testid="button-back-projects-admin">
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+            <Tooltip label={t('admin.projects.detail.back')} side="bottom">
+              <button onClick={onBack} className="p-1.5 hover:bg-gray-100 rounded" data-testid="button-back-projects-admin">
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            </Tooltip>
             <div>
               <h2 className="text-lg font-bold text-gray-900">{project.title}</h2>
-              <p className="text-xs text-gray-500">{t('admin.projects.detail.subtitle')}</p>
+              <AdminHint variant="intro">{t('admin.projects.detail.subtitle')}</AdminHint>
             </div>
           </div>
         </div>
@@ -860,14 +867,22 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-2.5 text-sm flex items-start gap-2" data-testid="alert-local-error-projects">
           <span className="mt-0.5 shrink-0">⚠</span>
           <span>{localError}</span>
-          <button onClick={() => setLocalError(null)} className="ml-auto text-red-400 hover:text-red-600 shrink-0">✕</button>
+          <span className="ml-auto shrink-0 inline-flex">
+            <Tooltip label={t('common.dismiss')}>
+              <button onClick={() => setLocalError(null)} className="text-red-400 hover:text-red-600">✕</button>
+            </Tooltip>
+          </span>
         </div>
       )}
       {localInfo && (
         <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl px-4 py-2.5 text-sm flex items-center gap-2" data-testid="alert-local-info-projects">
           <span>✓</span>
           <span>{localInfo}</span>
-          <button onClick={() => setLocalInfo(null)} className="ml-auto text-green-400 hover:text-green-600">✕</button>
+          <span className="ml-auto inline-flex">
+            <Tooltip label={t('common.dismiss')}>
+              <button onClick={() => setLocalInfo(null)} className="text-green-400 hover:text-green-600">✕</button>
+            </Tooltip>
+          </span>
         </div>
       )}
 
@@ -875,8 +890,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       <div className="chic-card p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2"><FolderOpen className="w-4 h-4" /> {t('admin.projects.docs.title')}</h3>
-            <p className="text-xs text-gray-500">{t('admin.projects.docs.desc')}</p>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2"><FolderOpen className="w-4 h-4" /> {t('admin.projects.docs.title')}<HelpTip id="projects.docs" /></h3>
+            <AdminHint variant="intro">{t('admin.projects.docs.desc')}</AdminHint>
           </div>
           <label className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm cursor-pointer ${uploadingPDoc ? 'bg-gray-100 text-gray-400' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
             {uploadingPDoc ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
@@ -902,16 +917,18 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                   <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded">{t('admin.projects.docs.projectdata')}</span>
                 )}
                 <div className="text-xs text-gray-400">{d.byte_size ? `${Math.round(d.byte_size / 1024)} KB` : ''}</div>
-                <button
-                  onClick={() => toggleDocVisibility(d)}
-                  className={`p-1 rounded ${d.is_visible_to_students ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                  title={d.is_visible_to_students
-                    ? t('admin.projects.docs.visibleTitle')
-                    : t('admin.projects.docs.hiddenTitle')}
-                  data-testid={`button-toggle-visibility-${d.id}`}
-                >
-                  {d.is_visible_to_students ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                </button>
+                <Tooltip label={d.is_visible_to_students
+                  ? t('admin.projects.docs.visibleTitle')
+                  : t('admin.projects.docs.hiddenTitle')}>
+                  <button
+                    onClick={() => toggleDocVisibility(d)}
+                    className={`p-1 rounded ${d.is_visible_to_students ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                    data-testid={`button-toggle-visibility-${d.id}`}
+                  >
+                    {d.is_visible_to_students ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                </Tooltip>
+                <Tooltip label={t('admin.projects.subs.download')}>
                 <button
                   onClick={async () => {
                     try {
@@ -927,14 +944,16 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                     } catch (e: any) { setLocalError(e.message); }
                   }}
                   className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                  title={t('admin.projects.subs.download')}
                   data-testid={`button-download-project-doc-${d.id}`}
                 >
                   <Download className="w-4 h-4" />
                 </button>
-                <button onClick={() => deleteProjectDoc(d)} className="p-1 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-project-doc-${d.id}`}>
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                </Tooltip>
+                <Tooltip label={t('admin.projects.docs.deleteTitle')}>
+                  <button onClick={() => deleteProjectDoc(d)} className="p-1 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-project-doc-${d.id}`}>
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </Tooltip>
               </li>
             ))}
           </ul>
@@ -943,19 +962,19 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
 
       {/* Ingeleverde projectproducten */}
       {!project.submissions_enabled && (
-        <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 text-xs text-gray-600" data-testid="section-project-submissions-disabled">
+        <AdminHint variant="tip" testId="section-project-submissions-disabled">
           {t('admin.projects.subs.disabled')}
-        </div>
+        </AdminHint>
       )}
       {project.submissions_enabled && (
         <div className="chic-card p-5" data-testid="section-project-submissions">
           <div className="mb-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="w-4 h-4" /> {t('admin.projects.subs.projectTitle')}
+              <FileText className="w-4 h-4" /> {t('admin.projects.subs.projectTitle')}<HelpTip id="projects.submissions" />
             </h3>
-            <p className="text-xs text-gray-500">
+            <AdminHint variant="intro">
               {t('admin.projects.subs.projectDesc')}
-            </p>
+            </AdminHint>
           </div>
           {loadingSubs ? (
             <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> {t('admin.projects.subs.loading')}</p>
@@ -975,22 +994,24 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                       {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
                     </div>
                   </div>
-                  <button
-                    onClick={() => downloadSubmission(s)}
-                    className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                    title={t('admin.projects.subs.download')}
-                    data-testid={`button-download-submission-${s.id}`}
-                  >
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setConfirmDeleteSub(s)}
-                    className="p-1 text-red-500 hover:bg-red-50 rounded"
-                    title={t('admin.projects.subs.delete')}
-                    data-testid={`button-delete-submission-${s.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <Tooltip label={t('admin.projects.subs.download')}>
+                    <button
+                      onClick={() => downloadSubmission(s)}
+                      className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                      data-testid={`button-download-submission-${s.id}`}
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+                  <Tooltip label={t('admin.projects.subs.delete')}>
+                    <button
+                      onClick={() => setConfirmDeleteSub(s)}
+                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                      data-testid={`button-delete-submission-${s.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 </li>
               ))}
             </ul>
@@ -1003,7 +1024,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(personas.length) })}<HelpTip id="personas.inProject" /></h3>
-            <p className="text-xs text-gray-500 flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></p>
+            <AdminHint variant="intro" className="flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></AdminHint>
           </div>
           <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', rag_enabled: true, persona_type: 'conversational', cue_emission_enabled: true })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
             <Plus className="w-4 h-4" />{t('admin.projects.personas.addBtn')}
@@ -1072,15 +1093,17 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                         <Copy className="w-3 h-3" />{copying === p.id ? t('admin.projects.personas.copying') : t('admin.projects.personas.copyBtn')}
                       </button>
                       <button onClick={() => setEditingPersona(p)} className="px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded" data-testid={`button-edit-pp-${p.id}`}>{t('admin.projects.personas.editBtn')}</button>
-                      <button onClick={() => removePersona(p)} className="p-2 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-pp-${p.id}`}>
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <Tooltip label={t('admin.projects.personas.deleteTitle')}>
+                        <button onClick={() => removePersona(p)} className="p-2 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-pp-${p.id}`}>
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                   </div>
                   {isEval && (
                     <div className="mt-2 ml-10 bg-purple-50/40 border border-purple-100 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-medium text-purple-900 flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{t('admin.projects.personas.rubric.title', { count: String(rubricList.length) })}</div>
+                        <div className="text-xs font-medium text-purple-900 flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{t('admin.projects.personas.rubric.title', { count: String(rubricList.length) })}<HelpTip id="personas.hiddenRubric" /></div>
                         <label className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded cursor-pointer ${uploadingRubric === p.id ? 'bg-gray-100 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
                           {uploadingRubric === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
                           {t('admin.projects.personas.rubric.uploadBtn')}
@@ -1100,17 +1123,20 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                             <li key={r.id} className="flex items-center gap-2 text-xs" data-testid={`rubric-doc-${r.id}`}>
                               <FileText className="w-3 h-3 text-purple-600" />
                               <span className="flex-1 truncate">{r.filename}</span>
-                              <button
-                                onClick={() => toggleRubricVisibility(p.id, r)}
-                                className={`p-0.5 rounded flex items-center gap-1 ${r.visible_to_students ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                                title={r.visible_to_students ? t('admin.projects.personas.rubric.visibleOn') : t('admin.projects.personas.rubric.visibleOff')}
-                                data-testid={`button-rubric-visibility-${r.id}`}
-                              >
-                                {r.visible_to_students ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                              </button>
-                              <button onClick={() => deleteRubric(p.id, r)} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
-                                <Trash2 className="w-3 h-3" />
-                              </button>
+                              <Tooltip label={r.visible_to_students ? t('admin.projects.personas.rubric.visibleOn') : t('admin.projects.personas.rubric.visibleOff')}>
+                                <button
+                                  onClick={() => toggleRubricVisibility(p.id, r)}
+                                  className={`p-0.5 rounded flex items-center gap-1 ${r.visible_to_students ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
+                                  data-testid={`button-rubric-visibility-${r.id}`}
+                                >
+                                  {r.visible_to_students ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                                </button>
+                              </Tooltip>
+                              <Tooltip label={t('admin.projects.personas.rubric.deleteTitle')}>
+                                <button onClick={() => deleteRubric(p.id, r)} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </Tooltip>
                             </li>
                           ))}
                         </ul>
@@ -1129,7 +1155,9 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold">{editingPersona.id ? t('admin.projects.personas.editTitle') : t('admin.projects.personas.newTitle')}</h3>
-              <button onClick={() => setEditingPersona(null)} className="p-1 hover:bg-gray-100 rounded"><X className="w-4 h-4" /></button>
+              <Tooltip label={t('common.close')} side="bottom">
+                <button onClick={() => setEditingPersona(null)} className="p-1 hover:bg-gray-100 rounded"><X className="w-4 h-4" /></button>
+              </Tooltip>
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-3">
@@ -1207,7 +1235,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
               )}
               <div className="border-t border-gray-100 pt-2 grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.maxConsultationsLabel')}</label>
+                  <span className="flex items-center gap-1.5"><label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.maxConsultationsLabel')}</label><HelpTip id="personas.consultationLimits" /></span>
                   <input
                     type="number"
                     min={0}

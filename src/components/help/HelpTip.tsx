@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { helpBodyKey, helpTitleKey, type HelpId } from '../../help/helpTopics';
+import { useHelpVisible } from './helpVisibility';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -22,6 +23,7 @@ export function HelpTip({ id, className = '' }: { id: HelpId; className?: string
   const buttonRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
   const title = tk(helpTitleKey(id));
+  const visible = useHelpVisible();
 
   // Klap naar links uit als het kader anders buiten beeld valt.
   useLayoutEffect(() => {
@@ -47,6 +49,9 @@ export function HelpTip({ id, className = '' }: { id: HelpId; className?: string
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  // "Uitleg tonen" staat uit: geen vraagteken tonen.
+  if (!visible) return null;
 
   return (
     <span ref={wrapRef} className={`relative inline-flex align-middle ${className}`}>
