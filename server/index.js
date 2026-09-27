@@ -14340,8 +14340,8 @@ app.post('/api/projects/:projectId/personas/:personaId/copy-to-library', async (
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
-    if (!isAdmin) return res.status(403).json({ error: 'Alleen admins kunnen persona\'s naar de bibliotheek kopiëren' });
+    // Docent van de cursus van het project of admin (requireProjectStaff); het
+    // sjabloon komt in de bibliotheek van diezelfde cursus.
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const project = access.project;
@@ -14385,12 +14385,27 @@ app.post('/api/projects/:projectId/personas/:personaId/copy-to-library', async (
 });
 
 // =============================================================================
-// Admin-only CRUD voor de persona-bibliotheek (course_personas).
+// CRUD voor de persona-sjablonen (course_personas) van één cursus.
 // POST   /api/admin/course-personas          — nieuwe sjabloon aanmaken
 // PATCH  /api/admin/course-personas/:id      — sjabloon bewerken
 // DELETE /api/admin/course-personas/:id      — sjabloon verwijderen
-// Alle drie uitsluitend voor admins (en superuser).
+// Voor admins en docenten van DIE cursus (isStaffForCourse); een sjabloon van
+// een andere cursus is voor een docent onvindbaar (404), zodat persona's net
+// als itembanken binnen hun cursus blijven.
 // =============================================================================
+
+// Zoek een sjabloon op en controleer dat de gebruiker staf is van de cursus
+// ervan. Levert { persona } of { status, error }.
+async function loadCoursePersonaForStaff(personaId, user, profile) {
+  const { data: persona, error } = await supabaseAdmin
+    .from('course_personas').select('id, course_id').eq('id', personaId).maybeSingle();
+  if (error) return { status: 500, error: error.message };
+  if (!persona) return { status: 404, error: 'Persona niet gevonden' };
+  if (!(await isStaffForCourse(user, profile, persona.course_id))) {
+    return { status: 404, error: 'Persona niet gevonden' };
+  }
+  return { persona };
+}
 
 app.post('/api/admin/course-personas', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
@@ -14399,10 +14414,11 @@ app.post('/api/admin/course-personas', async (req, res) => {
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
-    if (!isAdmin) return res.status(403).json({ error: 'Alleen admins kunnen bibliotheek-persona\'s aanmaken' });
     const { course_id, name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, persona_type, badge_award_mode } = req.body || {};
     if (!course_id || !name?.trim()) return res.status(400).json({ error: 'course_id en name zijn verplicht' });
+    if (!(await isStaffForCourse(auth.user, profile, course_id))) {
+      return res.status(403).json({ error: 'Alleen docenten van deze cursus kunnen persona-sjablonen aanmaken' });
+    }
     const libRow = {
       course_id,
       name: String(name).trim(),
@@ -14438,8 +14454,8 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
-    if (!isAdmin) return res.status(403).json({ error: 'Alleen admins kunnen bibliotheek-persona\'s bewerken' });
+    const found = await loadCoursePersonaForStaff(personaId, auth.user, profile);
+    if (found.error) return res.status(found.status).json({ error: found.error });
     const { name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, persona_type, badge_award_mode } = req.body || {};
     const patch = {};
     if (name !== undefined) patch.name = String(name).trim();
@@ -14473,8 +14489,8 @@ app.delete('/api/admin/course-personas/:personaId', async (req, res) => {
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
-    if (!isAdmin) return res.status(403).json({ error: 'Alleen admins kunnen bibliotheek-persona\'s verwijderen' });
+    const found = await loadCoursePersonaForStaff(personaId, auth.user, profile);
+    if (found.error) return res.status(found.status).json({ error: found.error });
     const { error: delErr } = await supabaseAdmin
       .from('course_personas').delete().eq('id', personaId);
     if (delErr) return res.status(500).json({ error: delErr.message });

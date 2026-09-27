@@ -31,7 +31,10 @@ const EMPTY_FORM = {
 };
 
 export function PersonaLibraryTab() {
-  const { isAdmin, session } = useAuth();
+  const { isAdmin, isDocent, session } = useAuth();
+  // Docenten beheren de sjablonen van hun eigen cursus; de server controleert
+  // per cursus (isStaffForCourse).
+  const canEdit = isAdmin || isDocent;
   const { activeCourseId, activeCourse } = useActiveCourse();
   const { t } = useLanguage();
   const [personas, setPersonas] = useState<CoursePersona[]>([]);
@@ -200,7 +203,7 @@ export function PersonaLibraryTab() {
               {t('admin.personaLib.courseLabel')}: {activeCourse?.name}. {t('admin.personaLib.descPre')} <strong>{t('admin.personaLib.descProjectNav')}</strong>. {t('admin.personaLib.descPost')}
             </p>
           </div>
-          {isAdmin && (
+          {canEdit && (
             <button
               onClick={startNew}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
@@ -245,7 +248,7 @@ export function PersonaLibraryTab() {
                     <Download className="w-3 h-3" />
                     {t('admin.personaLib.useInProject')}
                   </button>
-                  {isAdmin && (
+                  {canEdit && (
                     <>
                       <button
                         onClick={() => startEdit(p)}
