@@ -1,3 +1,5 @@
+import { useLanguage } from '../i18n';
+
 interface RAGDiagnosticsProps {
   matchCount: number;
   threshold: number;
@@ -17,6 +19,7 @@ export function RAGDiagnostics({
   className = '',
   viewerRole,
 }: RAGDiagnosticsProps) {
+  const { t } = useLanguage();
   if (viewerRole === 'student') {
     return null;
   }
@@ -29,7 +32,7 @@ export function RAGDiagnostics({
         className={`text-xs text-gray-500 italic ${className}`}
         data-testid="rag-diagnostics"
       >
-        Antwoord zonder cursusmateriaal — geen RAG-zoekopdracht uitgevoerd voor deze vraag.
+        {t('ragDiagnostics.noSearch')}
       </div>
     );
   }
@@ -41,7 +44,7 @@ export function RAGDiagnostics({
           className={`text-xs text-gray-500 italic ${className}`}
           data-testid="rag-diagnostics"
         >
-          Geen passages uit cursusmateriaal gevonden voor deze vraag (drempel {formatScore(threshold)}).
+          {t('ragDiagnostics.noCandidates', { threshold: formatScore(threshold) })}
         </div>
       );
     }
@@ -51,10 +54,10 @@ export function RAGDiagnostics({
         className={`text-xs text-gray-500 italic ${className}`}
         data-testid="rag-diagnostics"
       >
-        Geen passages boven drempel {formatScore(threshold)}
-        {' '}— beste beschikbare match{' '}
+        {t('ragDiagnostics.noneAboveThreshold', { threshold: formatScore(threshold) })}
+        {' '}— {t('ragDiagnostics.bestMatch')}{' '}
         <span className="font-mono">{formatScore(maxSimilarity)}</span>
-        {' '}({candidatesConsidered} kandidaten bekeken).
+        {' '}{t('ragDiagnostics.candidatesConsidered', { n: String(candidatesConsidered) })}
       </div>
     );
   }
@@ -64,12 +67,12 @@ export function RAGDiagnostics({
       className={`text-xs text-gray-500 italic ${className}`}
       data-testid="rag-diagnostics"
     >
-      Antwoord gebaseerd op{' '}
+      {t('ragDiagnostics.basedOn')}{' '}
       <span className="font-medium">{matchCount}</span>{' '}
-      passage{matchCount !== 1 ? 's' : ''} uit cursusmateriaal
-      {' '}• hoogste match{' '}
+      {t(matchCount !== 1 ? 'ragDiagnostics.passagesOther' : 'ragDiagnostics.passagesOne')}
+      {' '}• {t('ragDiagnostics.highestMatch')}{' '}
       <span className="font-mono">{formatScore(maxSimilarity)}</span>
-      {' '}• drempel{' '}
+      {' '}• {t('ragDiagnostics.threshold')}{' '}
       <span className="font-mono">{formatScore(threshold)}</span>
     </div>
   );

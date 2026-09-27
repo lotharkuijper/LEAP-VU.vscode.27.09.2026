@@ -38,6 +38,12 @@
 - Preserve existing server/frontend architecture unless required by the bug.
 - Record the root cause and the verification evidence in the change notes or in the conversation.
 
+## Language and help texts
+- No user-visible text may exist only in Dutch. Every UI string goes through i18n (`t('key')` in components, `tStatic(getActiveLang(), 'key')` elsewhere); `src/i18n/locales/nl.json` is the source of truth, `en.json` is maintained by hand, and the other languages are filled with `node --env-file=.env scripts/i18n-generate.mjs` (re-run until "RESTEREND totaal: 0"). The locale parity test must pass.
+- Server messages shown to users (JSON `error`/`message`) are translated centrally by the response middleware in `server/serverI18n.js` using the language the client sends; add new messages to that dictionary (see the file header) instead of hard-coding per-language text.
+- Prompts sent to the language model are not UI text and stay as they are.
+- Help texts in the admin ("?" buttons, `src/components/help/HelpTip.tsx`) belong to a FUNCTION, not a place: ids live in `src/help/helpTopics.ts`, texts under `help.<id>.title/body`. When restructuring the admin, move the `<HelpTip>` with its control, update the text if the behaviour changed, and remove the id when a function disappears. `src/help/__tests__/helpTopics.test.ts` fails on unknown, unused or stray help ids.
+
 ## Sensitive notes
 - Do not put secrets in the repo.
 - Trust `.env` values only when they are actually loaded and resolved in the runtime environment.

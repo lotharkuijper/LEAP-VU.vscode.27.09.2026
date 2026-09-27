@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ClipboardCheck, Loader2, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../i18n';
+import { HelpTip } from '../help/HelpTip';
 import {
   applyReview,
   type CourseFile,
@@ -76,7 +77,7 @@ export function PurposeReview({
       <div className="flex items-start gap-3">
         <ClipboardCheck className="w-6 h-6 text-fuchsia-600 flex-shrink-0" />
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">{t('material.review.title')}</h3>
+          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">{t('material.review.title')}<HelpTip id="material.review" /></h3>
           <p className="text-sm text-gray-700 mt-1">{t('material.review.intro')}</p>
         </div>
       </div>

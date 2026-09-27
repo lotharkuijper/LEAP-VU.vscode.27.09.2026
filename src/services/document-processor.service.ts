@@ -4,6 +4,8 @@ import mammoth from 'mammoth';
 import { STORAGE_CONFIG } from '../config/storage.config';
 import { assignPdfPages, normalizeForMatch, type DocumentChunk } from './pdf-pages';
 import { sanitizeText, sanitizeMetadata } from '../lib/sanitizeText';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 // Re-export zodat bestaande imports vanuit document-processor.service blijven werken.
 export { assignPdfPages, normalizeForMatch };
@@ -298,13 +300,13 @@ export function validateDocumentFile(file: File, bucketType: string = 'rag_sourc
   if (!extension || !allowedExtensions.includes(extension)) {
     return {
       valid: false,
-      error: `Bestandstype .${extension} is niet toegestaan voor ${bucketType}. Toegestaan: ${allowedExtensions.join(', ')}.`,
+      error: tStatic(getActiveLang(), 'services.docProcessor.typeNotAllowed', { ext: String(extension), bucket: String(bucketType), allowed: allowedExtensions.join(', ') }),
     };
   }
 
   const allowedTypes = allowedTypesMap[bucketType] || [];
   if (allowedTypes.length > 0 && !allowedTypes.includes(file.type) && file.type !== '') {
-    return { valid: false, error: 'Bestandstype wordt niet ondersteund.' };
+    return { valid: false, error: tStatic(getActiveLang(), 'services.docProcessor.typeUnsupported') };
   }
 
   return { valid: true };

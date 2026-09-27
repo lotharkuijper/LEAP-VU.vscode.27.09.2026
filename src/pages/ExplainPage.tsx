@@ -18,6 +18,8 @@ import { RAGStatusIndicator } from '../components/RAGStatusIndicator';
 import { NoticeBanner, useNotice } from '../components/Notice';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 type Concept = Database['public']['Tables']['concepts']['Row'];
 
@@ -82,7 +84,7 @@ function FeedbackBlock({
     // Dia's worden bij het openen als PDF-pagina's geteld (pptx→PDF), dus een
     // slidenummer mapt 1-op-1 op een pagina; val daarop terug voor pptx.
     openRagDocument(s.documentId, s.pageStart ?? s.slideStart).catch((err) => {
-      setOpenSourceError(err?.message || 'Kon bron niet openen.');
+      setOpenSourceError(err?.message || tStatic(getActiveLang(), 'services.rag.openFailed'));
     });
   };
   return (

@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from './ui/alert-dialog';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { useLanguage } from '../i18n';
 
 interface CourseRow {
   id: string;
@@ -39,6 +40,7 @@ export default function CoursesAdmin() {
   const { session, isAdmin, user } = useAuth();
   const { refreshCourses } = useCourseAccess();
   const { setActiveCourse } = useActiveCourse();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   // Cursussen waarin de huidige user per-cursus docent is — bepaalt of
@@ -112,7 +114,7 @@ export default function CoursesAdmin() {
     setRowError(c.id, null);
     const token = session?.access_token;
     if (!token) {
-      setRowError(c.id, 'Niet ingelogd.');
+      setRowError(c.id, t('admin.users.notLoggedIn'));
       return;
     }
     setRowBusyId(c.id);
@@ -123,7 +125,7 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setRowError(c.id, json.error || `Verwijderen mislukt (${res.status})`);
+        setRowError(c.id, json.error || t('coursesAdmin.errors.deleteFailed', { status: String(res.status) }));
         return;
       }
       // Update counts: members nu 0.
@@ -135,7 +137,7 @@ export default function CoursesAdmin() {
       setConfirmBulkMembersId(null);
       await Promise.all([loadCourses(), refreshCourses()]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setRowError(c.id, msg);
     } finally {
       setRowBusyId(null);
@@ -149,7 +151,7 @@ export default function CoursesAdmin() {
     setMembersLoading(true);
     const token = session?.access_token;
     if (!token) {
-      setMembersError('Niet ingelogd.');
+      setMembersError(t('admin.users.notLoggedIn'));
       setMembersLoading(false);
       return;
     }
@@ -159,12 +161,12 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMembersError(json.error || `Laden mislukt (${res.status})`);
+        setMembersError(json.error || t('coursesAdmin.errors.loadFailed', { status: String(res.status) }));
       } else {
         setMembersList(json.members || []);
       }
     } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : 'Onbekende fout');
+      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
     } finally {
       setMembersLoading(false);
     }
@@ -174,7 +176,7 @@ export default function CoursesAdmin() {
     if (!membersTarget) return;
     const token = session?.access_token;
     if (!token) {
-      setMembersError('Niet ingelogd.');
+      setMembersError(t('admin.users.notLoggedIn'));
       return;
     }
     setMemberRoleBusy(userId);
@@ -193,7 +195,7 @@ export default function CoursesAdmin() {
         // duwen — zo blijft de bescherming zichtbaar.
         if (res.status === 409 && json.code === 'last_teacher' && isAdmin && !force) {
           const ok = window.confirm(
-            `${json.error}\n\nWeet je zeker dat je deze cursus zonder docent achterlaat? (Alleen admins kunnen dit forceren.)`
+            t('coursesAdmin.confirm.lastTeacherForce', { error: String(json.error) })
           );
           if (ok) {
             return changeMemberRole(userId, newRole, true);
@@ -201,14 +203,14 @@ export default function CoursesAdmin() {
           setMembersError(json.error);
           return;
         }
-        setMembersError(json.error || `Bijwerken mislukt (${res.status})`);
+        setMembersError(json.error || t('coursesAdmin.errors.updateFailed', { status: String(res.status) }));
         return;
       }
       setMembersList((prev) => prev.map((m) =>
         m.user_id === userId ? { ...m, member_role: newRole } : m
       ));
     } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : 'Onbekende fout');
+      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
     } finally {
       setMemberRoleBusy(null);
     }
@@ -218,13 +220,13 @@ export default function CoursesAdmin() {
     if (!membersTarget) return;
     const token = session?.access_token;
     if (!token) {
-      setMembersError('Niet ingelogd.');
+      setMembersError(t('admin.users.notLoggedIn'));
       return;
     }
     if (!force) {
       const target = membersList.find((m) => m.user_id === userId);
-      const label = target?.full_name || target?.email || 'dit lid';
-      if (!window.confirm(`Weet je zeker dat je ${label} uit "${membersTarget.name}" wilt verwijderen?`)) {
+      const label = target?.full_name || target?.email || t('coursesAdmin.members.thisMember');
+      if (!window.confirm(t('coursesAdmin.confirm.removeMember', { label, course: membersTarget.name }))) {
         return;
       }
     }
@@ -241,7 +243,7 @@ export default function CoursesAdmin() {
         // Last-teacher-bescherming: een admin mag het forceren na bevestiging.
         if (res.status === 409 && json.code === 'last_teacher' && isAdmin && !force) {
           const ok = window.confirm(
-            `${json.error}\n\nWeet je zeker dat je deze cursus zonder docent achterlaat? (Alleen admins kunnen dit forceren.)`
+            t('coursesAdmin.confirm.lastTeacherForce', { error: String(json.error) })
           );
           if (ok) {
             return removeMember(userId, true);
@@ -249,12 +251,12 @@ export default function CoursesAdmin() {
           setMembersError(json.error);
           return;
         }
-        setMembersError(json.error || `Verwijderen mislukt (${res.status})`);
+        setMembersError(json.error || t('coursesAdmin.errors.deleteFailed', { status: String(res.status) }));
         return;
       }
       setMembersList((prev) => prev.filter((m) => m.user_id !== userId));
     } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : 'Onbekende fout');
+      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
     } finally {
       setMemberRoleBusy(null);
     }
@@ -355,12 +357,12 @@ export default function CoursesAdmin() {
     setSuccessMsg(null);
     const trimmed = name.trim();
     if (!trimmed) {
-      setError('Cursusnaam is verplicht.');
+      setError(t('coursesAdmin.errors.nameRequired'));
       return;
     }
     const token = session?.access_token;
     if (!token) {
-      setError('Niet ingelogd.');
+      setError(t('admin.users.notLoggedIn'));
       return;
     }
     setSubmitting(true);
@@ -375,15 +377,15 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(json.error || `Aanmaken mislukt (${res.status})`);
+        setError(json.error || t('coursesAdmin.errors.createFailed', { status: String(res.status) }));
         return;
       }
-      setSuccessMsg(`Cursus "${trimmed}" aangemaakt met RAG- en Projectdata-map.`);
+      setSuccessMsg(t('coursesAdmin.create.success', { name: trimmed }));
       setName('');
       setDescription('');
       await Promise.all([loadCourses(), refreshCourses()]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -410,7 +412,7 @@ export default function CoursesAdmin() {
     setRowError(c.id, null);
     const token = session?.access_token;
     if (!token) {
-      setRowError(c.id, 'Niet ingelogd.');
+      setRowError(c.id, t('admin.users.notLoggedIn'));
       return;
     }
     setRowBusyId(c.id);
@@ -425,12 +427,12 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setRowError(c.id, json.error || `Wijzigen mislukt (${res.status})`);
+        setRowError(c.id, json.error || t('coursesAdmin.errors.changeFailed', { status: String(res.status) }));
         return;
       }
       await Promise.all([loadCourses(), refreshCourses()]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setRowError(c.id, msg);
     } finally {
       setRowBusyId(null);
@@ -444,7 +446,7 @@ export default function CoursesAdmin() {
     setRowError(c.id, null);
     const token = session?.access_token;
     if (!token) {
-      setRowError(c.id, 'Niet ingelogd.');
+      setRowError(c.id, t('admin.users.notLoggedIn'));
       return;
     }
     setRowBusyId(c.id);
@@ -459,12 +461,12 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setRowError(c.id, json.error || `Wijzigen mislukt (${res.status})`);
+        setRowError(c.id, json.error || t('coursesAdmin.errors.changeFailed', { status: String(res.status) }));
         return;
       }
       await Promise.all([loadCourses(), refreshCourses()]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setRowError(c.id, msg);
     } finally {
       setRowBusyId(null);
@@ -494,7 +496,7 @@ export default function CoursesAdmin() {
     setCascadeTarget(c);
     const token = session?.access_token;
     if (!token) {
-      setCascadeDialogError('Niet ingelogd.');
+      setCascadeDialogError(t('admin.users.notLoggedIn'));
       return;
     }
     setCascadeLoading(true);
@@ -505,12 +507,12 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setCascadeDialogError(json.error || `Ophalen van tellingen mislukt (${res.status})`);
+        setCascadeDialogError(json.error || t('coursesAdmin.errors.countsFailed', { status: String(res.status) }));
         return;
       }
       setCascadeCounts((json.counts ?? null) as DeleteCounts | null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setCascadeDialogError(msg);
     } finally {
       setCascadeLoading(false);
@@ -530,7 +532,7 @@ export default function CoursesAdmin() {
     if (cascadeConfirmText.trim() !== c.name) return;
     const token = session?.access_token;
     if (!token) {
-      setCascadeDialogError('Niet ingelogd.');
+      setCascadeDialogError(t('admin.users.notLoggedIn'));
       return;
     }
     setRowBusyId(c.id);
@@ -543,13 +545,13 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setCascadeDialogError(json.error || `Verwijderen mislukt (${res.status})`);
+        setCascadeDialogError(json.error || t('coursesAdmin.errors.deleteFailed', { status: String(res.status) }));
         return;
       }
       await Promise.all([loadCourses(), refreshCourses()]);
       success = true;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setCascadeDialogError(msg);
     } finally {
       setRowBusyId(null);
@@ -563,7 +565,7 @@ export default function CoursesAdmin() {
     if (deleteConfirmText.trim() !== c.name) return;
     const token = session?.access_token;
     if (!token) {
-      setDeleteDialogError('Niet ingelogd.');
+      setDeleteDialogError(t('admin.users.notLoggedIn'));
       return;
     }
     setRowBusyId(c.id);
@@ -576,7 +578,7 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const message = json.error || `Verwijderen mislukt (${res.status})`;
+        const message = json.error || t('coursesAdmin.errors.deleteFailed', { status: String(res.status) });
         if (res.status === 409 && json.counts) {
           // Schakel terug naar de rij-weergave zodat de admin de
           // category-specifieke cleanup-acties (Beheer leden, Open projecten,
@@ -592,7 +594,7 @@ export default function CoursesAdmin() {
       await Promise.all([loadCourses(), refreshCourses()]);
       success = true;
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setDeleteDialogError(msg);
     } finally {
       setRowBusyId(null);
@@ -605,17 +607,17 @@ export default function CoursesAdmin() {
     const trimmedName = editName.trim();
     const trimmedDesc = editDesc.trim();
     if (!trimmedName) {
-      setEditError('Naam mag niet leeg zijn.');
+      setEditError(t('coursesAdmin.errors.nameEmpty'));
       return;
     }
     const cueMaxNum = parseInt(editCueMax, 10);
     if (!Number.isInteger(cueMaxNum) || cueMaxNum < 1 || cueMaxNum > 5) {
-      setEditError('Cue-bereik moet een geheel getal tussen 1 en 5 zijn.');
+      setEditError(t('coursesAdmin.errors.cueRange'));
       return;
     }
     const token = session?.access_token;
     if (!token) {
-      setEditError('Niet ingelogd.');
+      setEditError(t('admin.users.notLoggedIn'));
       return;
     }
     setEditSaving(true);
@@ -630,13 +632,13 @@ export default function CoursesAdmin() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setEditError(json.error || `Bijwerken mislukt (${res.status})`);
+        setEditError(json.error || t('coursesAdmin.errors.updateFailed', { status: String(res.status) }));
         return;
       }
       cancelEdit();
       await Promise.all([loadCourses(), refreshCourses()]);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setEditError(msg);
     } finally {
       setEditSaving(false);
@@ -648,29 +650,29 @@ export default function CoursesAdmin() {
       <header className="space-y-1">
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-blue-600" />
-          Cursussen beheren
+          {t('admin.header.manageCourses')}
         </h1>
         <p className="text-sm text-gray-600">
           {isAdmin
-            ? 'Maak een nieuwe cursus aan en beheer bestaande cursussen. Bij het aanmaken worden automatisch een cursusmap met submappen RAG en Projectdata klaargezet en gekoppeld.'
-            : 'Beheer de cursussen waarin jij docent bent: leden, rollen en cursusinstellingen.'}
+            ? t('coursesAdmin.intro.admin')
+            : t('coursesAdmin.intro.teacher')}
         </p>
       </header>
 
       {isAdmin && (
       <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Nieuwe cursus aanmaken</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('coursesAdmin.create.title')}</h2>
         <form onSubmit={handleCreate} className="space-y-4" data-testid="form-create-course">
           <div>
             <label htmlFor="course-name" className="block text-sm font-medium text-gray-700 mb-1">
-              Naam <span className="text-red-600">*</span>
+              {t('admin.users.nameCol')} <span className="text-red-600">*</span>
             </label>
             <input
               id="course-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Bijv. MenS2"
+              placeholder={t('coursesAdmin.create.namePlaceholder')}
               maxLength={120}
               className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={submitting}
@@ -679,7 +681,7 @@ export default function CoursesAdmin() {
           </div>
           <div>
             <label htmlFor="course-desc" className="block text-sm font-medium text-gray-700 mb-1">
-              Beschrijving (optioneel)
+              {t('folderTree.descriptionOptional')}
             </label>
             <textarea
               id="course-desc"
@@ -722,21 +724,21 @@ export default function CoursesAdmin() {
             ) : (
               <Plus className="w-4 h-4" />
             )}
-            Cursus aanmaken
+            {t('coursesAdmin.create.submit')}
           </button>
         </form>
       </section>
       )}
 
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">Bestaande cursussen</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('coursesAdmin.list.title')}</h2>
         {loadingList ? (
           <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" /> Laden…
+            <Loader2 className="w-4 h-4 animate-spin" /> {t('material.drawer.loading')}
           </div>
         ) : courses.length === 0 ? (
           <p className="text-sm text-gray-500" data-testid="text-no-courses">
-            Nog geen cursussen gevonden.
+            {t('coursesAdmin.list.empty')}
           </p>
         ) : (
           <ul className="space-y-2" data-testid="list-courses">
@@ -751,7 +753,7 @@ export default function CoursesAdmin() {
                   {isEditing ? (
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-1">Naam</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">{t('admin.users.nameCol')}</label>
                         <input
                           type="text"
                           value={editName}
@@ -764,7 +766,7 @@ export default function CoursesAdmin() {
                       </div>
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Beschrijving
+                          {t('coursesAdmin.edit.descriptionLabel')}
                         </label>
                         <textarea
                           value={editDesc}
@@ -780,7 +782,7 @@ export default function CoursesAdmin() {
                           htmlFor={`input-edit-cue-max-${c.id}`}
                           className="block text-xs font-medium text-gray-700 mb-1"
                         >
-                          Maximale cue-uitslag (1–5)
+                          {t('coursesAdmin.edit.cueMaxLabel')}
                         </label>
                         <input
                           id={`input-edit-cue-max-${c.id}`}
@@ -795,8 +797,7 @@ export default function CoursesAdmin() {
                           data-testid={`input-edit-cue-max-${c.id}`}
                         />
                         <p className="text-[11px] text-gray-500 mt-1">
-                          Bepaalt hoe ver een persona bij gespreksafronding mag uitslaan op de
-                          verstandhouding: ±waarde per gesprek. Default 2.
+                          {t('coursesAdmin.edit.cueMaxHelp')}
                         </p>
                       </div>
                       {editError && (
@@ -821,7 +822,7 @@ export default function CoursesAdmin() {
                           ) : (
                             <Check className="w-3.5 h-3.5" />
                           )}
-                          Opslaan
+                          {t('common.save')}
                         </button>
                         <button
                           type="button"
@@ -831,7 +832,7 @@ export default function CoursesAdmin() {
                           data-testid={`button-cancel-edit-${c.id}`}
                         >
                           <X className="w-3.5 h-3.5" />
-                          Annuleren
+                          {t('coursesAdmin.cancel')}
                         </button>
                       </div>
                     </div>
@@ -849,7 +850,7 @@ export default function CoursesAdmin() {
                             className="text-[11px] text-gray-500 mt-0.5"
                             data-testid={`text-cue-max-${c.id}`}
                           >
-                            Cue-bereik: ±{c.cue_delta_max ?? 2}
+                            {t('coursesAdmin.row.cueRange', { value: String(c.cue_delta_max ?? 2) })}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -861,7 +862,7 @@ export default function CoursesAdmin() {
                             }
                             data-testid={`status-course-active-${c.id}`}
                           >
-                            {c.is_active ? 'Actief' : 'Inactief'}
+                            {c.is_active ? t('chooseCourse.active') : t('coursesAdmin.row.inactive')}
                           </span>
                           <span
                             className={
@@ -871,12 +872,12 @@ export default function CoursesAdmin() {
                             }
                             title={
                               c.student_visible
-                                ? 'Studenten kunnen deze cursus zien en selecteren'
-                                : 'Verborgen voor studenten; alleen docent van de cursus en admins zien hem'
+                                ? t('coursesAdmin.row.visibleTitle')
+                                : t('coursesAdmin.row.hiddenTitle')
                             }
                             data-testid={`status-course-visible-${c.id}`}
                           >
-                            {c.student_visible ? 'Beschikbaar' : 'Niet beschikbaar'}
+                            {c.student_visible ? t('coursesAdmin.row.available') : t('coursesAdmin.row.unavailable')}
                           </span>
                           {isAdmin && (
                           <button
@@ -884,11 +885,11 @@ export default function CoursesAdmin() {
                             onClick={() => startEdit(c)}
                             disabled={rowBusyId === c.id}
                             className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                            title="Naam en beschrijving aanpassen"
+                            title={t('coursesAdmin.row.editTitle')}
                             data-testid={`button-edit-course-${c.id}`}
                           >
                             <Pencil className="w-3.5 h-3.5" />
-                            Bewerken
+                            {t('coursesAdmin.row.edit')}
                           </button>
                           )}
                           {isAdmin && (
@@ -901,7 +902,7 @@ export default function CoursesAdmin() {
                                 ? 'inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-amber-50 transition-colors'
                                 : 'inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-green-50 transition-colors'
                             }
-                            title={c.is_active ? 'Deactiveer deze cursus' : 'Activeer deze cursus'}
+                            title={c.is_active ? t('coursesAdmin.row.deactivateTitle') : t('coursesAdmin.row.activateTitle')}
                             data-testid={`button-toggle-active-${c.id}`}
                           >
                             {rowBusyId === c.id ? (
@@ -909,7 +910,7 @@ export default function CoursesAdmin() {
                             ) : (
                               <Power className="w-3.5 h-3.5" />
                             )}
-                            {c.is_active ? 'Deactiveren' : 'Activeren'}
+                            {c.is_active ? t('coursesAdmin.row.deactivate') : t('coursesAdmin.row.activate')}
                           </button>
                           )}
                           {(isAdmin || myTeacherCourseIds.has(c.id)) && (
@@ -924,8 +925,8 @@ export default function CoursesAdmin() {
                               }
                               title={
                                 c.student_visible
-                                  ? 'Verberg deze cursus voor studenten'
-                                  : 'Maak deze cursus weer beschikbaar voor studenten'
+                                  ? t('coursesAdmin.row.hideTitle')
+                                  : t('coursesAdmin.row.showTitle')
                               }
                               data-testid={`button-toggle-availability-${c.id}`}
                             >
@@ -936,7 +937,7 @@ export default function CoursesAdmin() {
                               ) : (
                                 <Eye className="w-3.5 h-3.5" />
                               )}
-                              {c.student_visible ? 'Niet beschikbaar maken' : 'Beschikbaar maken'}
+                              {c.student_visible ? t('coursesAdmin.row.makeUnavailable') : t('coursesAdmin.row.makeAvailable')}
                             </button>
                           )}
                           {(isAdmin || myTeacherCourseIds.has(c.id)) && (
@@ -945,11 +946,11 @@ export default function CoursesAdmin() {
                               onClick={() => openMembersDialog(c)}
                               disabled={rowBusyId === c.id}
                               className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                              title="Beheer leden en hun rol in deze cursus"
+                              title={t('coursesAdmin.row.manageMembersTitle')}
                               data-testid={`button-manage-members-primary-${c.id}`}
                             >
                               <Users className="w-3.5 h-3.5" />
-                              Beheer leden
+                              {t('admin.users.manageCourseMembers')}
                             </button>
                           )}
                           {isAdmin && (
@@ -958,11 +959,11 @@ export default function CoursesAdmin() {
                             onClick={() => requestDelete(c)}
                             disabled={rowBusyId === c.id}
                             className="inline-flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                            title="Verwijder deze cursus definitief"
+                            title={t('coursesAdmin.row.deleteTitle')}
                             data-testid={`button-delete-course-${c.id}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                            Verwijderen
+                            {t('coursesAdmin.delete')}
                           </button>
                           )}
                           {isAdmin && (
@@ -971,11 +972,11 @@ export default function CoursesAdmin() {
                               onClick={() => requestCascadeDelete(c)}
                               disabled={rowBusyId === c.id}
                               className="inline-flex items-center gap-1 text-xs font-medium text-white bg-red-700 hover:bg-red-800 disabled:bg-gray-300 disabled:text-gray-100 px-2 py-1 rounded transition-colors"
-                              title="Verwijder deze cursus inclusief leden, projecten, dagboek-notities en de hele cursusmap"
+                              title={t('coursesAdmin.row.cascadeTitle')}
                               data-testid={`button-cascade-delete-course-${c.id}`}
                             >
                               <Flame className="w-3.5 h-3.5" />
-                              Verwijder cursus + alle data
+                              {t('coursesAdmin.row.cascade')}
                             </button>
                           )}
                         </div>
@@ -994,12 +995,12 @@ export default function CoursesAdmin() {
                               {rowCounts[c.id]!.members > 0 && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-gray-700 text-xs">
-                                    {rowCounts[c.id]!.members} lid/leden
+                                    {t('coursesAdmin.counts.members', { count: String(rowCounts[c.id]!.members) })}
                                   </span>
                                   {isAdmin && (
                                     confirmBulkMembersId === c.id ? (
                                       <span className="inline-flex items-center gap-1.5">
-                                        <span className="text-xs text-amber-800">Alle leden ontkoppelen?</span>
+                                        <span className="text-xs text-amber-800">{t('coursesAdmin.cleanup.confirmBulk')}</span>
                                         <button
                                           type="button"
                                           onClick={() => bulkRemoveMembers(c)}
@@ -1012,7 +1013,7 @@ export default function CoursesAdmin() {
                                           ) : (
                                             <Check className="w-3.5 h-3.5" />
                                           )}
-                                          Ja, verwijder
+                                          {t('admin.concepts.yesDelete')}
                                         </button>
                                         <button
                                           type="button"
@@ -1022,7 +1023,7 @@ export default function CoursesAdmin() {
                                           data-testid={`button-cancel-bulk-remove-members-${c.id}`}
                                         >
                                           <X className="w-3.5 h-3.5" />
-                                          Annuleren
+                                          {t('coursesAdmin.cancel')}
                                         </button>
                                       </span>
                                     ) : (
@@ -1031,11 +1032,11 @@ export default function CoursesAdmin() {
                                         onClick={() => setConfirmBulkMembersId(c.id)}
                                         disabled={rowBusyId === c.id}
                                         className="inline-flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-900 disabled:text-gray-400 px-2 py-1 rounded border border-red-200 hover:bg-red-50 transition-colors"
-                                        title="Verwijder alle leden van deze cursus"
+                                        title={t('coursesAdmin.cleanup.bulkRemoveTitle')}
                                         data-testid={`button-bulk-remove-members-${c.id}`}
                                       >
                                         <UserX className="w-3.5 h-3.5" />
-                                        Verwijder alle leden
+                                        {t('coursesAdmin.cleanup.bulkRemove')}
                                       </button>
                                     )
                                   )}
@@ -1046,14 +1047,14 @@ export default function CoursesAdmin() {
                                     data-testid={`button-manage-members-${c.id}`}
                                   >
                                     <Users className="w-3.5 h-3.5" />
-                                    Beheer leden
+                                    {t('admin.users.manageCourseMembers')}
                                   </button>
                                 </div>
                               )}
                               {rowCounts[c.id]!.projects > 0 && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-gray-700 text-xs">
-                                    {rowCounts[c.id]!.projects} project(en)
+                                    {t('coursesAdmin.counts.projects', { count: String(rowCounts[c.id]!.projects) })}
                                   </span>
                                   <button
                                     type="button"
@@ -1062,16 +1063,16 @@ export default function CoursesAdmin() {
                                     data-testid={`button-open-projects-${c.id}`}
                                   >
                                     <FolderTree className="w-3.5 h-3.5" />
-                                    Open projecten
+                                    {t('dashboard.tile.project.cta')}
                                   </button>
                                 </div>
                               )}
                               {(rowCounts[c.id]!.extra_folders > 0 || rowCounts[c.id]!.documents > 0) && (
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-gray-700 text-xs">
-                                    {rowCounts[c.id]!.extra_folders > 0 && `${rowCounts[c.id]!.extra_folders} extra (sub)map(pen)`}
+                                    {rowCounts[c.id]!.extra_folders > 0 && t('coursesAdmin.counts.extraFolders', { count: String(rowCounts[c.id]!.extra_folders) })}
                                     {rowCounts[c.id]!.extra_folders > 0 && rowCounts[c.id]!.documents > 0 && ', '}
-                                    {rowCounts[c.id]!.documents > 0 && `${rowCounts[c.id]!.documents} document(en)`}
+                                    {rowCounts[c.id]!.documents > 0 && t('coursesAdmin.counts.documents', { count: String(rowCounts[c.id]!.documents) })}
                                   </span>
                                   <button
                                     type="button"
@@ -1080,18 +1081,18 @@ export default function CoursesAdmin() {
                                     data-testid={`button-open-course-folder-${c.id}`}
                                   >
                                     <FolderOpen className="w-3.5 h-3.5" />
-                                    Open cursusmap
+                                    {t('coursesAdmin.cleanup.openCourseFolder')}
                                   </button>
                                 </div>
                               )}
                               {rowCounts[c.id]!.sessions > 0 && (
                                 <div className="text-xs text-gray-700">
-                                  {rowCounts[c.id]!.sessions} sessie(s) — worden automatisch opgeruimd als de bijbehorende projecten verdwijnen.
+                                  {t('coursesAdmin.cleanup.sessions', { count: String(rowCounts[c.id]!.sessions) })}
                                 </div>
                               )}
                               {rowCounts[c.id]!.journal_entries > 0 && (
                                 <div className="text-xs text-gray-700">
-                                  {rowCounts[c.id]!.journal_entries} dagboek-notitie(s) — worden automatisch opgeruimd als de bijbehorende projecten verdwijnen.
+                                  {t('coursesAdmin.cleanup.journal', { count: String(rowCounts[c.id]!.journal_entries) })}
                                 </div>
                               )}
                             </div>
@@ -1121,16 +1122,16 @@ export default function CoursesAdmin() {
                   <AlertTriangle className="w-5 h-5 text-red-700" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <AlertDialogTitle>Cursus definitief verwijderen</AlertDialogTitle>
+                  <AlertDialogTitle>{t('coursesAdmin.deleteDialog.title')}</AlertDialogTitle>
                   <AlertDialogDescription className="mt-1">
-                    Je staat op het punt de cursus{' '}
+                    {t('coursesAdmin.deleteDialog.descBefore')}{' '}
                     <span
                       className="font-semibold text-gray-900"
                       data-testid="text-delete-course-name"
                     >
                       {deleteTarget.name}
                     </span>{' '}
-                    te verwijderen. Deze actie kan niet ongedaan worden gemaakt.
+                    {t('coursesAdmin.deleteDialog.descAfter')}
                   </AlertDialogDescription>
                 </div>
               </div>
@@ -1139,9 +1140,7 @@ export default function CoursesAdmin() {
             <div className="flex items-start gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
               <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>
-                Verwijderen kan alleen als er geen leden, projecten, dagboek-notities of extra
-                mappen/documenten aan de cursus hangen. De standaard cursusmap met submappen
-                RAG en Projectdata wordt automatisch opgeruimd.
+                {t('coursesAdmin.deleteDialog.warning')}
               </span>
             </div>
 
@@ -1150,8 +1149,8 @@ export default function CoursesAdmin() {
                 htmlFor="delete-course-confirm-input"
                 className="block text-sm font-medium text-gray-700"
               >
-                Typ <span className="font-mono font-semibold">{deleteTarget.name}</span> om te
-                bevestigen
+                {t('coursesAdmin.dialog.typeBefore')} <span className="font-mono font-semibold">{deleteTarget.name}</span>{' '}
+                {t('coursesAdmin.dialog.typeAfter')}
               </label>
               <input
                 id="delete-course-confirm-input"
@@ -1181,7 +1180,7 @@ export default function CoursesAdmin() {
                 disabled={rowBusyId === deleteTarget.id}
                 data-testid="button-cancel-delete-course"
               >
-                Annuleren
+                {t('coursesAdmin.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDeleteCourse}
@@ -1195,7 +1194,7 @@ export default function CoursesAdmin() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 <Trash2 className="w-4 h-4" />
-                Definitief verwijderen
+                {t('admin.users.deleteConfirmBtn')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -1216,17 +1215,16 @@ export default function CoursesAdmin() {
                   <Flame className="w-5 h-5 text-red-700" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <AlertDialogTitle>Cursus inclusief alle data verwijderen</AlertDialogTitle>
+                  <AlertDialogTitle>{t('coursesAdmin.cascadeDialog.title')}</AlertDialogTitle>
                   <AlertDialogDescription className="mt-1">
-                    Je staat op het punt de cursus{' '}
+                    {t('coursesAdmin.cascadeDialog.descBefore')}{' '}
                     <span
                       className="font-semibold text-gray-900"
                       data-testid="text-cascade-course-name"
                     >
                       {cascadeTarget.name}
                     </span>{' '}
-                    én alles wat eraan hangt definitief te verwijderen. Deze actie kan
-                    niet ongedaan worden gemaakt.
+                    {t('coursesAdmin.cascadeDialog.descAfter')}
                   </AlertDialogDescription>
                 </div>
               </div>
@@ -1239,45 +1237,42 @@ export default function CoursesAdmin() {
               <div className="flex items-start gap-2 font-medium">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>
-                  In één transactie worden de volgende gekoppelde gegevens verwijderd:
+                  {t('coursesAdmin.cascadeDialog.intro')}
                 </span>
               </div>
               {cascadeLoading ? (
                 <div className="flex items-center gap-2 text-gray-700 pl-6">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Tellingen ophalen…
+                  {t('coursesAdmin.cascadeDialog.loadingCounts')}
                 </div>
               ) : cascadeCounts ? (
                 <ul className="list-disc pl-10 space-y-0.5 text-gray-800">
                   <li data-testid="cascade-count-members">
-                    {cascadeCounts.members} lid/leden
+                    {t('coursesAdmin.counts.members', { count: String(cascadeCounts.members) })}
                   </li>
                   <li data-testid="cascade-count-projects">
-                    {cascadeCounts.projects} project(en) inclusief al hun groepen,
-                    persona-gesprekken en checkpoints
+                    {t('coursesAdmin.cascadeDialog.projects', { count: String(cascadeCounts.projects) })}
                   </li>
                   <li data-testid="cascade-count-sessions">
-                    {cascadeCounts.sessions} student-sessie(s)
+                    {t('coursesAdmin.cascadeDialog.sessions', { count: String(cascadeCounts.sessions) })}
                   </li>
                   <li data-testid="cascade-count-journal">
-                    {cascadeCounts.journal_entries} dagboek-notitie(s) (alleen die aan
-                    deze cursus hangen)
+                    {t('coursesAdmin.cascadeDialog.journal', { count: String(cascadeCounts.journal_entries) })}
                   </li>
                   <li data-testid="cascade-count-extra-folders">
-                    {cascadeCounts.extra_folders} extra (sub)map(pen) in de cursusmap
+                    {t('coursesAdmin.cascadeDialog.extraFolders', { count: String(cascadeCounts.extra_folders) })}
                   </li>
                   <li data-testid="cascade-count-documents">
-                    {cascadeCounts.documents} document(en) in de cursusmap
+                    {t('coursesAdmin.cascadeDialog.documents', { count: String(cascadeCounts.documents) })}
                   </li>
                   <li>
-                    De standaard cursusmap met submappen <strong>RAG</strong> en{' '}
-                    <strong>Projectdata</strong> en alle koppelingen
+                    {t('coursesAdmin.cascadeDialog.defaultFolderBefore')} <strong>RAG</strong> {t('coursesAdmin.cascadeDialog.defaultFolderAnd')}{' '}
+                    <strong>Projectdata</strong> {t('coursesAdmin.cascadeDialog.defaultFolderAfter')}
                   </li>
                 </ul>
               ) : (
                 <div className="text-gray-700 pl-6 text-xs">
-                  Geen tellingen beschikbaar — bevestiging blijft uitgeschakeld tot de
-                  preview is geladen.
+                  {t('coursesAdmin.cascadeDialog.noCounts')}
                 </div>
               )}
             </div>
@@ -1287,8 +1282,8 @@ export default function CoursesAdmin() {
                 htmlFor="cascade-course-confirm-input"
                 className="block text-sm font-medium text-gray-700"
               >
-                Typ <span className="font-mono font-semibold">{cascadeTarget.name}</span>{' '}
-                om te bevestigen
+                {t('coursesAdmin.dialog.typeBefore')} <span className="font-mono font-semibold">{cascadeTarget.name}</span>{' '}
+                {t('coursesAdmin.dialog.typeAfter')}
               </label>
               <input
                 id="cascade-course-confirm-input"
@@ -1318,7 +1313,7 @@ export default function CoursesAdmin() {
                 disabled={rowBusyId === cascadeTarget.id}
                 data-testid="button-cancel-cascade-delete"
               >
-                Annuleren
+                {t('coursesAdmin.cancel')}
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmCascadeDelete}
@@ -1335,7 +1330,7 @@ export default function CoursesAdmin() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 <Flame className="w-4 h-4" />
-                Cursus + alle data definitief verwijderen
+                {t('coursesAdmin.cascadeDialog.confirm')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -1356,13 +1351,10 @@ export default function CoursesAdmin() {
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Leden van "{membersTarget.name}"
+                  {t('coursesAdmin.members.title', { name: membersTarget.name })}
                 </h3>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Stel per cursus in wie student of docent is. Admins en
-                  docenten van deze cursus mogen rollen wijzigen. De laatste
-                  docent kan niet zomaar gedemoteerd worden — wijs eerst een
-                  vervanger aan.
+                  {t('coursesAdmin.members.help')}
                 </p>
               </div>
               <button
@@ -1383,20 +1375,20 @@ export default function CoursesAdmin() {
               {membersLoading ? (
                 <div className="flex items-center justify-center py-12 text-gray-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  Leden laden…
+                  {t('coursesAdmin.members.loading')}
                 </div>
               ) : membersList.length === 0 ? (
                 <p className="text-sm text-gray-500 py-8 text-center">
-                  Nog geen leden in deze cursus.
+                  {t('coursesAdmin.members.empty')}
                 </p>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 font-semibold text-gray-700">Naam</th>
-                      <th className="text-left py-2 px-2 font-semibold text-gray-700">E-mail</th>
-                      <th className="text-left py-2 px-2 font-semibold text-gray-700">Rol in deze cursus</th>
-                      <th className="text-right py-2 px-2 font-semibold text-gray-700">Acties</th>
+                      <th className="text-left py-2 px-2 font-semibold text-gray-700">{t('admin.users.nameCol')}</th>
+                      <th className="text-left py-2 px-2 font-semibold text-gray-700">{t('admin.users.emailCol')}</th>
+                      <th className="text-left py-2 px-2 font-semibold text-gray-700">{t('coursesAdmin.members.roleCol')}</th>
+                      <th className="text-right py-2 px-2 font-semibold text-gray-700">{t('admin.users.actionsCol')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1422,10 +1414,10 @@ export default function CoursesAdmin() {
                                   onChange={(e) => changeMemberRole(m.user_id, e.target.value as 'student' | 'teacher')}
                                   className="border border-gray-300 rounded px-2 py-1 text-xs bg-white disabled:opacity-50"
                                   data-testid={`select-member-role-${m.user_id}`}
-                                  title={isSoleTeacherSelf ? 'Je bent de laatste docent — wijs eerst een vervanger aan.' : undefined}
+                                  title={isSoleTeacherSelf ? t('coursesAdmin.members.soleTeacherTitle') : undefined}
                                 >
-                                  <option value="student">Student</option>
-                                  <option value="teacher">Docent</option>
+                                  <option value="student">{t('nav.role.student')}</option>
+                                  <option value="teacher">{t('nav.role.docent')}</option>
                                 </select>
                               ) : (
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -1433,12 +1425,12 @@ export default function CoursesAdmin() {
                                     ? 'bg-blue-100 text-blue-700'
                                     : 'bg-green-100 text-green-700'
                                 }`}>
-                                  {m.member_role === 'teacher' ? 'Docent' : 'Student'}
+                                  {m.member_role === 'teacher' ? t('nav.role.docent') : t('nav.role.student')}
                                 </span>
                               )}
                               {isSoleTeacherSelf && (
                                 <span className="ml-2 text-[11px] text-amber-700" data-testid={`text-sole-teacher-${m.user_id}`}>
-                                  laatste docent
+                                  {t('coursesAdmin.members.soleTeacherBadge')}
                                 </span>
                               )}
                               {memberRoleBusy === m.user_id && (
@@ -1453,10 +1445,10 @@ export default function CoursesAdmin() {
                                   disabled={memberRoleBusy === m.user_id || isSoleTeacherSelf}
                                   className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                   data-testid={`button-remove-member-${m.user_id}`}
-                                  title={isSoleTeacherSelf ? 'Je bent de laatste docent — wijs eerst een vervanger aan.' : 'Lid verwijderen uit deze cursus'}
+                                  title={isSoleTeacherSelf ? t('coursesAdmin.members.soleTeacherTitle') : t('coursesAdmin.members.removeTitle')}
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
-                                  Verwijderen
+                                  {t('coursesAdmin.delete')}
                                 </button>
                               )}
                             </td>
@@ -1475,7 +1467,7 @@ export default function CoursesAdmin() {
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
                 data-testid="button-close-members-dialog-footer"
               >
-                Sluiten
+                {t('common.close')}
               </button>
             </div>
           </div>

@@ -8,9 +8,11 @@ import {
   ShareStatsFile,
 } from "../services/sharestats";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { useLanguage } from "../i18n";
 
 export default function ShareStatsQuizPage() {
   const { topic } = useParams<{ topic: string }>();
+  const { t } = useLanguage();
 
   const [files, setFiles] = useState<ShareStatsFile[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -58,9 +60,9 @@ export default function ShareStatsQuizPage() {
   if (files.length === 0) {
     return (
       <div className="p-4">
-        <h1 className="text-xl font-bold mb-4">Geen vragen gevonden</h1>
+        <h1 className="text-xl font-bold mb-4">{t('shareStats.noQuestionsTitle')}</h1>
         <p className="text-gray-600">
-          Dit onderwerp bevat geen vraagbestanden in de ShareStats‑repository.
+          {t('shareStats.noQuestionsBody')}
         </p>
       </div>
     );
@@ -75,7 +77,7 @@ export default function ShareStatsQuizPage() {
       </h1>
 
       <p className="text-gray-600 mb-4">
-        Vraag {currentIndex + 1} van {files.length}
+        {t('shareStats.questionOf', { current: String(currentIndex + 1), total: String(files.length) })}
       </p>
 
       <div className="bg-white border rounded-lg shadow-sm p-4 whitespace-pre-wrap">
@@ -94,7 +96,7 @@ export default function ShareStatsQuizPage() {
           onClick={() => setCurrentIndex((i) => i - 1)}
           className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
         >
-          Vorige
+          {t('quiz.previous')}
         </button>
 
         <button
@@ -102,7 +104,7 @@ export default function ShareStatsQuizPage() {
           onClick={() => setCurrentIndex((i) => i + 1)}
           className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
         >
-          Volgende
+          {t('quiz.next')}
         </button>
       </div>
     </div>

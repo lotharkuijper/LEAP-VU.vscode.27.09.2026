@@ -50,7 +50,7 @@ function DeleteModal({
             onClick={onConfirm}
             className="px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700"
           >
-            OK
+            {t('fileManager.ok')}
           </button>
         </div>
       </div>
@@ -178,7 +178,7 @@ const loadItems = async (path: string) => {
 
   const handleRename = async (name: string) => {
     try {
-      const newName = prompt("Nieuwe naam:", name);
+      const newName = prompt(t('fileManager.renamePrompt'), name);
       if (!newName || newName === name) return;
 
       const item = items.find((i) => i.name === name);
@@ -219,7 +219,7 @@ const loadItems = async (path: string) => {
           .from("resources")
           .upload(`${newPath}.keep`, new Blob([]));
 
-        alert(`Map hernoemd naar "${newName}".`);
+        alert(t('fileManager.folderRenamed', { name: newName }));
       } else {
         const oldPath = `${currentPath}${name}`;
         const newPath = `${currentPath}${newName}`;
@@ -236,13 +236,13 @@ const loadItems = async (path: string) => {
 
         if (removeError) throw removeError;
 
-        alert(`Bestand hernoemd naar "${newName}".`);
+        alert(t('fileManager.fileRenamed', { name: newName }));
       }
 
       loadItems(currentPath);
     } catch (err: any) {
       console.error("Fout bij hernoemen:", err);
-      alert("Kon niet hernoemen: " + err.message);
+      alert(t('fileManager.renameFailed', { msg: String(err.message) }));
     }
   };
 
@@ -260,7 +260,7 @@ const loadItems = async (path: string) => {
 
         if (listError) throw listError;
 
-        let baseName = `${name} kopie`;
+        let baseName = t('fileManager.copyName', { name });
         let newName = baseName;
         let counter = 2;
 
@@ -292,9 +292,9 @@ const loadItems = async (path: string) => {
           if (copyError) throw copyError;
         }
 
-        setMessage(`Map gedupliceerd als "${newName}".`);
+        setMessage(t('fileManager.folderDuplicated', { name: newName }));
       } else {
-        let baseName = `${name} kopie`;
+        let baseName = t('fileManager.copyName', { name });
         let newName = baseName;
         let counter = 2;
 
@@ -314,14 +314,14 @@ const loadItems = async (path: string) => {
 
         if (copyError) throw copyError;
 
-        setMessage(`Bestand gedupliceerd als "${newName}".`);
+        setMessage(t('fileManager.fileDuplicated', { name: newName }));
       }
 
       setTimeout(() => setMessage(null), 3000);
       loadItems(currentPath);
     } catch (err: any) {
       console.error("Fout bij dupliceren:", err);
-      alert("Kon niet dupliceren: " + err.message);
+      alert(t('fileManager.duplicateFailed', { msg: String(err.message) }));
     }
   };
 // ------------------------------------------------------------
@@ -416,13 +416,13 @@ const moveItem = async (name: string, targetPath: string) => {
 
   // Prevent: map naar zichzelf verplaatsen
   if (sourcePath === destPath) {
-    alert("Je kunt een map niet naar zichzelf verplaatsen.");
+    alert(t('fileManager.moveIntoSelf'));
     return;
   }
 
   // Prevent: map naar eigen submap verplaatsen
   if (isFolder && destPath.startsWith(sourcePath)) {
-    alert("Je kunt een map niet naar een submap van zichzelf verplaatsen.");
+    alert(t('fileManager.moveIntoSubfolder'));
     return;
   }
 
@@ -448,12 +448,12 @@ const moveItem = async (name: string, targetPath: string) => {
       if (removeError) throw removeError;
     }
 
-    setMessage(`Verplaatst naar "${targetPath || "/"}".`);
+    setMessage(t('fileManager.movedTo', { path: targetPath || "/" }));
     setTimeout(() => setMessage(null), 3000);
     loadItems(currentPath);
   } catch (err: any) {
     console.error("Fout bij recursief verplaatsen:", err);
-    alert("Kon niet verplaatsen: " + err.message);
+    alert(t('fileManager.moveFailed', { msg: String(err.message) }));
   }
 };
 
@@ -483,12 +483,12 @@ const moveItem = async (name: string, targetPath: string) => {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[480px] space-y-4">
             <h2 className="text-xl font-bold">
-              Verplaatsen: {moveSource}
+              {t('fileManager.moveTitle', { name: moveSource })}
             </h2>
 
             <p className="text-gray-600">
-              Kies de doelmap (je bent nu in:{" "}
-              <span className="font-mono">{currentMovePathLabel}</span>).
+              {t('fileManager.chooseTargetPrefix')}{" "}
+              <span className="font-mono">{currentMovePathLabel}</span>{t('fileManager.chooseTargetSuffix')}
             </p>
 
             <div className="flex justify-between items-center">
@@ -501,7 +501,7 @@ const moveItem = async (name: string, targetPath: string) => {
                     : "bg-gray-100 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                Naar bovenliggende map
+                {t('fileManager.toParentFolder')}
               </button>
             </div>
 
@@ -534,7 +534,7 @@ const moveItem = async (name: string, targetPath: string) => {
                       i.metadata === null && i.name !== moveSource
                   ).length === 0 && (
                     <p className="text-sm text-gray-500">
-                      Geen submappen in deze map.
+                      {t('fileManager.noSubfolders')}
                     </p>
                   )}
                 </>
@@ -550,7 +550,7 @@ const moveItem = async (name: string, targetPath: string) => {
                 }}
                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
               >
-                Annuleren
+                {t('documents.cancel')}
               </button>
 
 <button
@@ -563,7 +563,7 @@ const moveItem = async (name: string, targetPath: string) => {
   }}
   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
 >
-  Verplaatsen naar deze map
+  {t('fileManager.moveHere')}
 </button>
 
             </div>
@@ -572,18 +572,18 @@ const moveItem = async (name: string, targetPath: string) => {
       )}
 
       <div className="p-6 w-full space-y-6">
-        <h1 className="text-3xl font-bold">Bestandsbeheer</h1>
+        <h1 className="text-3xl font-bold">{t('fileManager.title')}</h1>
 
         <div className="flex gap-3">
           <button
             onClick={() => setCreatingFolder(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg"
           >
-            Nieuwe map
+            {t('documents.newFolder')}
           </button>
 
           <label className="px-4 py-2 bg-green-600 text-white rounded-lg cursor-pointer">
-            Upload bestanden
+            {t('fileManager.uploadFiles')}
             <input
               type="file"
               multiple
@@ -597,12 +597,12 @@ const moveItem = async (name: string, targetPath: string) => {
               onClick={goBack}
               className="px-4 py-2 bg-gray-300 rounded-lg"
             >
-              Terug
+              {t('fileManager.back')}
             </button>
           )}
         </div>
 
-        <p className="text-gray-600">Pad: /{currentPath}</p>
+        <p className="text-gray-600">{t('fileManager.path', { path: currentPath })}</p>
 
         {message && (
           <p className="text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded">
@@ -631,7 +631,7 @@ const moveItem = async (name: string, targetPath: string) => {
                         .upload(folderPath, new Blob([]));
 
                       if (error) {
-                        alert("Kon map niet maken: " + error.message);
+                        alert(t('fileManager.createFolderFailed', { msg: error.message }));
                       }
 
                       setNewFolderName("");
@@ -645,7 +645,7 @@ const moveItem = async (name: string, targetPath: string) => {
                     }
                   }}
                   className="flex-1 px-2 py-1 border rounded"
-                  placeholder="Naam van nieuwe map…"
+                  placeholder={t('fileManager.newFolderPlaceholder')}
                 />
 
                 <button
@@ -655,7 +655,7 @@ const moveItem = async (name: string, targetPath: string) => {
                   }}
                   className="text-sm text-gray-600 hover:text-gray-900"
                 >
-                  Annuleren
+                  {t('documents.cancel')}
                 </button>
               </div>
             )}
@@ -712,7 +712,7 @@ const moveItem = async (name: string, targetPath: string) => {
                         }}
                         className="block w-full text-left px-3 py-2 hover:bg-gray-100"
                       >
-                        Hernoemen
+                        {t('folderTree.rename')}
                       </button>
 
                       <button
@@ -722,7 +722,7 @@ const moveItem = async (name: string, targetPath: string) => {
                         }}
                         className="block w-full text-left px-3 py-2 hover:bg-gray-100"
                       >
-                        Dupliceren
+                        {t('fileManager.duplicate')}
                       </button>
 
                       <button
@@ -732,7 +732,7 @@ const moveItem = async (name: string, targetPath: string) => {
                         }}
                         className="block w-full text-left px-3 py-2 hover:bg-gray-100"
                       >
-                        Verplaatsen
+                        {t('fileManager.move')}
                       </button>
 
                       <button
@@ -799,7 +799,7 @@ const moveItem = async (name: string, targetPath: string) => {
                     loadItems(currentPath);
                   } catch (err: any) {
                     console.error("Fout bij verwijderen:", err);
-                    alert("Kon niet verwijderen: " + err.message);
+                    alert(t('fileManager.deleteFailed', { msg: String(err.message) }));
                   }
 
                   setItemToDelete(null);

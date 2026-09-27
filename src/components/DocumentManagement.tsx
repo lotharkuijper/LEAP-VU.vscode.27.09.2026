@@ -24,6 +24,7 @@ import {
 } from '../services/folder.service';
 import { useAuth } from '../contexts/AuthContext';
 import { NoticeBanner, ConfirmDialog, useNotice } from './Notice';
+import { useLanguage } from '../i18n';
 
 interface SubmissionItem {
   id: string;
@@ -61,6 +62,7 @@ export default function DocumentManagement({
   onDeleteDocument: (documentId: string, filePath: string, fileName: string) => void;
 }) {
   const { user, session } = useAuth();
+  const { t } = useLanguage();
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [currentFolderType, setCurrentFolderType] = useState<string | null>(null);
   const [folders, setFolders] = useState<FolderWithDocumentCount[]>([]);
@@ -133,7 +135,7 @@ export default function DocumentManagement({
             setSubmissions(d.submissions || []);
           } else {
             const j = await r.json().catch(() => ({}));
-            setSubmissionsError(j.error || 'Kon inleveringen niet laden');
+            setSubmissionsError(j.error || t('documentManagement.loadSubmissionsFailed'));
             setSubmissions([]);
           }
         } catch (e: any) {
@@ -161,7 +163,7 @@ export default function DocumentManagement({
       });
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
-        setSubmissionsError(j.error || 'Verwijderen mislukt');
+        setSubmissionsError(j.error || t('room.deleteFailed'));
         return;
       }
       setConfirmDeleteSubmission(null);
@@ -179,7 +181,7 @@ export default function DocumentManagement({
       const r = await fetch(`/api/projects/${s.project_id}/submissions/${s.id}/download`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
-      if (!r.ok) { setSubmissionsError('Download mislukt'); return; }
+      if (!r.ok) { setSubmissionsError(t('room.downloadFailed')); return; }
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -224,7 +226,7 @@ export default function DocumentManagement({
       console.error('Error creating folder:', error);
       setNotice({
         kind: 'error',
-        message: 'Map aanmaken mislukt. Mogelijk bestaat er al een map met deze naam.',
+        message: t('documentManagement.createFolderFailed'),
       });
     }
   }
@@ -240,7 +242,7 @@ export default function DocumentManagement({
       await loadCurrentFolder();
     } catch (error) {
       console.error('Error renaming folder:', error);
-      setNotice({ kind: 'error', message: 'Hernoemen van map mislukt.' });
+      setNotice({ kind: 'error', message: t('documentManagement.renameFolderFailed') });
     }
   }
 
@@ -259,7 +261,7 @@ export default function DocumentManagement({
       await loadCurrentFolder();
     } catch (error: any) {
       console.error('Error deleting folder:', error);
-      setNotice({ kind: 'error', message: error.message || 'Verwijderen van map mislukt.' });
+      setNotice({ kind: 'error', message: error.message || t('folderTree.deleteFailed') });
     } finally {
       setDeletingFolder(false);
     }
@@ -290,7 +292,7 @@ export default function DocumentManagement({
   }
 
   if (loading && currentFolderId === null) {
-    return <div className="text-center py-12 text-gray-500">Laden...</div>;
+    return <div className="text-center py-12 text-gray-500">{t('common.loading')}</div>;
   }
 
   return (
@@ -317,14 +319,14 @@ export default function DocumentManagement({
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
           >
             <FolderPlus className="w-4 h-4" />
-            Nieuwe Map
+            {t('documentManagement.newFolder')}
           </button>
           <button
             onClick={() => onUploadClick(currentFolderId)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Upload className="w-4 h-4" />
-            Upload Bestand(en)
+            {t('documentManagement.uploadFiles')}
           </button>
         </div>
       </div>
@@ -344,27 +346,27 @@ export default function DocumentManagement({
               onClick={handleOpenSelected}
               className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
             >
-              Openen
+              {t('documentManagement.open')}
             </button>
             {selectedItem.type === 'folder' && (
               <button
                 onClick={handleRenameSelected}
                 className="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
               >
-                Hernoemen
+                {t('folderTree.rename')}
               </button>
             )}
             <button
               onClick={selectedItem.type === 'folder' ? handleDeleteFolder : handleDeleteDocument}
               className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
             >
-              Verwijderen
+              {t('documents.delete')}
             </button>
             <button
               onClick={() => setSelectedItem(null)}
               className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
             >
-              Annuleren
+              {t('documents.cancel')}
             </button>
           </div>
         </div>
@@ -374,9 +376,9 @@ export default function DocumentManagement({
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-2 text-sm text-amber-900" data-testid="banner-uploads-info">
           <Inbox className="w-4 h-4 mt-0.5 flex-shrink-0" />
           <div>
-            <div className="font-medium">Inleveringen van studenten</div>
+            <div className="font-medium">{t('documentManagement.submissionsTitle')}</div>
             <div className="text-xs text-amber-800">
-              In deze map staan de ingeleverde projectproducten per groep. Eén bestand per groep — een nieuwe upload vervangt de vorige.
+              {t('documentManagement.submissionsInfo')}
               {submissionsError && <span className="block text-red-700 mt-1">{submissionsError}</span>}
             </div>
           </div>
@@ -393,8 +395,8 @@ export default function DocumentManagement({
                   <div className="font-medium truncate">{s.filename}</div>
                   <div className="text-xs text-gray-500">
                     {s.project_title || s.project_id.slice(0, 8)} · {s.group_name || s.group_id.slice(0, 8)}
-                    {s.uploaded_by_name || s.uploaded_by_email ? ` · door ${s.uploaded_by_name || s.uploaded_by_email}` : ''}
-                    {' · '}{new Date(s.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {s.uploaded_by_name || s.uploaded_by_email ? ` · ${t('documentManagement.uploadedBy', { name: String(s.uploaded_by_name || s.uploaded_by_email) })}` : ''}
+                    {' · '}{new Date(s.created_at).toLocaleString(t('common.locale'), { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
                   </div>
                 </div>
@@ -405,14 +407,14 @@ export default function DocumentManagement({
                   className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1.5"
                   data-testid={`button-download-uploads-submission-${s.id}`}
                 >
-                  <Download className="w-4 h-4" /> Download
+                  <Download className="w-4 h-4" /> {t('resources.download')}
                 </button>
                 <button
                   onClick={() => setConfirmDeleteSubmission(s)}
                   className="px-3 py-1.5 text-sm bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1.5"
                   data-testid={`button-delete-uploads-submission-${s.id}`}
                 >
-                  <Trash2 className="w-4 h-4" /> Verwijderen
+                  <Trash2 className="w-4 h-4" /> {t('documents.delete')}
                 </button>
               </div>
             </div>
@@ -422,13 +424,16 @@ export default function DocumentManagement({
 
       <ConfirmDialog
         open={confirmDeleteSubmission !== null}
-        title="Inlevering verwijderen?"
+        title={t('documentManagement.deleteSubmissionTitle')}
         description={
           confirmDeleteSubmission
-            ? `Weet je zeker dat je de inlevering "${confirmDeleteSubmission.filename}" van groep "${confirmDeleteSubmission.group_name || confirmDeleteSubmission.group_id.slice(0, 8)}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.`
+            ? t('documentManagement.deleteSubmissionConfirm', {
+                filename: confirmDeleteSubmission.filename,
+                group: confirmDeleteSubmission.group_name || confirmDeleteSubmission.group_id.slice(0, 8),
+              })
             : ''
         }
-        confirmLabel="Verwijderen"
+        confirmLabel={t('documents.delete')}
         variant="danger"
         busy={deletingSubmission}
         onConfirm={() => { void deleteSubmissionConfirmed(); }}
@@ -437,12 +442,12 @@ export default function DocumentManagement({
 
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Laden...</div>
+          <div className="text-center py-12 text-gray-500">{t('common.loading')}</div>
         ) : folders.length === 0 && documents.length === 0 && !(currentFolderType === 'uploads' && submissions.length > 0) ? (
           <div className="text-center py-12 text-gray-500">
             <FolderOpen className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p>Deze map is leeg</p>
-            <p className="text-sm mt-1">Maak een nieuwe map aan of upload bestanden</p>
+            <p>{t('documentManagement.emptyFolder')}</p>
+            <p className="text-sm mt-1">{t('documentManagement.emptyFolderHint')}</p>
           </div>
         ) : (
           <div>
@@ -465,7 +470,7 @@ export default function DocumentManagement({
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">{folder.document_count} items</span>
+                  <span className="text-xs text-gray-500">{t('documentManagement.itemCount', { count: String(folder.document_count) })}</span>
                 </div>
               </div>
             ))}
@@ -496,10 +501,10 @@ export default function DocumentManagement({
                     }`}
                   >
                     {doc.processing_status === 'completed'
-                      ? 'Klaar'
+                      ? t('documentManagement.statusDone')
                       : doc.processing_status === 'failed'
-                      ? 'Mislukt'
-                      : 'Verwerken...'}
+                      ? t('addUsers.status.failed')
+                      : t('documentManagement.statusProcessing')}
                   </span>
                 </div>
               </div>
@@ -511,30 +516,30 @@ export default function DocumentManagement({
       {showNewFolderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Nieuwe Map Aanmaken</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('folderTree.createNewFolderTitle')}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Mapnaam
+                  {t('folderTree.folderName')}
                 </label>
                 <input
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Voer mapnaam in"
+                  placeholder={t('folderTree.folderNamePlaceholder')}
                   autoFocus
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Beschrijving (optioneel)
+                  {t('folderTree.descriptionOptional')}
                 </label>
                 <textarea
                   value={newFolderDescription}
                   onChange={(e) => setNewFolderDescription(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Voer beschrijving in"
+                  placeholder={t('folderTree.descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
@@ -547,14 +552,14 @@ export default function DocumentManagement({
                   }}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  Annuleren
+                  {t('documents.cancel')}
                 </button>
                 <button
                   onClick={handleCreateFolder}
                   disabled={!newFolderName.trim()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Aanmaken
+                  {t('folderTree.create')}
                 </button>
               </div>
             </div>
@@ -564,13 +569,13 @@ export default function DocumentManagement({
 
       <ConfirmDialog
         open={confirmDeleteFolder !== null}
-        title="Map verwijderen?"
+        title={t('folderTree.deleteTitle')}
         description={
           confirmDeleteFolder
-            ? `Weet je zeker dat je de map "${confirmDeleteFolder.name}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.`
+            ? t('folderTree.deleteConfirm', { name: confirmDeleteFolder.name })
             : ''
         }
-        confirmLabel="Verwijderen"
+        confirmLabel={t('documents.delete')}
         variant="danger"
         busy={deletingFolder}
         onConfirm={() => { void confirmDeleteFolderAction(); }}
@@ -580,18 +585,18 @@ export default function DocumentManagement({
       {showRenameModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Map Hernoemen</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('folderTree.renameFolderTitle')}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nieuwe naam
+                  {t('folderTree.newName')}
                 </label>
                 <input
                   type="text"
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Voer nieuwe naam in"
+                  placeholder={t('folderTree.newNamePlaceholder')}
                   autoFocus
                 />
               </div>
@@ -603,14 +608,14 @@ export default function DocumentManagement({
                   }}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  Annuleren
+                  {t('documents.cancel')}
                 </button>
                 <button
                   onClick={handleRenameFolder}
                   disabled={!newFolderName.trim()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Hernoemen
+                  {t('folderTree.rename')}
                 </button>
               </div>
             </div>

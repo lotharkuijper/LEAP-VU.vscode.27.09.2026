@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
+import { HelpTip } from '../../components/help/HelpTip';
 import { supabase } from '../../lib/supabase';
 import { Bot, FolderOpen, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 
@@ -226,7 +227,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
       <div className="chic-card p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Bot className="w-5 h-5" /> {t('admin.personaLib.title')}</h2>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Bot className="w-5 h-5" /> {t('admin.personaLib.title')}<HelpTip id="projects.templates" /></h2>
             <p className="text-sm text-gray-500 max-w-3xl">
               {t('admin.personaLib.intro', { course: activeCourse?.name || '' })}
             </p>

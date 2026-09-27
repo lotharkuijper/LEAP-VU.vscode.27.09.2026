@@ -132,6 +132,7 @@ import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
 import { buildSourcesInstructionBlock, buildNumberedRagContext } from './citationSources.js';
+import { serverI18nMiddleware, translateServerMessage } from './serverI18n.js';
 import { purposeAllowsModule } from './filePurpose.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
@@ -227,6 +228,9 @@ app.use(cors());
 // vroeger via een directe client-storage-upload wél werkten). 50mb sluit aan op de
 // gangbare Supabase per-bestand storage-limiet en voorkomt die regressie.
 app.use(express.json({ limit: '50mb' }));
+// Meldingen (error/message/…) in JSON-responsen vertalen naar de taal van de
+// gebruiker (header X-LEAP-Lang). Zie server/serverI18n.js.
+app.use(serverI18nMiddleware);
 
 const SUPABASE_URL = process.env.VITE_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_PUBLIC_SUPABASE_ANON_KEY;
@@ -3188,7 +3192,11 @@ app.post('/api/admin/import-web/import', async (req, res) => {
     const safeEmit = (event) => {
       if (clientGone) return false;
       try {
-        res.write(JSON.stringify(event) + '\n');
+        // Streams gaan buiten res.json om: vertaal de melding hier zelf.
+        const out = event && typeof event.error === 'string'
+          ? { ...event, error: translateServerMessage(event.error, req.get('x-leap-lang')) }
+          : event;
+        res.write(JSON.stringify(out) + '\n');
         if (typeof res.flush === 'function') res.flush();
         lastWrite = Date.now();
         return true;
@@ -3427,7 +3435,7 @@ app.post('/api/admin/import-web/import', async (req, res) => {
     // meld de fout dan als event en sluit de stream netjes af.
     if (res.headersSent) {
       if (!clientGone) {
-        try { res.write(JSON.stringify({ type: 'error', error: err.message || 'Web-import mislukt.' }) + '\n'); } catch {}
+        try { res.write(JSON.stringify({ type: 'error', error: translateServerMessage(err.message || 'Web-import mislukt.', req.get('x-leap-lang')) }) + '\n'); } catch {}
       }
       return res.end();
     }

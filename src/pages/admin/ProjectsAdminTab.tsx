@@ -6,6 +6,7 @@ import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert, Bot } from 'lucide-react';
 import { PersonaLibraryTab } from './PersonaLibraryTab';
+import { HelpTip } from '../../components/help/HelpTip';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -217,7 +218,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
         setCourseSubs(d.submissions || []);
       } else {
         const j = await r.json().catch(() => ({}));
-        setError(j.error || 'Kon inleveringen niet laden');
+        setError(j.error || t('admin.projects.subs.loadFailed'));
       }
     } catch (e: any) { setError(e.message); }
     finally { setLoadingCourseSubs(false); }
@@ -230,7 +231,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
       const r = await fetch(`/api/projects/${s.project_id}/submissions/${s.id}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) { setError('Download mislukt'); return; }
+      if (!r.ok) { setError(t('admin.projects.subs.downloadFailed')); return; }
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -323,7 +324,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
       <div className="chic-card p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FolderOpen className="w-5 h-5" />{t('admin.projects.title')}</h2>
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FolderOpen className="w-5 h-5" />{t('admin.projects.title')}<HelpTip id="projects.overview" /></h2>
             <p className="text-sm text-gray-500">{activeCourse ? t('admin.projects.courseLabel', { name: activeCourse.name }) : t('admin.projects.allCourses')}.</p>
           </div>
           <button onClick={() => startEdit(null)} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-testid="button-add-project">
@@ -365,24 +366,24 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                <FileText className="w-4 h-4" /> Cursus-brede inleveringen
+                <FileText className="w-4 h-4" /> {t('admin.projects.subs.courseTitle')}
               </h3>
-              <p className="text-xs text-gray-500">Alle ingeleverde projectproducten van projecten in deze cursus.</p>
+              <p className="text-xs text-gray-500">{t('admin.projects.subs.courseDesc')}</p>
             </div>
             <button
               onClick={() => setShowCourseSubs(s => !s)}
               className="px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 rounded"
               data-testid="button-toggle-course-submissions"
             >
-              {showCourseSubs ? 'Verberg' : 'Toon inleveringen'}
+              {showCourseSubs ? t('admin.projects.subs.hide') : t('admin.projects.subs.show')}
             </button>
           </div>
           {showCourseSubs && (
             <div className="mt-3">
               {loadingCourseSubs ? (
-                <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> Laden…</p>
+                <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> {t('admin.projects.subs.loading')}</p>
               ) : courseSubs.length === 0 ? (
-                <p className="text-xs text-gray-500">Nog geen inleveringen in deze cursus.</p>
+                <p className="text-xs text-gray-500">{t('admin.projects.subs.noneInCourse')}</p>
               ) : (
                 <ul className="divide-y divide-gray-100">
                   {courseSubs.map(s => (
@@ -392,15 +393,15 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                         <div className="text-sm truncate">{s.filename}</div>
                         <div className="text-[11px] text-gray-500">
                           {s.project_title || s.project_id.slice(0, 8)} · {s.group_name || s.group_id.slice(0, 8)}
-                          {s.uploaded_by_name || s.uploaded_by_email ? ` · door ${s.uploaded_by_name || s.uploaded_by_email}` : ''}
-                          {' · '}{new Date(s.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {s.uploaded_by_name || s.uploaded_by_email ? ` · ${t('admin.projects.subs.by', { name: String(s.uploaded_by_name || s.uploaded_by_email) })}` : ''}
+                          {' · '}{new Date(s.created_at).toLocaleString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                           {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
                         </div>
                       </div>
                       <button
                         onClick={() => downloadCourseSub(s)}
                         className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                        title="Download"
+                        title={t('admin.projects.subs.download')}
                         data-testid={`button-download-course-submission-${s.id}`}
                       >
                         <Download className="w-4 h-4" />
@@ -470,9 +471,9 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                     data-testid="checkbox-project-submissions-enabled"
                   />
                   <span>
-                    <span className="font-medium">Inleveren projectproduct aanzetten</span>
+                    <span className="font-medium">{t('admin.projects.subs.enable')}</span>
                     <span className="block text-[11px] text-gray-500">
-                      Studenten kunnen per groep één bestand uploaden. Een nieuwe upload vervangt de vorige.
+                      {t('admin.projects.subs.enableHint')}
                     </span>
                   </span>
                 </label>
@@ -538,7 +539,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       const r = await fetch(`/api/projects/${project.id}/submissions/${s.id}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); setLocalError(j.error || 'Download mislukt'); return; }
+      if (!r.ok) { const j = await r.json().catch(() => ({})); setLocalError(j.error || t('admin.projects.subs.downloadFailed')); return; }
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = s.filename;
@@ -554,8 +555,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!r.ok) { const j = await r.json().catch(() => ({})); setLocalError(j.error || 'Verwijderen mislukt'); return; }
-      setLocalInfo('Inlevering verwijderd.');
+      if (!r.ok) { const j = await r.json().catch(() => ({})); setLocalError(j.error || t('admin.projects.subs.deleteFailed')); return; }
+      setLocalInfo(t('admin.projects.subs.deleted'));
       await loadSubmissions();
     } catch (e: any) { setLocalError(e.message); }
     finally { setConfirmDeleteSub(null); }
@@ -926,7 +927,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                     } catch (e: any) { setLocalError(e.message); }
                   }}
                   className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                  title="Download"
+                  title={t('admin.projects.subs.download')}
                   data-testid={`button-download-project-doc-${d.id}`}
                 >
                   <Download className="w-4 h-4" />
@@ -943,23 +944,23 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       {/* Ingeleverde projectproducten */}
       {!project.submissions_enabled && (
         <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 text-xs text-gray-600" data-testid="section-project-submissions-disabled">
-          Inleveren projectproduct staat uit voor dit project. Zet het aan via Bewerken om studenten één bestand per groep te laten uploaden.
+          {t('admin.projects.subs.disabled')}
         </div>
       )}
       {project.submissions_enabled && (
         <div className="chic-card p-5" data-testid="section-project-submissions">
           <div className="mb-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="w-4 h-4" /> Ingeleverde projectproducten
+              <FileText className="w-4 h-4" /> {t('admin.projects.subs.projectTitle')}
             </h3>
             <p className="text-xs text-gray-500">
-              Eén bestand per groep. De meest recente upload vervangt de vorige.
+              {t('admin.projects.subs.projectDesc')}
             </p>
           </div>
           {loadingSubs ? (
-            <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> Laden…</p>
+            <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> {t('admin.projects.subs.loading')}</p>
           ) : submissions.length === 0 ? (
-            <p className="text-xs text-gray-500">Nog geen inleveringen.</p>
+            <p className="text-xs text-gray-500">{t('admin.projects.subs.none')}</p>
           ) : (
             <ul className="divide-y divide-gray-100">
               {submissions.map(s => (
@@ -969,15 +970,15 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                     <div className="text-sm truncate">{s.filename}</div>
                     <div className="text-[11px] text-gray-500">
                       {s.group_name || s.group_id.slice(0, 8)}
-                      {s.uploaded_by_name || s.uploaded_by_email ? ` · door ${s.uploaded_by_name || s.uploaded_by_email}` : ''}
-                      {' · '}{new Date(s.created_at).toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {s.uploaded_by_name || s.uploaded_by_email ? ` · ${t('admin.projects.subs.by', { name: String(s.uploaded_by_name || s.uploaded_by_email) })}` : ''}
+                      {' · '}{new Date(s.created_at).toLocaleString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                       {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
                     </div>
                   </div>
                   <button
                     onClick={() => downloadSubmission(s)}
                     className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                    title="Download"
+                    title={t('admin.projects.subs.download')}
                     data-testid={`button-download-submission-${s.id}`}
                   >
                     <Download className="w-4 h-4" />
@@ -985,7 +986,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                   <button
                     onClick={() => setConfirmDeleteSub(s)}
                     className="p-1 text-red-500 hover:bg-red-50 rounded"
-                    title="Verwijderen"
+                    title={t('admin.projects.subs.delete')}
                     data-testid={`button-delete-submission-${s.id}`}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1001,8 +1002,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       <div className="chic-card p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-gray-900">{t('admin.projects.personas.title', { count: String(personas.length) })}</h3>
-            <p className="text-xs text-gray-500">{t('admin.projects.personas.desc')}</p>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(personas.length) })}<HelpTip id="personas.inProject" /></h3>
+            <p className="text-xs text-gray-500 flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></p>
           </div>
           <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', rag_enabled: true, persona_type: 'conversational', cue_emission_enabled: true })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
             <Plus className="w-4 h-4" />{t('admin.projects.personas.addBtn')}
@@ -1021,7 +1022,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           </div>
         ) : (
           <div className="flex items-center gap-2 mb-3 p-2 bg-gray-50 border border-gray-200 rounded-lg">
-            <span className="text-xs font-medium text-gray-600 flex-shrink-0">{t('admin.projects.personas.fromTemplateLabel')}</span>
+            <span className="text-xs font-medium text-gray-600 flex-shrink-0 inline-flex items-center gap-1">{t('admin.projects.personas.fromTemplateLabel')}<HelpTip id="personas.fromTemplate" /></span>
             <select
               value={selectedLibId}
               onChange={e => setSelectedLibId(e.target.value)}
@@ -1142,7 +1143,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldType')}</label>
+                <span className="flex items-center gap-1.5"><label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldType')}</label><HelpTip id="personas.evaluator" /></span>
                 <select
                   value={editingPersona.persona_type || 'conversational'}
                   onChange={e => setEditingPersona({ ...editingPersona, persona_type: e.target.value })}
@@ -1253,20 +1254,19 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       <AlertDialog open={!!confirmDeleteSub} onOpenChange={(o) => { if (!o) setConfirmDeleteSub(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Inlevering verwijderen?</AlertDialogTitle>
+            <AlertDialogTitle>{t('admin.projects.subs.confirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Weet je zeker dat je "{confirmDeleteSub?.filename}" wilt verwijderen?
-              De groep kan daarna opnieuw een bestand inleveren. Deze actie is niet terug te draaien.
+              {t('admin.projects.subs.confirmBody', { name: String(confirmDeleteSub?.filename || '') })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel data-testid="button-cancel-delete-submission">Annuleer</AlertDialogCancel>
+            <AlertDialogCancel data-testid="button-cancel-delete-submission">{t('admin.projects.subs.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => confirmDeleteSub && performDeleteSubmission(confirmDeleteSub)}
               data-testid="button-confirm-delete-submission"
               className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Verwijder
+              {t('admin.projects.subs.confirmDelete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

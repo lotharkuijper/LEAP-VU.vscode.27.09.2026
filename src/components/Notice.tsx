@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 export type NoticeKind = 'info' | 'warning' | 'error' | 'success';
 
@@ -29,6 +30,7 @@ interface NoticeBannerProps {
 }
 
 export function NoticeBanner({ notice, onDismiss, className }: NoticeBannerProps) {
+  const { t } = useLanguage();
   if (!notice) return null;
   const s = STYLES[notice.kind];
   const isAlert = notice.kind === 'error' || notice.kind === 'warning';
@@ -45,7 +47,7 @@ export function NoticeBanner({ notice, onDismiss, className }: NoticeBannerProps
         type="button"
         onClick={onDismiss}
         className="opacity-70 hover:opacity-100"
-        aria-label="Sluit melding"
+        aria-label={t('admin.imports.web.dismiss')}
         data-testid="button-dismiss-notice"
       >
         <X className="w-4 h-4" />
@@ -86,13 +88,14 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Bevestigen',
-  cancelLabel = 'Annuleren',
+  confirmLabel,
+  cancelLabel,
   variant = 'default',
   busy = false,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { t } = useLanguage();
   if (!open) return null;
   const confirmBtnClass =
     variant === 'danger'
@@ -127,7 +130,7 @@ export function ConfirmDialog({
             className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
             data-testid="button-confirm-cancel"
           >
-            {cancelLabel}
+            {cancelLabel ?? t('admin.ragSetup.import.confirmCancel')}
           </button>
           <button
             type="button"
@@ -136,7 +139,7 @@ export function ConfirmDialog({
             className={`px-4 py-2 text-white font-medium rounded-lg transition-colors disabled:opacity-50 ${confirmBtnClass}`}
             data-testid="button-confirm-ok"
           >
-            {busy ? 'Bezig...' : confirmLabel}
+            {busy ? t('room.checkpointing') : (confirmLabel ?? t('common.confirm'))}
           </button>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { RefreshCw, AlertTriangle, CheckCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { retryFailedDocument, UploadProgress } from '../services/document-upload.service';
 import { NoticeBanner, ConfirmDialog, useNotice } from './Notice';
+import { useLanguage } from '../i18n';
 
 export function DocumentRetryPanel() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -11,6 +12,7 @@ export function DocumentRetryPanel() {
   const [retryProgress, setRetryProgress] = useState<UploadProgress | null>(null);
   const [confirmRetryAll, setConfirmRetryAll] = useState(false);
   const { notice, setNotice, clearNotice } = useNotice();
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadDocuments();
@@ -35,12 +37,12 @@ export function DocumentRetryPanel() {
     try {
       await retryFailedDocument(documentId, setRetryProgress);
       await loadDocuments();
-      setNotice({ kind: 'success', message: 'Document succesvol verwerkt!' });
+      setNotice({ kind: 'success', message: t('documentRetry.success') });
     } catch (error) {
       console.error('Retry failed:', error);
       setNotice({
         kind: 'error',
-        message: 'Fout bij opnieuw verwerken: ' + (error instanceof Error ? error.message : 'Onbekende fout'),
+        message: t('rag.docStatus.reprocessErrorPrefix') + (error instanceof Error ? error.message : t('common.unknownError')),
       });
     } finally {
       setRetryingDocId(null);
@@ -61,15 +63,15 @@ export function DocumentRetryPanel() {
   };
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-600">Documenten laden...</div>;
+    return <div className="text-center py-8 text-gray-600">{t('documentRetry.loading')}</div>;
   }
 
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
         <CheckCircle className="w-12 h-12 mx-auto mb-3 text-green-600" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-1">Alle documenten verwerkt</h3>
-        <p className="text-gray-600">Er zijn geen documenten die opnieuw verwerkt moeten worden</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-1">{t('documentRetry.allProcessedTitle')}</h3>
+        <p className="text-gray-600">{t('documentRetry.allProcessedDesc')}</p>
       </div>
     );
   }
@@ -83,11 +85,10 @@ export function DocumentRetryPanel() {
           <AlertTriangle className="w-5 h-5 text-yellow-700 mt-0.5" />
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 mb-1">
-              {documents.length} Document{documents.length !== 1 ? 'en' : ''} Vastgelopen
+              {t(documents.length !== 1 ? 'documentRetry.stuckTitleOther' : 'documentRetry.stuckTitleOne', { n: String(documents.length) })}
             </h3>
             <p className="text-sm text-gray-700">
-              Deze documenten zijn niet volledig verwerkt. Dit kan gebeuren als het verwerkingsproces
-              werd onderbroken of als er een fout optrad bij het genereren van embeddings.
+              {t('documentRetry.stuckDesc')}
             </p>
           </div>
         </div>
@@ -100,7 +101,7 @@ export function DocumentRetryPanel() {
         data-testid="button-retry-all"
       >
         <RefreshCw className={`w-5 h-5 ${retryingDocId ? 'animate-spin' : ''}`} />
-        Verwerk Alle Documenten Opnieuw
+        {t('documentRetry.retryAll')}
       </button>
 
       {retryProgress && retryingDocId && (
@@ -117,7 +118,7 @@ export function DocumentRetryPanel() {
           </div>
           {retryProgress.currentChunk !== undefined && retryProgress.totalChunks !== undefined && (
             <p className="text-sm text-gray-600 mt-2">
-              Chunk {retryProgress.currentChunk} van {retryProgress.totalChunks}
+              {t('documentRetry.chunkProgress', { current: String(retryProgress.currentChunk), total: String(retryProgress.totalChunks) })}
             </p>
           )}
         </div>
@@ -142,10 +143,10 @@ export function DocumentRetryPanel() {
                       : 'bg-yellow-100 text-yellow-700'
                   }`}
                 >
-                  {doc.processing_status === 'failed' ? 'Mislukt' : 'Bezig...'}
+                  {doc.processing_status === 'failed' ? t('addUsers.status.failed') : t('room.checkpointing')}
                 </span>
                 <span className="text-xs text-gray-500">
-                  {doc.total_chunks || 0} chunks
+                  {t('documentRetry.chunkCount', { n: String(doc.total_chunks || 0) })}
                 </span>
               </div>
             </div>
@@ -154,7 +155,7 @@ export function DocumentRetryPanel() {
               onClick={() => handleRetry(doc.id)}
               disabled={retryingDocId !== null}
               className="p-3 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Opnieuw verwerken"
+              title={t('documentRetry.retryOne')}
               data-testid={`button-retry-${doc.id}`}
             >
               <RefreshCw
@@ -167,9 +168,9 @@ export function DocumentRetryPanel() {
 
       <ConfirmDialog
         open={confirmRetryAll}
-        title="Alle documenten opnieuw verwerken?"
-        description={`${documents.length} document${documents.length !== 1 ? 'en' : ''} opnieuw verwerken? Dit kan lang duren.`}
-        confirmLabel="Doorgaan"
+        title={t('documentRetry.confirmAllTitle')}
+        description={t(documents.length !== 1 ? 'documentRetry.confirmAllDescOther' : 'documentRetry.confirmAllDescOne', { n: String(documents.length) })}
+        confirmLabel={t('chooseCourse.continue')}
         onConfirm={() => { void runRetryAll(); }}
         onCancel={() => setConfirmRetryAll(false)}
       />

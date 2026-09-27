@@ -6,6 +6,8 @@ import {
 import { NoticeBanner, ConfirmDialog, useNotice } from '../components/Notice';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
+import { intlLocale } from '../i18n/languages';
+import { getActiveLang } from '../i18n/activeLang';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,18 +62,19 @@ function formatBytes(bytes: number) {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('nl-NL', {
+  return new Date(iso).toLocaleDateString(intlLocale(getActiveLang()), {
     day: '2-digit', month: 'short', year: 'numeric',
   });
 }
 
 function FolderTypeBadge({ type }: { type: string }) {
+  const { t } = useLanguage();
   if (type === 'rag_sources')
     return <span className="text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium shrink-0">RAG</span>;
   if (type === 'data')
     return <span className="text-xs px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 font-medium shrink-0">Data</span>;
   if (type === 'course')
-    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium shrink-0">Cursus</span>;
+    return <span className="text-xs px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium shrink-0">{t('addUsers.courseLabel')}</span>;
   return null;
 }
 

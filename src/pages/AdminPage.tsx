@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { useLanguage } from '../i18n';
 import { intlLocale } from '../i18n/languages';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -32,14 +34,15 @@ type Concept = Database['public']['Tables']['concepts']['Row'];
 function formatBackfillTime(isoString: string): string {
   const date = new Date(isoString);
   const now = new Date();
-  const time = date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  const lang = getActiveLang();
+  const time = date.toLocaleTimeString(intlLocale(lang), { hour: '2-digit', minute: '2-digit' });
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
   if (date >= startOfToday) return time;
-  if (date >= startOfYesterday) return `gisteren om ${time}`;
+  if (date >= startOfYesterday) return tStatic(lang, 'admin.backfill.yesterdayAt', { time });
   const diffDays = Math.floor((startOfToday.getTime() - date.getTime()) / 86400000);
-  if (diffDays < 7) return `${diffDays} dagen geleden om ${time}`;
-  return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' }) + ` om ${time}`;
+  if (diffDays < 7) return tStatic(lang, 'admin.backfill.daysAgoAt', { days: String(diffDays), time });
+  return tStatic(lang, 'admin.backfill.dateAt', { date: date.toLocaleDateString(intlLocale(lang), { day: 'numeric', month: 'long' }), time });
 }
 
 interface ChatbotPrompt {
@@ -1056,12 +1059,12 @@ export function AdminPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || `Laden mislukt (${res.status})`);
+      if (!res.ok) throw new Error(json.error || t('admin.users.loadFailedStatus', { status: String(res.status) }));
       setTeacherCoursesByUser((m) => ({
         ...m, [userId]: { loading: false, error: null, courses: json.courses || [] },
       }));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setTeacherCoursesByUser((m) => ({ ...m, [userId]: { loading: false, error: msg, courses: [] } }));
     }
   };
@@ -1079,11 +1082,11 @@ export function AdminPage() {
         body: JSON.stringify({ member_role: 'teacher' }),
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || `Toevoegen mislukt (${res.status})`);
+      if (!res.ok) throw new Error(json.error || t('admin.users.addFailedStatus', { status: String(res.status) }));
       setAddTeacherSelect((s) => ({ ...s, [userId]: '' }));
       await refetchTeacherCourses(userId);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setTeacherMutError((e) => ({ ...e, [userId]: msg }));
     } finally {
       setTeacherMutBusy(null);
@@ -1109,11 +1112,11 @@ export function AdminPage() {
           setLastTeacherConfirm({ userId, courseId, message: json.error });
           return;
         }
-        throw new Error(json.error || `Verwijderen mislukt (${res.status})`);
+        throw new Error(json.error || t('quiz.deleteFailed', { status: String(res.status) }));
       }
       await refetchTeacherCourses(userId);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setTeacherMutError((e) => ({ ...e, [userId]: msg }));
     } finally {
       setTeacherMutBusy(null);
@@ -1133,18 +1136,18 @@ export function AdminPage() {
     setTeacherCoursesByUser((m) => ({ ...m, [userId]: { loading: true, error: null, courses: [] } }));
     try {
       const token = session?.access_token;
-      if (!token) throw new Error('Niet ingelogd.');
+      if (!token) throw new Error(t('admin.users.notLoggedIn'));
       const res = await fetch(`/api/admin/users/${userId}/teacher-courses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(json.error || `Laden mislukt (${res.status})`);
+      if (!res.ok) throw new Error(json.error || t('admin.users.loadFailedStatus', { status: String(res.status) }));
       setTeacherCoursesByUser((m) => ({
         ...m,
         [userId]: { loading: false, error: null, courses: json.courses || [] },
       }));
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Onbekende fout';
+      const msg = err instanceof Error ? err.message : t('common.unknownError');
       setTeacherCoursesByUser((m) => ({ ...m, [userId]: { loading: false, error: msg, courses: [] } }));
     }
   };
@@ -1821,7 +1824,7 @@ const tabGroups = [
                                   ? 'bg-blue-100 text-blue-700'
                                   : 'bg-green-100 text-green-700'
                               }`} data-testid={`badge-role-${user.id}`}>
-                                {globalRole}
+                                {globalRole === 'admin' ? t('nav.role.admin') : globalRole === 'docent' ? t('nav.role.docent') : t('nav.role.student')}
                               </span>
                             </td>
                           </tr>
@@ -1849,10 +1852,10 @@ const tabGroups = [
                                   <ul className="space-y-1.5">
                                     {tcState.courses.map((c) => (
                                       <li key={c.courseId} className="flex items-center gap-3 flex-wrap" data-testid={`row-teacher-course-${user.id}-${c.courseId}`}>
-                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">Docent</span>
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-100 text-blue-700">{t('nav.role.docent')}</span>
                                         <span className="text-sm text-gray-900" data-testid={`text-teacher-course-${c.courseId}`}>{c.courseName}</span>
                                         {c.isActive === false && (
-                                          <span className="text-[11px] text-gray-500">(inactief)</span>
+                                          <span className="text-[11px] text-gray-500">{t('admin.users.inactiveSuffix')}</span>
                                         )}
                                         <button
                                           type="button"

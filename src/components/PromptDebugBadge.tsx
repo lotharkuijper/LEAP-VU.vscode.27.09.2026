@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Terminal } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 interface PromptInfo {
   id?: string;
@@ -22,6 +23,7 @@ interface Props {
 
 export function PromptDebugBadge({ section }: Props) {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [data, setData] = useState<ActivePromptsResponse | null>(null);
 
   const isStaff = profile?.role === 'admin' || profile?.role === 'teacher';
@@ -50,7 +52,7 @@ export function PromptDebugBadge({ section }: Props) {
     return (
       <div
         className="flex items-center gap-1.5 text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 font-mono leading-none"
-        title="Debug: actieve systeemprompt"
+        title={t('promptDebug.activeSystemPrompt')}
         data-testid={`debug-prompt-${section}`}
       >
         <Terminal className="w-3 h-3 shrink-0 text-gray-300" />
@@ -59,7 +61,7 @@ export function PromptDebugBadge({ section }: Props) {
           <span className={isFallback ? 'text-amber-500' : 'text-gray-600 font-semibold'}>
             {info.name}
           </span>
-          {isFallback && <span className="text-amber-400 ml-1">(standaard)</span>}
+          {isFallback && <span className="text-amber-400 ml-1">{t('promptDebug.defaultSuffix')}</span>}
         </span>
       </div>
     );
@@ -74,14 +76,14 @@ export function PromptDebugBadge({ section }: Props) {
           data-testid="debug-prompt-quiz"
         >
           <Terminal className="w-3 h-3 shrink-0" />
-          <span>quiz prompts: standaard (DB niet geconfigureerd)</span>
+          <span>{t('promptDebug.quizDefaultNoDb')}</span>
         </div>
       );
     }
     return (
       <div
         className="text-[11px] text-gray-400 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 font-mono leading-none space-y-0.5"
-        title="Debug: actieve quiz-prompts"
+        title={t('promptDebug.activeQuizPrompts')}
         data-testid="debug-prompt-quiz"
       >
         <div className="flex items-center gap-1 mb-1">
@@ -93,7 +95,7 @@ export function PromptDebugBadge({ section }: Props) {
             <span className={p.is_active ? 'text-gray-600 font-semibold' : 'line-through text-gray-300'}>
               {p.name}
             </span>
-            {!p.is_active && <span className="text-gray-300 ml-1">(inactief)</span>}
+            {!p.is_active && <span className="text-gray-300 ml-1">{t('promptDebug.inactiveSuffix')}</span>}
           </div>
         ))}
       </div>

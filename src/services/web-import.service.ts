@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 // Eén ontdekte pagina van een webomgeving.
 export interface DiscoveredPage {
@@ -56,7 +58,7 @@ export interface WebImportOptions {
 
 async function authHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Geen actieve sessie. Log opnieuw in.');
+  if (!session) throw new Error(tStatic(getActiveLang(), 'services.noActiveSessionLogin'));
   return {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${session.access_token}`,
@@ -99,7 +101,7 @@ export class WebImportInterruptedError extends Error {
   processed: number;
   total: number;
   constructor(processed: number, total: number) {
-    super('Web-import onderbroken: de verbinding werd verbroken voordat de import klaar was.');
+    super(tStatic(getActiveLang(), 'services.webImport.interrupted'));
     this.name = 'WebImportInterruptedError';
     this.processed = processed;
     this.total = total;
@@ -122,7 +124,7 @@ export async function importWebPages(
     body: JSON.stringify({ courseId, baseUrl, pages, ...options }),
   });
   if (!res.ok) throw new Error(await parseError(res));
-  if (!res.body) throw new Error('Geen stream-antwoord van de server.');
+  if (!res.body) throw new Error(tStatic(getActiveLang(), 'services.webImport.noStream'));
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
@@ -157,7 +159,7 @@ export async function importWebPages(
       const { type, ...rest } = event;
       done = rest as WebImportResult;
     } else if (event.type === 'error') {
-      streamError = event.error || 'Web-import mislukt.';
+      streamError = event.error || tStatic(getActiveLang(), 'services.webImport.failed');
     }
     // 'ping' is een heartbeat om de verbinding open te houden; bewust genegeerd.
   };

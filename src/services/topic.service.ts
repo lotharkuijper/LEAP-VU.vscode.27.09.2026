@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 export interface Topic {
   id: string;
@@ -19,7 +21,7 @@ export async function getAllTopics(): Promise<Topic[]> {
     .order('display_order', { ascending: true });
 
   if (error) {
-    throw new Error(`Kon topics niet ophalen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchTopics', { detail: String(error.message) }));
   }
 
   return data || [];
@@ -47,7 +49,7 @@ export async function createTopic(
     .single();
 
   if (error) {
-    throw new Error(`Kon topic niet aanmaken: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.createTopic', { detail: String(error.message) }));
   }
 
   return data;
@@ -65,7 +67,7 @@ export async function linkConceptToTopic(
   });
 
   if (error && !error.message.includes('duplicate')) {
-    throw new Error(`Kon concept niet koppelen aan topic: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.linkConcept', { detail: String(error.message) }));
   }
 }
 
@@ -81,7 +83,7 @@ export async function linkQuizQuestionToTopic(
   });
 
   if (error && !error.message.includes('duplicate')) {
-    throw new Error(`Kon quiz vraag niet koppelen aan topic: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.linkQuestion', { detail: String(error.message) }));
   }
 }
 
@@ -99,7 +101,7 @@ export async function linkDocumentToTopic(
   });
 
   if (error && !error.message.includes('duplicate')) {
-    throw new Error(`Kon document niet koppelen aan topic: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.linkDocument', { detail: String(error.message) }));
   }
 }
 
@@ -110,7 +112,7 @@ export async function getTopicsForConcept(conceptId: string): Promise<Topic[]> {
     .eq('concept_id', conceptId);
 
   if (error) {
-    throw new Error(`Kon topics niet ophalen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchTopics', { detail: String(error.message) }));
   }
 
   return (data || []).map((item: any) => item.topic);
@@ -123,7 +125,7 @@ export async function getTopicsForQuizQuestion(questionId: string): Promise<Topi
     .eq('question_id', questionId);
 
   if (error) {
-    throw new Error(`Kon topics niet ophalen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchTopics', { detail: String(error.message) }));
   }
 
   return (data || []).map((item: any) => item.topic);
@@ -136,7 +138,7 @@ export async function getTopicsForDocument(documentId: string): Promise<Topic[]>
     .eq('document_id', documentId);
 
   if (error) {
-    throw new Error(`Kon topics niet ophalen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchTopics', { detail: String(error.message) }));
   }
 
   return (data || []).map((item: any) => item.topic);
@@ -149,7 +151,7 @@ export async function getConceptsForTopic(topicId: string): Promise<any[]> {
     .eq('topic_id', topicId);
 
   if (error) {
-    throw new Error(`Kon concepts niet ophalen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchConcepts', { detail: String(error.message) }));
   }
 
   return (data || []).map((item: any) => item.concept);
@@ -161,7 +163,7 @@ export async function getQuestionsWithoutTopics(): Promise<any[]> {
     .select('id, question_text, topic');
 
   if (qError) {
-    throw new Error(`Kon vragen niet ophalen: ${qError.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchQuestions', { detail: String(qError.message) }));
   }
 
   const { data: linkedQuestions, error: lError } = await supabase
@@ -169,7 +171,7 @@ export async function getQuestionsWithoutTopics(): Promise<any[]> {
     .select('question_id');
 
   if (lError) {
-    throw new Error(`Kon gekoppelde vragen niet ophalen: ${lError.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchLinkedQuestions', { detail: String(lError.message) }));
   }
 
   const linkedIds = new Set((linkedQuestions || []).map((q: any) => q.question_id));
@@ -183,7 +185,7 @@ export async function getConceptsWithoutTopics(): Promise<any[]> {
     .select('id, name, category');
 
   if (cError) {
-    throw new Error(`Kon concepts niet ophalen: ${cError.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchConcepts', { detail: String(cError.message) }));
   }
 
   const { data: linkedConcepts, error: lError } = await supabase
@@ -191,7 +193,7 @@ export async function getConceptsWithoutTopics(): Promise<any[]> {
     .select('concept_id');
 
   if (lError) {
-    throw new Error(`Kon gekoppelde concepts niet ophalen: ${lError.message}`);
+    throw new Error(tStatic(getActiveLang(), 'services.topic.fetchLinkedConcepts', { detail: String(lError.message) }));
   }
 
   const linkedIds = new Set((linkedConcepts || []).map((c: any) => c.concept_id));

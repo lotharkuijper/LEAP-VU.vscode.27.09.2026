@@ -11,8 +11,10 @@ import {
 } from '../services/dataset.service';
 import { getFolders, type Folder } from '../services/folder.service';
 import { NoticeBanner, ConfirmDialog, useNotice } from './Notice';
+import { useLanguage } from '../i18n';
 
 export function DatasetManagement() {
+  const { t } = useLanguage();
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,15 +76,15 @@ export function DatasetManagement() {
       );
 
       if (result.success) {
-        setNotice({ kind: 'success', message: 'Dataset succesvol geüpload!' });
+        setNotice({ kind: 'success', message: t('datasetManagement.uploadSuccess') });
         setShowUploadModal(false);
         setUploadForm({ file: null, name: '', description: '', folderId: null });
         loadData();
       } else {
-        setNotice({ kind: 'error', message: `Fout bij uploaden: ${result.error}` });
+        setNotice({ kind: 'error', message: t('datasetManagement.uploadError', { error: String(result.error) }) });
       }
     } catch (error: any) {
-      setNotice({ kind: 'error', message: `Fout bij uploaden: ${error.message}` });
+      setNotice({ kind: 'error', message: t('datasetManagement.uploadError', { error: String(error.message) }) });
     } finally {
       setUploading(false);
     }
@@ -102,10 +104,10 @@ export function DatasetManagement() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       } else {
-        setNotice({ kind: 'error', message: `Fout bij downloaden: ${result.error}` });
+        setNotice({ kind: 'error', message: t('datasetManagement.downloadError', { error: String(result.error) }) });
       }
     } catch (error: any) {
-      setNotice({ kind: 'error', message: `Fout bij downloaden: ${error.message}` });
+      setNotice({ kind: 'error', message: t('datasetManagement.downloadError', { error: String(error.message) }) });
     }
   };
 
@@ -115,13 +117,13 @@ export function DatasetManagement() {
     try {
       const result = await deleteDataset(deleteTarget.id, deleteTarget.file_path);
       if (result.success) {
-        setNotice({ kind: 'success', message: 'Dataset verwijderd.' });
+        setNotice({ kind: 'success', message: t('datasetManagement.deleted') });
         loadData();
       } else {
-        setNotice({ kind: 'error', message: `Fout bij verwijderen: ${result.error}` });
+        setNotice({ kind: 'error', message: t('datasetManagement.deleteError', { error: String(result.error) }) });
       }
     } catch (error: any) {
-      setNotice({ kind: 'error', message: `Fout bij verwijderen: ${error.message}` });
+      setNotice({ kind: 'error', message: t('datasetManagement.deleteError', { error: String(error.message) }) });
     } finally {
       setDeleting(false);
       setDeleteTarget(null);
@@ -136,9 +138,9 @@ export function DatasetManagement() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Dataset Beheer</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t('datasetManagement.title')}</h2>
           <p className="text-gray-600 mt-1">
-            Upload datasets (XLSX, CSV, OMV) voor studenten om te downloaden
+            {t('datasetManagement.subtitle')}
           </p>
         </div>
         <button
@@ -147,7 +149,7 @@ export function DatasetManagement() {
           data-testid="button-open-upload-dataset"
         >
           <Upload className="w-4 h-4" />
-          Upload Dataset
+          {t('datasetManagement.uploadDataset')}
         </button>
       </div>
 
@@ -160,7 +162,7 @@ export function DatasetManagement() {
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          Alle Datasets
+          {t('datasetManagement.allDatasets')}
         </button>
         {datasetFolders.map(folder => (
           <button
@@ -181,11 +183,11 @@ export function DatasetManagement() {
       {loading ? (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Laden...</p>
+          <p className="mt-4 text-gray-600">{t('common.loading')}</p>
         </div>
       ) : datasets.length === 0 ? (
         <div className="bg-gray-50 rounded-lg p-12 text-center">
-          <p className="text-gray-600">Geen datasets gevonden</p>
+          <p className="text-gray-600">{t('datasetManagement.noDatasets')}</p>
         </div>
       ) : (
         <div className="grid gap-4">
@@ -201,8 +203,8 @@ export function DatasetManagement() {
                     )}
                     <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                       <span>{formatFileSize(dataset.file_size)}</span>
-                      <span>Geüpload door: {dataset.uploader_name || 'Onbekend'}</span>
-                      <span>{new Date(dataset.created_at).toLocaleDateString('nl-NL')}</span>
+                      <span>{t('datasetManagement.uploadedBy', { name: dataset.uploader_name || t('datasetManagement.unknownUploader') })}</span>
+                      <span>{new Date(dataset.created_at).toLocaleDateString(t('common.locale'))}</span>
                     </div>
                   </div>
                 </div>
@@ -210,7 +212,7 @@ export function DatasetManagement() {
                   <button
                     onClick={() => handleDownload(dataset)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    title="Download"
+                    title={t('resources.download')}
                     data-testid={`button-download-dataset-${dataset.id}`}
                   >
                     <Download className="w-4 h-4" />
@@ -218,7 +220,7 @@ export function DatasetManagement() {
                   <button
                     onClick={() => setDeleteTarget(dataset)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Verwijder"
+                    title={t('common.delete')}
                     data-testid={`button-delete-dataset-${dataset.id}`}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -234,7 +236,7 @@ export function DatasetManagement() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900">Upload Dataset</h3>
+              <h3 className="text-xl font-bold text-gray-900">{t('datasetManagement.uploadDataset')}</h3>
               <button
                 onClick={() => setShowUploadModal(false)}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -246,7 +248,7 @@ export function DatasetManagement() {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bestand *
+                  {t('datasetManagement.fileLabel')}
                 </label>
                 <input
                   type="file"
@@ -255,46 +257,46 @@ export function DatasetManagement() {
                   className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none"
                 />
                 <p className="mt-1 text-xs text-gray-500">
-                  Toegestaan: XLSX, CSV, OMV (max 50MB)
+                  {t('datasetManagement.allowedTypes')}
                 </p>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Naam *
+                  {t('admin.concepts.nameLabel')}
                 </label>
                 <input
                   type="text"
                   value={uploadForm.name}
                   onChange={(e) => setUploadForm({ ...uploadForm, name: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Dataset naam"
+                  placeholder={t('datasetManagement.namePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Beschrijving
+                  {t('datasetManagement.descriptionLabel')}
                 </label>
                 <textarea
                   value={uploadForm.description}
                   onChange={(e) => setUploadForm({ ...uploadForm, description: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Optionele beschrijving"
+                  placeholder={t('datasetManagement.descriptionPlaceholder')}
                   rows={3}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Folder (optioneel)
+                  {t('datasetManagement.folderOptional')}
                 </label>
                 <select
                   value={uploadForm.folderId || ''}
                   onChange={(e) => setUploadForm({ ...uploadForm, folderId: e.target.value || null })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
-                  <option value="">Geen folder</option>
+                  <option value="">{t('datasetManagement.noFolder')}</option>
                   {datasetFolders.map(folder => (
                     <option key={folder.id} value={folder.id}>
                       {folder.name}
@@ -308,14 +310,14 @@ export function DatasetManagement() {
                   onClick={() => setShowUploadModal(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  Annuleer
+                  {t('common.cancel')}
                 </button>
                 <button
                   onClick={handleUpload}
                   disabled={!uploadForm.file || !uploadForm.name || uploading}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {uploading ? 'Uploaden...' : 'Upload'}
+                  {uploading ? t('datasetManagement.uploading') : t('room.upload')}
                 </button>
               </div>
             </div>
@@ -325,13 +327,13 @@ export function DatasetManagement() {
 
       <ConfirmDialog
         open={deleteTarget !== null}
-        title="Dataset verwijderen?"
+        title={t('datasetManagement.deleteTitle')}
         description={
           deleteTarget
-            ? `Weet je zeker dat je "${deleteTarget.name}" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.`
+            ? t('datasetManagement.deleteConfirm', { name: deleteTarget.name })
             : ''
         }
-        confirmLabel="Verwijderen"
+        confirmLabel={t('documents.delete')}
         variant="danger"
         busy={deleting}
         onConfirm={() => { void confirmDeleteDataset(); }}

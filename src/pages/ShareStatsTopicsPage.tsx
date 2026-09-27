@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { fetchShareStatsTopics, ShareStatsTopic } from "../services/sharestats";
 import { useNavigate } from "react-router-dom";
 import { LoadingSpinner } from "../components/LoadingSpinner";
+import { useLanguage } from "../i18n";
 
 export default function ShareStatsTopicsPage() {
   const [topics, setTopics] = useState<ShareStatsTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const load = async () => {
@@ -31,14 +33,13 @@ export default function ShareStatsTopicsPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">ShareStats – Oefenonderwerpen</h1>
+      <h1 className="text-2xl font-bold mb-4">{t('shareStats.topicsTitle')}</h1>
 
       <p className="text-gray-700 mb-6">
-        Kies een onderwerp uit de ShareStats‑itembank om mee te oefenen.
+        {t('shareStats.topicsIntro')}
         <br />
         <span className="text-sm text-gray-500">
-          Let op: deze vragen sluiten niet altijd perfect aan bij onze cursus,
-          maar zijn wél heel goed voor extra oefening.
+          {t('shareStats.topicsNote')}
         </span>
       </p>
 

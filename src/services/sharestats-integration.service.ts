@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { getAllRmdFiles, fetchFileContent, setItembankRepo } from './github-parser.service';
 import { parseShareStatsItem } from './rmd-parser.service';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 export interface ShareStatsQuestion {
   id: string;
@@ -292,7 +294,7 @@ export async function importQuestionsFromShareStats(
     onProgress?.({
       stage: 'completed',
       progress: 100,
-      message: `Import voltooid: ${imported} geïmporteerd, ${skipped} overgeslagen, ${errors} fouten`,
+      message: tStatic(getActiveLang(), 'services.sharestats.importDone', { imported: String(imported), skipped: String(skipped), errors: String(errors) }),
       questionsProcessed: totalItems,
       totalQuestions: totalItems,
     });
@@ -340,7 +342,7 @@ export async function syncShareStatsQuestions(
 // een cursus-override; zonder courseId betreft het de globale (admin-only) bron.
 async function authHeaders(): Promise<Record<string, string>> {
   const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error('Geen actieve sessie');
+  if (!session) throw new Error(tStatic(getActiveLang(), 'services.noActiveSession'));
   return {
     'Content-Type': 'application/json',
     Authorization: `Bearer ${session.access_token}`,

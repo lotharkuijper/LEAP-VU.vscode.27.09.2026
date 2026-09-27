@@ -1,16 +1,18 @@
 import { useCourseAccess } from "../contexts/CourseAccessContext";
 import { useActiveCourse } from "../contexts/ActiveCourseContext";
+import { useLanguage } from "../i18n";
 
 export default function CourseSelector() {
   const { courses } = useCourseAccess();
   const { activeCourse, chooseCourse } = useActiveCourse();
+  const { t } = useLanguage();
 
   // Als er maar 0 of 1 cursus is, geen selector tonen
   if (!courses || courses.length <= 1) return null;
 
   return (
     <div className="p-4 border-r bg-gray-50 h-full">
-      <h3 className="font-semibold mb-3">Kies een cursus</h3>
+      <h3 className="font-semibold mb-3">{t('chooseCourse.title')}</h3>
 
       {courses.map((course) => (
         <button

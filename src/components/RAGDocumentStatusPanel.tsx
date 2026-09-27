@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CheckCircle, AlertTriangle, Loader2, RefreshCw, FileText, Info, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { retryFailedDocument, UploadProgress, SESSION_EXPIRED_MSG } from '../services/document-upload.service';
+import { retryFailedDocument, UploadProgress, sessionExpiredMessage } from '../services/document-upload.service';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n';
@@ -238,7 +238,7 @@ export function RAGDocumentStatusPanel() {
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(res.status === 401 ? SESSION_EXPIRED_MSG : (body.error || `HTTP ${res.status}`));
+        throw new Error(res.status === 401 ? sessionExpiredMessage() : (body.error || `HTTP ${res.status}`));
       }
 
       fetch('/api/admin/record-doc-mutation', {
@@ -253,7 +253,7 @@ export function RAGDocumentStatusPanel() {
       await loadDocuments();
     } catch (err) {
       console.error('[RAG PANEL] Delete failed:', err);
-      alert('Fout bij verwijderen: ' + (err instanceof Error ? err.message : 'Onbekende fout'));
+      alert(t('admin.prompts.deleteError') + (err instanceof Error ? err.message : t('common.unknownError')));
     } finally {
       setDeletingDocId(null);
       setDeleteConfirmId(null);
@@ -271,7 +271,7 @@ export function RAGDocumentStatusPanel() {
     return (
       <div className="text-center py-12 text-gray-500">
         <Info className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-        <p>Kies een actieve cursus om RAG-documenten te bekijken</p>
+        <p>{t('ragStatus.panel.chooseActiveCourse')}</p>
       </div>
     );
   }
@@ -281,10 +281,10 @@ export function RAGDocumentStatusPanel() {
       <div className="text-center py-12 text-gray-500">
         <Info className="w-12 h-12 mx-auto mb-3 text-gray-400" />
         <p>
-          Cursus <strong>{activeCourse?.name}</strong> heeft geen RAG-mappen
+          {t('ragStatus.panel.courseLabel')} <strong>{activeCourse?.name}</strong> {t('ragStatus.panel.hasNoRagFolders')}
         </p>
         <p className="text-sm mt-1">
-          Wijs een RAG-map toe aan de cursus via Cursussen beheren
+          {t('ragStatus.panel.assignRagFolderHint')}
         </p>
       </div>
     );
@@ -295,13 +295,13 @@ export function RAGDocumentStatusPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-gray-900">
-            RAG-documenten: {activeCourse?.name}
+            {t('ragStatus.panel.title', { name: activeCourse?.name ?? '' })}
           </h3>
           <p className="text-sm text-gray-600">
-            {documents.length} document(en) in {activeCourseRagFolderIds.length} RAG-map(pen)
+            {t('ragStatus.panel.summary', { docs: String(documents.length), folders: String(activeCourseRagFolderIds.length) })}
             {failedCount > 0 && (
               <span className="ml-2 text-amber-700 font-medium">
-                • {failedCount} vereisen aandacht
+                • {t('ragStatus.panel.needAttention', { n: String(failedCount) })}
               </span>
             )}
           </p>
@@ -315,13 +315,13 @@ export function RAGDocumentStatusPanel() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            {filterMode === 'failed' ? 'Toon alle' : `Toon problemen (${failedCount})`}
+            {filterMode === 'failed' ? t('ragStatus.panel.showAll') : t('ragStatus.panel.showProblems', { n: String(failedCount) })}
           </button>
           <button
             onClick={loadDocuments}
             disabled={loading}
             className="p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-            title="Vernieuwen"
+            title={t('material.refresh')}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -416,18 +416,18 @@ export function RAGDocumentStatusPanel() {
       {loading ? (
         <div className="text-center py-8 text-gray-500">
           <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-          <p className="text-sm">Documenten laden...</p>
+          <p className="text-sm">{t('documentRetry.loading')}</p>
         </div>
       ) : filteredDocuments.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
           <CheckCircle className="w-10 h-10 mx-auto mb-3 text-emerald-500" />
           <p className="font-medium text-gray-700">
-            {filterMode === 'failed' ? 'Geen problemen gevonden' : 'Geen documenten'}
+            {filterMode === 'failed' ? t('ragStatus.panel.noProblemsTitle') : t('ragStatus.panel.noDocumentsTitle')}
           </p>
           <p className="text-sm mt-1">
             {filterMode === 'failed'
-              ? 'Alle documenten zijn correct verwerkt'
-              : 'Upload documenten via de Bestanden-tab of het admin beheerpaneel'}
+              ? t('ragStatus.panel.noProblemsDesc')
+              : t('ragStatus.panel.noDocumentsDesc')}
           </p>
         </div>
       ) : (
@@ -460,7 +460,7 @@ export function RAGDocumentStatusPanel() {
 
                   {doc.processing_status === 'completed' && doc.chunkCount > 0 && (
                     <span className="text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
-                      {doc.chunkCount} chunks
+                      {t('documentRetry.chunkCount', { n: String(doc.chunkCount) })}
                     </span>
                   )}
 
@@ -483,7 +483,7 @@ export function RAGDocumentStatusPanel() {
                       onClick={() => handleRetry(doc.id)}
                       disabled={retryingDocId !== null}
                       className="p-2 text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
-                      title="Opnieuw verwerken"
+                      title={t('documentRetry.retryOne')}
                     >
                       <RefreshCw
                         className={`w-4 h-4 ${retryingDocId === doc.id ? 'animate-spin' : ''}`}
@@ -499,7 +499,7 @@ export function RAGDocumentStatusPanel() {
                         className="px-2 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
                         data-testid={`button-confirm-delete-doc-${doc.id}`}
                       >
-                        {deletingDocId === doc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Ja'}
+                        {deletingDocId === doc.id ? <Loader2 className="w-3 h-3 animate-spin" /> : t('admin.yes')}
                       </button>
                       <button
                         onClick={() => setDeleteConfirmId(null)}
@@ -537,11 +537,12 @@ function StatusBadge({
   status: string;
   chunkCount: number;
 }) {
+  const { t } = useLanguage();
   if (status === 'completed' && chunkCount > 0) {
     return (
       <span className="flex items-center gap-1 text-xs text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
         <CheckCircle className="w-3 h-3" />
-        Voltooid
+        {t('ragStatus.badge.completed')}
       </span>
     );
   }
@@ -550,7 +551,7 @@ function StatusBadge({
     return (
       <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
         <AlertTriangle className="w-3 h-3" />
-        Geen chunks
+        {t('ragStatus.badge.noChunks')}
       </span>
     );
   }
@@ -559,7 +560,7 @@ function StatusBadge({
     return (
       <span className="flex items-center gap-1 text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
         <Loader2 className="w-3 h-3 animate-spin" />
-        Bezig...
+        {t('room.checkpointing')}
       </span>
     );
   }
@@ -568,7 +569,7 @@ function StatusBadge({
     return (
       <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
         <AlertTriangle className="w-3 h-3" />
-        In wachtrij
+        {t('ragStatus.badge.pending')}
       </span>
     );
   }
@@ -577,7 +578,7 @@ function StatusBadge({
     return (
       <span className="flex items-center gap-1 text-xs text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
         <AlertTriangle className="w-3 h-3" />
-        Mislukt
+        {t('addUsers.status.failed')}
       </span>
     );
   }

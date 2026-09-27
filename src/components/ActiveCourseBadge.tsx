@@ -1,9 +1,11 @@
 import { useActiveCourse } from "../contexts/ActiveCourseContext";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useLanguage } from "../i18n";
 
 export default function ActiveCourseBadge() {
   const { activeCourseId } = useActiveCourse();
+  const { t } = useLanguage();
   const [courseName, setCourseName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function ActiveCourseBadge() {
   if (!courseName) {
     return (
       <div style={{ opacity: 0.6, fontSize: "0.9rem" }}>
-        Geen actieve cursus
+        {t('admin.ragSetup.noActiveCourse')}
       </div>
     );
   }
@@ -50,7 +52,7 @@ export default function ActiveCourseBadge() {
         color: "#334",
       }}
     >
-      Actieve cursus: {courseName}
+      {t('dashboard.activeCourse', { name: courseName })}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 /**
  * Onderwerp-bron-abstractie voor de Quiz-omgeving (Task #52, fase 1).
@@ -30,7 +32,7 @@ export interface QuizTopic {
 export async function getQuizTopics(courseId: string | null): Promise<QuizTopic[]> {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    throw new Error('Niet geauthenticeerd: log opnieuw in om onderwerpen te laden.');
+    throw new Error(tStatic(getActiveLang(), 'services.quizTopic.notAuthenticated'));
   }
 
   const params = courseId ? `?courseId=${encodeURIComponent(courseId)}` : '';
@@ -44,7 +46,7 @@ export async function getQuizTopics(courseId: string | null): Promise<QuizTopic[
       const j = await res.json();
       detail = j?.error || '';
     } catch { /* ignore */ }
-    throw new Error(`Kon onderwerpen niet laden (${res.status})${detail ? `: ${detail}` : ''}`);
+    throw new Error(tStatic(getActiveLang(), 'services.quizTopic.loadFailed', { status: String(res.status) }) + (detail ? `: ${detail}` : ''));
   }
 
   const data = await res.json();

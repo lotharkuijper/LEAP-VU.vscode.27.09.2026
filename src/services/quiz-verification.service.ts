@@ -36,6 +36,8 @@
  */
 
 import { callChatAPI, extractJSON, LLMError, type QuizQuestion, type MCQQuestion } from './llm.service';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 export type ChatCaller = (body: object) => Promise<any>;
 
@@ -290,7 +292,7 @@ async function ask(call: ChatCaller, prompt: string, maxTokens: number): Promise
     try {
       const content = contentOf(await call(body(attempt === 0 ? maxTokens : maxTokens * 2)));
       if (content.trim()) return content;
-      lastErr = new LLMError('leeg antwoord', 502, 'empty_response');
+      lastErr = new LLMError(tStatic(getActiveLang(), 'quizVerify.emptyAnswer'), 502, 'empty_response');
     } catch (err: any) {
       lastErr = err;
       if (err instanceof LLMError && err.status === 400 && /promptMode/i.test(`${err.message} ${err.rawMessage}`) && !promptModeUnsupported) {
@@ -358,7 +360,7 @@ export async function verifyGeneratedQuestion(
       );
     } catch (err: any) {
       if (usable) return acceptUsable('controle van verbetering mislukt; bruikbare versie behouden');
-      return { status: 'rejected', question: null, reason: `controle mislukt: ${err?.message || String(err)}`, kind: 'error' };
+      return { status: 'rejected', question: null, reason: tStatic(getActiveLang(), 'quizVerify.checkFailed', { error: err?.message || String(err) }), kind: 'error' };
     }
 
     const severity = severityOf(compare, solve, mcqMismatch);
@@ -416,7 +418,7 @@ export async function checkItembankFit(
       'object',
     );
   } catch (err: any) {
-    return { status: 'rejected', question: null, reason: `controle mislukt: ${err?.message || String(err)}`, kind: 'error' };
+    return { status: 'rejected', question: null, reason: tStatic(getActiveLang(), 'quizVerify.checkFailed', { error: err?.message || String(err) }), kind: 'error' };
   }
   if (raw?.fits === true) {
     return { status: 'accepted', question, reason: raw?.reason || 'past bij cursusmateriaal' };

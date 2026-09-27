@@ -1,3 +1,5 @@
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 export interface GitHubFileInfo {
   name: string;
   path: string;
@@ -168,7 +170,7 @@ interface GitHubRepoMetadata {
 async function fetchRepoMetadata(): Promise<GitHubRepoMetadata> {
   const response = await githubProxyFetch(`repos/${REPO_OWNER}/${REPO_NAME}`);
   if (!response.ok) {
-    throw new Error(`Kon repo-metadata niet ophalen: ${response.status} ${response.statusText}`);
+    throw new Error(tStatic(getActiveLang(), 'services.github.metadataFailed', { status: `${response.status} ${response.statusText}` }));
   }
   const data = await response.json();
   return { defaultBranch: data.default_branch || 'main' };
@@ -184,7 +186,7 @@ async function fetchRecursiveTree(branch: string): Promise<{ entries: GitTreeEnt
   const apiPath = `repos/${REPO_OWNER}/${REPO_NAME}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
   const response = await githubProxyFetch(apiPath);
   if (!response.ok) {
-    throw new Error(`Kon repo-tree niet ophalen: ${response.status} ${response.statusText}`);
+    throw new Error(tStatic(getActiveLang(), 'services.github.treeFailed', { status: `${response.status} ${response.statusText}` }));
   }
   const data = await response.json();
   return {

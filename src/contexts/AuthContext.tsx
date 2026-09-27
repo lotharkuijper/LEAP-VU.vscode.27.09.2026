@@ -3,6 +3,8 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { isDefinitiveAuthError } from '../lib/authSession';
 import type { Database } from '../lib/database.types';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -79,7 +81,7 @@ export async function signUpWithSupabase(
 
   if (error) {
     console.error('[AUTH] SignUp error:', error);
-    throw new Error(error.message || 'Registratie mislukt');
+    throw new Error(error.message || tStatic(getActiveLang(), 'services.auth.signupFailed'));
   }
 
   // Supabase verbergt bestaande accounts: bij een al geregistreerd e-mailadres
@@ -93,7 +95,7 @@ export async function signUpWithSupabase(
   }
 
   if (!data.user) {
-    throw new Error('Geen gebruiker aangemaakt');
+    throw new Error(tStatic(getActiveLang(), 'services.auth.noUserCreated'));
   }
 
   console.log('[AUTH] User registered, profile created by trigger');

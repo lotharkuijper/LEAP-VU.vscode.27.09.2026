@@ -1,5 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { STORAGE_CONFIG, getBucketForType, type BucketType } from '../config/storage.config';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 export interface UploadProgress {
   stage: 'uploading' | 'processing' | 'generating' | 'saving' | 'completed' | 'error';
@@ -15,13 +17,14 @@ export type ProgressCallback = (progress: UploadProgress) => void;
 // API-key-rotatie): de server geeft dan 401 terug. Zo ziet de docent niet langer
 // een cryptische "new row violates row-level security policy"-fout, maar een
 // begrijpelijke instructie om opnieuw in te loggen.
-export const SESSION_EXPIRED_MSG =
-  'Je sessie is verlopen. Log opnieuw in en probeer het nog een keer.';
+/** Melding bij een verlopen sessie, in de actieve taal. */
+export const sessionExpiredMessage = () =>
+  tStatic(getActiveLang(), 'services.upload.sessionExpired');
 
 // Vertaalt een mislukte server-respons naar een leesbare melding: 401 → opnieuw
 // inloggen, anders de server-boodschap (of een generieke fallback).
 function mapApiError(status: number, serverMessage?: string): string {
-  if (status === 401) return SESSION_EXPIRED_MSG;
+  if (status === 401) return sessionExpiredMessage();
   return serverMessage || `Bewerking mislukt (${status})`;
 }
 
@@ -30,7 +33,7 @@ function mapApiError(status: number, serverMessage?: string): string {
 async function requireAccessToken(): Promise<string> {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
-  if (!token) throw new Error(SESSION_EXPIRED_MSG);
+  if (!token) throw new Error(sessionExpiredMessage());
   return token;
 }
 
@@ -65,7 +68,7 @@ function isDocx(fileName: string): boolean {
 async function processPptxOnServer(documentId: string): Promise<number> {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
-  if (!token) throw new Error('Niet geauthenticeerd');
+  if (!token) throw new Error(tStatic(getActiveLang(), 'services.upload.notAuthenticated'));
 
   const res = await fetch('/api/admin/process-pptx', {
     method: 'POST',
@@ -90,7 +93,7 @@ async function processPptxOnServer(documentId: string): Promise<number> {
 async function processRagDocOnServer(documentId: string): Promise<number> {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
-  if (!token) throw new Error('Niet geauthenticeerd');
+  if (!token) throw new Error(tStatic(getActiveLang(), 'services.upload.notAuthenticated'));
 
   const res = await fetch('/api/admin/process-rag-document', {
     method: 'POST',
@@ -112,7 +115,7 @@ async function processRagDocOnServer(documentId: string): Promise<number> {
 async function processDocxOnServer(documentId: string): Promise<number> {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
-  if (!token) throw new Error('Niet geauthenticeerd');
+  if (!token) throw new Error(tStatic(getActiveLang(), 'services.upload.notAuthenticated'));
 
   const res = await fetch('/api/admin/process-docx', {
     method: 'POST',
@@ -140,7 +143,7 @@ async function uploadRagDocumentViaServer(
   folderId: string,
   onProgress?: ProgressCallback
 ): Promise<{ documentId: string }> {
-  onProgress?.({ stage: 'uploading', progress: 10, message: 'Bestand uploaden naar opslag...' });
+  onProgress?.({ stage: 'uploading', progress: 10, message: tStatic(getActiveLang(), 'services.upload.uploadingToStorage') });
   const token = await requireAccessToken();
   const base64 = await fileToBase64(file);
 
@@ -160,7 +163,7 @@ async function uploadRagDocumentViaServer(
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(mapApiError(res.status, data?.error));
   const documentId: string | undefined = data?.document?.id;
-  if (!documentId) throw new Error('Serverantwoord bevatte geen document-id');
+  if (!documentId) throw new Error(tStatic(getActiveLang(), 'services.upload.noDocumentId'));
 
   // Verwerk synchroon via het juiste endpoint; de server vervangt de fragmenten
   // ATOMISCH en zet de status zelf op completed/failed (geen client-side
@@ -169,16 +172,16 @@ async function uploadRagDocumentViaServer(
   try {
     let totalChunks: number;
     if (isPptx(file.name)) {
-      onProgress?.({ stage: 'generating', progress: 55, message: 'PowerPoint verwerken op de server (dia\'s + notities)...' });
+      onProgress?.({ stage: 'generating', progress: 55, message: tStatic(getActiveLang(), 'services.upload.processingPptx') });
       totalChunks = await processPptxOnServer(documentId);
     } else if (isDocx(file.name)) {
-      onProgress?.({ stage: 'generating', progress: 55, message: 'Word-document verwerken op de server (paginanummers)...' });
+      onProgress?.({ stage: 'generating', progress: 55, message: tStatic(getActiveLang(), 'services.upload.processingDocx') });
       totalChunks = await processDocxOnServer(documentId);
     } else {
-      onProgress?.({ stage: 'generating', progress: 55, message: 'Document verwerken op de server...' });
+      onProgress?.({ stage: 'generating', progress: 55, message: tStatic(getActiveLang(), 'services.upload.processingDoc') });
       totalChunks = await processRagDocOnServer(documentId);
     }
-    onProgress?.({ stage: 'completed', progress: 100, message: 'Document succesvol verwerkt!', totalChunks });
+    onProgress?.({ stage: 'completed', progress: 100, message: tStatic(getActiveLang(), 'services.upload.docDone'), totalChunks });
     return { documentId };
   } catch (err) {
     onProgress?.({ stage: 'error', progress: 0, message: err instanceof Error ? err.message : 'Onbekende fout' });
@@ -217,7 +220,7 @@ export async function uploadDocument(
     onProgress?.({
       stage: 'uploading',
       progress: 10,
-      message: 'Bestand uploaden naar opslag...',
+      message: tStatic(getActiveLang(), 'services.upload.uploadingToStorage'),
     });
 
     const timestamp = Date.now();
@@ -268,7 +271,7 @@ export async function uploadDocument(
       onProgress?.({
         stage: 'completed',
         progress: 100,
-        message: 'Bestand succesvol geüpload!',
+        message: tStatic(getActiveLang(), 'services.upload.uploadDone'),
       });
 
       return { documentId: docData.id };
@@ -286,14 +289,14 @@ export async function uploadDocument(
       onProgress?.({
         stage: 'generating',
         progress: 50,
-        message: 'PowerPoint verwerken op de server (dia\'s + notities)...',
+        message: tStatic(getActiveLang(), 'services.upload.processingPptx'),
       });
       try {
         const totalChunks = await processPptxOnServer(docData.id);
         onProgress?.({
           stage: 'completed',
           progress: 100,
-          message: 'PowerPoint succesvol verwerkt!',
+          message: tStatic(getActiveLang(), 'services.upload.pptxDone'),
           totalChunks,
         });
         return { documentId: docData.id };
@@ -312,14 +315,14 @@ export async function uploadDocument(
       onProgress?.({
         stage: 'generating',
         progress: 50,
-        message: 'Word-document verwerken op de server (paginanummers)...',
+        message: tStatic(getActiveLang(), 'services.upload.processingDocx'),
       });
       try {
         const totalChunks = await processDocxOnServer(docData.id);
         onProgress?.({
           stage: 'completed',
           progress: 100,
-          message: 'Word-document succesvol verwerkt!',
+          message: tStatic(getActiveLang(), 'services.upload.docxDone'),
           totalChunks,
         });
         return { documentId: docData.id };
@@ -339,14 +342,14 @@ export async function uploadDocument(
     onProgress?.({
       stage: 'generating',
       progress: 50,
-      message: 'Document verwerken op de server...',
+      message: tStatic(getActiveLang(), 'services.upload.processingDoc'),
     });
     try {
       const totalChunks = await processRagDocOnServer(docData.id);
       onProgress?.({
         stage: 'completed',
         progress: 100,
-        message: 'Document succesvol verwerkt!',
+        message: tStatic(getActiveLang(), 'services.upload.docDone'),
         totalChunks,
       });
       return { documentId: docData.id };
@@ -408,14 +411,14 @@ export async function retryFailedDocument(documentId: string, onProgress?: Progr
       onProgress?.({
         stage: 'generating',
         progress: 50,
-        message: 'PowerPoint verwerken op de server (dia\'s + notities)...',
+        message: tStatic(getActiveLang(), 'services.upload.processingPptx'),
       });
       try {
         const totalChunks = await processPptxOnServer(documentId);
         onProgress?.({
           stage: 'completed',
           progress: 100,
-          message: 'PowerPoint succesvol verwerkt!',
+          message: tStatic(getActiveLang(), 'services.upload.pptxDone'),
           totalChunks,
         });
         return;
@@ -443,14 +446,14 @@ export async function retryFailedDocument(documentId: string, onProgress?: Progr
       onProgress?.({
         stage: 'generating',
         progress: 50,
-        message: 'Word-document verwerken op de server (paginanummers)...',
+        message: tStatic(getActiveLang(), 'services.upload.processingDocx'),
       });
       try {
         const totalChunks = await processDocxOnServer(documentId);
         onProgress?.({
           stage: 'completed',
           progress: 100,
-          message: 'Word-document succesvol verwerkt!',
+          message: tStatic(getActiveLang(), 'services.upload.docxDone'),
           totalChunks,
         });
         return;
@@ -481,7 +484,7 @@ export async function retryFailedDocument(documentId: string, onProgress?: Progr
     onProgress?.({
       stage: 'generating',
       progress: 50,
-      message: 'Document verwerken op de server...',
+      message: tStatic(getActiveLang(), 'services.upload.processingDoc'),
     });
 
     try {
@@ -489,7 +492,7 @@ export async function retryFailedDocument(documentId: string, onProgress?: Progr
       onProgress?.({
         stage: 'completed',
         progress: 100,
-        message: 'Document succesvol verwerkt!',
+        message: tStatic(getActiveLang(), 'services.upload.docDone'),
         totalChunks,
       });
       return;

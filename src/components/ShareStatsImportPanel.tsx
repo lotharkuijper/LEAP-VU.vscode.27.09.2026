@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment, type ReactNode } from 'react';
 import { Download, Loader2, CheckCircle, AlertTriangle, XCircle, RefreshCw, Save, Info, X, Link2 } from 'lucide-react';
 import {
   importQuestionsFromShareStats,
@@ -12,6 +12,8 @@ import { getRepositoryTopics, setItembankRepo } from '../services/github-parser.
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useLanguage } from '../i18n';
+import type { TranslationKey } from '../i18n/translations';
 
 interface ImportResult {
   imported: number;
@@ -33,24 +35,35 @@ interface AutoLinkResult {
 // De interne waarde (key) blijft de echte foldernaam — die wordt naar de
 // import-API gestuurd. Onbekende topics vallen terug op een
 // genormaliseerde versie van de foldernaam (zie `topicLabel` hieronder).
-const TOPIC_LABEL_NL: Record<string, string> = {
-  Assumptions: 'Aannames',
-  'Descriptive-statistics': 'Beschrijvende statistiek',
-  Distributions: 'Verdelingen',
-  'Factor-analysis': 'Factoranalyse',
-  Inferential_Statistics: 'Inferentiële statistiek',
-  'Inferential-Statistics': 'Inferentiële statistiek',
-  'Measurement-Level': 'Meetniveau',
-  Probability: 'Kansrekening',
-  Reliability: 'Betrouwbaarheid',
-  'Variable-type': 'Variabele type',
-  Variance: 'Variantie',
-  packaging: 'Verpakking (technisch)',
-  scripts: 'Scripts (technisch)',
+const TOPIC_LABEL_KEYS: Record<string, TranslationKey> = {
+  Assumptions: 'shareStatsImport.topic.assumptions',
+  'Descriptive-statistics': 'shareStatsImport.topic.descriptiveStatistics',
+  Distributions: 'shareStatsImport.topic.distributions',
+  'Factor-analysis': 'shareStatsImport.topic.factorAnalysis',
+  Inferential_Statistics: 'shareStatsImport.topic.inferentialStatistics',
+  'Inferential-Statistics': 'shareStatsImport.topic.inferentialStatistics',
+  'Measurement-Level': 'shareStatsImport.topic.measurementLevel',
+  Probability: 'shareStatsImport.topic.probability',
+  Reliability: 'shareStatsImport.topic.reliability',
+  'Variable-type': 'shareStatsImport.topic.variableType',
+  Variance: 'shareStatsImport.topic.variance',
+  packaging: 'shareStatsImport.topic.packaging',
+  scripts: 'shareStatsImport.topic.scripts',
 };
 
-function topicLabel(folder: string): string {
-  if (TOPIC_LABEL_NL[folder]) return TOPIC_LABEL_NL[folder];
+// Vervangt {naam}-placeholders in een vertaalde tekst door JSX-fragmenten
+// (bijv. <code>/<strong>), zodat opmaak behouden blijft zonder HTML in de
+// vertaalbestanden.
+function renderRich(text: string, parts: Record<string, ReactNode>): ReactNode {
+  return text.split(/(\{\w+\})/g).map((seg, i) => {
+    const m = /^\{(\w+)\}$/.exec(seg);
+    if (m && m[1] in parts) return <Fragment key={i}>{parts[m[1]]}</Fragment>;
+    return <Fragment key={i}>{seg}</Fragment>;
+  });
+}
+
+function topicLabel(folder: string, t: (key: TranslationKey) => string): string {
+  if (TOPIC_LABEL_KEYS[folder]) return t(TOPIC_LABEL_KEYS[folder]);
   const spaced = folder.replace(/[-_]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
   if (!spaced) return folder;
   return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
@@ -69,15 +82,16 @@ const NOTICE_STYLES: Record<NoticeKind, { box: string; icon: string }> = {
   success: { box: 'bg-emerald-50 border-emerald-200 text-emerald-900', icon: 'text-emerald-600' },
 };
 
-const SKIP_REASON_LABELS: Record<string, string> = {
-  not_dutch: 'Niet-Nederlands',
-  unsupported_extype: 'Niet-ondersteund vraagtype',
-  already_imported: 'Al eerder geïmporteerd',
-  no_rmd: 'Geen .Rmd-bestand',
-  parse_failed: 'Niet geparseerd',
+const SKIP_REASON_KEYS: Record<string, TranslationKey> = {
+  not_dutch: 'shareStatsImport.skipReason.notDutch',
+  unsupported_extype: 'shareStatsImport.skipReason.unsupportedExtype',
+  already_imported: 'shareStatsImport.skipReason.alreadyImported',
+  no_rmd: 'shareStatsImport.skipReason.noRmd',
+  parse_failed: 'shareStatsImport.skipReason.parseFailed',
 };
 
 export function ShareStatsImportPanel() {
+  const { t } = useLanguage();
   const { activeCourseId, activeCourse } = useActiveCourse();
   const { isAdmin } = useAuth();
   const [autoLinkResult, setAutoLinkResult] = useState<AutoLinkResult | null>(null);
@@ -126,7 +140,7 @@ export function ShareStatsImportPanel() {
       setTopics(availableTopics);
     } catch (error) {
       console.error('Error loading topics:', error);
-      setNotice({ kind: 'error', message: 'Kon topics niet laden van GitHub. Controleer de repo-URL.' });
+      setNotice({ kind: 'error', message: t('shareStatsImport.loadTopicsFailed') });
     }
     setLoading(false);
   };
@@ -134,7 +148,7 @@ export function ShareStatsImportPanel() {
   const handleSaveRepoUrl = async () => {
     const parsed = parseRepoUrl(repoUrl);
     if (!parsed) {
-      setNotice({ kind: 'warning', message: 'Ongeldige GitHub-URL. Verwacht het formaat https://github.com/<owner>/<repo>.' });
+      setNotice({ kind: 'warning', message: t('shareStatsImport.invalidRepoUrl') });
       return;
     }
     setSavingConfig(true);
@@ -148,10 +162,10 @@ export function ShareStatsImportPanel() {
       setTopics(availableTopics);
       setSelectedTopics([]);
       setLoading(false);
-      setNotice({ kind: 'success', message: 'Repo-URL opgeslagen en topics opnieuw geladen.' });
+      setNotice({ kind: 'success', message: t('shareStatsImport.repoUrlSaved') });
     } catch (err) {
       console.error('Kon repo-URL niet opslaan:', err);
-      setNotice({ kind: 'error', message: 'Opslaan mislukt: ' + (err instanceof Error ? err.message : 'Onbekende fout') });
+      setNotice({ kind: 'error', message: t('shareStatsImport.saveFailed', { error: err instanceof Error ? err.message : t('common.unknownError') }) });
     }
     setSavingConfig(false);
   };
@@ -180,7 +194,7 @@ export function ShareStatsImportPanel() {
     setAutoLinking(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Geen actieve sessie');
+      if (!session) throw new Error(t('shareStatsImport.noActiveSession'));
       // We sturen de geselecteerde GitHub-foldernamen mee. De server
       // zoekt zélf de werkelijk in de database aanwezige exsection-
       // paden op zodat ook eerder geïmporteerde items worden meegenomen
@@ -207,9 +221,9 @@ export function ShareStatsImportPanel() {
       console.warn('Auto-koppelen mislukt:', err);
       setNotice({
         kind: 'warning',
-        message: 'Vragen zijn geïmporteerd, maar automatisch koppelen aan begrippen lukte niet: '
-          + (err instanceof Error ? err.message : 'onbekende fout')
-          + '. Je kunt de mappings handmatig leggen in Beheer → Quiz-bronnen.',
+        message: t('shareStatsImport.autoLinkFailed', {
+          error: err instanceof Error ? err.message : t('shareStatsImport.unknownErrorLower'),
+        }),
       });
     }
     setAutoLinking(false);
@@ -222,7 +236,7 @@ export function ShareStatsImportPanel() {
     setAutoLinking(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Geen actieve sessie');
+      if (!session) throw new Error(t('shareStatsImport.noActiveSession'));
       const res = await fetch('/api/admin/sharestats/auto-link-concepts', {
         method: 'POST',
         headers: {
@@ -251,7 +265,7 @@ export function ShareStatsImportPanel() {
     if (!isAdmin) {
       setNotice({
         kind: 'warning',
-        message: 'Alleen een beheerder kan vragen importeren in de gedeelde ItemBank.',
+        message: t('shareStatsImport.adminOnlyImport'),
       });
       return;
     }
@@ -270,7 +284,11 @@ export function ShareStatsImportPanel() {
       setResult(importResult);
       setNotice({
         kind: 'success',
-        message: `Klaar — ${importResult.imported} geïmporteerd, ${importResult.skipped} overgeslagen, ${importResult.errors} fouten.`,
+        message: t('shareStatsImport.importDone', {
+          imported: String(importResult.imported),
+          skipped: String(importResult.skipped),
+          errors: String(importResult.errors),
+        }),
       });
       // Autom. koppelen aan begrippen in de actieve cursus. Bij een
       // selectieve import baseren we dit op de gekozen topic-folders
@@ -297,7 +315,7 @@ export function ShareStatsImportPanel() {
       console.error('Error importing questions:', error);
       setNotice({
         kind: 'error',
-        message: 'Importeren mislukt: ' + (error instanceof Error ? error.message : 'Onbekende fout'),
+        message: t('shareStatsImport.importFailed', { error: error instanceof Error ? error.message : t('common.unknownError') }),
       });
     }
 
@@ -306,19 +324,19 @@ export function ShareStatsImportPanel() {
 
   const handleImport = () => {
     if (selectedTopics.length === 0) {
-      setNotice({ kind: 'warning', message: 'Selecteer minimaal één onderwerp om te importeren.' });
+      setNotice({ kind: 'warning', message: t('shareStatsImport.selectAtLeastOne') });
       return;
     }
     void runImport(
       selectedTopics,
-      `Import gestart vanuit ShareStats voor ${selectedTopics.length} onderwerp(en) — dit kan even duren.`
+      t('shareStatsImport.importStarted', { count: String(selectedTopics.length) })
     );
   };
 
   const handleSyncAll = () => {
     void runImport(
       [],
-      'Volledige synchronisatie met ShareStats gestart — dit kan een paar minuten duren.'
+      t('shareStatsImport.fullSyncStarted')
     );
   };
 
@@ -344,7 +362,7 @@ export function ShareStatsImportPanel() {
             type="button"
             onClick={() => setNotice(null)}
             className="opacity-70 hover:opacity-100"
-            aria-label="Sluit melding"
+            aria-label={t('admin.imports.web.dismiss')}
             data-testid="button-dismiss-notice"
           >
             <X className="w-4 h-4" />
@@ -356,14 +374,16 @@ export function ShareStatsImportPanel() {
         <div className="flex items-start gap-3">
           <Download className="w-5 h-5 text-blue-700 mt-0.5" />
           <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 mb-1">ShareStats Itembank</h3>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('shareStatsImport.title')}</h3>
             <p className="text-sm text-gray-700">
-              Importeer en synchroniseer vragen uit een ShareStats-itembank-repository.
-              Alleen Nederlandstalige items worden geïmporteerd. Ondersteunde vraagtypes:
-              meerkeuze (<code>mchoice</code>, <code>schoice</code>) en open
-              (<code>num</code>, <code>string</code>, <code>cloze</code>). Het hiërarchische
-              pad uit <code>exsection</code> wordt opgeslagen zodat je vragen aan
-              cursus-begrippen kunt koppelen.
+              {renderRich(t('shareStatsImport.intro'), {
+                mchoice: <code>mchoice</code>,
+                schoice: <code>schoice</code>,
+                num: <code>num</code>,
+                string: <code>string</code>,
+                cloze: <code>cloze</code>,
+                exsection: <code>exsection</code>,
+              })}
             </p>
           </div>
         </div>
@@ -371,7 +391,7 @@ export function ShareStatsImportPanel() {
 
       {/* Repository configuratie */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-3">
-        <h3 className="font-semibold text-gray-900">Repository</h3>
+        <h3 className="font-semibold text-gray-900">{t('shareStatsImport.repository')}</h3>
         <div className="flex gap-2">
           <input
             type="text"
@@ -391,7 +411,7 @@ export function ShareStatsImportPanel() {
               data-testid="button-save-repo-url"
             >
               <Save className="w-4 h-4" />
-              Opslaan
+              {t('common.save')}
             </button>
           )}
           {isAdmin && (
@@ -402,18 +422,18 @@ export function ShareStatsImportPanel() {
               data-testid="button-sync-all"
             >
               <RefreshCw className={`w-4 h-4 ${importing ? 'animate-spin' : ''}`} />
-              Volledige sync
+              {t('shareStatsImport.fullSync')}
             </button>
           )}
         </div>
         {!isAdmin && (
           <p className="text-xs text-gray-500" data-testid="text-repo-admin-only">
-            Alleen een beheerder kan de ItemBank-repository wijzigen of een volledige synchronisatie starten.
+            {t('shareStatsImport.repoAdminOnly')}
           </p>
         )}
         {lastSyncedAt && (
           <p className="text-xs text-gray-500" data-testid="text-last-synced">
-            Laatst gesynchroniseerd: {new Date(lastSyncedAt).toLocaleString('nl-NL')}
+            {t('shareStatsImport.lastSynced', { date: new Date(lastSyncedAt).toLocaleString(t('common.locale')) })}
           </p>
         )}
       </div>
@@ -429,15 +449,16 @@ export function ShareStatsImportPanel() {
           <div className="flex items-start gap-3" data-testid="text-import-admin-only">
             <Info className="w-5 h-5 text-gray-500 mt-0.5 flex-shrink-0" />
             <div className="text-sm text-gray-700">
-              <p className="font-semibold text-gray-900 mb-1">Importeren is beheerder-werk</p>
+              <p className="font-semibold text-gray-900 mb-1">{t('shareStatsImport.adminWorkTitle')}</p>
               <p>
-                De ShareStats-ItemBank is een <strong>gedeelde vragenpool</strong> die door álle cursussen wordt
-                gebruikt. Eén import voegt vragen toe waar iedereen uit put, daarom kan alleen een beheerder
-                onderwerpen importeren of synchroniseren.
+                {renderRich(t('shareStatsImport.adminWorkBody'), {
+                  sharedPool: <strong>{t('shareStatsImport.sharedPool')}</strong>,
+                })}
               </p>
               <p className="mt-2">
-                Je kunt bestaande ItemBank-vragen wél aan de begrippen van je eigen cursus koppelen via
-                <strong> Beheer → Quiz-bronnen</strong>.
+                {renderRich(t('shareStatsImport.adminWorkLink'), {
+                  location: <strong>{t('shareStatsImport.quizSourcesLocation')}</strong>,
+                })}
               </p>
             </div>
           </div>
@@ -447,13 +468,13 @@ export function ShareStatsImportPanel() {
       {!loading && isAdmin && topics.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Selectief importeren per topic</h3>
+            <h3 className="font-semibold text-gray-900">{t('shareStatsImport.selectiveTitle')}</h3>
             <button
               onClick={handleSelectAll}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               data-testid="button-toggle-all-topics"
             >
-              {selectedTopics.length === topics.length ? 'Deselecteer alles' : 'Selecteer alles'}
+              {selectedTopics.length === topics.length ? t('admin.imports.web.deselectAll') : t('admin.imports.web.selectAll')}
             </button>
           </div>
 
@@ -470,7 +491,7 @@ export function ShareStatsImportPanel() {
                   onChange={() => handleTopicToggle(topic)}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium text-gray-700" title={topic}>{topicLabel(topic)}</span>
+                <span className="text-sm font-medium text-gray-700" title={topic}>{topicLabel(topic, t)}</span>
               </label>
             ))}
           </div>
@@ -481,13 +502,15 @@ export function ShareStatsImportPanel() {
             <div className="text-blue-900">
               {activeCourseId && activeCourse ? (
                 <>
-                  <strong>Auto-koppelen actief:</strong> de geïmporteerde topics worden meteen als begrip toegevoegd aan
-                  cursus <strong>{activeCourse.name}</strong>, zodat studenten er direct quizvragen over kunnen oefenen.
+                  <strong>{t('shareStatsImport.autoLinkActiveLabel')}</strong>{' '}
+                  {renderRich(t('shareStatsImport.autoLinkActiveBody'), {
+                    course: <strong>{activeCourse.name}</strong>,
+                  })}
                 </>
               ) : (
                 <>
-                  <strong>Geen actieve cursus:</strong> de vragen worden wel opgeslagen, maar je moet ze later handmatig aan begrippen
-                  koppelen via Beheer → Quiz-bronnen. Wissel naar een cursus om automatisch koppelen te activeren.
+                  <strong>{t('shareStatsImport.noActiveCourseLabel')}</strong>{' '}
+                  {t('shareStatsImport.noActiveCourseBody')}
                 </>
               )}
             </div>
@@ -500,7 +523,7 @@ export function ShareStatsImportPanel() {
             data-testid="button-import-selected"
           >
             <Download className="w-5 h-5" />
-            {importing ? 'Importeren...' : `Importeer ${selectedTopics.length} topic(s)`}
+            {importing ? t('admin.imports.web.importing') : t('shareStatsImport.importSelected', { count: String(selectedTopics.length) })}
           </button>
 
           {progress && (
@@ -517,7 +540,10 @@ export function ShareStatsImportPanel() {
               </div>
               {progress.questionsProcessed !== undefined && progress.totalQuestions !== undefined && (
                 <p className="text-sm text-gray-600 mt-2">
-                  {progress.questionsProcessed} van {progress.totalQuestions} items verwerkt
+                  {t('shareStatsImport.progressCount', {
+                    processed: String(progress.questionsProcessed),
+                    total: String(progress.totalQuestions),
+                  })}
                 </p>
               )}
             </div>
@@ -529,12 +555,15 @@ export function ShareStatsImportPanel() {
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4" data-testid="result-imported">
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="w-5 h-5 text-green-600" />
-                    <span className="text-sm font-medium text-green-900">Geïmporteerd</span>
+                    <span className="text-sm font-medium text-green-900">{t('admin.imports.web.imported')}</span>
                   </div>
                   <p className="text-2xl font-bold text-green-900">{result.imported}</p>
                   {(result.importedMcq !== undefined || result.importedOpen !== undefined) && (
                     <p className="text-xs text-green-800 mt-1">
-                      {result.importedMcq ?? 0} mcq · {result.importedOpen ?? 0} open
+                      {t('shareStatsImport.importedByType', {
+                        mcq: String(result.importedMcq ?? 0),
+                        open: String(result.importedOpen ?? 0),
+                      })}
                     </p>
                   )}
                 </div>
@@ -542,7 +571,7 @@ export function ShareStatsImportPanel() {
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4" data-testid="result-skipped">
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                    <span className="text-sm font-medium text-yellow-900">Overgeslagen</span>
+                    <span className="text-sm font-medium text-yellow-900">{t('admin.imports.web.skipped')}</span>
                   </div>
                   <p className="text-2xl font-bold text-yellow-900">{result.skipped}</p>
                 </div>
@@ -550,7 +579,7 @@ export function ShareStatsImportPanel() {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4" data-testid="result-errors">
                   <div className="flex items-center gap-2 mb-2">
                     <XCircle className="w-5 h-5 text-red-600" />
-                    <span className="text-sm font-medium text-red-900">Fouten</span>
+                    <span className="text-sm font-medium text-red-900">{t('admin.imports.web.errors')}</span>
                   </div>
                   <p className="text-2xl font-bold text-red-900">{result.errors}</p>
                 </div>
@@ -558,10 +587,10 @@ export function ShareStatsImportPanel() {
 
               {result.skippedReasons && (
                 <div className="text-xs text-gray-600 bg-gray-50 rounded p-3" data-testid="text-skipped-reasons">
-                  <strong>Overslaan-redenen:</strong>{' '}
+                  <strong>{t('shareStatsImport.skipReasonsLabel')}</strong>{' '}
                   {Object.entries(result.skippedReasons)
                     .filter(([, n]) => n > 0)
-                    .map(([k, n]) => `${SKIP_REASON_LABELS[k] || k}: ${n}`)
+                    .map(([k, n]) => `${SKIP_REASON_KEYS[k] ? t(SKIP_REASON_KEYS[k]) : k}: ${n}`)
                     .join(' · ') || '—'}
                 </div>
               )}
@@ -572,16 +601,32 @@ export function ShareStatsImportPanel() {
                   {autoLinking ? (
                     <>
                       <Loader2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
-                      <span className="text-blue-900">Begrippen koppelen aan cursus...</span>
+                      <span className="text-blue-900">{t('shareStatsImport.autoLinking')}</span>
                     </>
                   ) : autoLinkResult && (
                     <>
                       <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
                       <span className="text-blue-900">
-                        <strong>{autoLinkResult.created}</strong> nieuw begrip{autoLinkResult.created === 1 ? '' : 'pen'} aangemaakt
-                        en <strong>{autoLinkResult.linked}</strong> koppeling{autoLinkResult.linked === 1 ? '' : 'en'} gelegd
-                        {autoLinkResult.courseName && <> in <strong>{autoLinkResult.courseName}</strong></>}.
-                        De geïmporteerde vragen zijn nu zichtbaar in de begrippenlijst van Quiz.
+                        {renderRich(
+                          t(autoLinkResult.courseName
+                            ? 'shareStatsImport.autoLinkResultInCourse'
+                            : 'shareStatsImport.autoLinkResult'),
+                          {
+                            created: renderRich(
+                              t(autoLinkResult.created === 1
+                                ? 'shareStatsImport.autoLinkCreatedOne'
+                                : 'shareStatsImport.autoLinkCreatedMany'),
+                              { count: <strong>{autoLinkResult.created}</strong> },
+                            ),
+                            linked: renderRich(
+                              t(autoLinkResult.linked === 1
+                                ? 'shareStatsImport.autoLinkLinkedOne'
+                                : 'shareStatsImport.autoLinkLinkedMany'),
+                              { count: <strong>{autoLinkResult.linked}</strong> },
+                            ),
+                            course: <strong>{autoLinkResult.courseName}</strong>,
+                          },
+                        )}
                       </span>
                     </>
                   )}
@@ -593,14 +638,23 @@ export function ShareStatsImportPanel() {
       )}
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h4 className="font-semibold text-gray-900 mb-2">Over ShareStats import</h4>
+        <h4 className="font-semibold text-gray-900 mb-2">{t('shareStatsImport.aboutTitle')}</h4>
         <ul className="text-sm text-gray-700 space-y-2">
-          <li>• Vragen worden opgehaald van de geconfigureerde GitHub-repository</li>
-          <li>• Alleen Nederlandstalige items worden geïmporteerd (folder bevat <code>-nl</code>, of <code>exlang: nl</code>)</li>
-          <li>• Meerkeuze (<code>mchoice</code>, <code>schoice</code>) en open vragen (<code>num</code>, <code>string</code>, <code>cloze</code>) worden ondersteund</li>
-          <li>• Duplicaten (op basis van ShareStats-ID) worden overgeslagen</li>
-          <li>• Het hiërarchische pad uit <code>exsection</code> wordt opgeslagen voor mapping op begrippen</li>
-          <li>• Elke vraag wordt automatisch gevalideerd tegen cursusmateriaal</li>
+          <li>• {t('shareStatsImport.about.source')}</li>
+          <li>• {renderRich(t('shareStatsImport.about.dutchOnly'), {
+            nlSuffix: <code>-nl</code>,
+            exlang: <code>exlang: nl</code>,
+          })}</li>
+          <li>• {renderRich(t('shareStatsImport.about.types'), {
+            mchoice: <code>mchoice</code>,
+            schoice: <code>schoice</code>,
+            num: <code>num</code>,
+            string: <code>string</code>,
+            cloze: <code>cloze</code>,
+          })}</li>
+          <li>• {t('shareStatsImport.about.duplicates')}</li>
+          <li>• {renderRich(t('shareStatsImport.about.exsection'), { exsection: <code>exsection</code> })}</li>
+          <li>• {t('shareStatsImport.about.validated')}</li>
         </ul>
       </div>
     </div>

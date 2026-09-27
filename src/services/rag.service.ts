@@ -4,6 +4,8 @@ import { generateEmbeddings } from './llm.service';
 import { STORAGE_CONFIG } from '../config/storage.config';
 import { expandQuery, type QueryExpansionOptions } from './queryExpansion';
 import { purposeAllowsModule } from '../../server/filePurpose.js';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 export interface DocumentChunk {
   id: string;
@@ -550,12 +552,12 @@ export async function openRagDocument(documentId: string, targetPage?: number): 
       const j = await res.json();
       detail = j?.error || '';
     } catch { /* ignore */ }
-    throw new Error(detail || `Kon bron niet openen (${res.status}).`);
+    throw new Error(detail || tStatic(getActiveLang(), 'services.rag.openFailedStatus', { status: String(res.status) }));
   }
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('application/json')) {
     const j = await res.json() as { url?: string };
-    if (!j.url) throw new Error('Geen downloadlink ontvangen.');
+    if (!j.url) throw new Error(tStatic(getActiveLang(), 'services.rag.noDownloadLink'));
     window.open(j.url + pageFragment, '_blank', 'noopener,noreferrer');
     return;
   }
@@ -564,7 +566,7 @@ export async function openRagDocument(documentId: string, targetPage?: number): 
   const win = window.open(objectUrl + pageFragment, '_blank', 'noopener,noreferrer');
   // Geef de browser even tijd om het tabblad te openen voor we de URL revoken.
   setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
-  if (!win) throw new Error('Pop-up geblokkeerd. Sta pop-ups toe om de bron te openen.');
+  if (!win) throw new Error(tStatic(getActiveLang(), 'services.rag.popupBlocked'));
 }
 
 export function buildContextWithCap(

@@ -28,18 +28,14 @@ export class LLMError extends Error {
 type LlmErrLang = string;
 
 export function llmErrorToDutch(err: unknown, lang: LlmErrLang = 'nl'): { title: string; detail?: string } {
-  const nl = lang !== 'en';
+  const tr = (key: string) => tStatic(lang as Lang, key);
   if (err instanceof LLMError) {
     const code = err.code ?? '';
     const raw = (err.rawMessage || err.message || '').toLowerCase();
     if (code === 'context_length_exceeded' || raw.includes('context') && raw.includes('length')) {
       return {
-        title: nl
-          ? 'De prompt is te lang geworden voor het taalmodel.'
-          : 'The prompt has become too long for the language model.',
-        detail: nl
-          ? 'Probeer de RAG-drempel iets hoger te zetten of het aantal passages (match_count) te verlagen, zodat er minder cursusmateriaal wordt meegestuurd.'
-          : 'Try raising the RAG threshold or lowering the number of passages (match_count) to send less course material.',
+        title: tr('llm.err.contextTooLong.title'),
+        detail: tr('llm.err.contextTooLong.detail'),
       };
     }
     if (
@@ -50,90 +46,64 @@ export function llmErrorToDutch(err: unknown, lang: LlmErrLang = 'nl'): { title:
       raw.includes('exceeded your current quota')
     ) {
       return {
-        title: nl
-          ? 'Het tegoed of de uitgavenlimiet van de AI-dienst is bereikt.'
-          : 'The AI service credit or spending limit has been reached.',
-        detail: nl
-          ? 'Opnieuw proberen helpt pas als er weer tegoed of limiet beschikbaar is. Vraag de beheerder om de facturering en limieten van de OpenAI-account te controleren.'
-          : 'Retrying only helps once credit or limit is available again. Ask the administrator to check the billing and limits of the OpenAI account.',
+        title: tr('llm.err.quota.title'),
+        detail: tr('llm.err.quota.detail'),
       };
     }
     if (code === 'rate_limit_exceeded' || err.status === 429 || raw.includes('rate limit')) {
       return {
-        title: nl
-          ? 'Het taalmodel staat tijdelijk onder druk (rate limit).'
-          : 'The language model is temporarily under pressure (rate limit).',
-        detail: nl
-          ? 'Wacht een halve minuut en probeer het opnieuw.'
-          : 'Wait half a minute and try again.',
+        title: tr('llm.err.rateLimit.title'),
+        detail: tr('llm.err.rateLimit.detail'),
       };
     }
     if (err.status === 503) {
       return {
-        title: nl
-          ? 'De chatbot is niet (volledig) geconfigureerd.'
-          : 'The chatbot is not (fully) configured.',
-        detail: err.rawMessage || (nl ? 'Controleer of de VU Azure OpenAI-configuratie (chat én embeddings) compleet is.' : 'Check whether the VU Azure OpenAI configuration (chat and embeddings) is complete.'),
+        title: tr('llm.err.notConfigured.title'),
+        detail: err.rawMessage || tr('llm.err.notConfigured.detail'),
       };
     }
     if (code === 'upstream_unavailable') {
       return {
-        title: nl
-          ? 'De AI-dienst is tijdelijk niet bereikbaar.'
-          : 'The AI service is temporarily unavailable.',
-        detail: nl
-          ? 'De dienst gaf een ongeldig of leeg antwoord terug. Wacht een halve minuut en probeer het opnieuw.'
-          : 'The service returned an invalid or empty response. Wait half a minute and try again.',
+        title: tr('llm.err.unavailable.title'),
+        detail: tr('llm.err.unavailable.detail'),
       };
     }
     if (code === 'empty_response' || code === 'length' || raw.includes('lege reactie') || raw.includes('te weinig tokenruimte')) {
       return {
-        title: nl
-          ? 'Het antwoord paste niet in de beschikbare tokenruimte.'
-          : 'The answer did not fit in the available token space.',
-        detail: nl
-          ? 'Het taalmodel had te weinig ruimte om volledige feedback te geven. Probeer het opnieuw, of stuur minder cursusmateriaal mee (verhoog de RAG-drempel of verlaag het aantal passages / match_count).'
-          : 'The language model had too little room to give complete feedback. Try again, or send less course material (raise the RAG threshold or lower the number of passages / match_count).',
+        title: tr('llm.err.tokenSpace.title'),
+        detail: tr('llm.err.tokenSpace.detail'),
       };
     }
     if (err.status >= 500) {
       return {
-        title: nl
-          ? 'Het taalmodel reageert niet (serverfout).'
-          : 'The language model is not responding (server error).',
+        title: tr('llm.err.serverError.title'),
         detail: err.rawMessage || `HTTP ${err.status}`,
       };
     }
     if (err.status === 401 || err.status === 403 || code === 'invalid_api_key') {
       return {
-        title: nl
-          ? 'De AI-dienst weigerde de toegang (sleutel of rechten).'
-          : 'The AI service denied access (key or permissions).',
-        detail: nl
-          ? 'Vraag de beheerder om te controleren of de Azure OpenAI-sleutel geldig is en toegang heeft tot het ingestelde model.'
-          : 'Ask the administrator to verify the Azure OpenAI key is valid and has access to the configured model.',
+        title: tr('llm.err.accessDenied.title'),
+        detail: tr('llm.err.accessDenied.detail'),
       };
     }
     if (code === 'invalid_request_error' || (err.status >= 400 && err.status < 500)) {
       return {
-        title: nl
-          ? 'Het taalmodel weigerde het verzoek.'
-          : 'The language model rejected the request.',
+        title: tr('llm.err.rejected.title'),
         detail: err.rawMessage || `HTTP ${err.status}`,
       };
     }
     return {
-      title: nl ? 'Er ging iets mis bij het taalmodel.' : 'Something went wrong with the language model.',
+      title: tr('llm.err.generic.title'),
       detail: err.rawMessage,
     };
   }
   if (err instanceof Error) {
     return {
-      title: nl ? 'Er ging iets mis bij het taalmodel.' : 'Something went wrong with the language model.',
+      title: tr('llm.err.generic.title'),
       detail: err.message,
     };
   }
-  return { title: nl ? 'Er ging iets mis bij het taalmodel.' : 'Something went wrong with the language model.' };
+  return { title: tr('llm.err.generic.title') };
 }
 
 // Eén bron van waarheid: de AI-client gebruikt exact de actieve UI-taal
@@ -195,7 +165,7 @@ export async function sendChatMessage(
     const content = data.choices[0]?.message?.content;
 
     if (!content) {
-      throw new LLMError('Het taalmodel gaf een leeg antwoord terug.', 502, 'empty_response', 'empty content');
+      throw new LLMError(tStatic(_getLang(), 'llm.err.emptyAnswer'), 502, 'empty_response', 'empty content');
     }
 
     return { content };
@@ -294,7 +264,7 @@ ${keyPoints.map((point, i) => `${i + 1}. ${point}`).join('\n')}`;
 
   const content = data.choices[0]?.message?.content;
   if (!content) {
-    throw new LLMError('Het taalmodel gaf een lege reactie terug.', 502, 'empty_response', 'empty content');
+    throw new LLMError(tStatic(_getLang(), 'llm.err.emptyReaction'), 502, 'empty_response', 'empty content');
   }
   return { content };
 }
@@ -410,7 +380,7 @@ export function extractJSON<T>(content: string, kind: 'array' | 'object'): T {
   const match = content.match(re);
   if (!match) {
     throw new LLMError(
-      'Het taalmodel gaf geen geldige JSON terug.',
+      tStatic(getActiveLang(), 'llm.err.invalidJson'),
       502,
       'invalid_response_format',
       content.slice(0, 400),
@@ -420,7 +390,7 @@ export function extractJSON<T>(content: string, kind: 'array' | 'object'): T {
     return JSON.parse(match[0]) as T;
   } catch (parseErr: any) {
     throw new LLMError(
-      'Het taalmodel gaf geen geldige JSON terug.',
+      tStatic(getActiveLang(), 'llm.err.invalidJson'),
       502,
       'invalid_response_format',
       parseErr?.message || 'JSON parse error',

@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { tStatic } from '../i18n/translations';
+import { getActiveLang } from '../i18n/activeLang';
 
 async function callChatAPI(messages: { role: string; content: string }[], options: Record<string, any> = {}): Promise<string> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
@@ -23,7 +25,7 @@ async function callChatAPI(messages: { role: string; content: string }[], option
 
   const data = await response.json();
   const content = data.choices[0]?.message?.content;
-  if (!content) throw new Error('Geen response van AI');
+  if (!content) throw new Error(tStatic(getActiveLang(), 'conceptExtraction.noAiResponse'));
   return content;
 }
 
@@ -54,7 +56,7 @@ export async function extractConceptsFromDocument(
     onProgress?.({
       stage: 'analyzing',
       progress: 10,
-      message: 'Document ophalen...',
+      message: tStatic(getActiveLang(), 'conceptExtraction.fetchingDocument'),
     });
 
     const { data: doc, error: docError } = await supabase
@@ -64,17 +66,17 @@ export async function extractConceptsFromDocument(
       .single();
 
     if (docError || !doc) {
-      throw new Error('Document niet gevonden');
+      throw new Error(tStatic(getActiveLang(), 'conceptExtraction.documentNotFound'));
     }
 
     if (!doc.document_chunks || doc.document_chunks.length === 0) {
-      throw new Error('Document heeft geen chunks. Verwerk het document eerst opnieuw.');
+      throw new Error(tStatic(getActiveLang(), 'conceptExtraction.noChunks'));
     }
 
     onProgress?.({
       stage: 'analyzing',
       progress: 20,
-      message: `${doc.document_chunks.length} chunks analyseren...`,
+      message: tStatic(getActiveLang(), 'conceptExtraction.analyzingChunks', { count: String(doc.document_chunks.length) }),
     });
 
     const chunks = doc.document_chunks
@@ -88,7 +90,7 @@ export async function extractConceptsFromDocument(
     onProgress?.({
       stage: 'extracting',
       progress: 40,
-      message: 'Begrippen identificeren met AI...',
+      message: tStatic(getActiveLang(), 'conceptExtraction.identifying'),
     });
 
     const systemPrompt = `Je bent een vakexpert die universitair cursusmateriaal analyseert. Analyseer de volgende Nederlandse tekst en extraheer alle belangrijke begrippen (concepten) die worden uitgelegd.
@@ -155,13 +157,13 @@ Voorbeeld output:
           confidence: c.confidence,
         }));
     } catch (parseError) {
-      throw new Error('Kon AI response niet parsen. Probeer opnieuw.');
+      throw new Error(tStatic(getActiveLang(), 'conceptExtraction.parseFailed'));
     }
 
     onProgress?.({
       stage: 'saving',
       progress: 70,
-      message: `${extractedConcepts.length} begrippen opslaan...`,
+      message: tStatic(getActiveLang(), 'conceptExtraction.savingConcepts', { count: String(extractedConcepts.length) }),
       conceptsFound: extractedConcepts.length,
     });
 
@@ -208,7 +210,7 @@ Voorbeeld output:
     onProgress?.({
       stage: 'completed',
       progress: 100,
-      message: `${conceptIds.length} begrippen succesvol geëxtraheerd!`,
+      message: tStatic(getActiveLang(), 'conceptExtraction.extracted', { count: String(conceptIds.length) }),
       conceptsFound: conceptIds.length,
     });
 
@@ -220,7 +222,7 @@ Voorbeeld output:
     onProgress?.({
       stage: 'error',
       progress: 0,
-      message: error instanceof Error ? error.message : 'Onbekende fout',
+      message: error instanceof Error ? error.message : tStatic(getActiveLang(), 'common.unknownError'),
     });
     throw error;
   }
@@ -237,7 +239,7 @@ export async function extractConceptsFromAllDocuments(
     .order('created_at', { ascending: true });
 
   if (docsError || !documents) {
-    throw new Error('Kon documenten niet ophalen');
+    throw new Error(tStatic(getActiveLang(), 'conceptExtraction.fetchDocumentsFailed'));
   }
 
   let totalConcepts = 0;
@@ -274,7 +276,7 @@ export async function approveExtractedConcept(
     .eq('id', conceptId);
 
   if (error) {
-    throw new Error(`Kon begrip niet goedkeuren: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'conceptExtraction.approveFailed', { error: error.message }));
   }
 }
 
@@ -292,7 +294,7 @@ export async function rejectExtractedConcept(
     .eq('id', conceptId);
 
   if (error) {
-    throw new Error(`Kon begrip niet afwijzen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'conceptExtraction.rejectFailed', { error: error.message }));
   }
 }
 
@@ -308,7 +310,7 @@ export async function getExtractedConceptsForReview(): Promise<any[]> {
     .order('extracted_at', { ascending: false });
 
   if (error) {
-    throw new Error(`Kon begrippen niet ophalen: ${error.message}`);
+    throw new Error(tStatic(getActiveLang(), 'conceptExtraction.fetchConceptsFailed', { error: error.message }));
   }
 
   return data || [];

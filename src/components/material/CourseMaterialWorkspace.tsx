@@ -15,6 +15,7 @@ import { RAGDocumentStatusPanel } from '../RAGDocumentStatusPanel';
 import { FilesStep } from './FilesStep';
 import { PurposeReview } from './PurposeReview';
 import { ReadinessStep, WarningList, type MaterialStep } from './ReadinessStep';
+import { HelpTip } from '../help/HelpTip';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -120,7 +121,7 @@ export function CourseMaterialWorkspace({
     <div className="space-y-6" data-testid="workspace-course-material">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{t('material.title')}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">{t('material.title')}<HelpTip id="material.overview" /></h2>
           <p className="text-sm text-gray-600 mt-1">{t('material.subtitle', { course: activeCourse?.name || '' })}</p>
         </div>
         <button type="button" onClick={() => void load()} className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50" data-testid="button-material-refresh">
@@ -137,11 +138,11 @@ export function CourseMaterialWorkspace({
             ? (readiness?.warnings || []).filter(w => w.severity !== 'info').length
             : warningsFor(s).length;
           return (
+            <div key={s} className="relative h-full">
             <button
-              key={s}
               type="button"
               onClick={() => onStepChange(s)}
-              className={`text-left rounded-xl border px-4 py-3 transition-all ${active ? 'border-sky-400 bg-sky-50 ring-2 ring-sky-200' : 'border-gray-200 bg-white hover:border-gray-300'}`}
+              className={`w-full h-full text-left rounded-xl border pl-4 pr-9 py-3 transition-all ${active ? 'border-sky-400 bg-sky-50 ring-2 ring-sky-200' : 'border-gray-200 bg-white hover:border-gray-300'}`}
               aria-current={active ? 'step' : undefined}
               data-testid={`step-${s}`}
             >
@@ -156,6 +157,9 @@ export function CourseMaterialWorkspace({
                 </p>
               )}
             </button>
+            {/* Naast (niet ín) de stapknop: een knop in een knop is ongeldig. */}
+            <HelpTip id={`material.step.${s}` as const} className="absolute top-2.5 right-2.5" />
+            </div>
           );
         })}
       </nav>
@@ -212,6 +216,7 @@ export function CourseMaterialWorkspace({
               {findingNew ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               {findingNew ? t('material.concepts.findingNew') : t('material.concepts.findNew')}
             </button>
+            <HelpTip id="material.findNewConcepts" />
             {findResult && (
               <span className={`text-sm ${findResult.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} data-testid="text-find-new-result">{findResult.text}</span>
             )}

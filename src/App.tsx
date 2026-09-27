@@ -6,6 +6,8 @@ import { ActiveCourseProvider, useActiveCourse } from './contexts/ActiveCourseCo
 import { Layout } from './components/Layout';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { LanguageProvider } from './i18n';
+import { tStatic } from './i18n/translations';
+import { getActiveLang } from './i18n/activeLang';
 import { ProfileLangSync } from './components/ProfileLangSync';
 import ChooseCoursePage from "./pages/ChooseCoursePage";
 import ShareStatsTopicsPage from "./pages/ShareStatsTopicsPage";
@@ -61,7 +63,7 @@ class LazyChunkErrorBoundary extends Component<
     if (this.state.hasError) {
       return (
         <div style={{ padding: 24 }} data-testid="text-chunk-reload">
-          <p>De pagina wordt opnieuw geladen…</p>
+          <p>{tStatic(getActiveLang(), 'app.chunkReloading')}</p>
         </div>
       );
     }

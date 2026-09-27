@@ -1,7 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
+import { installApiLanguageHeader } from './lib/apiLanguage';
 import './index.css';
+
+// Gekozen taal meesturen naar de eigen API, zodat servermeldingen vertaald terugkomen.
+installApiLanguageHeader();
 import 'katex/dist/katex.min.css';
 
 const originalWarn = console.warn;

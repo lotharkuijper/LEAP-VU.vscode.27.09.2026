@@ -17,6 +17,7 @@ import { PURPOSE_ORDER, PURPOSE_STYLE, formatBytes } from './purposeUi';
 import { PurposePicker, type PurposeValue } from './PurposePicker';
 import { WebSourceRow } from './WebSourceRow';
 import { WebImportPanel } from '../WebImportPanel';
+import { HelpTip } from '../help/HelpTip';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -176,15 +177,18 @@ export function FilesStep({
       <section className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4" data-testid="panel-upload">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-semibold text-gray-900">{t('material.upload.title')}</h3>
-          <button
-            type="button"
-            onClick={() => setAddingWebsite(true)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium border border-sky-300 text-sky-800 bg-white hover:bg-sky-50"
-            data-testid="button-add-website"
-          >
-            <Globe className="w-4 h-4" />
-            {t('material.web.add')}
-          </button>
+          <span className="inline-flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setAddingWebsite(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium border border-sky-300 text-sky-800 bg-white hover:bg-sky-50"
+              data-testid="button-add-website"
+            >
+              <Globe className="w-4 h-4" />
+              {t('material.web.add')}
+            </button>
+            <HelpTip id="material.addWebsite" />
+          </span>
         </div>
         <div
           onClick={() => inputRef.current?.click()}
@@ -219,7 +223,7 @@ export function FilesStep({
               ))}
             </ul>
             <div>
-              <p className="text-sm font-medium text-gray-800 mb-2">{t('material.upload.purposeQuestion')}</p>
+              <p className="text-sm font-medium text-gray-800 mb-2 flex items-center gap-1.5">{t('material.upload.purposeQuestion')}<HelpTip id="material.purposes" /></p>
               <PurposePicker value={target} onChange={setTarget} projects={projects} suggested={suggested} idPrefix="upload-purpose" />
             </div>
             {(target.purpose === 'course_material' || target.purpose === 'course_info') && (

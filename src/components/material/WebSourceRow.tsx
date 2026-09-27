@@ -9,6 +9,7 @@ import {
   type WebSource,
 } from '../../services/course-files.service';
 import { importWebPages, WebImportInterruptedError, type WebImportProgress } from '../../services/web-import.service';
+import { HelpTip } from '../help/HelpTip';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 type WebPurpose = WebSource['purpose'];
@@ -159,6 +160,7 @@ export function WebSourceRow({
               {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
               {syncing ? t('material.web.syncing') : t('material.web.resync')}
             </button>
+            <HelpTip id="material.web.resync" />
             <button
               type="button"
               onClick={() => setPendingPurpose(otherPurpose)}
