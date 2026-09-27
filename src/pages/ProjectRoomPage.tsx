@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,10 @@ import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
 import { useLearningLevel } from '../hooks/useLearningLevel';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
+import { PersonaMessageBody, personaSourcesFrom } from '../components/PersonaMessageBody';
+import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
+// De viewer (met pdf.js) pas laden als een student een bron opent.
+const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m => ({ default: m.DocumentViewer })));
 import {
   ArrowLeft, Send, Users, MessageCircle, Bot, CheckCircle2,
   Flag, Clipboard, Copy, Loader2, BookOpen, Paperclip, Trash2, FileText, ShieldAlert, Download, Database, EyeOff,
@@ -70,6 +74,8 @@ interface PersonaMsg {
   content: string;
   created_at: string;
   user_id: string | null;
+  /** Bronnen uit het cursusmateriaal waar [n] in het antwoord naar verwijst. */
+  rag_sources?: unknown;
 }
 interface Checkpoint {
   id: string;
@@ -220,6 +226,9 @@ export function ProjectRoomPage() {
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [activePersonaId, setActivePersonaId] = useState<string | null>(null);
   const [personaMessages, setPersonaMessages] = useState<PersonaMsg[]>([]);
+  // Cursusdocument dat vanuit een bronverwijzing in een persona-antwoord is geopend.
+  const [viewerDoc, setViewerDoc] = useState<{ documentId: string; title: string; page?: number; seq: number } | null>(null);
+  const viewerSeqRef = useRef(0);
   const [personaInput, setPersonaInput] = useState('');
   const [personaLoading, setPersonaLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
@@ -742,6 +751,7 @@ export function ProjectRoomPage() {
         id: `reply-${Date.now()}`, role: 'assistant',
         content: data.relationshipBlocked ? t('room.relationship.blockedBanner') : data.reply,
         created_at: new Date().toISOString(), user_id: null,
+        rag_sources: data.relationshipBlocked ? [] : data.ragSources,
       }]);
       // Task #167: server kan een blokkade signaleren — herlaad relaties zodat
       // de banner + dropdown-label direct synchroniseren.
@@ -1279,12 +1289,19 @@ export function ProjectRoomPage() {
             {personaMessages.map(m => (
               <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
-                    m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900'
+                  className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm ${
+                    m.role === 'user' ? 'bg-blue-600 text-white whitespace-pre-wrap' : 'bg-gray-100 text-gray-900'
                   }`}
                   data-testid={`msg-persona-${m.id}`}
                 >
-                  {m.content}
+                  {m.role === 'assistant' ? (
+                    <PersonaMessageBody
+                      messageId={m.id}
+                      content={m.content}
+                      sources={personaSourcesFrom(m.rag_sources)}
+                      onOpenSource={(src) => setViewerDoc({ ...src, seq: ++viewerSeqRef.current })}
+                    />
+                  ) : m.content}
                 </div>
               </div>
             ))}
@@ -2551,6 +2568,34 @@ export function ProjectRoomPage() {
                 <span className="inline-flex items-center gap-1.5 px-4 py-2 text-amber-700"><Loader2 className="w-4 h-4 animate-spin" /> Uploaden…</span>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {viewerDoc && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-stretch justify-center p-2 sm:p-6" role="dialog" aria-modal="true" data-testid="dialog-persona-source">
+          <div className="chic-card w-full max-w-5xl flex flex-col overflow-hidden p-0">
+            <ViewerErrorBoundary
+              key={viewerDoc.documentId}
+              documentId={viewerDoc.documentId}
+              labels={{
+                closeViewer: t('docViewer.closeViewer'),
+                cannotDisplay: t('docViewer.cannotDisplay'),
+                downloadInstead: t('docViewer.downloadInstead'),
+              }}
+              onClose={() => setViewerDoc(null)}
+            >
+              <Suspense fallback={<div className="p-6 text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t('common.loading')}</div>}>
+                <DocumentViewer
+                  documentId={viewerDoc.documentId}
+                  title={viewerDoc.title}
+                  lang={lang as 'nl' | 'en'}
+                  initialPage={viewerDoc.page}
+                  openSeq={viewerDoc.seq}
+                  onClose={() => setViewerDoc(null)}
+                />
+              </Suspense>
+            </ViewerErrorBoundary>
           </div>
         </div>
       )}

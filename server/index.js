@@ -131,6 +131,7 @@ import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
+import { buildSourcesInstructionBlock, buildNumberedRagContext } from './citationSources.js';
 import { purposeAllowsModule } from './filePurpose.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
@@ -609,16 +610,8 @@ app.post('/api/chat', async (req, res) => {
   // Task #296: parametrisch leerniveau-blok (leeg bij ontbrekend/ongeldig niveau).
   const levelBlock = buildLevelInstructionBlock(learningLevel, lang);
 
-  // Bouw bron-instructieblok voor [1]/[2]/... citaten in chat-antwoorden.
-  // Spiegel van buildSourcesBlock in src/services/llm.service.ts (Ik Leg Uit).
-  const buildChatSourcesBlock = (srcs) => {
-    if (!Array.isArray(srcs) || srcs.length === 0) return '';
-    const numbered = srcs
-      .map((s, i) => `[${i + 1}] ${(s && s.title) || 'Onbekende bron'}`)
-      .join('\n');
-    return `\n\nBronnen uit het cursusmateriaal die je tot je beschikking hebt:\n${numbered}\n\nVerwijsregels (volg deze STRIKT):\n- Verwijs in je antwoord naar een bron met exact de notatie [1], [2], ... direct na de zin waar je die bron gebruikt.\n- Gebruik géén andere verwijsvormen (geen titels, geen URL's, geen voetnoten, geen DOI's).\n- Als je in je antwoord informatie noemt die NIET uit deze bronnen komt maar uit algemene kennis, markeer die zin dan met "(buiten cursusmateriaal)" aan het einde van die zin.`;
-  };
-  const chatSourcesBlock = buildChatSourcesBlock(sources);
+  // Bron-instructieblok voor [1]/[2]/... citaten (gedeeld met de persona-chat).
+  const chatSourcesBlock = buildSourcesInstructionBlock(sources);
 
   const userMessages = Array.isArray(messages) ? messages.filter(m => m.role !== 'system') : [];
 
@@ -10606,15 +10599,13 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       }
       const { matched } = await searchChunksServerSide(
         message, cfg.similarity_threshold, cfg.match_count, folderIds,
-        { enabled: cfg.query_expansion_enabled }, lang
+        { enabled: cfg.query_expansion_enabled }, lang, 'project'
       );
       if (matched && matched.length > 0) {
-        context = matched.map((c, i) => `[Bron ${i + 1}] ${c.content}`).join('\n\n');
-        ragSources = matched.map(c => ({
-          documentId: c.document_id,
-          similarity: c.similarity,
-          excerpt: (c.content || '').slice(0, 200),
-        }));
+        // Zelfde bronverwijzingen als de chat: één genummerde bron per
+        // document, zodat [n] in het antwoord klikbaar naar het cursusdocument
+        // wijst en de bronnenlijst onder het antwoord klopt.
+        ({ context, sources: ragSources } = buildNumberedRagContext(matched, 5));
       }
     }
 
@@ -10671,7 +10662,9 @@ app.post('/api/projects/persona-chat', async (req, res) => {
     const agreementsBlock = priorAgreements.length > 0
       ? `\n\nGemaakte afspraken in eerdere gesprekken:\n${priorAgreements.map(a => `- ${a}`).join('\n')}`
       : '';
-    const ragBlock = context ? `\n\nContext uit cursusmateriaal:\n${context}` : '';
+    const ragBlock = context
+      ? `\n\nContext uit cursusmateriaal (elk fragment begint met zijn bronnummer):\n${context}${buildSourcesInstructionBlock(ragSources)}`
+      : '';
     const docBlock = uploadedContext ? `\n\nGeüploade documenten van de groep:\n${uploadedContext}` : '';
     const projectDocBlock = projectDocContext ? `\n\nProjectmateriaal van de docent:\n${projectDocContext}` : '';
     const langSuffix = buildLanguageInstruction(lang);
