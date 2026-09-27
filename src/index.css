@@ -3,11 +3,52 @@
 @tailwind utilities;
 
 @layer base {
+  /* LEAP-huisstijl: kleuren als RGB-drietallen (zie tailwind.config.js).
+     Pas een kleur hier aan en de hele app gaat mee. */
+  :root {
+    /* Hoofdkleur: fris blauw met een vleugje turquoise. 600 = knoppen met witte tekst (contrast ≥ 4,5). */
+    --leap-brand-50: 239 248 255;
+    --leap-brand-100: 219 238 254;
+    --leap-brand-200: 191 227 254;
+    --leap-brand-300: 147 209 253;
+    --leap-brand-400: 90 184 249;
+    --leap-brand-500: 30 138 224;
+    --leap-brand-600: 11 114 194;
+    --leap-brand-700: 10 93 159;
+    --leap-brand-800: 14 77 130;
+    --leap-brand-900: 17 65 107;
+    --leap-brand-950: 12 42 71;
+    /* Neutraal: licht koele grijzen voor tekst, randen en vlakken. */
+    --leap-ink-50: 248 250 252;
+    --leap-ink-100: 241 245 249;
+    --leap-ink-200: 226 232 240;
+    --leap-ink-300: 203 213 225;
+    --leap-ink-400: 148 163 184;
+    --leap-ink-500: 100 116 139;
+    --leap-ink-600: 71 85 105;
+    --leap-ink-700: 51 65 85;
+    --leap-ink-800: 30 41 59;
+    --leap-ink-900: 15 23 42;
+    --leap-ink-950: 2 6 23;
+    /* Accent: warm oranje voor successen, beloningen en vieringen. */
+    --leap-accent-50: 255 247 237;
+    --leap-accent-100: 255 237 213;
+    --leap-accent-200: 254 215 170;
+    --leap-accent-300: 253 186 116;
+    --leap-accent-400: 251 146 60;
+    --leap-accent-500: 249 115 22;
+    --leap-accent-600: 234 88 12;
+    --leap-accent-700: 194 65 12;
+    --leap-accent-800: 154 52 18;
+    --leap-accent-900: 124 45 18;
+    --leap-accent-950: 67 20 7;
+  }
   html {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
-      "Noto Sans", "Noto Sans SC", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", "Noto Sans Arabic",
-      "PingFang SC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Microsoft YaHei", "Malgun Gothic", "Geeza Pro",
-      sans-serif;
+    @apply font-sans;
+  }
+  /* Koppen iets strakker gespatieerd; Nunito loopt van nature wat breed. */
+  h1, h2, h3 {
+    letter-spacing: -0.01em;
   }
   body {
     @apply text-slate-800;

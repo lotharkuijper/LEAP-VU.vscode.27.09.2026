@@ -2,6 +2,9 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { installApiLanguageHeader } from './lib/apiLanguage';
+// Nunito lokaal meegeleverd (geen Google-verbinding). Formules gebruiken
+// KaTeX' eigen lettertypen en veranderen dus niet mee.
+import '@fontsource-variable/nunito';
 import './index.css';
 
 // Gekozen taal meesturen naar de eigen API, zodat servermeldingen vertaald terugkomen.
