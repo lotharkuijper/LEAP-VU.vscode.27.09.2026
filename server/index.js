@@ -167,7 +167,7 @@ import {
   consultationLimitMessage as conLimitMessage,
 } from './consultationLimit.js';
 import { applyRelationshipDeltaImpl } from './threadClose.js';
-import { sanitizeAvatar } from './personaAvatar.js';
+import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -12187,6 +12187,12 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
     // Task #253: normaliseer badge-toekenningsmodus.
     if ('badge_award_mode' in patch) patch.badge_award_mode = normalizeBadgeAwardMode(patch.badge_award_mode);
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Geen wijzigingen' });
+    // Gezicht vóór de wijziging: alleen een ECHT gewijzigd gezicht gaat naar het
+    // sjabloon (anders zou een kopie zonder gezicht het sjabloon leegmaken).
+    const { data: before } = faceFields(patch)
+      ? await supabaseAdmin.from('project_personas').select('avatar, avatar_emoji')
+        .eq('id', personaId).eq('project_id', projectId).maybeSingle()
+      : { data: null };
     let { data, error: e } = await supabaseAdmin
       .from('project_personas').update(patch)
       .eq('id', personaId).eq('project_id', projectId).select('*').single();
@@ -12216,6 +12222,16 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
         .eq('id', personaId).eq('project_id', projectId).select('*').single());
     }
     if (e) return res.status(500).json({ error: e.message });
+    // Eén persona = één gezicht: een nieuw gezicht gaat ook naar het sjabloon
+    // en naar de kopieën in andere projecten van dezelfde cursus.
+    const face = changedFaceFields(before, patch);
+    if (face && data?.source_persona_id) {
+      try {
+        await syncPersonaFace(supabaseAdmin, { templateId: data.source_persona_id, courseId: access.project?.course_id, fields: face });
+      } catch (syncErr) {
+        console.warn('[persona-face] doorvoeren mislukt:', syncErr.message);
+      }
+    }
     return res.json({ persona: data });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -14578,6 +14594,15 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
     }
     if (uErr) return res.status(500).json({ error: uErr.message });
     if (!updated) return res.status(404).json({ error: 'Persona niet gevonden' });
+    // Eén persona = één gezicht: het nieuwe gezicht meteen in alle projecten.
+    const face = faceFields(patch);
+    if (face) {
+      try {
+        await syncPersonaFace(supabaseAdmin, { templateId: personaId, fields: face, fromTemplate: true });
+      } catch (syncErr) {
+        console.warn('[persona-face] doorvoeren mislukt:', syncErr.message);
+      }
+    }
     return res.json({ persona: updated });
   } catch (err) {
     return res.status(500).json({ error: err.message });
