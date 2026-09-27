@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Ir a Plantillas de persona",
   "admin.projects.personas.fromTemplateLabel": "Desde plantilla:",
   "admin.projects.personas.alreadyInProject": "ya está en este proyecto",
-  "admin.projects.personas.addFromTemplateBtn": "Añadir"
+  "admin.projects.personas.addFromTemplateBtn": "Añadir",
+  "docViewer.textFallback": "Vista simplificada: solo el texto de este documento. Con el botón de descarga obtendrás el original con formato."
 }

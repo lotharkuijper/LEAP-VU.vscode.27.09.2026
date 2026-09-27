@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "La șabloanele de persona",
   "admin.projects.personas.fromTemplateLabel": "Din șablon:",
   "admin.projects.personas.alreadyInProject": "deja în acest proiect",
-  "admin.projects.personas.addFromTemplateBtn": "Adaugă"
+  "admin.projects.personas.addFromTemplateBtn": "Adaugă",
+  "docViewer.textFallback": "Afișare simplificată: doar textul acestui document. Prin butonul de descărcare obții originalul cu formatare."
 }

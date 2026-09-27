@@ -43,7 +43,7 @@ interface DocumentViewerProps {
 
 type ViewResponse =
   | { kind: 'pdf'; title: string; sourceType: string; url: string }
-  | { kind: 'text'; title: string; sourceType: string; text: string }
+  | { kind: 'text'; title: string; sourceType: string; text: string; fallback?: boolean }
   | { kind: 'url'; title: string; sourceType: string; url: string };
 
 // Segmenteer een plat-tekstbestand in leesbare secties (≤ max tekens) zodat een
@@ -69,6 +69,8 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
   const [error, setError] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ title: string; sourceType: string } | null>(null);
   const [textPages, setTextPages] = useState<string[] | null>(null);
+  // Server kon geen opgemaakte (pdf-)versie maken en stuurt de leesbare tekst.
+  const [textFallback, setTextFallback] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -221,6 +223,7 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
     setLoading(true);
     setError(null);
     setTextPages(null);
+    setTextFallback(false);
     setMeta(null);
     setPage(1);
     setTotalPages(0);
@@ -249,6 +252,7 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
         setMeta({ title: data.title || title, sourceType: data.sourceType });
 
         if (data.kind === 'text') {
+          setTextFallback(!!data.fallback);
           const segs = segmentText(data.text);
           setTextPages(segs);
           setTotalPages(segs.length);
@@ -493,6 +497,12 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
           <X className="h-4 w-4" />
         </button>
       </div>
+
+      {textFallback && (
+        <div className="border-b border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900" data-testid="text-viewer-fallback">
+          {t('docViewer.textFallback')}
+        </div>
+      )}
 
       {/* Vertaalwerkbalk */}
       {translateOpen && (

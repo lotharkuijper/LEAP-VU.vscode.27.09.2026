@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Naar Persona-sjablonen",
   "admin.projects.personas.fromTemplateLabel": "Uit sjabloon:",
   "admin.projects.personas.alreadyInProject": "al in dit project",
-  "admin.projects.personas.addFromTemplateBtn": "Toevoegen"
+  "admin.projects.personas.addFromTemplateBtn": "Toevoegen",
+  "docViewer.textFallback": "Vereenvoudigde weergave: alleen de tekst van dit document. Via de downloadknop krijg je het origineel met opmaak."
 }

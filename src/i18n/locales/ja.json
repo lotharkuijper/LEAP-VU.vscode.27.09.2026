@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "ペルソナテンプレートへ",
   "admin.projects.personas.fromTemplateLabel": "テンプレートから:",
   "admin.projects.personas.alreadyInProject": "すでにこのプロジェクトに含まれています",
-  "admin.projects.personas.addFromTemplateBtn": "追加"
+  "admin.projects.personas.addFromTemplateBtn": "追加",
+  "docViewer.textFallback": "簡易表示：この文書のテキストのみ。ダウンロードボタンから、書式付きの元のファイルを取得できるよ。"
 }

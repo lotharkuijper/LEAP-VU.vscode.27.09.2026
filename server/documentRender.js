@@ -5,11 +5,28 @@
 // in de weg zitten.
 
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const SOFFICE_BIN = process.env.SOFFICE_BIN || 'soffice';
+// Welk LibreOffice-programma we starten. Op Replit/Linux staat `soffice` in het
+// PATH (replit.nix); een Windows-installatie zet het daar níet in. Zonder deze
+// detectie faalden op Windows zowel de documentviewer (docx/pptx → pdf) als de
+// paginanummers bij het inlezen van Word-bestanden, stil (2026-09-27).
+export function resolveSofficeBin(env = process.env, platform = process.platform, exists = existsSync) {
+  if (env.SOFFICE_BIN) return env.SOFFICE_BIN;
+  if (platform === 'win32') {
+    const candidates = [env.ProgramFiles, env['ProgramFiles(x86)'], 'C:\\Program Files', 'C:\\Program Files (x86)']
+      .filter(Boolean)
+      .map((dir) => path.win32.join(dir, 'LibreOffice', 'program', 'soffice.exe'));
+    const found = candidates.find((p) => exists(p));
+    if (found) return found;
+  }
+  return 'soffice';
+}
+
+const SOFFICE_BIN = resolveSofficeBin();
 const CONVERSION_TIMEOUT_MS = 90_000;
 
 // Extensies die we via LibreOffice naar PDF converteren voor weergave.
@@ -61,12 +78,19 @@ export function sofficePdfOutputName(inputName) {
 // Bouwt de argumentenlijst voor de headless LibreOffice-conversie naar PDF.
 // Apart en puur zodat een test de command-bedrading kan controleren zonder
 // een echte conversie te draaien.
+// file-URL voor het LibreOffice-profiel: `file:///tmp/x` op Linux en
+// `file:///C:/Users/.../x` op Windows (een kaal `file://C:\...` is ongeldig).
+export function profileDirUrl(profileDir) {
+  const p = String(profileDir || '').replace(/\\/g, '/');
+  return `file://${p.startsWith('/') ? '' : '/'}${p}`;
+}
+
 export function buildSofficeArgs({ profileDir, outDir, inputPath }) {
   return [
     '--headless',
     '--norestore',
     '--nolockcheck',
-    `-env:UserInstallation=file://${profileDir}`,
+    `-env:UserInstallation=${profileDirUrl(profileDir)}`,
     '--convert-to', 'pdf',
     '--outdir', outDir,
     inputPath,

@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "페르소나 템플릿으로 이동",
   "admin.projects.personas.fromTemplateLabel": "템플릿에서:",
   "admin.projects.personas.alreadyInProject": "이미 이 프로젝트에 있음",
-  "admin.projects.personas.addFromTemplateBtn": "추가"
+  "admin.projects.personas.addFromTemplateBtn": "추가",
+  "docViewer.textFallback": "간소화된 보기: 이 문서의 텍스트만 표시돼. 다운로드 버튼을 통해 서식이 포함된 원본을 받을 수 있어."
 }

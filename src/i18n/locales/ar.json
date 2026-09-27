@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "إلى قوالب الشخصيات",
   "admin.projects.personas.fromTemplateLabel": "من القالب:",
   "admin.projects.personas.alreadyInProject": "موجود بالفعل في هذا المشروع",
-  "admin.projects.personas.addFromTemplateBtn": "إضافة"
+  "admin.projects.personas.addFromTemplateBtn": "إضافة",
+  "docViewer.textFallback": "عرض مبسّط: نص هذا المستند فقط. عبر زر التنزيل يمكنك الحصول على النسخة الأصلية مع التنسيق."
 }

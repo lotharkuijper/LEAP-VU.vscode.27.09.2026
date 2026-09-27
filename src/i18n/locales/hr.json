@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Na predloške persona",
   "admin.projects.personas.fromTemplateLabel": "Iz predloška:",
   "admin.projects.personas.alreadyInProject": "već u ovom projektu",
-  "admin.projects.personas.addFromTemplateBtn": "Dodaj"
+  "admin.projects.personas.addFromTemplateBtn": "Dodaj",
+  "docViewer.textFallback": "Pojednostavljeni prikaz: samo tekst ovog dokumenta. Putem gumba za preuzimanje dobivaš izvornik s oblikovanjem."
 }

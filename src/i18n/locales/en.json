@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Go to Persona templates",
   "admin.projects.personas.fromTemplateLabel": "From template:",
   "admin.projects.personas.alreadyInProject": "already in this project",
-  "admin.projects.personas.addFromTemplateBtn": "Add"
+  "admin.projects.personas.addFromTemplateBtn": "Add",
+  "docViewer.textFallback": "Simplified view: only the text of this document. Use the download button for the original with formatting."
 }

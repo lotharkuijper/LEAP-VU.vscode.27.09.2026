@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "前往 Persona 模板",
   "admin.projects.personas.fromTemplateLabel": "来自模板：",
   "admin.projects.personas.alreadyInProject": "已在此项目中",
-  "admin.projects.personas.addFromTemplateBtn": "添加"
+  "admin.projects.personas.addFromTemplateBtn": "添加",
+  "docViewer.textFallback": "简化视图：仅显示此文档的文本。通过下载按钮可获取带格式的原始文件。"
 }

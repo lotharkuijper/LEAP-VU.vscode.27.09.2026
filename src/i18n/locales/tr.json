@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Persona şablonlarına git",
   "admin.projects.personas.fromTemplateLabel": "Şablondan:",
   "admin.projects.personas.alreadyInProject": "zaten bu projede",
-  "admin.projects.personas.addFromTemplateBtn": "Ekle"
+  "admin.projects.personas.addFromTemplateBtn": "Ekle",
+  "docViewer.textFallback": "Basitleştirilmiş görünüm: bu belgenin yalnızca metni. İndirme düğmesiyle biçimlendirilmiş orijinaline ulaşabilirsin."
 }

@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Vers les modèles de persona",
   "admin.projects.personas.fromTemplateLabel": "Depuis le modèle :",
   "admin.projects.personas.alreadyInProject": "déjà dans ce projet",
-  "admin.projects.personas.addFromTemplateBtn": "Ajouter"
+  "admin.projects.personas.addFromTemplateBtn": "Ajouter",
+  "docViewer.textFallback": "Affichage simplifié : uniquement le texte de ce document. Le bouton de téléchargement te permet d’obtenir l’original avec sa mise en forme."
 }

@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "До шаблонів персон",
   "admin.projects.personas.fromTemplateLabel": "Із шаблону:",
   "admin.projects.personas.alreadyInProject": "уже в цьому проєкті",
-  "admin.projects.personas.addFromTemplateBtn": "Додати"
+  "admin.projects.personas.addFromTemplateBtn": "Додати",
+  "docViewer.textFallback": "Спрощений перегляд: лише текст цього документа. За допомогою кнопки завантаження ти отримаєш оригінал із форматуванням."
 }

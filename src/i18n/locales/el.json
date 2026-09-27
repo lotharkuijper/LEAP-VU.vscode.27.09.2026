@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Στα πρότυπα Persona",
   "admin.projects.personas.fromTemplateLabel": "Από πρότυπο:",
   "admin.projects.personas.alreadyInProject": "ήδη σε αυτό το έργο",
-  "admin.projects.personas.addFromTemplateBtn": "Προσθήκη"
+  "admin.projects.personas.addFromTemplateBtn": "Προσθήκη",
+  "docViewer.textFallback": "Απλοποιημένη προβολή: μόνο το κείμενο αυτού του εγγράφου. Μέσω του κουμπιού λήψης θα λάβεις το πρωτότυπο με τη μορφοποίηση."
 }

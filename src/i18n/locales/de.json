@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Zu Persona-Vorlagen",
   "admin.projects.personas.fromTemplateLabel": "Aus Vorlage:",
   "admin.projects.personas.alreadyInProject": "bereits in diesem Projekt",
-  "admin.projects.personas.addFromTemplateBtn": "Hinzufügen"
+  "admin.projects.personas.addFromTemplateBtn": "Hinzufügen",
+  "docViewer.textFallback": "Vereinfachte Ansicht: nur der Text dieses Dokuments. Über die Download-Schaltfläche erhältst du das Original mit Formatierung."
 }

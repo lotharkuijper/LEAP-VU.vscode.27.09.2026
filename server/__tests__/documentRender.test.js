@@ -124,3 +124,21 @@ describe('normalizeExt', () => {
     expect(normalizeExt('Docx')).toBe('docx');
   });
 });
+
+// Regressie 2026-09-27: op Windows staat LibreOffice niet in het PATH en was
+// het profiel-pad geen geldige file-URL — de viewer kon docx/pptx niet tonen.
+describe('LibreOffice op Windows', () => {
+  it('vindt soffice.exe in Program Files als SOFFICE_BIN niet is gezet', async () => {
+    const { resolveSofficeBin } = await import('../documentRender.js');
+    const want = String.raw`C:\Program Files\LibreOffice\program\soffice.exe`;
+    expect(resolveSofficeBin({ ProgramFiles: String.raw`C:\Program Files` }, 'win32', (p) => p === want)).toBe(want);
+    expect(resolveSofficeBin({ SOFFICE_BIN: String.raw`D:\lo\soffice.exe` }, 'win32', () => false)).toBe(String.raw`D:\lo\soffice.exe`);
+    expect(resolveSofficeBin({}, 'linux', () => false)).toBe('soffice');
+  });
+
+  it('maakt van een Windows-profielmap een geldige file-URL', async () => {
+    const { profileDirUrl } = await import('../documentRender.js');
+    expect(profileDirUrl(String.raw`C:\Users\x\Temp\leapvu-loprofile-1`)).toBe('file:///C:/Users/x/Temp/leapvu-loprofile-1');
+    expect(profileDirUrl('/tmp/profile')).toBe('file:///tmp/profile');
+  });
+});

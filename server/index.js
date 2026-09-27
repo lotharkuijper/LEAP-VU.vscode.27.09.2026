@@ -142,7 +142,7 @@ import {
   getEmailConfig,
   sendEmailViaResend,
 } from './notifications.js';
-import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceType } from './documentRender.js';
+import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceType, resolveSofficeBin } from './documentRender.js';
 import { planConceptReplace, planConceptWrites, classifyConceptRole, normalizeConceptRole, classifyConceptDifficulty, normalizeDifficulty, isMetaCommentaryName, capByBestMatch, mergeNearDuplicateConcepts } from './conceptExtraction.js';
 import {
   scoreToLabel as relScoreToLabel,
@@ -1953,7 +1953,18 @@ app.get('/api/rag/documents/:documentId/view', async (req, res) => {
       if (!signed?.signedUrl) {
         // Nog geen rendition in cache — eenmalig converteren en opslaan.
         const sourceBytes = await loadSourceBytes();
-        const pdfBuffer = await queueConversion(() => convertOfficeToPdf(sourceBytes, ext));
+        let pdfBuffer;
+        try {
+          pdfBuffer = await queueConversion(() => convertOfficeToPdf(sourceBytes, ext));
+        } catch (convErr) {
+          // Conversie onmogelijk (bv. geen LibreOffice op deze server): toon de
+          // leesbare tekst i.p.v. een fout, zodat studenten de bron altijd in de
+          // app kunnen bekijken zonder te downloaden.
+          console.error('[view] PDF-weergave niet mogelijk, val terug op tekstweergave:', convErr.message);
+          const text = await parseOfficeAsync(sourceBytes).catch(() => '');
+          if (!text.trim()) throw convErr;
+          return res.json({ kind: 'text', title, sourceType: renditionSourceType(ext), text, fallback: true });
+        }
         const { error: upErr } = await supabaseAdmin.storage
           .from(bucket)
           .upload(renditionPath, pdfBuffer, { contentType: 'application/pdf', upsert: true });
@@ -14723,6 +14734,15 @@ if (process.env.NODE_ENV !== 'test') {
     detectConceptEvidenceSchema();
     detectDocumentsContentHash();
     detectWebSources();
+    {
+      // Documentviewer (docx/pptx → pdf) en paginanummers bij Word-bronnen hebben
+      // LibreOffice nodig; zonder valt de viewer terug op alleen tekst.
+      const bin = resolveSofficeBin();
+      // Op Windows staat LibreOffice nooit in het PATH: alleen een gevonden
+      // absoluut pad telt. Elders (Replit/Linux) gaan we uit van het PATH.
+      const ok = path.isAbsolute(bin) ? fs.existsSync(bin) : process.platform !== 'win32';
+      console.log(`[API Server] LibreOffice: ${bin}${ok ? '' : ' — NIET GEVONDEN: viewer toont Office-bestanden alleen als tekst, geen paginanummers bij Word-bronnen'}`);
+    }
     initChatbotPromptSection();
     // Wacht kort tot promptsHasSection geinitialiseerd is alvorens quiz-prompts
     // aan te maken (initChatbotPromptSection draait async).

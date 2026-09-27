@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Do szablonów person",
   "admin.projects.personas.fromTemplateLabel": "Z szablonu:",
   "admin.projects.personas.alreadyInProject": "już w tym projekcie",
-  "admin.projects.personas.addFromTemplateBtn": "Dodaj"
+  "admin.projects.personas.addFromTemplateBtn": "Dodaj",
+  "docViewer.textFallback": "Widok uproszczony: tylko tekst tego dokumentu. Za pomocą przycisku pobierania otrzymasz oryginał z formatowaniem."
 }

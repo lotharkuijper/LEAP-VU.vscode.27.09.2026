@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Vai ai modelli di persona",
   "admin.projects.personas.fromTemplateLabel": "Da modello:",
   "admin.projects.personas.alreadyInProject": "già in questo progetto",
-  "admin.projects.personas.addFromTemplateBtn": "Aggiungi"
+  "admin.projects.personas.addFromTemplateBtn": "Aggiungi",
+  "docViewer.textFallback": "Visualizzazione semplificata: solo il testo di questo documento. Tramite il pulsante di download puoi ottenere l'originale con la formattazione."
 }

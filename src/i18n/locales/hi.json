@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "पर्सोना टेम्पलेट्स पर जाएँ",
   "admin.projects.personas.fromTemplateLabel": "टेम्पलेट से:",
   "admin.projects.personas.alreadyInProject": "इस प्रोजेक्ट में पहले से है",
-  "admin.projects.personas.addFromTemplateBtn": "जोड़ें"
+  "admin.projects.personas.addFromTemplateBtn": "जोड़ें",
+  "docViewer.textFallback": "सरलीकृत दृश्य: इस दस्तावेज़ का केवल टेक्स्ट। डाउनलोड बटन से तुम्हें मूल स्वरूपित दस्तावेज़ मिलेगा।"
 }

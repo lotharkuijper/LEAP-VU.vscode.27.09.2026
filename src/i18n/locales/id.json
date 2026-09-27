@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "Ke Templat Persona",
   "admin.projects.personas.fromTemplateLabel": "Dari templat:",
   "admin.projects.personas.alreadyInProject": "sudah ada di proyek ini",
-  "admin.projects.personas.addFromTemplateBtn": "Tambahkan"
+  "admin.projects.personas.addFromTemplateBtn": "Tambahkan",
+  "docViewer.textFallback": "Tampilan sederhana: hanya teks dari dokumen ini. Melalui tombol unduh, kamu mendapatkan versi asli dengan format."
 }

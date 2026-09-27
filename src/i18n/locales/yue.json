@@ -2062,5 +2062,6 @@
   "admin.projects.personas.toTemplates": "前往 Persona 範本",
   "admin.projects.personas.fromTemplateLabel": "來自範本：",
   "admin.projects.personas.alreadyInProject": "已喺呢個項目入面",
-  "admin.projects.personas.addFromTemplateBtn": "加入"
+  "admin.projects.personas.addFromTemplateBtn": "加入",
+  "docViewer.textFallback": "簡化顯示：只顯示呢份文件嘅文字。你可以透過下載按鈕取得保留原本格式嘅版本。"
 }
