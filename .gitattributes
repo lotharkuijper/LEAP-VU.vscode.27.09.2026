@@ -1,1 +1,5 @@
-
+# Bestanden die in een Linux-container worden gebruikt, altijd met LF: met CRLF
+# breken regels die met een backslash doorlopen (RUN ... \) en shell-scripts.
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.sh text eol=lf
