@@ -316,3 +316,17 @@ describe('persona\'s tussen project en sjablonen', () => {
     expect(harness.state.db.tables.project_personas.some((p) => p.name === 'Beoordelaar B')).toBe(false);
   });
 });
+
+describe('herkomst van kopieën (voor "gebruikt in" bij sjablonen)', () => {
+  it('een kopie uit een sjabloon onthoudt van welk sjabloon ze komt, en blijft een losse kopie', async () => {
+    seed(TEACHER_A);
+    const first = await request('POST', '/api/projects/proj-a/personas/from-library/tpl-a');
+    const second = await request('POST', '/api/projects/proj-a/personas/from-library/tpl-a');
+    expect(first.status).toBeLessThan(300);
+    expect(second.status).toBeLessThan(300);
+    const copies = harness.state.db.tables.project_personas.filter((p) => p.name === 'Wethouder');
+    // Twee losse kopieën toegestaan (geen deduplicatie), beide met herkomst.
+    expect(copies).toHaveLength(2);
+    expect(copies.every((p) => p.source_persona_id === 'tpl-a')).toBe(true);
+  });
+});

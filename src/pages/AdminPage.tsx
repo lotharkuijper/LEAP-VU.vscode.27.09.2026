@@ -13,7 +13,6 @@ import { RAGSetupPanel } from '../components/RAGSetupPanel';
 import { ImportsHubPanel } from '../components/ImportsHubPanel';
 import { QuizSourcesAdminPanel } from '../components/QuizSourcesAdminPanel';
 import CursusInfoTab from '../components/CursusInfoTab';
-import { PersonaLibraryTab } from './admin/PersonaLibraryTab';
 import { ProjectsAdminTab } from './admin/ProjectsAdminTab';
 import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
@@ -53,7 +52,7 @@ interface ChatbotPrompt {
   updated_at: string;
 }
 
-type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'personas' | 'projects_admin' | 'course_info' | 'learning_levels';
+type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels';
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -232,7 +231,9 @@ export function AdminPage() {
     let t = searchParams.get('tab') as TabType | null;
     // Backward-compat: oude deep-links naar de losse ShareStats-tab komen nu op de Imports-hub.
     if ((t as string | null) === 'sharestats_import') t = 'imports';
-    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','personas','projects_admin','course_info','learning_levels'];
+    // Persona's horen sinds 2026-09-27 bij Projecten (tabblad Persona-sjablonen).
+    if ((t as string | null) === 'personas') t = 'projects_admin';
+    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
     if (t && allowed.includes(t)) return t;
     return isAdmin ? 'users' : 'material';
   })();
@@ -273,9 +274,18 @@ export function AdminPage() {
       setActiveTabState('imports');
       return;
     }
+    // Oude `?tab=personas`-links: naar Projecten → Persona-sjablonen.
+    if (raw === 'personas') {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', 'projects_admin');
+      next.set('view', 'templates');
+      setSearchParams(next, { replace: true });
+      setActiveTabState('projects_admin');
+      return;
+    }
     const t = raw as TabType | null;
     if (t && t !== activeTab) {
-      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','personas','projects_admin','course_info','learning_levels'];
+      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
       if (allowed.includes(t)) setActiveTabState(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1479,7 +1489,6 @@ const tabs = [
   { id: 'projects_admin' as TabType, label: t('admin.tabs.projects'), icon: FolderTree, show: isAdmin || isDocent },
   { id: 'course_info' as TabType, label: t('admin.tabs.courseInfo'), icon: BookText, show: isAdmin || isDocent },
   { id: 'learning_levels' as TabType, label: t('admin.tabs.learningLevels'), icon: GraduationCap, show: isAdmin || isDocent },
-  { id: 'personas' as TabType, label: t('admin.tabs.personas'), icon: MessageSquareText, show: isAdmin || isDocent },
   { id: 'settings' as TabType, label: t('admin.tabs.settings'), icon: Settings, show: isAdmin },
 ].filter(tab => tab.show);
 
@@ -1487,7 +1496,7 @@ const tabs = [
 // Cursusmateriaal voorop; systeemzaken apart (admin); de vorige indeling blijft
 // bereikbaar als ingeklapte "Klassieke weergave".
 const tabGroups = [
-  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'personas', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
+  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
   { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'], collapsible: false },
   { key: 'classic', label: t('admin.tabGroups.classic'), ids: ['documents', 'rag_beheer', 'concepts'], collapsible: true },
 ].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
@@ -3427,7 +3436,6 @@ const tabGroups = [
 
           {activeTab === 'projects_admin' && <ProjectsAdminTab />}
           {activeTab === 'add_users' && <AddUsersTab />}
-          {activeTab === 'personas' && <PersonaLibraryTab />}
 
           {activeTab === 'settings' && (
             <div className="space-y-4">

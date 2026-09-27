@@ -9985,7 +9985,7 @@ async function courseRagFolderIds(courseId) {
 
 // Fallback-helper voor de persona-chat route: zet een course_persona om naar
 // een project_persona als het project nog geen persona met die naam heeft.
-// Maakt een verse, onafhankelijke kopie (source_persona_id = null) conform het
+// Maakt een verse, onafhankelijke kopie (source_persona_id = herkomst, geen FK) conform het
 // sjablonen-model. Deduplicatie op naam is bewust: in dit chat-pad is dezelfde
 // naam voldoende als sleutel — bij eventuele naambotsingen wordt de bestaande
 // project_persona hergebruikt, zodat studenten hun gesprekshistorie behouden.
@@ -10008,7 +10008,7 @@ async function ensureProjectPersonaFromCourse(projectId, coursePersonaId) {
     .from('project_personas')
     .insert({
       project_id: projectId,
-      source_persona_id: null,
+      source_persona_id: cp.id, // herkomst (geen FK): "gebruikt in" bij sjablonen
       name: cp.name,
       avatar_emoji: cp.avatar_emoji,
       system_prompt: cp.system_prompt,
@@ -11792,7 +11792,7 @@ app.post('/api/projects/copy-personas-from-library', async (req, res) => {
     // evaluators ook bij bulk-import nooit cues uitzenden.
     const rows = lib.map((p, i) => ({
       project_id: projectId,
-      source_persona_id: null,
+      source_persona_id: p.id, // herkomst (geen FK): "gebruikt in" bij sjablonen
       name: p.name,
       avatar_emoji: p.avatar_emoji,
       system_prompt: p.system_prompt,
@@ -11932,7 +11932,7 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
         return res.status(400).json({ error: 'Persona hoort bij een andere cursus' });
       }
       row = {
-        project_id: projectId, source_persona_id: null,
+        project_id: projectId, source_persona_id: cp.id,
         name: cp.name, avatar_emoji: cp.avatar_emoji,
         system_prompt: cp.system_prompt, rag_enabled: cp.rag_enabled,
         rag_folder_ids: cp.rag_folder_ids, visible_from_phase: cp.visible_from_phase,
@@ -12024,7 +12024,7 @@ app.post('/api/projects/:projectId/personas/from-library/:coursePersonaId', asyn
     const nextOrder = (existing && existing[0] ? Number(existing[0].sort_order || 0) : -1) + 1;
     const baseRow = {
       project_id: projectId,
-      source_persona_id: null,
+      source_persona_id: cp.id, // herkomst (geen FK): "gebruikt in" bij sjablonen
       name: cp.name,
       avatar_emoji: cp.avatar_emoji,
       system_prompt: cp.system_prompt,

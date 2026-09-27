@@ -5,6 +5,23 @@ import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { Bot, FolderOpen, Trash2, Pencil, Plus, Save, X, Download } from 'lucide-react';
 
+/** Per sjabloon: de titels van de projecten die er een kopie van hebben. */
+export function usageBySource(
+  copies: Array<{ source_persona_id: string | null; project_id: string }>,
+  projects: Array<{ id: string; title: string }>,
+): Map<string, string[]> {
+  const titles = new Map(projects.map(p => [p.id, p.title]));
+  const out = new Map<string, string[]>();
+  for (const c of copies) {
+    if (!c.source_persona_id || !titles.has(c.project_id)) continue;
+    const list = out.get(c.source_persona_id) || [];
+    const title = titles.get(c.project_id)!;
+    if (!list.includes(title)) list.push(title);
+    out.set(c.source_persona_id, list);
+  }
+  return out;
+}
+
 interface CoursePersona {
   id: string;
   course_id: string;
@@ -48,6 +65,7 @@ export function PersonaLibraryTab() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [fetching, setFetching] = useState(false);
   const [fetchMsg, setFetchMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [usage, setUsage] = useState<Map<string, string[]>>(new Map());
 
   const load = useCallback(async () => {
     if (!activeCourseId) { setPersonas([]); return; }
@@ -60,6 +78,19 @@ export function PersonaLibraryTab() {
   }, [activeCourseId]);
 
   useEffect(() => { load(); }, [load]);
+
+  // "Gebruikt in": kopieën in de projecten van deze cursus onthouden hun
+  // herkomst (project_personas.source_persona_id, geen FK).
+  const loadUsage = useCallback(async () => {
+    if (!activeCourseId) { setUsage(new Map()); return; }
+    const { data: projs } = await supabase.from('projects').select('id, title').eq('course_id', activeCourseId);
+    const ids = (projs || []).map((p: { id: string }) => p.id);
+    if (!ids.length) { setUsage(new Map()); return; }
+    const { data: copies } = await supabase.from('project_personas').select('source_persona_id, project_id').in('project_id', ids);
+    setUsage(usageBySource((copies as any) || [], (projs as any) || []));
+  }, [activeCourseId]);
+
+  useEffect(() => { loadUsage(); }, [loadUsage, personas]);
 
   const loadProjects = useCallback(async () => {
     if (!activeCourseId) return;
@@ -177,6 +208,7 @@ export function PersonaLibraryTab() {
         setFetchMsg({ ok: false, text: d.error || t('admin.personaLib.err.addFailed') });
       } else {
         setFetchMsg({ ok: true, text: t('admin.personaLib.addedToProject', { name: fetchTarget.name }) });
+        loadUsage();
       }
     } catch (err: any) {
       setFetchMsg({ ok: false, text: err.message });
@@ -199,8 +231,8 @@ export function PersonaLibraryTab() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Bot className="w-5 h-5" /> {t('admin.personaLib.title')}</h2>
-            <p className="text-sm text-gray-500">
-              {t('admin.personaLib.courseLabel')}: {activeCourse?.name}. {t('admin.personaLib.descPre')} <strong>{t('admin.personaLib.descProjectNav')}</strong>. {t('admin.personaLib.descPost')}
+            <p className="text-sm text-gray-500 max-w-3xl">
+              {t('admin.personaLib.intro', { course: activeCourse?.name || '' })}
             </p>
           </div>
           {canEdit && (
@@ -216,7 +248,7 @@ export function PersonaLibraryTab() {
 
         <div className="bg-blue-50 border border-blue-100 text-blue-800 px-3 py-2 rounded text-xs flex items-start gap-2 mb-3">
           <FolderOpen className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>{t('admin.personaLib.readOnlyHint')}</span>
+          <span>{t('admin.personaLib.copyHint')}</span>
         </div>
 
         {error && (
@@ -238,6 +270,11 @@ export function PersonaLibraryTab() {
                     {!p.rag_enabled && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.ragOff')}</span>}
                   </div>
                   <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{p.system_prompt.slice(0, 200)}</p>
+                  <p className="text-[11px] text-gray-500 mt-1" data-testid={`text-cp-usage-${p.id}`}>
+                    {usage.get(p.id)?.length
+                      ? t('admin.personaLib.usedIn', { projects: usage.get(p.id)!.join(', ') })
+                      : t('admin.personaLib.notUsed')}
+                  </p>
                 </div>
                 <div className="flex gap-1 flex-shrink-0">
                   <button

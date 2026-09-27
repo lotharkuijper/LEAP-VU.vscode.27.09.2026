@@ -1,9 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
-import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert } from 'lucide-react';
+import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert, Bot } from 'lucide-react';
+import { PersonaLibraryTab } from './PersonaLibraryTab';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -129,7 +131,56 @@ interface CourseSubmissionRow extends SubmissionRow {
   project_title: string | null;
 }
 
+// Projecten heeft twee weergaven: de projecten zelf en de persona-sjablonen van
+// de cursus (persona's worden alleen in projecten gebruikt). ?view=templates
+// maakt de sjablonen deelbaar als link.
+export type ProjectsView = 'projects' | 'templates';
+
+export function ProjectsViewSwitch({ view, onChange }: { view: ProjectsView; onChange: (v: ProjectsView) => void }) {
+  const { t } = useLanguage();
+  const items: Array<{ id: ProjectsView; label: string; icon: typeof FolderOpen }> = [
+    { id: 'projects', label: t('admin.projects.view.projects'), icon: FolderOpen },
+    { id: 'templates', label: t('admin.projects.view.templates'), icon: Bot },
+  ];
+  return (
+    <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1" role="tablist" aria-label={t('admin.projects.title')}>
+      {items.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          role="tab"
+          aria-selected={view === id}
+          onClick={() => onChange(id)}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors ${view === id ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+          data-testid={`tab-projects-view-${id}`}
+        >
+          <Icon className="w-4 h-4" />{label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function ProjectsAdminTab() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view: ProjectsView = searchParams.get('view') === 'templates' ? 'templates' : 'projects';
+  const setView = (v: ProjectsView) => {
+    const next = new URLSearchParams(searchParams);
+    if (v === 'templates') next.set('view', 'templates'); else next.delete('view');
+    setSearchParams(next, { replace: true });
+  };
+  if (view === 'templates') {
+    return (
+      <div className="space-y-4">
+        <ProjectsViewSwitch view={view} onChange={setView} />
+        <PersonaLibraryTab />
+      </div>
+    );
+  }
+  return <ProjectsListView switcher={<ProjectsViewSwitch view={view} onChange={setView} />} />;
+}
+
+function ProjectsListView({ switcher }: { switcher: ReactNode }) {
   const { session } = useAuth();
   const { activeCourseId, activeCourse } = useActiveCourse();
   const { lang, t } = useLanguage();
@@ -267,6 +318,7 @@ export function ProjectsAdminTab() {
 
   return (
     <div className="space-y-4">
+      {switcher}
       <div className="chic-card p-6">
         <div className="flex items-center justify-between mb-3">
           <div>
