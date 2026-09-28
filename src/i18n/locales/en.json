@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Almost! Read your tutor’s tips, practise a little more and then ask again.",
   "achievements.notice.notYet": "Not yet — no problem. Work on your tutor’s tips and try again later.",
   "achievements.notice.tooShort": "Good going! A conversation only counts towards an achievement once you have asked a few substantive questions or given explanations yourself. Keep going and then ask again.",
-  "achievements.notice.maxLevel": "You are already at the highest level: Expert. Impressive!"
+  "achievements.notice.maxLevel": "You are already at the highest level: Expert. Impressive!",
+  "common.more": "More",
+  "common.moreActions": "More actions"
 }

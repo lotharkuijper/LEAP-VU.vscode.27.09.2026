@@ -332,11 +332,11 @@ export function RAGSetupPanel() {
       </div>
 
       <div className="border border-gray-200 rounded-xl overflow-hidden">
-        <div className="flex border-b border-gray-200">
+        <div className="flex flex-wrap border-b border-gray-200">
           <button
             onClick={() => setActiveSection('upload')}
             data-testid="tab-upload"
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors ${
               activeSection === 'upload'
                 ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -348,7 +348,7 @@ export function RAGSetupPanel() {
           <button
             onClick={() => setActiveSection('import')}
             data-testid="tab-import"
-            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors ${
               activeSection === 'import'
                 ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -376,7 +376,7 @@ export function RAGSetupPanel() {
       <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
         <div className="flex items-start gap-3">
           <Sparkles className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold text-gray-900 text-sm">{t('admin.ragSetup.extract.title')}</h3>
               <button
@@ -398,7 +398,7 @@ export function RAGSetupPanel() {
 
             {processedDocs.length > 0 && (
               <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden bg-white">
-                <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <div className="flex flex-wrap items-center justify-between px-3 py-2 bg-gray-50 border-b border-gray-200 gap-3">
                   <span className="text-xs font-medium text-gray-700">{t('admin.ragSetup.extract.selectDocs')}</span>
                   {processedDocs.length > 3 && (
                     <button
@@ -409,7 +409,7 @@ export function RAGSetupPanel() {
                           setSelectedDocIds(new Set(processedDocs.map(d => d.id)));
                         }
                       }}
-                      className="text-xs text-blue-600 hover:underline"
+                      className="whitespace-nowrap flex-shrink-0 text-xs text-blue-600 hover:underline"
                       data-testid="button-toggle-all-docs"
                     >
                       {selectedDocIds.size === processedDocs.length ? t('admin.ragSetup.extract.deselectAll') : t('admin.ragSetup.extract.selectAll')}

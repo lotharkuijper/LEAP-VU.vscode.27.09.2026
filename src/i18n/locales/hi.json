@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "लगभग! अपने ट्यूटर की सलाह पढ़ो, थोड़ा और अभ्यास करो और फिर दोबारा पूछो।",
   "achievements.notice.notYet": "अभी नहीं — कोई बात नहीं। अपने ट्यूटर की सलाह पर काम करो और बाद में फिर कोशिश करो।",
   "achievements.notice.tooShort": "अच्छा कर रहे हो! कोई बातचीत किसी achievement के लिए तभी गिनी जाती है जब तुमने उसमें खुद कुछ सार्थक सवाल पूछे हों या स्पष्टीकरण दिया हो। थोड़ा और जारी रखो और फिर दोबारा पूछो।",
-  "achievements.notice.maxLevel": "तुम पहले ही सबसे ऊँचे स्तर पर हो: Expert. शानदार!"
+  "achievements.notice.maxLevel": "तुम पहले ही सबसे ऊँचे स्तर पर हो: Expert. शानदार!",
+  "common.more": "और",
+  "common.moreActions": "और कार्रवाइयाँ"
 }

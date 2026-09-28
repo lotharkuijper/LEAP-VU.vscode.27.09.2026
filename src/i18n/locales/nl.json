@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Bijna! Lees de tips van je tutor, oefen nog even en vraag het daarna opnieuw.",
   "achievements.notice.notYet": "Nog niet — geen probleem. Werk de tips van je tutor uit en probeer het later nog eens.",
   "achievements.notice.tooShort": "Goed bezig! Een gesprek telt pas mee voor een achievement als je er zelf een paar inhoudelijke vragen of uitleg in hebt gegeven. Ga nog even door en vraag het dan opnieuw.",
-  "achievements.notice.maxLevel": "Je zit al op het hoogste niveau: Expert. Knap!"
+  "achievements.notice.maxLevel": "Je zit al op het hoogste niveau: Expert. Knap!",
+  "common.more": "Meer",
+  "common.moreActions": "Meer acties"
 }

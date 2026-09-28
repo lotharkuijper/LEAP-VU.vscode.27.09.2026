@@ -273,7 +273,7 @@ export function FilesStep({
               <div className="flex-1 min-w-[12rem]">
                 <h3 className="font-semibold text-gray-900">
                   {tk(`filePurpose.${p}.label`)}{' '}
-                  <span className="text-xs font-normal text-gray-500">{t('material.files.count', { n: String(list.length + projectDocCount) })}</span>
+                  <span className="whitespace-nowrap text-xs font-normal text-gray-500">{t('material.files.count', { n: String(list.length + projectDocCount) })}</span>
                   {sources.length > 0 && (
                     <span className="text-xs font-normal text-gray-500"> · {t('material.web.count', { n: String(sources.length) })}</span>
                   )}

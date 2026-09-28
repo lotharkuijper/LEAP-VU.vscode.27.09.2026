@@ -396,13 +396,13 @@ export function ShareStatsImportPanel() {
       {/* Repository configuratie */}
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-3">
         <h3 className="font-semibold text-gray-900">{t('shareStatsImport.repository')}</h3>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             type="text"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             placeholder="https://github.com/ShareStats/itembank"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono disabled:bg-gray-50 disabled:text-gray-500"
+            className="min-w-[12rem] flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono disabled:bg-gray-50 disabled:text-gray-500"
             data-testid="input-repo-url"
             readOnly={!isAdmin}
             disabled={!isAdmin}
@@ -422,7 +422,7 @@ export function ShareStatsImportPanel() {
             <button
               onClick={handleSyncAll}
               disabled={importing || !savedRepoUrl}
-              className="px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
+              className="whitespace-nowrap flex-shrink-0 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
               data-testid="button-sync-all"
             >
               <RefreshCw className={`w-4 h-4 ${importing ? 'animate-spin' : ''}`} />
@@ -471,18 +471,19 @@ export function ShareStatsImportPanel() {
 
       {!loading && isAdmin && topics.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
             <h3 className="font-semibold text-gray-900">{t('shareStatsImport.selectiveTitle')}</h3>
             <button
               onClick={handleSelectAll}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              className="whitespace-nowrap flex-shrink-0 text-sm text-blue-600 hover:text-blue-700 font-medium"
               data-testid="button-toggle-all-topics"
             >
               {selectedTopics.length === topics.length ? t('admin.imports.web.deselectAll') : t('admin.imports.web.selectAll')}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+          {/* Kolommen naar de beschikbare ruimte, niet naar de schermbreedte. */}
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(12rem,100%),1fr))] gap-3 mb-6">
             {topics.map((topic) => (
               <label
                 key={topic}
@@ -495,7 +496,7 @@ export function ShareStatsImportPanel() {
                   onChange={() => handleTopicToggle(topic)}
                   className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                 />
-                <span className="text-sm font-medium text-gray-700" title={topic}>{topicLabel(topic, t)}</span>
+                <span className="min-w-0 break-words text-sm font-medium text-gray-700" title={topic}>{topicLabel(topic, t)}</span>
               </label>
             ))}
           </div>
@@ -503,7 +504,7 @@ export function ShareStatsImportPanel() {
           {/* Cursus-indicator voor auto-koppelen aan begrippen */}
           <div className="mb-4 flex items-start gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg p-3" data-testid="text-active-course-indicator">
             <Link2 className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-blue-900">
+            <div className="min-w-0 flex-1 text-blue-900">
               {activeCourseId && activeCourse ? (
                 <>
                   <strong>{t('shareStatsImport.autoLinkActiveLabel')}</strong>{' '}

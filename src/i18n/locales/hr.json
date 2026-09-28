@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Skoro! Pročitaj savjete svog tutora, još malo vježbaj i zatim ponovno pitaj.",
   "achievements.notice.notYet": "Još ne — nema problema. Primijeni savjete svog tutora i pokušaj ponovno kasnije.",
   "achievements.notice.tooShort": "Dobro ti ide! Razgovor se računa za postignuće tek kad u njemu sam/a postaviš nekoliko sadržajnih pitanja ili pružiš objašnjenja. Nastavi još malo pa onda ponovno pitaj.",
-  "achievements.notice.maxLevel": "Već si na najvišoj razini: Expert. Bravo!"
+  "achievements.notice.maxLevel": "Već si na najvišoj razini: Expert. Bravo!",
+  "common.more": "Više",
+  "common.moreActions": "Više radnji"
 }

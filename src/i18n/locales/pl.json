@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Prawie! Przeczytaj wskazówki od tutora, poćwicz jeszcze chwilę i potem zapytaj ponownie.",
   "achievements.notice.notYet": "Jeszcze nie — nic nie szkodzi. Przepracuj wskazówki od tutora i spróbuj ponownie później.",
   "achievements.notice.tooShort": "Dobra robota! Rozmowa liczy się do osiągnięcia dopiero wtedy, gdy samodzielnie zadasz w niej kilka merytorycznych pytań lub udzielisz wyjaśnień. Kontynuuj jeszcze chwilę, a potem poproś ponownie.",
-  "achievements.notice.maxLevel": "Jesteś już na najwyższym poziomie: Expert. Świetnie!"
+  "achievements.notice.maxLevel": "Jesteś już na najwyższym poziomie: Expert. Świetnie!",
+  "common.more": "Więcej",
+  "common.moreActions": "Więcej działań"
 }

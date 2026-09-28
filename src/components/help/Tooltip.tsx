@@ -24,7 +24,9 @@ export function Tooltip({ label, side = 'top', children }: { label: string; side
       {child}
       <span
         aria-hidden="true"
-        className={`pointer-events-none absolute left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow transition-opacity duration-100 group-hover/tooltip:opacity-100 group-focus-within/tooltip:opacity-100 ${side === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'}`}
+        // hidden (display:none) i.p.v. alleen doorzichtig: een onzichtbare ballon
+        // aan de rand van het scherm maakte anders de hele pagina breder.
+        className={`pointer-events-none absolute left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium text-white shadow group-hover/tooltip:block group-focus-within/tooltip:block ${side === 'top' ? 'bottom-full mb-1.5' : 'top-full mt-1.5'}`}
         data-testid="tooltip"
       >
         {label}

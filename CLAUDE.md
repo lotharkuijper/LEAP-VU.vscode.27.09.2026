@@ -57,6 +57,11 @@
 - Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input, and the topic must be an approved course concept.
 - Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Future kinds (quiz, project badges, learning goals) reuse this table.
 
+## Layout
+- List rows in the admin (title + badges + buttons) use `ListRow` / `RowActions` (`src/components/ui/`): buttons that do not fit go into "⋯ More", dangerous actions always sit there, separated and in red. Never build a `flex justify-between` row with a button group that is not allowed to shrink.
+- Flex children that hold text get `min-w-0`; buttons get `whitespace-nowrap` inside a row that may wrap (`flex-wrap`). Grids inside the admin choose columns by the available space (`grid-cols-[repeat(auto-fill,minmax(min(Xrem,100%),1fr))]`), not by the screen width: the admin content column is much narrower than the screen.
+- Check layout with `npm run ui:audit` (Edge via playwright-core; test account via `node --env-file=.env scripts/ui-audit-account.mjs create`). It opens every page and admin tab at 390/1024/1366 px and reports squeezed text, overlap, content sticking out of its card and horizontal scrolling. The report goes to `ui-audit-output/`.
+
 ## Sensitive notes
 - Do not put secrets in the repo.
 - Trust `.env` values only when they are actually loaded and resolved in the runtime environment.

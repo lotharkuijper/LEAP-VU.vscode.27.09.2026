@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Fast! Lies die Tipps deines Tutors, übe noch kurz und frag danach erneut.",
   "achievements.notice.notYet": "Noch nicht — kein Problem. Arbeite die Tipps deines Tutors aus und versuch es später noch einmal.",
   "achievements.notice.tooShort": "Gut gemacht! Ein Gespräch zählt erst für ein Achievement, wenn du selbst ein paar inhaltliche Fragen gestellt oder Erklärungen gegeben hast. Mach noch kurz weiter und frag dann erneut.",
-  "achievements.notice.maxLevel": "Du bist bereits auf dem höchsten Niveau: Experte. Klasse!"
+  "achievements.notice.maxLevel": "Du bist bereits auf dem höchsten Niveau: Experte. Klasse!",
+  "common.more": "Mehr",
+  "common.moreActions": "Weitere Aktionen"
 }

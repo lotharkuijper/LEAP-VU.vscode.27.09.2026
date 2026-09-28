@@ -5,6 +5,7 @@ import { useLanguage } from '../../i18n';
 import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { AdminHint } from '../../components/help/AdminHint';
+import { ListRow } from '../../components/ui/ListRow';
 import { supabase } from '../../lib/supabase';
 import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
@@ -236,8 +237,8 @@ export function PersonaLibraryTab({ onOpenProjects }: {
   return (
     <div className="space-y-4">
       <div className="chic-card p-6">
-        <div className="flex items-center justify-between mb-3">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+          <div className="min-w-[min(100%,16rem)] flex-1">
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Bot className="w-5 h-5" /> {t('admin.personaLib.title')}<HelpTip id="projects.templates" /></h2>
             <AdminHint variant="intro" className="max-w-3xl">
               {t('admin.personaLib.intro', { course: activeCourse?.name || '' })}
@@ -246,7 +247,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
           {canEdit && (
             <button
               onClick={startNew}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
+              className="flex flex-shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
               data-testid="button-new-cp"
             >
               <Plus className="w-4 h-4" />{t('admin.personaLib.newTemplate')}
@@ -280,55 +281,40 @@ export function PersonaLibraryTab({ onOpenProjects }: {
         ) : (
           <ul className="divide-y divide-gray-100">
             {personas.map(p => (
-              <li key={p.id} className="py-3 flex items-start gap-3" data-testid={`persona-row-${p.id}`}>
-                <PersonaAvatar avatar={p.avatar} name={p.name} size={40} />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 flex items-center gap-2">
-                    {p.name}
-                    {p.persona_type === 'evaluator' && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.evaluator')}</span>}
-                    {p.is_default && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.default')}</span>}
-                    {!p.rag_enabled && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.ragOff')}</span>}
-                  </div>
-                  <p className="text-xs text-gray-500 line-clamp-2 mt-0.5">{p.system_prompt.slice(0, 200)}</p>
-                  <p className="text-[11px] text-gray-500 mt-1" data-testid={`text-cp-usage-${p.id}`}>
-                    {usage.get(p.id)?.length
-                      ? t('admin.personaLib.usedIn', { projects: usage.get(p.id)!.join(', ') })
-                      : t('admin.personaLib.notUsed')}
-                  </p>
-                </div>
-                <div className="flex gap-1 flex-shrink-0">
-                  <button
-                    onClick={() => openFetchModal(p)}
-                    className="px-2 py-1 text-xs text-blue-700 hover:bg-blue-50 rounded flex items-center gap-1"
-                    data-testid={`button-fetch-cp-${p.id}`}
-                  >
-                    <Download className="w-3 h-3" />
-                    {t('admin.personaLib.addToProjectBtn')}
-                  </button>
-                  {canEdit && (
+              <li key={p.id} className="py-3" data-testid={`persona-row-${p.id}`}>
+                <ListRow
+                  menuTestId={`button-more-cp-${p.id}`}
+                  title={
+                    <span className="flex items-center gap-2">
+                      <PersonaAvatar avatar={p.avatar} name={p.name} size={32} />
+                      <span>{p.name}</span>
+                    </span>
+                  }
+                  badges={
                     <>
-                      <Tooltip label={t('common.edit')}>
-                        <button
-                          onClick={() => startEdit(p)}
-                          className="p-1.5 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded"
-                          data-testid={`button-edit-cp-${p.id}`}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                      </Tooltip>
-                      <Tooltip label={t('admin.personaLib.removeFromLibrary')}>
-                        <button
-                          onClick={() => removePersona(p)}
-                          disabled={deleting === p.id}
-                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded disabled:opacity-40"
-                          data-testid={`button-delete-cp-${p.id}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </Tooltip>
+                      {p.persona_type === 'evaluator' && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.evaluator')}</span>}
+                      {p.is_default && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.default')}</span>}
+                      {!p.rag_enabled && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.ragOff')}</span>}
                     </>
-                  )}
-                </div>
+                  }
+                  meta={
+                    <>
+                      <p className="line-clamp-2">{p.system_prompt.slice(0, 200)}</p>
+                      <p className="text-[11px]" data-testid={`text-cp-usage-${p.id}`}>
+                        {usage.get(p.id)?.length
+                          ? t('admin.personaLib.usedIn', { projects: usage.get(p.id)!.join(', ') })
+                          : t('admin.personaLib.notUsed')}
+                      </p>
+                    </>
+                  }
+                  actions={[
+                    { key: 'fetch', label: t('admin.personaLib.addToProjectBtn'), icon: Download, tone: 'primary', onClick: () => openFetchModal(p), testId: `button-fetch-cp-${p.id}` },
+                    ...(canEdit ? [
+                      { key: 'edit', label: t('common.edit'), icon: Pencil, onClick: () => startEdit(p), testId: `button-edit-cp-${p.id}` },
+                      { key: 'delete', label: t('admin.personaLib.removeFromLibrary'), icon: Trash2, tone: 'danger' as const, onClick: () => removePersona(p), disabled: deleting === p.id, testId: `button-delete-cp-${p.id}` },
+                    ] : []),
+                  ]}
+                />
               </li>
             ))}
           </ul>

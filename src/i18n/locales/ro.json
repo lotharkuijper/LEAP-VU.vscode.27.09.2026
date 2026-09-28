@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Aproape! Citește sfaturile tutorului tău, mai exersează puțin și apoi întreabă din nou.",
   "achievements.notice.notYet": "Încă nu — nicio problemă. Pune în practică sfaturile tutorului tău și încearcă din nou mai târziu.",
   "achievements.notice.tooShort": "Bravo! O conversație contează pentru o realizare doar dacă ai pus tu câteva întrebări de conținut sau ai oferit explicații. Mai continuă puțin și apoi întreabă din nou.",
-  "achievements.notice.maxLevel": "Ești deja la cel mai înalt nivel: Expert. Felicitări!"
+  "achievements.notice.maxLevel": "Ești deja la cel mai înalt nivel: Expert. Felicitări!",
+  "common.more": "Mai mult",
+  "common.moreActions": "Mai multe acțiuni"
 }

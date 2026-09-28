@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Quase! Lê as dicas do teu tutor, pratica mais um pouco e depois pergunta novamente.",
   "achievements.notice.notYet": "Ainda não — sem problema. Trabalha as dicas do teu tutor e tenta novamente mais tarde.",
   "achievements.notice.tooShort": "Bom trabalho! Uma conversa só conta para uma conquista se tiveres feito algumas perguntas substantivas ou dado alguma explicação. Continua mais um pouco e volta a perguntar.",
-  "achievements.notice.maxLevel": "Já estás no nível mais alto: Especialista. Excelente!"
+  "achievements.notice.maxLevel": "Já estás no nível mais alto: Especialista. Excelente!",
+  "common.more": "Mais",
+  "common.moreActions": "Mais ações"
 }

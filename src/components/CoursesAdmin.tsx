@@ -19,6 +19,7 @@ import { useLanguage } from '../i18n';
 import { Tooltip } from './help/Tooltip';
 import { AdminHint } from './help/AdminHint';
 import { HelpTip } from './help/HelpTip';
+import { ListRow, StatusBadge } from './ui/ListRow';
 
 interface CourseRow {
   id: string;
@@ -844,149 +845,66 @@ export default function CoursesAdmin() {
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium text-gray-900" data-testid={`text-course-name-${c.id}`}>
-                            {c.name}
-                          </div>
-                          {c.description && (
-                            <div className="text-xs text-gray-500 mt-0.5">{c.description}</div>
-                          )}
-                          <div
-                            className="text-[11px] text-gray-500 mt-0.5"
-                            data-testid={`text-cue-max-${c.id}`}
-                          >
-                            {t('coursesAdmin.row.cueRange', { value: String(c.cue_delta_max ?? 2) })}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span
-                            className={
-                              c.is_active
-                                ? 'text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800'
-                                : 'text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-700'
-                            }
-                            data-testid={`status-course-active-${c.id}`}
-                          >
-                            {c.is_active ? t('chooseCourse.active') : t('coursesAdmin.row.inactive')}
-                          </span>
-                          <span
-                            className={
-                              c.student_visible
-                                ? 'text-xs font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-800'
-                                : 'text-xs font-medium px-2 py-0.5 rounded-full bg-orange-100 text-orange-800'
-                            }
-                            title={
-                              c.student_visible
-                                ? t('coursesAdmin.row.visibleTitle')
-                                : t('coursesAdmin.row.hiddenTitle')
-                            }
-                            data-testid={`status-course-visible-${c.id}`}
-                          >
-                            {c.student_visible ? t('coursesAdmin.row.available') : t('coursesAdmin.row.unavailable')}
-                          </span>
-                          {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => startEdit(c)}
-                            disabled={rowBusyId === c.id}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                            title={t('coursesAdmin.row.editTitle')}
-                            data-testid={`button-edit-course-${c.id}`}
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                            {t('coursesAdmin.row.edit')}
-                          </button>
-                          )}
-                          {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => toggleActive(c)}
-                            disabled={rowBusyId === c.id}
-                            className={
-                              c.is_active
-                                ? 'inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-amber-50 transition-colors'
-                                : 'inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-green-50 transition-colors'
-                            }
-                            title={c.is_active ? t('coursesAdmin.row.deactivateTitle') : t('coursesAdmin.row.activateTitle')}
-                            data-testid={`button-toggle-active-${c.id}`}
-                          >
-                            {rowBusyId === c.id ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Power className="w-3.5 h-3.5" />
-                            )}
-                            {c.is_active ? t('coursesAdmin.row.deactivate') : t('coursesAdmin.row.activate')}
-                          </button>
-                          )}
-                          {(isAdmin || myTeacherCourseIds.has(c.id)) && (
-                            <button
-                              type="button"
-                              onClick={() => toggleAvailability(c)}
-                              disabled={rowBusyId === c.id}
-                              className={
-                                c.student_visible
-                                  ? 'inline-flex items-center gap-1 text-xs font-medium text-orange-700 hover:text-orange-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-orange-50 transition-colors'
-                                  : 'inline-flex items-center gap-1 text-xs font-medium text-green-700 hover:text-green-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-green-50 transition-colors'
-                              }
-                              title={
-                                c.student_visible
-                                  ? t('coursesAdmin.row.hideTitle')
-                                  : t('coursesAdmin.row.showTitle')
-                              }
-                              data-testid={`button-toggle-availability-${c.id}`}
+                      <ListRow
+                        testId={`row-course-main-${c.id}`}
+                        menuTestId={`button-more-course-${c.id}`}
+                        title={<span data-testid={`text-course-name-${c.id}`}>{c.name}</span>}
+                        badges={
+                          <>
+                            <StatusBadge tone={c.is_active ? 'success' : 'neutral'} testId={`status-course-active-${c.id}`}>
+                              {c.is_active ? t('chooseCourse.active') : t('coursesAdmin.row.inactive')}
+                            </StatusBadge>
+                            <StatusBadge
+                              tone={c.student_visible ? 'success' : 'warning'}
+                              title={c.student_visible ? t('coursesAdmin.row.visibleTitle') : t('coursesAdmin.row.hiddenTitle')}
+                              testId={`status-course-visible-${c.id}`}
                             >
-                              {rowBusyId === c.id ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : c.student_visible ? (
-                                <EyeOff className="w-3.5 h-3.5" />
-                              ) : (
-                                <Eye className="w-3.5 h-3.5" />
-                              )}
-                              {c.student_visible ? t('coursesAdmin.row.makeUnavailable') : t('coursesAdmin.row.makeAvailable')}
-                            </button>
-                          )}
-                          {(isAdmin || myTeacherCourseIds.has(c.id)) && (
-                            <button
-                              type="button"
-                              onClick={() => openMembersDialog(c)}
-                              disabled={rowBusyId === c.id}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-blue-50 transition-colors"
-                              title={t('coursesAdmin.row.manageMembersTitle')}
-                              data-testid={`button-manage-members-primary-${c.id}`}
-                            >
-                              <Users className="w-3.5 h-3.5" />
-                              {t('admin.users.manageCourseMembers')}
-                            </button>
-                          )}
-                          {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => requestDelete(c)}
-                            disabled={rowBusyId === c.id}
-                            className="inline-flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-900 disabled:text-gray-400 px-2 py-1 rounded hover:bg-red-50 transition-colors"
-                            title={t('coursesAdmin.row.deleteTitle')}
-                            data-testid={`button-delete-course-${c.id}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            {t('coursesAdmin.delete')}
-                          </button>
-                          )}
-                          {isAdmin && (
-                            <button
-                              type="button"
-                              onClick={() => requestCascadeDelete(c)}
-                              disabled={rowBusyId === c.id}
-                              className="inline-flex items-center gap-1 text-xs font-medium text-white bg-red-700 hover:bg-red-800 disabled:bg-gray-300 disabled:text-gray-100 px-2 py-1 rounded transition-colors"
-                              title={t('coursesAdmin.row.cascadeTitle')}
-                              data-testid={`button-cascade-delete-course-${c.id}`}
-                            >
-                              <Flame className="w-3.5 h-3.5" />
-                              {t('coursesAdmin.row.cascade')}
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                              {c.student_visible ? t('coursesAdmin.row.available') : t('coursesAdmin.row.unavailable')}
+                            </StatusBadge>
+                          </>
+                        }
+                        meta={
+                          <>
+                            {c.description && <div>{c.description}</div>}
+                            <div className="text-[11px]" data-testid={`text-cue-max-${c.id}`}>
+                              {t('coursesAdmin.row.cueRange', { value: String(c.cue_delta_max ?? 2) })}
+                            </div>
+                          </>
+                        }
+                        actions={[
+                          ...(isAdmin ? [{
+                            key: 'edit', label: t('coursesAdmin.row.edit'), icon: Pencil, tone: 'primary' as const,
+                            title: t('coursesAdmin.row.editTitle'), onClick: () => startEdit(c),
+                            disabled: rowBusyId === c.id, testId: `button-edit-course-${c.id}`,
+                          }] : []),
+                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
+                            key: 'members', label: t('admin.users.manageCourseMembers'), icon: Users, tone: 'primary' as const,
+                            title: t('coursesAdmin.row.manageMembersTitle'), onClick: () => openMembersDialog(c),
+                            disabled: rowBusyId === c.id, testId: `button-manage-members-primary-${c.id}`,
+                          }, {
+                            key: 'availability',
+                            label: c.student_visible ? t('coursesAdmin.row.makeUnavailable') : t('coursesAdmin.row.makeAvailable'),
+                            icon: c.student_visible ? EyeOff : Eye, tone: (c.student_visible ? 'warning' : 'success') as 'warning' | 'success',
+                            title: c.student_visible ? t('coursesAdmin.row.hideTitle') : t('coursesAdmin.row.showTitle'),
+                            onClick: () => toggleAvailability(c), busy: rowBusyId === c.id,
+                            testId: `button-toggle-availability-${c.id}`,
+                          }] : []),
+                          ...(isAdmin ? [{
+                            key: 'active', label: c.is_active ? t('coursesAdmin.row.deactivate') : t('coursesAdmin.row.activate'),
+                            icon: Power, tone: (c.is_active ? 'warning' : 'success') as 'warning' | 'success',
+                            title: c.is_active ? t('coursesAdmin.row.deactivateTitle') : t('coursesAdmin.row.activateTitle'),
+                            onClick: () => toggleActive(c), busy: rowBusyId === c.id, testId: `button-toggle-active-${c.id}`,
+                          }, {
+                            key: 'delete', label: t('coursesAdmin.delete'), icon: Trash2, tone: 'danger' as const,
+                            title: t('coursesAdmin.row.deleteTitle'), onClick: () => requestDelete(c),
+                            disabled: rowBusyId === c.id, testId: `button-delete-course-${c.id}`,
+                          }, {
+                            key: 'cascade', label: t('coursesAdmin.row.cascade'), icon: Flame, tone: 'danger' as const,
+                            title: t('coursesAdmin.row.cascadeTitle'), onClick: () => requestCascadeDelete(c),
+                            disabled: rowBusyId === c.id, testId: `button-cascade-delete-course-${c.id}`,
+                          }] : []),
+                        ]}
+                      />
                       {rowErrors[c.id] && (
                         <div
                           className="flex flex-col gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2"

@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Neredeyse! Eğitmeninin ipuçlarını oku, biraz daha pratik yap ve ardından tekrar sor.",
   "achievements.notice.notYet": "Henüz değil — sorun değil. Eğitmeninin ipuçlarını uygula ve daha sonra tekrar dene.",
   "achievements.notice.tooShort": "İyi gidiyorsun! Bir konuşmanın achievement için sayılabilmesi için içinde senin de birkaç içerikli soru sorman veya açıklama yapman gerekir. Biraz daha devam et ve sonra tekrar sor.",
-  "achievements.notice.maxLevel": "Zaten en yüksek seviyedesin: Uzman. Harika!"
+  "achievements.notice.maxLevel": "Zaten en yüksek seviyedesin: Uzman. Harika!",
+  "common.more": "Daha fazla",
+  "common.moreActions": "Daha fazla işlem"
 }

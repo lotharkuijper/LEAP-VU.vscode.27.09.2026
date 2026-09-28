@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "거의 다 됐어! 튜터의 팁을 읽고 조금 더 연습한 뒤 다시 물어봐.",
   "achievements.notice.notYet": "아직은 아니야 — 괜찮아. 튜터의 팁을 적용해 보고 나중에 다시 시도해 봐.",
   "achievements.notice.tooShort": "잘하고 있어! 대화에서 네가 직접 내용이 있는 질문이나 설명을 몇 가지 해야 achievement에 반영돼. 조금만 더 진행한 다음 다시 요청해 봐.",
-  "achievements.notice.maxLevel": "이미 최고 레벨인 Expert에 도달했어. 멋져!"
+  "achievements.notice.maxLevel": "이미 최고 레벨인 Expert에 도달했어. 멋져!",
+  "common.more": "더 보기",
+  "common.moreActions": "더 많은 작업"
 }

@@ -185,8 +185,8 @@ export function LearningLevelsAdminTab() {
               </p>
             </div>
           ) : (
-            <div className="chic-card overflow-hidden">
-              <table className="w-full text-sm" data-testid="table-learning-levels">
+            <div className="chic-card overflow-x-auto">
+              <table className="w-full min-w-[32rem] text-sm" data-testid="table-learning-levels">
                 <thead>
                   <tr className="border-b border-gray-100 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     <th className="px-4 py-2.5">{t('admin.learningLevels.colName')}</th>

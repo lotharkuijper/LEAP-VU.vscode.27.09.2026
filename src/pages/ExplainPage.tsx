@@ -803,8 +803,8 @@ export function ExplainPage() {
         </div>
 
         <div className="chic-card p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <h2 className="min-w-0 text-lg font-bold text-gray-900 flex items-center gap-2">
               <History className="w-5 h-5 text-amber-600" />
               {t('explain.previouslyExplained')}
             </h2>

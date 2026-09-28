@@ -89,11 +89,14 @@ export function ImportsHubPanel({ onNavigateToQuizSources, onNavigateToMaterial 
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 items-start">
-        <div className="w-full md:w-56 flex-shrink-0 space-y-2">
+      {/* Bibliotheekkeuze pas vanaf xl naast de inhoud: in Beheer staan er al twee
+          menu's links, en een derde kolom liet te weinig ruimte over. */}
+      <div className="flex flex-col xl:flex-row gap-6 xl:items-start">
+        <div className="w-full xl:w-56 flex-shrink-0 space-y-2">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">
             {t('admin.imports.librariesLabel')}
           </p>
+          <div className="grid gap-2 grid-cols-[repeat(auto-fill,minmax(min(13rem,100%),1fr))] xl:grid-cols-1">
           {sources.map(s => {
             const Icon = s.icon;
             const isActive = s.id === active.id;
@@ -123,6 +126,7 @@ export function ImportsHubPanel({ onNavigateToQuizSources, onNavigateToMaterial 
           >
             <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>{t('admin.imports.moreComing')}</span>
+          </div>
           </div>
         </div>
 

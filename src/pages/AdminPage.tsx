@@ -145,8 +145,8 @@ function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deleting
           />
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2 flex-wrap">
               {onOpenDetails ? (
                 <button
                   type="button"
@@ -1525,8 +1525,8 @@ const tabGroups = [
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('admin.header.title')}</h1>
           <p className="text-gray-600">
             {isAdmin ? t('admin.header.subtitleAdmin') : t('admin.header.subtitleDocent')}
@@ -1541,10 +1541,10 @@ const tabGroups = [
 </div>
 
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-shrink-0 flex-row-reverse flex-wrap items-center justify-end gap-2 sm:flex-col sm:items-end">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Home className="w-5 h-5" />
             <span>{t('admin.header.backToDashboard')}</span>
@@ -1596,7 +1596,7 @@ const tabGroups = [
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-4 items-start">
+      <div className="flex flex-col md:flex-row gap-4 md:items-start">
 
         {/* Mobiel: dropdown */}
         <div className="md:hidden w-full">
@@ -1821,7 +1821,7 @@ const tabGroups = [
                                 {expanded
                                   ? <ChevronDown className="w-4 h-4 text-gray-500" />
                                   : <ChevronRight className="w-4 h-4 text-gray-500" />}
-                                <span>{user.full_name || '-'}</span>
+                                <span className="whitespace-nowrap">{user.full_name || '-'}</span>
                               </button>
                             </td>
                             <td className="py-3 px-4">{user.email}</td>
@@ -2050,11 +2050,11 @@ const tabGroups = [
 
           {(activeTab === 'concepts' || (activeTab === 'material' && materialStep === 'concepts')) && (
             <div className={`space-y-4 ${activeTab === 'material' ? 'mt-4' : ''}`}>
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-[min(100%,16rem)] flex-1">
                   <AdminHint variant="intro">{t('admin.concepts.subtitle')}</AdminHint>
                   {activeCourse && (
-                    <p className="text-sm text-blue-600 mt-1 flex items-center gap-1">
+                    <p className="text-sm text-blue-600 mt-1 flex flex-wrap items-center gap-x-1">
                       <GraduationCap className="w-4 h-4" />
                       {t('admin.concepts.activeCourse')} <strong>{activeCourse.name}</strong>
                       {courseConcepts.length === 0 && <span className="text-amber-600 ml-1">{t('admin.concepts.noCourseConceptsYet')}</span>}
@@ -2085,7 +2085,7 @@ const tabGroups = [
                     <p className="text-xs text-gray-400 mt-2" data-testid="text-last-extraction">{t('admin.concepts.neverRegenerated')}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {activeCourseId && (
                     <button
                       onClick={handleRegenerateConcepts}
@@ -2108,7 +2108,7 @@ const tabGroups = [
                   )}
                   <button
                     onClick={() => { setAddConceptForm(v => !v); setAddConceptError(null); setAddConceptSuccess(false); }}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg flex items-center gap-2"
+                    className="whitespace-nowrap flex-shrink-0 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg flex items-center gap-2"
                     data-testid="button-toggle-add-concept"
                   >
                     <Plus className="w-4 h-4" />
@@ -2473,7 +2473,7 @@ const tabGroups = [
                                               {diffAllSelected ? t('admin.concepts.deselectAll') : t('admin.concepts.selectAll')}
                                             </button>
                                           </div>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(18rem,100%),1fr))] gap-3">
                                             {diffItems.map((concept) => {
                                               const isRagExtracted = (concept.key_points || []).includes('[RAG-geëxtraheerd uit cursusmateriaal]');
                                               const sourceLabel = isRagExtracted ? t('admin.concepts.sourceAI') : t('admin.concepts.sourceCourse');
@@ -2528,7 +2528,7 @@ const tabGroups = [
                     <p className="text-sm">{t('admin.concepts.noGlobalConcepts')}</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(min(18rem,100%),1fr))] gap-3">
                     {globalConcepts.map(concept => (
                       <ConceptCard
                         key={concept.id}
@@ -2650,9 +2650,9 @@ const tabGroups = [
                   {/* ── Chat (alleen admin: globale hoofdchat-prompt) ── */}
                   {isAdmin && (
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
                       <MessageSquareText className="w-5 h-5 text-blue-600" />
-                      <h3 className="text-base font-bold text-gray-900">{t('admin.prompts.chatTitle')}</h3>
+                      <h3 className="whitespace-nowrap text-base font-bold text-gray-900">{t('admin.prompts.chatTitle')}</h3>
                       <span className="text-xs text-gray-400">— {t('admin.prompts.chatDesc')}</span>
                     </div>
                     <div className="space-y-2">
@@ -2685,9 +2685,9 @@ const tabGroups = [
 
                   {/* ── Ik Leg Uit ── */}
                   <div>
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-3">
                       <Sparkles className="w-5 h-5 text-purple-600" />
-                      <h3 className="text-base font-bold text-gray-900">{t('admin.prompts.explainTitle')}</h3>
+                      <h3 className="whitespace-nowrap text-base font-bold text-gray-900">{t('admin.prompts.explainTitle')}</h3>
                       <span className="text-xs text-gray-400">— {t('admin.prompts.explainDesc')}</span>
                     </div>
                     {isAdmin && (
@@ -2882,16 +2882,16 @@ const tabGroups = [
                   {/* ── Projecten (alleen admin: globale project-agent-prompts) ── */}
                   {isAdmin && (
                   <div>
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-wrap items-center justify-between mb-3 gap-3">
                       <div className="flex items-center gap-2">
                         <GraduationCap className="w-5 h-5 text-green-600" />
-                        <h3 className="text-base font-bold text-gray-900">{t('admin.prompts.projectsTitle')}</h3>
+                        <h3 className="whitespace-nowrap text-base font-bold text-gray-900">{t('admin.prompts.projectsTitle')}</h3>
                         <span className="text-xs text-gray-400">— {t('admin.prompts.projectsDesc')}</span>
                       </div>
                       {promptsMigration?.hasSection !== false && (
                         <button
                           onClick={() => setShowNewProjectForm(v => !v)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                          className="whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                           data-testid="button-add-project-prompt"
                         >
                           <Plus className="w-4 h-4" />
@@ -3068,7 +3068,7 @@ const tabGroups = [
                   )}
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm border bg-gray-50 border-gray-200 text-gray-600">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-4 py-2.5 rounded-lg text-sm border bg-gray-50 border-gray-200 text-gray-600">
                   <Globe className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   {t('admin.ragSettings.globalDefaultDesc')}
                   {coursesWithOverrides.size > 0 && (
@@ -3323,7 +3323,7 @@ const tabGroups = [
                       onChange={e => setDiagnosticQuery(e.target.value)}
                       onKeyDown={e => { if (e.key === 'Enter' && !diagnosticLoading) runDiagnostic(); }}
                       placeholder={t('admin.ragSettings.diagnostic.placeholder')}
-                      className="flex-1 px-3 py-2 text-sm chic-input outline-none"
+                      className="min-w-0 flex-1 px-3 py-2 text-sm chic-input outline-none"
                       data-testid="input-diagnostic-query"
                     />
                     <button

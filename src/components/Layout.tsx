@@ -257,8 +257,9 @@ export function Layout({ children }: LayoutProps) {
           </div>
         </aside>
 
-        {/* MAIN CONTENT */}
-        <main className="flex-1 p-4 md:p-8">
+        {/* MAIN CONTENT — min-w-0: een flex-item mag anders nooit smaller worden
+            dan zijn breedste inhoud, en duwt dan op een telefoon de hele pagina breder. */}
+        <main className="flex-1 min-w-0 p-4 md:p-8">
           {children}
         </main>
       </div>

@@ -908,7 +908,7 @@ export function QuizPage() {
             {/* QUESTION TYPE */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">{t('quiz.questionTypeLabel')}</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(10rem,100%),1fr))] gap-3">
                 {(Object.keys(QUESTION_TYPE_META) as QuestionType[]).map(qtype => {
                   const meta = QUESTION_TYPE_META[qtype];
                   const Icon = meta.icon;

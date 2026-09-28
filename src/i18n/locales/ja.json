@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "あと少し！チューターからのヒントを読んで、もう少し練習してから、もう一度聞いてみよう。",
   "achievements.notice.notYet": "まだです。でも大丈夫。チューターからのヒントに取り組んで、あとでもう一度試してみよう。",
   "achievements.notice.tooShort": "いい調子！会話がアチーブメントにカウントされるのは、自分で内容のある質問をいくつかしたり、説明をしたりしてからだよ。もう少し続けてから、もう一度確認してみて。",
-  "achievements.notice.maxLevel": "すでに最高レベルのエキスパートに到達しているよ。すごい！"
+  "achievements.notice.maxLevel": "すでに最高レベルのエキスパートに到達しているよ。すごい！",
+  "common.more": "もっと見る",
+  "common.moreActions": "その他の操作"
 }

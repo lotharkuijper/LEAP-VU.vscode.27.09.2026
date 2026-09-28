@@ -13,7 +13,7 @@ export function HelpToggle({ className = '' }: { className?: string }) {
       aria-checked={visible}
       onClick={() => setHelpVisible(!visible)}
       title={visible ? t('help.toggle.on') : t('help.toggle.off')}
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${visible ? 'border-sky-300 bg-sky-50 text-sky-800' : 'border-gray-200 bg-white text-gray-500 hover:text-gray-700'} ${className}`}
+      className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1 text-xs font-medium transition-colors ${visible ? 'border-sky-300 bg-sky-50 text-sky-800' : 'border-gray-200 bg-white text-gray-500 hover:text-gray-700'} ${className}`}
       data-testid="toggle-help-visible"
     >
       <HelpCircle className="w-3.5 h-3.5" />

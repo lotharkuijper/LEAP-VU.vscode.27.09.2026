@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Hampir! Baca tips dari tutormu, berlatih sebentar lagi, lalu tanyakan lagi.",
   "achievements.notice.notYet": "Belum — tidak masalah. Kerjakan tips dari tutormu dan coba lagi nanti.",
   "achievements.notice.tooShort": "Bagus! Sebuah percakapan baru dihitung untuk achievement jika kamu sendiri sudah mengajukan beberapa pertanyaan berbobot atau memberikan penjelasan di dalamnya. Lanjutkan sebentar lagi, lalu minta lagi.",
-  "achievements.notice.maxLevel": "Kamu sudah berada di level tertinggi: Expert. Hebat!"
+  "achievements.notice.maxLevel": "Kamu sudah berada di level tertinggi: Expert. Hebat!",
+  "common.more": "Lainnya",
+  "common.moreActions": "Tindakan lainnya"
 }

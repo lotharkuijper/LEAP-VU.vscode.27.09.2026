@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "差少少！睇吓你導師嘅貼士，再練習一陣，之後再問一次。",
   "achievements.notice.notYet": "仲未得——唔緊要。跟住你導師嘅貼士做，遲啲再試多次。",
   "achievements.notice.tooShort": "做得好！一次對話要計入 achievement，你自己要喺入面問幾條有內容嘅問題，或者提供啲解釋。再繼續多陣，然後再問過。",
-  "achievements.notice.maxLevel": "你已經去到最高級別：Expert。好叻！"
+  "achievements.notice.maxLevel": "你已經去到最高級別：Expert。好叻！",
+  "common.more": "更多",
+  "common.moreActions": "更多操作"
 }

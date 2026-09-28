@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "Presque ! Lis les conseils de ton tuteur, entraîne-toi encore un peu, puis redemande.",
   "achievements.notice.notYet": "Pas encore — ce n’est pas grave. Travaille les conseils de ton tuteur et réessaie plus tard.",
   "achievements.notice.tooShort": "Bien joué ! Une conversation ne compte pour un achievement que si tu y as toi-même posé quelques questions de fond ou donné des explications. Continue encore un peu, puis redemande.",
-  "achievements.notice.maxLevel": "Tu es déjà au niveau le plus élevé : Expert. Bravo !"
+  "achievements.notice.maxLevel": "Tu es déjà au niveau le plus élevé : Expert. Bravo !",
+  "common.more": "Plus",
+  "common.moreActions": "Plus d’actions"
 }

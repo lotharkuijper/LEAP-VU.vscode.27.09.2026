@@ -54,7 +54,9 @@ export function HelpTip({ id, className = '' }: { id: HelpId; className?: string
   if (!visible) return null;
 
   return (
-    <span ref={wrapRef} className={`relative inline-flex align-middle ${className}`}>
+    // Wie de HelpTip zelf positioneert (absolute/fixed), krijgt geen `relative`:
+    // die wint in Tailwind van `absolute` en zette het vraagteken dan ónder de kaart.
+    <span ref={wrapRef} className={`${/\b(absolute|fixed)\b/.test(className) ? '' : 'relative '}inline-flex align-middle ${className}`}>
       <button
         ref={buttonRef}
         type="button"

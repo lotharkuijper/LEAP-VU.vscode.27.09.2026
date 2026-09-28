@@ -132,7 +132,9 @@ export function CourseMaterialWorkspace({
       </header>
 
       {/* Stappenbalk met status per stap */}
-      <nav className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4" aria-label={t('material.title')}>
+      {/* Kolommen naar de beschikbare ruimte (niet naar de schermbreedte): in Beheer is
+          het inhoudsvak veel smaller dan het scherm. */}
+      <nav className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(min(11.5rem,100%),1fr))]" aria-label={t('material.title')}>
         {MATERIAL_STEPS.map((s, i) => {
           const active = s === step;
           const issues = s === 'ready'

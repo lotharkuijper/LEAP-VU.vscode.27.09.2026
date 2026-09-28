@@ -293,7 +293,7 @@ export function RAGDocumentStatusPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="font-semibold text-gray-900">
             {t('ragStatus.panel.title', { name: activeCourse?.name ?? '' })}
@@ -307,10 +307,10 @@ export function RAGDocumentStatusPanel() {
             )}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setFilterMode(filterMode === 'all' ? 'failed' : 'all')}
-            className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+            className={`whitespace-nowrap px-3 py-1.5 text-sm rounded-lg transition-colors ${
               filterMode === 'failed'
                 ? 'bg-amber-100 text-amber-800 font-medium'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

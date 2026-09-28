@@ -693,7 +693,7 @@ export function QuizSourcesAdminPanel() {
           <button
             type="button"
             onClick={() => toggleCollapsed('coverage')}
-            className="flex items-center gap-2 flex-1 text-left"
+            className="flex flex-wrap items-center gap-2 flex-1 text-left"
             aria-expanded={!collapsed.coverage}
             title={collapsed.coverage ? t('admin.quizSources.toggleExpand') : t('admin.quizSources.toggleCollapse')}
             data-testid="button-toggle-coverage"
@@ -701,7 +701,7 @@ export function QuizSourcesAdminPanel() {
             <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${collapsed.coverage ? '-rotate-90' : ''}`} />
             <BarChart3 className="w-4 h-4" /> {t('admin.quizSources.coverage.title')}
             {coverage.length > 0 && coverageGaps > 0 && (
-              <span className="ml-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700" data-testid="badge-coverage-gaps">
+              <span className="ml-1 whitespace-nowrap text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700" data-testid="badge-coverage-gaps">
                 {t('admin.quizSources.coverage.gapsBadge', { count: String(coverageGaps) })}
               </span>
             )}
@@ -1188,7 +1188,7 @@ export function QuizSourcesAdminPanel() {
             data-testid="textarea-csv-text"
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <input
             type="file"
             accept=".csv,text/csv"
@@ -1204,7 +1204,7 @@ export function QuizSourcesAdminPanel() {
             type="button"
             onClick={handleImportCsv}
             disabled={csvImporting || csvText.trim().length === 0}
-            className="px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-700 disabled:opacity-50 inline-flex items-center gap-2"
+            className="whitespace-nowrap flex-shrink-0 px-4 py-2 bg-sky-600 text-white text-sm font-medium rounded-lg hover:bg-sky-700 disabled:opacity-50 inline-flex items-center gap-2"
             data-testid="button-csv-import"
           >
             {csvImporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -1321,15 +1321,15 @@ export function QuizSourcesAdminPanel() {
 
 function MixField({ label, value, onChange, testId }: { label: string; value: number; onChange: (v: number) => void; testId: string }) {
   return (
-    <div className="flex items-center gap-3">
-      <label className="text-xs font-medium text-gray-700 w-44 shrink-0">{label}</label>
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+      <label className="w-full text-xs font-medium text-gray-700 sm:w-44 sm:shrink-0">{label}</label>
       <input
         type="range"
         min={0}
         max={100}
         value={value}
         onChange={e => onChange(parseInt(e.target.value, 10))}
-        className="w-44 max-w-full"
+        className="min-w-0 flex-1 sm:w-44 sm:flex-none"
         data-testid={testId}
       />
       <input

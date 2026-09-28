@@ -134,15 +134,15 @@ export function ResourcesPage() {
       <span className="text-xl flex-shrink-0">{getFileIcon(resource.file_type)}</span>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-gray-900 text-sm truncate">{resource.name}</p>
-        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-400">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-400">
           {resource.folder_name && (
             <span className="flex items-center gap-1">
               <FolderOpen className="w-3 h-3" />
               {resource.folder_name}
             </span>
           )}
-          {resource.file_size > 0 && <span>{formatFileSize(resource.file_size)}</span>}
-          <span>{new Date(resource.created_at).toLocaleDateString(t('common.locale'))}</span>
+          {resource.file_size > 0 && <span className="whitespace-nowrap">{formatFileSize(resource.file_size)}</span>}
+          <span className="whitespace-nowrap">{new Date(resource.created_at).toLocaleDateString(t('common.locale'))}</span>
         </div>
         {resource.description && (
           <p className="text-xs text-gray-500 mt-0.5 truncate">{resource.description}</p>

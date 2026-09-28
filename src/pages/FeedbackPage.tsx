@@ -403,8 +403,8 @@ export function FeedbackPage() {
 
   return (
     <div className="space-y-6" data-testid="page-leerdagboek">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-[min(100%,16rem)] flex-1">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('feedback.title')}</h1>
           <p className="text-gray-600">
             {t('feedback.subtitle')}
@@ -413,7 +413,7 @@ export function FeedbackPage() {
         <button
           onClick={() => (showForm ? resetForm() : openFormForSection('reflection'))}
           data-testid="btn-toggle-form"
-          className="px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg flex items-center gap-2"
+          className="whitespace-nowrap flex-shrink-0 px-4 py-2 bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold rounded-lg hover:from-teal-600 hover:to-teal-700 transition-all shadow-lg flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           {t('feedback.newEntry')}

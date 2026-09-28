@@ -328,12 +328,12 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
     <div className="space-y-4">
       {switcher}
       <div className="chic-card p-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-wrap items-center justify-between mb-3 gap-3">
           <div>
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FolderOpen className="w-5 h-5" />{t('admin.projects.title')}<HelpTip id="projects.overview" /></h2>
             <p className="text-sm text-gray-500">{activeCourse ? t('admin.projects.courseLabel', { name: activeCourse.name }) : t('admin.projects.allCourses')}.</p>
           </div>
-          <button onClick={() => startEdit(null)} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-testid="button-add-project">
+          <button onClick={() => startEdit(null)} className="whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-testid="button-add-project">
             <Plus className="w-4 h-4" />{t('admin.projects.addBtn')}
           </button>
         </div>
@@ -371,7 +371,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
 
       {activeCourseId && (
         <div className="chic-card p-5" data-testid="section-course-submissions">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <FileText className="w-4 h-4" /> {t('admin.projects.subs.courseTitle')}
@@ -380,7 +380,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
             </div>
             <button
               onClick={() => setShowCourseSubs(s => !s)}
-              className="px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 rounded"
+              className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 rounded"
               data-testid="button-toggle-course-submissions"
             >
               {showCourseSubs ? t('admin.projects.subs.hide') : t('admin.projects.subs.show')}

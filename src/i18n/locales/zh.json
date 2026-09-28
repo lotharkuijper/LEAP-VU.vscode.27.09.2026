@@ -2638,5 +2638,7 @@
   "achievements.notice.almost": "差一点！阅读导师给你的建议，再练习一下，然后再次提问。",
   "achievements.notice.notYet": "还没有——没关系。根据导师的建议继续完善，稍后再试一次。",
   "achievements.notice.tooShort": "做得不错！只有当你自己提出了几个有实质内容的问题或作出解释时，一次对话才会计入成就。再继续一会儿，然后再来请求。",
-  "achievements.notice.maxLevel": "你已经达到最高等级：专家。真棒！"
+  "achievements.notice.maxLevel": "你已经达到最高等级：专家。真棒！",
+  "common.more": "更多",
+  "common.moreActions": "更多操作"
 }

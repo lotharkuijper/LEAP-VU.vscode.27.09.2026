@@ -461,10 +461,10 @@ export default function DocumentsPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full min-h-0 overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden sm:flex-row">
 
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
-      <aside className="w-56 shrink-0 border-r border-gray-200 flex flex-col overflow-hidden bg-gray-50">
+      <aside className="w-full max-h-64 shrink-0 border-b border-gray-200 flex flex-col overflow-hidden bg-gray-50 sm:w-56 sm:max-h-none sm:border-b-0 sm:border-r">
         <div className="px-3 py-2.5 border-b border-gray-200 shrink-0">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
             {t('documents.foldersLabel')}
