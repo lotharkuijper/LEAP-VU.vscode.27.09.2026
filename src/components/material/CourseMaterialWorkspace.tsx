@@ -16,6 +16,8 @@ import { FilesStep } from './FilesStep';
 import { PurposeReview } from './PurposeReview';
 import { ReadinessStep, WarningList, type MaterialStep } from './ReadinessStep';
 import { HelpTip } from '../help/HelpTip';
+import { ExtractionProgressText } from '../ExtractionProgressText';
+import { runConceptExtraction, type ExtractionProgress } from '../../lib/conceptExtractionJob';
 import { AdminHint } from '../help/AdminHint';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
@@ -54,6 +56,7 @@ export function CourseMaterialWorkspace({
   const [reviewDeferred, setReviewDeferred] = useState(false);
   const [findingNew, setFindingNew] = useState(false);
   const [findResult, setFindResult] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [findProgress, setFindProgress] = useState<ExtractionProgress | null>(null);
 
   // Nieuwe begrippen zoeken zonder de bestaande lijst (en eerdere goedkeuringen)
   // te vervangen: de server voegt alleen toe (replace:false) en meldt wat nieuw is.
@@ -63,11 +66,7 @@ export function CourseMaterialWorkspace({
     setFindResult(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/admin/extract-concepts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ courseId: activeCourseId, replace: false }),
-      });
+      const res = await runConceptExtraction({ courseId: activeCourseId, replace: false }, session?.access_token || '', setFindProgress);
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
       const names: string[] = (body.concepts || []).map((c: { name: string }) => c.name);
@@ -80,6 +79,7 @@ export function CourseMaterialWorkspace({
       setFindResult({ kind: 'error', text: t('material.concepts.findFailed', { error: err instanceof Error ? err.message : String(err) }) });
     } finally {
       setFindingNew(false);
+      setFindProgress(null);
     }
   };
 
@@ -220,6 +220,7 @@ export function CourseMaterialWorkspace({
               {findingNew ? t('material.concepts.findingNew') : t('material.concepts.findNew')}
             </button>
             <HelpTip id="material.findNewConcepts" />
+            {findingNew && <ExtractionProgressText progress={findProgress} />}
             {findResult && (
               <span className={`text-sm ${findResult.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} data-testid="text-find-new-result">{findResult.text}</span>
             )}

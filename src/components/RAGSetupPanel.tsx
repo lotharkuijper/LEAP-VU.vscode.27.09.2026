@@ -10,6 +10,8 @@ import { uploadDocument, UploadProgress } from '../services/document-upload.serv
 import { RAGDocumentStatusPanel } from './RAGDocumentStatusPanel';
 import { useLanguage } from '../i18n';
 import { Tooltip } from './help/Tooltip';
+import { ExtractionProgressText } from './ExtractionProgressText';
+import { runConceptExtraction, type ExtractionProgress } from '../lib/conceptExtractionJob';
 import { AdminHint } from './help/AdminHint';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.txt'];
@@ -88,6 +90,7 @@ export function RAGSetupPanel() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<ActiveSection>('upload');
   const [extracting, setExtracting] = useState(false);
+  const [extractProgress, setExtractProgress] = useState<ExtractionProgress | null>(null);
   const [extractResult, setExtractResult] = useState<{
     count: number;
     skipped: number;
@@ -209,19 +212,12 @@ export function RAGSetupPanel() {
     setExtractResult(null);
     setLowerThresholdNote(null);
     try {
-      const response = await fetch('/api/admin/extract-concepts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          courseId: activeCourseId,
-          replace: replaceMode,
-          language: conceptLanguage,
-          documentIds: selectedDocIds.size < processedDocs.length ? Array.from(selectedDocIds) : [],
-        }),
-      });
+      const response = await runConceptExtraction({
+        courseId: activeCourseId,
+        replace: replaceMode,
+        language: conceptLanguage,
+        documentIds: selectedDocIds.size < processedDocs.length ? Array.from(selectedDocIds) : [],
+      }, session.access_token, setExtractProgress);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || `Server error ${response.status}`);
@@ -247,6 +243,7 @@ export function RAGSetupPanel() {
       });
     } finally {
       setExtracting(false);
+      setExtractProgress(null);
     }
   };
 
@@ -450,6 +447,7 @@ export function RAGSetupPanel() {
               </div>
             )}
 
+            {extracting && <ExtractionProgressText progress={extractProgress} />}
             {extractResult && (
               <div
                 className={`mb-3 text-sm px-3 py-2.5 rounded-lg space-y-2 ${

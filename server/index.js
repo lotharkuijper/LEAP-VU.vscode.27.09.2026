@@ -167,6 +167,8 @@ import {
   consultationLimitMessage as conLimitMessage,
 } from './consultationLimit.js';
 import { applyRelationshipDeltaImpl } from './threadClose.js';
+import { randomUUID } from 'node:crypto';
+import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, mapLimit } from './conceptConsolidation.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
 import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
 import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countPriorStudentMessages, levelName, topicKey } from './readiness.js';
@@ -5340,7 +5342,144 @@ app.get('/api/admin/concepts-meta', async (req, res) => {
   }
 });
 
-app.post('/api/admin/extract-concepts', async (req, res) => {
+// Begrippen per document: kandidaten uit deze run (optioneel) en begrippen die
+// er nu voor de cursus staan (via source_document_ids). Een document met 0
+// begrippen is een signaal (niet stil accepteren).
+async function conceptCoverageByDocument(courseId, docIds, candidates = null) {
+  const { data: docs } = await supabaseAdmin.from('documents').select('id, title, filename').in('id', docIds);
+  const { data: rows } = await supabaseAdmin.from('concepts').select('source_document_ids').eq('course_id', courseId);
+  const counts = new Map();
+  for (const r of rows || []) for (const d of r.source_document_ids || []) counts.set(d, (counts.get(d) || 0) + 1);
+  const cand = new Map();
+  for (const c of candidates || []) for (const d of c.documentIds || []) cand.set(d, (cand.get(d) || 0) + 1);
+  return (docs || [])
+    .map((d) => ({ documentId: d.id, title: d.title || d.filename, concepts: counts.get(d.id) || 0, candidates: candidates ? (cand.get(d.id) || 0) : null }))
+    .sort((a, b) => String(a.title).localeCompare(String(b.title), 'nl', { numeric: true }));
+}
+
+// Leerstofdocumenten van een cursus (RAG-bronmappen, verwerkt, doel staat begrippen toe).
+async function conceptSourceDocIds(courseId) {
+  const { data: assignments } = await supabaseAdmin.from('course_folder_assignments').select('folder_id').eq('course_id', courseId);
+  const folderIds = (assignments || []).map((a) => a.folder_id);
+  if (!folderIds.length) return [];
+  const { data: ragFolders } = await supabaseAdmin.from('document_folders').select('id').in('id', folderIds).eq('folder_type', 'rag_sources');
+  const ragIds = (ragFolders || []).map((r) => r.id);
+  if (!ragIds.length) return [];
+  const { data: docs } = await supabaseAdmin.from('documents').select('id, purpose').in('folder_id', ragIds).eq('processing_status', 'completed');
+  return (docs || []).filter((d) => purposeAllowsModule(d.purpose, 'concepts')).map((d) => d.id);
+}
+
+async function requireConceptStaff(req, res, courseId) {
+  if (!supabaseAdmin) { res.status(503).json({ error: 'Admin client niet beschikbaar' }); return null; }
+  const auth = await authUser(req);
+  if (auth.error) { res.status(auth.error.status).json(auth.error.body); return null; }
+  if (!courseId) { res.status(400).json({ error: 'courseId is vereist' }); return null; }
+  const { data: profile } = await supabaseAdmin.from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+  if (!(await isStaffForCourse(auth.user, profile, courseId))) { res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' }); return null; }
+  return auth.user;
+}
+
+// Voorvoegsel __concepts_regen_ wordt overal uitgesloten waar prompts worden getoond/gekozen.
+const mergeDismissKey = (courseId) => `__concepts_regen_merge_dismissed_${courseId}__`;
+const groupSignature = (ids) => [...ids].sort().join('|');
+
+// GET /api/admin/concepts/coverage?courseId= — begrippen per leerstofdocument.
+app.get('/api/admin/concepts/coverage', async (req, res) => {
+  const courseId = String(req.query.courseId || '');
+  if (!(await requireConceptStaff(req, res, courseId))) return;
+  try {
+    const docIds = await conceptSourceDocIds(courseId);
+    return res.json({ documents: docIds.length ? await conceptCoverageByDocument(courseId, docIds) : [] });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/concepts/merge-suggestions?courseId= — twijfelgevallen
+// (synoniemen, afkortingen, vertalingen) als voorstel; de docent beslist.
+app.get('/api/admin/concepts/merge-suggestions', async (req, res) => {
+  const courseId = String(req.query.courseId || '');
+  if (!(await requireConceptStaff(req, res, courseId))) return;
+  if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
+  try {
+    const { data: rows } = await supabaseAdmin.from('concepts')
+      .select('id, name, definition, review_status').eq('course_id', courseId).order('name');
+    const list = rows || [];
+    if (list.length < 2) return res.json({ suggestions: [] });
+    const resp = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages: [{ role: 'user', content: buildSynonymPrompt(list) }],
+      ...chatModelParams({ temperature: 0, maxTokens: 4000 }),
+    });
+    if (!resp.ok) return res.status(502).json({ error: 'Het taalmodel kon geen voorstellen maken.' });
+    const data = await resp.json();
+    const groups = parseSynonymGroups(data.choices?.[0]?.message?.content || '', list.map((r) => r.name));
+    const byName = new Map(list.map((r) => [r.name, r]));
+    const { data: dismissedRow } = await supabaseAdmin.from('chatbot_prompts').select('content').eq('name', mergeDismissKey(courseId)).maybeSingle();
+    let dismissed = [];
+    try { dismissed = JSON.parse(dismissedRow?.content || '[]'); } catch { dismissed = []; }
+    const dismissedSet = new Set(dismissed);
+    const rank = { approved: 3, needs_review: 2, rejected: 1 };
+    const suggestions = [];
+    for (const g of groups) {
+      const members = [g.preferred, ...g.others].map((n) => byName.get(n)).filter(Boolean);
+      if (members.length < 2) continue;
+      if (dismissedSet.has(groupSignature(members.map((m) => m.id)))) continue;
+      // Voorkeur: de voorgestelde naam; bij een goedgekeurd begrip in de groep dat goedgekeurde.
+      const preferred = byName.get(g.preferred);
+      const best = [...members].sort((a, b) => (rank[b.review_status] || 0) - (rank[a.review_status] || 0))[0];
+      const keep = (rank[preferred?.review_status] || 0) >= (rank[best.review_status] || 0) ? preferred : best;
+      suggestions.push({
+        keep: { id: keep.id, name: keep.name, reviewStatus: keep.review_status },
+        others: members.filter((m) => m.id !== keep.id).map((m) => ({ id: m.id, name: m.name, reviewStatus: m.review_status })),
+      });
+    }
+    return res.json({ suggestions });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/concepts/merge { courseId, keepId, dupIds[] } — samenvoegen
+// (verwijzingen verhuizen, namen worden alias; zie merge_concepts in de DB).
+app.post('/api/admin/concepts/merge', async (req, res) => {
+  const { courseId, keepId, dupIds } = req.body || {};
+  if (!(await requireConceptStaff(req, res, courseId))) return;
+  if (!keepId || !Array.isArray(dupIds) || dupIds.length === 0) return res.status(400).json({ error: 'keepId en dupIds zijn vereist' });
+  try {
+    const ids = [keepId, ...dupIds];
+    const { data: rows } = await supabaseAdmin.from('concepts').select('id, course_id').in('id', ids);
+    if ((rows || []).length !== ids.length || rows.some((r) => r.course_id !== courseId)) {
+      return res.status(400).json({ error: 'Begrippen horen niet (allemaal) bij deze cursus' });
+    }
+    const { data: merged, error } = await supabaseAdmin.rpc('merge_concepts', { keep_id: keepId, dup_ids: dupIds });
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ merged: Number(merged) || 0 });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/concepts/merge-dismiss { courseId, ids[] } — voorstel negeren (blijft weg).
+app.post('/api/admin/concepts/merge-dismiss', async (req, res) => {
+  const { courseId, ids } = req.body || {};
+  if (!(await requireConceptStaff(req, res, courseId))) return;
+  if (!Array.isArray(ids) || ids.length < 2) return res.status(400).json({ error: 'ids zijn vereist' });
+  try {
+    const key = mergeDismissKey(courseId);
+    const { data: row } = await supabaseAdmin.from('chatbot_prompts').select('id, content').eq('name', key).maybeSingle();
+    let list = [];
+    try { list = JSON.parse(row?.content || '[]'); } catch { list = []; }
+    const next = [...new Set([...list, groupSignature(ids)])];
+    if (row) await supabaseAdmin.from('chatbot_prompts').update({ content: JSON.stringify(next), updated_at: new Date().toISOString() }).eq('id', row.id);
+    else await supabaseAdmin.from('chatbot_prompts').insert({ name: key, content: JSON.stringify(next), is_active: false });
+    return res.json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+async function extractConceptsHandler(req, res) {
   if (!supabaseAdmin) {
     return res.status(503).json({ error: 'Admin client not available — SUPABASE_SERVICE_ROLE_KEY missing' });
   }
@@ -5546,26 +5685,34 @@ app.post('/api/admin/extract-concepts', async (req, res) => {
       }
     }
 
-    const { data: chunks, error: chunksError } = await supabaseAdmin
-      .from('document_chunks')
-      .select('content, document_id')
-      .in('document_id', docIds)
-      .limit(80);
-
-    if (chunksError) {
-      console.error('[extract-concepts] chunks query error:', chunksError);
-      return res.status(500).json({ error: `Chunks ophalen mislukt: ${chunksError.message}` });
+    // De HELE cursus lezen (regressie: voorheen 80 willekeurige fragmenten en
+    // daarvan de eerste 14.000 tekens = 5% van E&B1, uit 3 van 16 documenten).
+    // Alle fragmenten, per document in volgorde, gebundeld tot vensters van
+    // ~12.000 tekens; elk venster gaat apart naar het taalmodel.
+    const chunks = [];
+    for (let from = 0; ; from += 1000) {
+      const { data: page, error: chunksError } = await supabaseAdmin
+        .from('document_chunks')
+        .select('content, document_id, chunk_index')
+        .in('document_id', docIds)
+        .order('document_id', { ascending: true })
+        .order('chunk_index', { ascending: true })
+        .range(from, from + 999);
+      if (chunksError) {
+        console.error('[extract-concepts] chunks query error:', chunksError);
+        return res.status(500).json({ error: `Chunks ophalen mislukt: ${chunksError.message}` });
+      }
+      chunks.push(...(page || []));
+      if (!page || page.length < 1000) break;
     }
 
-    if (!chunks || chunks.length === 0) {
+    if (chunks.length === 0) {
       await writeRegenTimestamp().catch(() => {});
       return res.json({ concepts: [], message: 'Geen document-chunks gevonden' });
     }
 
-    const combinedText = chunks
-      .map((c) => c.content)
-      .join('\n\n---\n\n')
-      .slice(0, 14000);
+    const windows = buildDocumentWindows(chunks);
+    console.log(`[extract-concepts] ${chunks.length} fragmenten uit ${new Set(chunks.map((c) => c.document_id)).size} documenten → ${windows.length} vensters`);
 
     // Taal-instructie voor naam + definitie.
     const languageDirective = {
@@ -5574,9 +5721,9 @@ app.post('/api/admin/extract-concepts', async (req, res) => {
       auto: '- name: the concept term in the SAME language as the course material below\n- definition: a clear 1-2 sentence definition in the SAME language as the course material below',
     }[conceptLanguage];
 
-    const extractionPrompt = `Je bent een vakexpert die universitair cursusmateriaal aan de VU Amsterdam analyseert.
+    const buildExtractionPrompt = (combinedText) => `Je bent een vakexpert die universitair cursusmateriaal aan de VU Amsterdam analyseert.
 
-Analyseer de onderstaande tekst uit universitair cursusmateriaal. Identificeer ALLE relevante vakbegrippen die studenten moeten kennen en kunnen uitleggen — ook als ze slechts terloops of impliciet in de tekst voorkomen. Wees volledig en breed: liever 30 begrippen dan 10.
+Analyseer de onderstaande tekst uit universitair cursusmateriaal. Identificeer ALLE relevante vakbegrippen die studenten moeten kennen en kunnen uitleggen — ook als ze slechts terloops of impliciet in de tekst voorkomen. Dit is één deel van de cursus: noem de vakbegrippen die in DIT deel aan bod komen (meestal 10 à 25). Geen alledaagse woorden die in elk vak voorkomen (zoals "effect", "metingen", "criterium", "correctie"), geen losse letters of symbolen (zoals "n", "x", "z"), geen formules (zoals "t = 0") en geen personen, dagen of voorbeelden uit een casus als kernbegrip.
 
 BELANGRIJK: kies de begripsnamen zó dat ze letterlijk of bijna-letterlijk in het onderstaande cursusmateriaal voorkomen, want de namen worden daarna automatisch tegen dat materiaal geverifieerd.
 
@@ -5626,11 +5773,11 @@ ${combinedText}`;
     // tweede poging faalt, geven we een Nederlandstalige melding terug
     // — en omdat de replace-stap pas later in deze handler draait,
     // verliest de cursus géén begrippen meer als de extractie crasht.
-    async function callOpenAI(maxRetries = 1) {
+    async function callOpenAI(prompt, maxRetries = 1) {
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         const resp = await openaiChatCompletion({
           model: OPENAI_MODEL,
-          messages: [{ role: 'user', content: extractionPrompt }],
+          messages: [{ role: 'user', content: prompt }],
           ...chatModelParams({ temperature: 0.2, maxTokens: 8192 }),
         });
         if (resp.ok) return { resp, errData: null };
@@ -5646,49 +5793,52 @@ ${combinedText}`;
       return { resp: null, errData: { error: { message: 'Onbereikbaar' } } };
     }
 
-    const { resp: llmResponse, errData: llmErrData } = await callOpenAI(1);
+    // JSON uit het antwoord halen; bij een afgekapt antwoord de complete
+    // objecten redden. Leeg = niets bruikbaars in dit venster.
+    function parseExtractedConcepts(rawContent) {
+      try {
+        const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
+        if (jsonMatch) return JSON.parse(jsonMatch[0]);
+      } catch { /* val terug op losse objecten */ }
+      const out = [];
+      for (const m of rawContent.matchAll(/\{\s*"name"\s*:\s*"[^"]+"\s*,[\s\S]*?\}/g)) {
+        try { const obj = JSON.parse(m[0]); if (obj.name && obj.definition) out.push(obj); } catch { /* skip */ }
+      }
+      return out;
+    }
 
-    if (!llmResponse || !llmResponse.ok) {
-      console.error('[extract-concepts] LLM error:', llmErrData);
+    // Per venster een aanroep (hooguit 3 tegelijk i.v.m. de tokenlimiet).
+    let windowsDone = 0;
+    req.__onProgress?.({ step: 'reading', done: 0, total: windows.length });
+    const windowResults = await mapLimit(windows, 4, async (w) => {
+      const result = await (async () => {
+      const { resp, errData } = await callOpenAI(buildExtractionPrompt(w.text), 1);
+      if (!resp || !resp.ok) return { documentId: w.documentId, error: errData, concepts: [] };
+      const data = await resp.json();
+      const list = parseExtractedConcepts(data.choices?.[0]?.message?.content || '');
+      return { documentId: w.documentId, concepts: Array.isArray(list) ? list : [] };
+      })();
+      windowsDone++;
+      req.__onProgress?.({ step: 'reading', done: windowsDone, total: windows.length });
+      console.log(`[extract-concepts] venster ${windowsDone}/${windows.length} klaar (${result.concepts.length} kandidaten${result.error ? ', MISLUKT' : ''})`);
+      return result;
+    });
+    const failedWindows = windowResults.filter((r) => r.error);
+    if (failedWindows.length === windowResults.length) {
+      const llmErrData = failedWindows[0]?.error;
+      console.error('[extract-concepts] LLM error (alle vensters):', llmErrData);
       const isRateLimit = llmErrData?.error?.code === 'rate_limit_exceeded';
       const friendly = isRateLimit
         ? 'De LLM-aanbieder heeft een token-limiet bereikt. Wacht een minuutje en probeer opnieuw, of selecteer minder documenten in één keer.'
         : 'LLM-extractie mislukt. Bestaande begrippen zijn ongemoeid gelaten.';
       return res.status(503).json({ error: friendly, details: llmErrData });
     }
-
-    const llmData = await llmResponse.json();
-    const rawContent = llmData.choices?.[0]?.message?.content || '';
-
-    let extractedConcepts = [];
-    try {
-      const jsonMatch = rawContent.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        extractedConcepts = JSON.parse(jsonMatch[0]);
-      }
-    } catch (parseErr) {
-      // Fallback: de LLM-respons is waarschijnlijk afgekapt (token-limiet).
-      // Probeer individuele complete JSON-objecten te redden uit de afgekapte array.
-      console.warn('[extract-concepts] Volledige JSON-parse mislukt, probeer partial recovery…', parseErr.message);
-      try {
-        const objectMatches = rawContent.matchAll(/\{\s*"name"\s*:\s*"[^"]+"\s*,[\s\S]*?\}/g);
-        for (const m of objectMatches) {
-          try {
-            const obj = JSON.parse(m[0]);
-            if (obj.name && obj.definition) extractedConcepts.push(obj);
-          } catch (_) { /* ongeldig object, skip */ }
-        }
-        if (extractedConcepts.length > 0) {
-          console.log(`[extract-concepts] Partial recovery: ${extractedConcepts.length} begrippen gered uit afgekapte respons`);
-        } else {
-          console.error('[extract-concepts] Partial recovery leverde 0 begrippen op. Raw:', rawContent.slice(0, 300));
-          return res.status(500).json({ error: 'Kon LLM-respons niet verwerken als JSON. De respons was waarschijnlijk te lang — probeer minder documenten tegelijk te selecteren.' });
-        }
-      } catch (recoverErr) {
-        console.error('[extract-concepts] JSON parse + recovery mislukt:', recoverErr, 'raw:', rawContent.slice(0, 200));
-        return res.status(500).json({ error: 'Kon LLM-respons niet verwerken als JSON. Probeer minder documenten tegelijk te selecteren.' });
-      }
+    if (failedWindows.length > 0) {
+      console.warn(`[extract-concepts] ${failedWindows.length} van ${windowResults.length} vensters mislukt; de rest wordt verwerkt.`);
     }
+    // Elk kandidaat-begrip onthoudt uit welk document het komt.
+    const extractedConcepts = windowResults.flatMap((r) =>
+      r.concepts.map((c) => ({ ...c, documentIds: [r.documentId] })));
 
     if (!Array.isArray(extractedConcepts) || extractedConcepts.length === 0) {
       await writeRegenTimestamp().catch(() => {});
@@ -5701,7 +5851,8 @@ ${combinedText}`;
         const difficulty = normalizeDifficulty(c?.difficulty) || classifyConceptDifficulty(c?.name, c?.definition);
         return { ...c, concept_role: conceptRole, category: c?.category || conceptRole, difficulty };
       })
-      .filter((c) => c.name && c.definition);
+      // Geen losse letters/symbolen of formules als begripsnaam.
+      .filter((c) => c.name && c.definition && isUsableConceptName(c.name));
 
     // Vangnet vóór de (dure) RAG-verificatie: een naam die uitsluitend een
     // waardeoordeel over de stof is (bv. "Methodologisch zeer uitdagend") is
@@ -5709,7 +5860,7 @@ ${combinedText}`;
     // similarity-check kunnen doorstaan. Zie isMetaCommentaryName in
     // conceptExtraction.js voor het criterium.
     const metaRejected = [];
-    const candidateConcepts = [];
+    let candidateConcepts = [];
     for (const c of rawValidConcepts) {
       if (isMetaCommentaryName(c.name)) {
         metaRejected.push({ concept: c, matchedCount: 0, maxScore: 0, candidates: 0, reason: 'meta_commentary' });
@@ -5721,6 +5872,64 @@ ${combinedText}`;
       console.log(`[extract-concepts] ${metaRejected.length} kandidaten afgewezen als waardeoordeel/commentaar (geen vakterm): ${metaRejected.map((r) => `"${r.concept.name}"`).join(', ')}`);
     }
 
+    // SAMENVOEGEN vóór de (dure) verificatie. 1) Zekere spellingvarianten
+    // (conceptKey). 2) Synoniemen/afkortingen/vertalingen via het taalmodel,
+    // samen met de begrippen die al in de cursus staan: een bestaand begrip
+    // wint altijd, de andere namen worden alias. Zie conceptConsolidation.js.
+    const { data: existingForMerge } = await supabaseAdmin
+      .from('concepts').select('id, name, definition, aliases, source_document_ids').eq('course_id', courseId);
+    const existingList = existingForMerge || [];
+    const existingByKey = new Map(existingList.map((c) => [conceptKey(c.name), c]));
+    const aliasUpdates = new Map(); // bestaand begrip-id → { aliases:Set, docs:Set }
+    const addToExisting = (row, aliases, docs) => {
+      const e = aliasUpdates.get(row.id) || { row, aliases: new Set(), docs: new Set() };
+      (aliases || []).forEach((a) => { if (a && a.toLowerCase().trim() !== row.name.toLowerCase().trim()) e.aliases.add(a); });
+      (docs || []).forEach((d) => d && e.docs.add(d));
+      aliasUpdates.set(row.id, e);
+    };
+    req.__onProgress?.({ step: 'merging', done: 0, total: 1 });
+    const beforeMerge = candidateConcepts.length;
+    candidateConcepts = mergeByKey(candidateConcepts);
+    // Kandidaat = spellingvariant van een bestaand begrip → alias van dat begrip.
+    // (Precies dezelfde naam blijft in de lijst: die ververst rol/bewijs zoals voorheen.)
+    const sureExisting = [];
+    candidateConcepts = candidateConcepts.filter((c) => {
+      const ex = existingByKey.get(conceptKey(c.name));
+      if (!ex) return true;
+      addToExisting(ex, [c.name, ...(c.aliases || [])], c.documentIds);
+      if (ex.name.toLowerCase().trim() === c.name.toLowerCase().trim()) return true;
+      sureExisting.push(c.name);
+      return false;
+    });
+    let synonymMerged = [];
+    if (AZURE_CHAT_READY && candidateConcepts.length > 1) {
+      try {
+        const items = [
+          ...existingList.map((c) => ({ name: c.name, definition: c.definition })),
+          ...candidateConcepts.filter((c) => !existingByKey.has(conceptKey(c.name))),
+        ];
+        const synResp = await openaiChatCompletion({
+          model: OPENAI_MODEL,
+          messages: [{ role: 'user', content: buildSynonymPrompt(items) }],
+          ...chatModelParams({ temperature: 0, maxTokens: 4000 }),
+        });
+        if (synResp.ok) {
+          const synData = await synResp.json();
+          const groups = parseSynonymGroups(synData.choices?.[0]?.message?.content || '', items.map((i) => i.name));
+          const applied = applySynonymGroups(candidateConcepts, existingList.map((c) => c.name), groups);
+          candidateConcepts = applied.kept;
+          synonymMerged = applied.mergedAway;
+          for (const [name, v] of applied.toExisting) {
+            const row = existingList.find((c) => c.name === name);
+            if (row) addToExisting(row, v.aliases, v.documentIds);
+          }
+        }
+      } catch (synErr) {
+        console.warn('[extract-concepts] Synoniem-samenvoegstap mislukt, ga door zonder:', synErr.message);
+      }
+    }
+    console.log(`[extract-concepts] Samenvoegen: ${beforeMerge} kandidaten → ${candidateConcepts.length} (${sureExisting.length} spellingvariant van bestaand, ${synonymMerged.length} synoniem samengevoegd)`);
+
     // VERIFICATIE-STAP: vergelijk elk LLM-kandidaat-begrip met RAG-chunks
     // (eigen instellingen, los van chat/explain/quiz/project)
     const allSettings = await loadRagSettings(courseId);
@@ -5730,8 +5939,10 @@ ${combinedText}`;
 
     console.log(`[extract-concepts] Verificatie: ${candidateConcepts.length} kandidaten met drempel ${verifyThreshold.toFixed(2)} en min ${minEvidence} bewijschunks`);
 
-    const verificationResults = await Promise.all(
-      candidateConcepts.map(async (c) => {
+    let verified = 0;
+    req.__onProgress?.({ step: 'verifying', done: 0, total: candidateConcepts.length });
+    const verificationResults = await mapLimit(candidateConcepts, 6, async (c) => {
+      const out = await (async () => {
         // Query-expansion met de eigen (LLM-gegenereerde) definitie: een kale
         // naam als "behandeling" of "toeval" draagt weinig semantisch signaal
         // en scoort daardoor vaak net onder de drempel tegen chunk-tekst, ook
@@ -5758,8 +5969,11 @@ ${combinedText}`;
           // RAG-verificatie hierboven.
           embedding: result?.embedding || null,
         };
-      })
-    );
+      })();
+      verified++;
+      if (verified % 10 === 0 || verified === candidateConcepts.length) req.__onProgress?.({ step: 'verifying', done: verified, total: candidateConcepts.length });
+      return out;
+      });
 
     const rejectedConcepts = [...metaRejected];
     const acceptedResults = [];
@@ -5836,7 +6050,8 @@ ${combinedText}`;
     // dat er nu buiten valt, wordt door de bestaande keep-aware opruimstap
     // verwijderd als het al bestond (net als een gewone RAG-verificatie-
     // afwijzing) — géén apart opruimpad nodig.
-    const { kept: keptResults, cutOff: cappedOut } = capByBestMatch(dedupedResults, extractionSettings.max_concepts);
+    const { kept: keptResults, cutOff: cappedOut } = capFairly(dedupedResults, extractionSettings.max_concepts);
+
     for (const r of cappedOut) {
       rejectedConcepts.push({ ...r, reason: 'max_concepts_cap' });
     }
@@ -5906,7 +6121,7 @@ ${combinedText}`;
     if (conceptsHasCourseId) {
       const { data: existingForCourse } = await supabaseAdmin
         .from('concepts')
-        .select('id, name, key_points, concept_role, category, difficulty')
+        .select('id, name, key_points, concept_role, category, difficulty, aliases, source_document_ids')
         .eq('course_id', courseId);
 
       const existingByName = new Map(
@@ -5924,6 +6139,7 @@ ${combinedText}`;
         const key = c.name.toLowerCase().trim();
         const existing = existingByName.get(key);
         if (existing) {
+          addToExisting(existing, c.aliases, c.documentIds);
           if (existing.concept_role !== c.concept_role || existing.difficulty !== c.difficulty) {
             toRefresh.push({
               id: existing.id,
@@ -5946,6 +6162,9 @@ ${combinedText}`;
           category: c.category,
           concept_role: c.concept_role,
           difficulty: c.difficulty,
+          aliases: (c.aliases || []).filter((a) => a && a !== c.name),
+          source_document_ids: c.documentIds || [],
+          source_document_id: (c.documentIds || [])[0] || null,
         });
       }
 
@@ -6122,6 +6341,35 @@ ${combinedText}`;
       }
     }
 
+    // Aliassen en bron-documenten bijwerken bij bestaande begrippen.
+    for (const { row, aliases, docs } of aliasUpdates.values()) {
+      const nextAliases = [...new Set([...(row.aliases || []), ...aliases])];
+      const nextDocs = [...new Set([...(row.source_document_ids || []), ...docs])];
+      if (nextAliases.length === (row.aliases || []).length && nextDocs.length === (row.source_document_ids || []).length) continue;
+      const { error: aErr } = await supabaseAdmin.from('concepts')
+        .update({ aliases: nextAliases, source_document_ids: nextDocs }).eq('id', row.id);
+      if (aErr) console.warn('[extract-concepts] alias/documenten bijwerken mislukt:', aErr.message);
+    }
+
+    // Zekere dubbelingen in de bestaande lijst (spellingvarianten) automatisch
+    // samenvoegen; twijfelgevallen gaan als voorstel naar de docent.
+    let sureMerged = 0;
+    try {
+      const { data: allRows } = await supabaseAdmin.from('concepts')
+        .select('id, name, review_status, definition').eq('course_id', courseId);
+      for (const plan of planSureMerges(allRows || [])) {
+        const { data: n, error: mErr } = await supabaseAdmin.rpc('merge_concepts', { keep_id: plan.keepId, dup_ids: plan.dupIds });
+        if (mErr) console.warn('[extract-concepts] samenvoegen mislukt:', mErr.message);
+        else sureMerged += Number(n) || 0;
+      }
+      if (sureMerged) console.log(`[extract-concepts] ${sureMerged} zekere dubbeling(en) samengevoegd`);
+    } catch (mErr) {
+      console.warn('[extract-concepts] zekere samenvoegingen overgeslagen:', mErr.message);
+    }
+
+    // Overzicht per document: hoeveel kandidaten en hoeveel begrippen nu.
+    const documentCoverage = await conceptCoverageByDocument(courseId, docIds, extractedConcepts);
+
     const totalAdded = inserted.length + updatedCount;
     // netTotal = totalAdded + skipped is het aantal begrippen dat NA deze run
     // echt voor de cursus bestaat (skipped = begrip bestond al en blijft
@@ -6160,12 +6408,73 @@ ${combinedText}`;
       language: conceptLanguage,
       evidenceWritten,
       conceptsLinked,
+      windows: windows.length,
+      failedWindows: failedWindows.length,
+      synonymsMerged: synonymMerged.length + sureExisting.length,
+      sureMerged,
+      documentCoverage,
       message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}`,
     });
   } catch (err) {
     console.error('[extract-concepts] Unexpected error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
+}
+
+// Direct (synchroon) — blijft bestaan voor bestaande aanroepers en tests.
+app.post('/api/admin/extract-concepts', extractConceptsHandler);
+
+// ── Als achtergrondtaak ─────────────────────────────────────────────────────
+// De hele cursus lezen duurt minuten; een verzoek van die lengte wordt door
+// proxy's (bv. in de VU-hosting) vaak afgebroken. De app start daarom een taak
+// en vraagt de voortgang op. Taken leven in het geheugen van dit proces
+// (verdwijnen bij een herstart) en zijn alleen zichtbaar voor wie ze startte.
+const conceptJobs = new Map();
+const CONCEPT_JOB_TTL_MS = 60 * 60 * 1000;
+
+app.post('/api/admin/extract-concepts/jobs', async (req, res) => {
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  const courseId = req.body?.courseId;
+  if (!courseId) return res.status(400).json({ error: 'courseId is required' });
+  // Eén lopende taak per cursus: een tweede klik haakt aan bij de bestaande.
+  for (const [id, job] of conceptJobs) {
+    if (job.courseId === courseId && job.status === 'running') return res.status(202).json({ jobId: id, alreadyRunning: true });
+  }
+  const jobId = randomUUID();
+  const job = { userId: auth.user.id, courseId, status: 'running', progress: null, httpStatus: null, result: null, startedAt: Date.now() };
+  conceptJobs.set(jobId, job);
+  const jobReq = { body: req.body, headers: { authorization: req.headers['authorization'] }, __onProgress: (p) => { job.progress = p; } };
+  const jobRes = {
+    statusCode: 200,
+    status(code) { this.statusCode = code; return this; },
+    json(body) {
+      job.httpStatus = this.statusCode;
+      job.status = this.statusCode < 400 ? 'done' : 'error';
+      job.result = body;
+      job.finishedAt = Date.now();
+      return this;
+    },
+  };
+  extractConceptsHandler(jobReq, jobRes).catch((err) => {
+    job.status = 'error'; job.httpStatus = 500; job.result = { error: err?.message || 'Onbekende fout' }; job.finishedAt = Date.now();
+  });
+  for (const [id, j] of conceptJobs) if (j.finishedAt && Date.now() - j.finishedAt > CONCEPT_JOB_TTL_MS) conceptJobs.delete(id);
+  return res.status(202).json({ jobId });
+});
+
+app.get('/api/admin/extract-concepts/jobs/:jobId', async (req, res) => {
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  const job = conceptJobs.get(req.params.jobId);
+  if (!job || job.userId !== auth.user.id) return res.status(404).json({ error: 'Taak niet gevonden (mogelijk is de server herstart).' });
+  return res.json({
+    status: job.status,
+    progress: job.progress,
+    httpStatus: job.httpStatus,
+    result: job.status === 'running' ? null : job.result,
+    elapsedMs: (job.finishedAt || Date.now()) - job.startedAt,
+  });
 });
 
 app.get('/api/concepts', async (req, res) => {

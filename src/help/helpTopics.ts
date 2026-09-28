@@ -28,6 +28,8 @@ export const HELP_TOPICS = [
   'material.web.resync',
   'material.findNewConcepts',
   'material.review',
+  'concepts.coverage',
+  'concepts.merge',
   // Projecten en persona's
   'projects.overview',
   'projects.templates',

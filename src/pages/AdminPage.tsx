@@ -27,6 +27,9 @@ import { ConceptDetailDrawer } from '../components/material/ConceptDetailDrawer'
 import type { MaterialStep } from '../components/material/ReadinessStep';
 import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset } from '../lib/ragPresets';
 import { HelpToggle } from '../components/help/HelpToggle';
+import { ConceptQualityPanel } from '../components/ConceptQualityPanel';
+import { ExtractionProgressText } from '../components/ExtractionProgressText';
+import { runConceptExtraction, type ExtractionProgress } from '../lib/conceptExtractionJob';
 import { Tooltip } from '../components/help/Tooltip';
 import { AdminHint } from '../components/help/AdminHint';
 import { HelpTip } from '../components/help/HelpTip';
@@ -203,6 +206,15 @@ function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deleting
               )}
             </div>
           </div>
+          {(() => {
+            // Synoniemen/afkortingen/vertalingen die LEAP heeft samengevoegd.
+            const aliases = (concept as Concept & { aliases?: string[] | null }).aliases || [];
+            return aliases.length > 0 ? (
+              <p className="mb-1 text-xs text-gray-500" data-testid={`text-concept-aliases-${concept.id}`}>
+                {t('admin.concepts.aliases', { names: aliases.join(', ') })}
+              </p>
+            ) : null;
+          })()}
           {concept.definition && (
             <div className="relative group/def">
               <p
@@ -315,6 +327,7 @@ export function AdminPage() {
   const [regeneratingConcepts, setRegeneratingConcepts] = useState(false);
   const [regenerateResult, setRegenerateResult] = useState<{ message: string } | null>(null);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
+  const [regenProgress, setRegenProgress] = useState<ExtractionProgress | null>(null);
   const [selectedConceptIds, setSelectedConceptIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
@@ -1290,14 +1303,8 @@ export function AdminPage() {
     setRegenerateResult(null);
     setRegenerateError(null);
     try {
-      const response = await fetch('/api/admin/extract-concepts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ courseId: activeCourseId, replace: true }),
-      });
+      // Als achtergrondtaak met voortgang: de hele cursus lezen duurt minuten.
+      const response = await runConceptExtraction({ courseId: activeCourseId, replace: true }, session.access_token, setRegenProgress);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || t('admin.ragSettings.serverErrorStatus', { status: String(response.status) }));
@@ -1310,6 +1317,7 @@ export function AdminPage() {
       setRegenerateError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
     } finally {
       setRegeneratingConcepts(false);
+      setRegenProgress(null);
     }
   };
 
@@ -2117,6 +2125,15 @@ const tabGroups = [
                 </div>
               </div>
 
+              {activeCourseId && session?.access_token && (
+                <ConceptQualityPanel
+                  courseId={activeCourseId}
+                  token={session.access_token}
+                  refreshKey={courseConcepts.length}
+                  onChanged={() => { void loadConcepts(); void loadConceptsMeta(); }}
+                />
+              )}
+
               {activeCourseId && (
                 <div className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                   <label htmlFor="input-max-concepts" className="text-gray-700 font-medium">
@@ -2184,6 +2201,7 @@ const tabGroups = [
                 </div>
               )}
 
+              {regeneratingConcepts && <ExtractionProgressText progress={regenProgress} />}
               {regenerateResult && (
                 <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800" data-testid="text-regenerate-result">
                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600" />

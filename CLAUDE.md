@@ -18,6 +18,13 @@
 - Do not down-rank evidence quality by changing the source mix in a way that hides missing ingestion problems.
 
 ## RAG and ingestion rules
+- Concept extraction reads the WHOLE course: all chunks per document, in windows of ~12k characters (`server/conceptConsolidation.js`), one LLM call per window, and every candidate keeps its `source_document_ids`. Never go back to a single sample of chunks (it used to cover 5% of E&B1).
+- Duplicates are handled in three ways:
+  - Sure spelling variants (`conceptKey`) are merged automatically.
+  - Synonyms, abbreviations and translations go through the LLM synonym step; the other names are stored as `aliases`.
+  - Doubtful cases are shown to the teacher as suggestions (`/api/admin/concepts/merge-suggestions`).
+- Merging always goes through the DB function `merge_concepts`, which moves all references along.
+- The frontend runs extraction as a background job (`runConceptExtraction`), because a request of several minutes gets cut off by proxies.
 - Verify chunking before concept extraction.
 - A document that collapses into a single giant chunk is a failure mode and must be diagnosed.
 - Office files should be converted to readable plain text; never write `[object Object]` into stored chunks.
