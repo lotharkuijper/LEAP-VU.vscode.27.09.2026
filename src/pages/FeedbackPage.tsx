@@ -6,6 +6,7 @@ import { intlLocale } from '../i18n/languages';
 import { supabase } from '../lib/supabase';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { JournalSections, hasJournalSections, type JournalSectionsData } from '../components/JournalSections';
+import { AchievementsView } from '../components/AchievementsView';
 import {
   BookText,
   Plus,
@@ -144,6 +145,10 @@ export function FeedbackPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [openGroups, setOpenGroups] = useState<Set<GroupKey>>(new Set());
   const [openEntryIds, setOpenEntryIds] = useState<Set<string>>(new Set());
+  // Tabblad: notities of de prijzenkast (?tab=achievements opent meteen de prijzenkast).
+  const [view, setView] = useState<'notes' | 'achievements'>(() => {
+    try { return new URLSearchParams(window.location.search).get('tab') === 'achievements' ? 'achievements' : 'notes'; } catch { return 'notes'; }
+  });
   const [initializedOpenGroup, setInitializedOpenGroup] = useState(false);
 
   useEffect(() => {
@@ -415,6 +420,27 @@ export function FeedbackPage() {
         </button>
       </div>
 
+      <div className="flex gap-1 rounded-xl bg-white/70 p-1 ring-1 ring-slate-200 w-fit" role="tablist" aria-label={t('feedback.title')}>
+        {(['notes', 'achievements'] as const).map(v => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => setView(v)}
+            className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors ${view === v ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+            data-testid={`tab-journal-${v}`}
+          >
+            {v === 'notes' ? t('feedback.tab.notes') : `🏆 ${t('achievements.tab')}`}
+          </button>
+        ))}
+      </div>
+
+      {view === 'achievements' && (
+        <AchievementsView onOpenEvidence={(id) => { setView('notes'); void loadEntries(id); }} />
+      )}
+
+      {view === 'notes' && (<>
       {showForm && (
         <div className="chic-card p-6" data-testid="journal-form">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -702,6 +728,7 @@ export function FeedbackPage() {
             );
           })}
       </div>
+      </>)}
     </div>
   );
 }

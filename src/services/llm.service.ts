@@ -1,3 +1,4 @@
+import type { ReadinessResult } from '../lib/readiness';
 import { getLanguageMeta, type Lang } from '../i18n/languages';
 import { getActiveLang } from '../i18n/activeLang';
 import { tStatic } from '../i18n/translations';
@@ -10,6 +11,8 @@ export interface Message {
 export interface LLMResponse {
   content: string;
   error?: string;
+  /** Alleen bij een readiness-vraag: het oordeel van de server. */
+  readiness?: ReadinessResult;
 }
 
 export class LLMError extends Error {
@@ -144,7 +147,8 @@ export async function sendChatMessage(
   ragStrictMode?: boolean,
   sources?: Array<{ title: string; similarity: number }>,
   learningLevel?: number,
-  courseId?: string
+  courseId?: string,
+  options?: { readinessCheck?: boolean }
 ): Promise<LLMResponse> {
   try {
     const userMessages = messages.filter(m => m.role !== 'system');
@@ -160,6 +164,7 @@ export async function sendChatMessage(
       sources: sources && sources.length > 0 ? sources : undefined,
       learningLevel,
       courseId,
+      ...(options?.readinessCheck ? { readinessCheck: true } : {}),
     });
 
     const content = data.choices[0]?.message?.content;
@@ -168,7 +173,7 @@ export async function sendChatMessage(
       throw new LLMError(tStatic(_getLang(), 'llm.err.emptyAnswer'), 502, 'empty_response', 'empty content');
     }
 
-    return { content };
+    return data.readiness ? { content, readiness: data.readiness as ReadinessResult } : { content };
   } catch (error: any) {
     console.error('[LLM] Error calling chat API:', error);
     // LLMError (afkomstig uit callChatAPI of het lege-antwoord-pad) ongewijzigd

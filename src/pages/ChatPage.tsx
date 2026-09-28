@@ -19,6 +19,8 @@ import { NoticeBanner, useNotice } from '../components/Notice';
 import { PromptDebugBadge } from '../components/PromptDebugBadge';
 import { useLearningLevel } from '../hooks/useLearningLevel';
 import { useRefocusAfterLoading } from '../hooks/useRefocusAfterLoading';
+import { LevelUpCelebration, ReadinessNotice } from '../components/LevelUpCelebration';
+import { shouldCelebrate, type ReadinessResult } from '../lib/readiness';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
 
 
@@ -459,7 +461,9 @@ export function ChatPage() {
   const [ragSettings, setRagSettings] = useState<RagSettings>(RAG_DEFAULTS);
   const [feedbackError, setFeedbackError] = useState<{ title: string; detail?: string } | null>(null);
   const [contextStats, setContextStats] = useState<{ used: number; total: number; charTrimmed: boolean } | null>(null);
-  const [pendingRetry, setPendingRetry] = useState<{ history: Message[]; isFirstMessage: boolean } | null>(null);
+  const [pendingRetry, setPendingRetry] = useState<{ history: Message[]; isFirstMessage: boolean; readinessCheck?: boolean } | null>(null);
+  // Oordeel op "klaar voor een hoger niveau?": feest (positief) of korte melding.
+  const [readinessResult, setReadinessResult] = useState<ReadinessResult | null>(null);
   const [sourceChoice, setSourceChoice] = useState<{ documentId: string; title: string; page?: number } | null>(null);
   const [viewerDoc, setViewerDoc] = useState<{ documentId: string; title: string; page?: number; seq: number } | null>(null);
   const viewerSeqRef = useRef(0);
@@ -803,7 +807,7 @@ export function ChatPage() {
     return `\n\nDe student bekijkt op dit moment ${unit} ${ctx.page} van ${ctx.totalPages} van de bron "${ctx.title}". Betrek dit waar relevant in je antwoord.`;
   };
 
-  const sendToAssistant = async (history: Message[], isFirstMessage: boolean) => {
+  const sendToAssistant = async (history: Message[], isFirstMessage: boolean, readinessCheck = false) => {
     if (!currentConversationId || !profile) return;
 
     setLoading(true);
@@ -883,12 +887,13 @@ export function ChatPage() {
           ragSettings.chat.rag_strict_mode,
           displaySources.length > 0 ? displaySources : undefined,
           learningLevel,
-          activeCourse || undefined
+          activeCourse || undefined,
+          { readinessCheck }
         );
       } catch (llmErr) {
         console.error('[CHAT] LLM call failed:', llmErr);
         setFeedbackError(llmErrorToDutch(llmErr, lang));
-        setPendingRetry({ history, isFirstMessage });
+        setPendingRetry({ history, isFirstMessage, readinessCheck });
         return;
       }
 
@@ -912,6 +917,7 @@ export function ChatPage() {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      if (response.readiness) setReadinessResult(response.readiness);
 
       await supabase.from('messages').insert({
         conversation_id: currentConversationId,
@@ -936,13 +942,13 @@ export function ChatPage() {
         title: t('chat.sendMessageError'),
         detail: error?.message || undefined,
       });
-      setPendingRetry({ history, isFirstMessage });
+      setPendingRetry({ history, isFirstMessage, readinessCheck });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSendMessage = async (overrideText?: string) => {
+  const handleSendMessage = async (overrideText?: string, readinessCheck = false) => {
     const text = (typeof overrideText === 'string' ? overrideText : input).trim();
     if (!text || !currentConversationId || !profile) return;
 
@@ -972,12 +978,12 @@ export function ChatPage() {
       console.error('[CHAT] insert user message failed:', e);
     }
 
-    await sendToAssistant(history, isFirstMessage);
+    await sendToAssistant(history, isFirstMessage, readinessCheck);
   };
 
   const handleRetry = () => {
     if (pendingRetry) {
-      sendToAssistant(pendingRetry.history, pendingRetry.isFirstMessage);
+      sendToAssistant(pendingRetry.history, pendingRetry.isFirstMessage, pendingRetry.readinessCheck);
     }
   };
 
@@ -985,7 +991,8 @@ export function ChatPage() {
   // niveau?"-oordeel. De student initieert dit; de bot doet het nooit uit zichzelf.
   const askReadiness = () => {
     if (loading) return;
-    handleSendMessage(t('learningLevel.readinessPrompt'));
+    setReadinessResult(null);
+    handleSendMessage(t('learningLevel.readinessPrompt'), true);
   };
 
   if (!profile) {
@@ -1234,6 +1241,16 @@ export function ChatPage() {
             </div>
 
             <div className="border-t border-gray-200 p-4">
+              {readinessResult && shouldCelebrate(readinessResult) && (
+                <LevelUpCelebration
+                  result={readinessResult}
+                  onAccept={(lvl) => { setLearningLevel(lvl); setReadinessResult(null); }}
+                  onClose={() => setReadinessResult(null)}
+                />
+              )}
+              {readinessResult && !shouldCelebrate(readinessResult) && (
+                <ReadinessNotice result={readinessResult} onClose={() => setReadinessResult(null)} />
+              )}
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                 <RAGStatusIndicator strictMode={ragSettings.chat.rag_strict_mode} />
                 <div className="flex items-end gap-2 ml-auto">

@@ -62,21 +62,12 @@ describe('LearningLevelSelector', () => {
     expect(screen.getByText(nl['learningLevel.help'])).toBeInTheDocument();
   });
 
-  it('viert een niveau omhoog met het nieuwe niveau in beeld', async () => {
+  it('zelf een hoger niveau kiezen geeft geen feestje (dat verdien je met het oordeel in de chat)', async () => {
     const user = userEvent.setup();
     renderSelector({ value: 2 });
     await user.click(screen.getByTestId('button-learning-level-3'));
-    const pill = screen.getByTestId('learning-level-up');
-    expect(pill).toHaveAttribute('role', 'status');
-    expect(pill).toHaveTextContent(nl['learningLevel.levelUp'].replace('{label}', nl['learningLevel.level3.label']));
-  });
-
-  it('geen feestje bij omlaag gaan of hetzelfde niveau', async () => {
-    const user = userEvent.setup();
-    renderSelector({ value: 3 });
-    await user.click(screen.getByTestId('button-learning-level-2'));
-    await user.click(screen.getByTestId('button-learning-level-3'));
     expect(screen.queryByTestId('learning-level-up')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('verbergt de helptekst in de compacte variant', () => {

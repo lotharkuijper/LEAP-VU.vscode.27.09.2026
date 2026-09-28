@@ -168,7 +168,8 @@ import {
 } from './consultationLimit.js';
 import { applyRelationshipDeltaImpl } from './threadClose.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
-import { journalFormatInstruction, journalFieldsFromModel } from './journalSections.js';
+import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
+import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countPriorStudentMessages, levelName, topicKey } from './readiness.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -595,7 +596,20 @@ app.post('/api/chat', async (req, res) => {
     lang = 'nl',
     learningLevel,
     courseId,
+    readinessCheck = false,
   } = req.body;
+
+  // Readiness-vraag ("klaar voor een hoger niveau?"): onderwerpen + huidig niveau
+  // uit de database, alleen voor een cursus waar de beller toegang toe heeft.
+  let readinessCtx = null;
+  if (readinessCheck === true && courseId && supabaseAdmin
+      && (await userHasCourseAccess(auth.user, auth.profile, courseId))) {
+    const [topics, currentLevel] = await Promise.all([
+      loadReadinessTopics(courseId),
+      currentLearningLevel(auth.user.id, courseId),
+    ]);
+    readinessCtx = { topics, currentLevel: currentLevel ?? LEVEL_DEFAULT };
+  }
 
   // Task #412: system-prompt hardening. De client stuurt geen vrije
   // system-prompt-tekst meer mee; alleen een bekende `promptMode` die de server
@@ -704,6 +718,15 @@ app.post('/api/chat', async (req, res) => {
     if (chatSourcesBlock) systemContent += chatSourcesBlock;
     systemContent += langSuffix;
     finalMessages = [{ role: 'system', content: systemContent }, ...userMessages];
+  }
+
+  if (readinessCtx) {
+    const readinessBlock = buildReadinessInstruction({ ...readinessCtx, lang });
+    if (finalMessages[0]?.role === 'system') {
+      finalMessages[0] = { ...finalMessages[0], content: finalMessages[0].content + readinessBlock };
+    } else {
+      finalMessages.unshift({ role: 'system', content: readinessBlock.trim() });
+    }
   }
 
   const chatBody = {
@@ -833,6 +856,24 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
+    // Het onzichtbare readiness-label nooit aan de student tonen; bij een
+    // readiness-vraag beoordeelt de server of het oordeel telt.
+    const readinessParsed = extractReadiness(String(finalContent));
+    if (readinessParsed.hadMarker) data.choices[0].message.content = readinessParsed.text;
+    if (readinessCtx) {
+      try {
+        const outcome = evaluateReadiness({
+          verdict: readinessParsed.verdict,
+          topic: readinessParsed.topic,
+          topics: readinessCtx.topics,
+          priorStudentMessages: countPriorStudentMessages(userMessages),
+          currentLevel: readinessCtx.currentLevel,
+        });
+        data.readiness = await recordReadinessOutcome({ user: auth.user, courseId, lang, outcome, answerText: readinessParsed.text });
+      } catch (rErr) {
+        console.warn('[/api/chat] readiness-verwerking mislukt:', rErr?.message || rErr);
+      }
+    }
     return res.json(data);
   } catch (err) {
     console.error('[/api/chat] Error:', err);
@@ -868,6 +909,71 @@ async function currentLearningLevel(userId, courseId) {
     return Number.isInteger(n) && n >= LEVEL_MIN && n <= LEVEL_MAX ? n : LEVEL_DEFAULT;
   } catch { return null; }
 }
+// ── "Klaar voor een hoger niveau?" → feestje + achievement (zie server/readiness.js) ──
+// Onderwerpen = goedgekeurde begrippen van de cursus (gegrond in het cursusmateriaal).
+async function loadReadinessTopics(courseId) {
+  if (!supabaseAdmin || !courseId) return [];
+  const { data } = await supabaseAdmin.from('concepts').select('id, name')
+    .eq('course_id', courseId).eq('review_status', 'approved').order('name').limit(200);
+  return data || [];
+}
+
+// Legt een positief oordeel vast: achievement (uniek per onderwerp + niveau) en,
+// op de achtergrond, een dagboekregel als bewijs. Geeft wat de app moet tonen.
+async function recordReadinessOutcome({ user, courseId, lang, outcome, answerText }) {
+  const result = {
+    verdict: outcome.verdict, eligible: outcome.eligible, reason: outcome.reason,
+    currentLevel: outcome.currentLevel, nextLevel: outcome.nextLevel,
+    topic: outcome.concept?.name || null, achievement: null,
+  };
+  if (!outcome.eligible || !supabaseAdmin) return result;
+  const row = {
+    user_id: user.id, course_id: courseId, kind: 'level',
+    concept_id: outcome.concept?.id || null, topic_label: outcome.concept?.name || null,
+    topic_key: topicKey(outcome.concept), level: outcome.nextLevel,
+    details: { from_level: outcome.currentLevel, source: 'chat_readiness' },
+  };
+  let isNew = true;
+  let { data: saved, error } = await supabaseAdmin.from('student_achievements').insert(row).select('id, earned_at').single();
+  if (error) {
+    if (error.code !== '23505') { console.warn('[readiness] achievement opslaan mislukt:', error.message); return result; }
+    isNew = false; // al eerder verdiend: het feestje mag, maar er komt geen tweede
+    ({ data: saved } = await supabaseAdmin.from('student_achievements').select('id, earned_at')
+      .eq('user_id', user.id).eq('course_id', courseId).eq('kind', 'level')
+      .eq('topic_key', row.topic_key).eq('level', row.level).maybeSingle());
+  }
+  if (saved) result.achievement = { id: saved.id, isNew, earnedAt: saved.earned_at };
+  if (saved && isNew) void createReadinessJournalEntry({ user, courseId, lang, outcome, answerText, achievementId: saved.id });
+  return result;
+}
+
+async function createReadinessJournalEntry({ user, courseId, lang, outcome, answerText, achievementId }) {
+  try {
+    const title = `🏆 ${lang === 'nl' ? 'Klaar voor' : 'Ready for'} ${levelName(outcome.nextLevel, lang)}${outcome.concept ? `: ${outcome.concept.name}` : ''}`;
+    let fields = { content: answerText, sections: null };
+    if (AZURE_CHAT_READY) {
+      const r = await openaiChatCompletion({
+        model: OPENAI_MODEL,
+        messages: [{ role: 'user', content: journalRedistributePrompt(title, answerText) }],
+        ...chatModelParams({ temperature: 0.2, maxTokens: 900 }),
+      });
+      if (r.ok) {
+        const txt = (await r.json())?.choices?.[0]?.message?.content;
+        const parsed = txt ? journalFieldsFromModel(txt, lang) : null;
+        if (parsed?.sections) fields = parsed;
+      }
+    }
+    const { data: entry, error } = await supabaseAdmin.from('learning_journal_entries').insert({
+      user_id: user.id, title, ...fields, activity_type: 'chat_reflection',
+      course_id: courseId, learning_level: outcome.currentLevel,
+    }).select('id').single();
+    if (error) throw error;
+    await supabaseAdmin.from('student_achievements').update({ evidence_journal_id: entry.id }).eq('id', achievementId);
+  } catch (e) {
+    console.warn('[readiness] dagboekregel voor achievement mislukt:', e?.message || e);
+  }
+}
+
 async function resolveJournalCourseId(courseId) {
   if (!courseId || typeof courseId !== 'string' || !JOURNAL_UUID_RE.test(courseId)) return null;
   if (!supabaseAdmin) return null;

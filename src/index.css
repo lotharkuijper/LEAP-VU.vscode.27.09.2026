@@ -61,35 +61,49 @@
   }
 }
 
-/* "Niveau omhoog"-moment (LearningLevelSelector): pil springt op, confetti
-   spat uiteen, knop veert even. Wie "minder beweging" instelt, ziet alleen
-   de pil. */
-@keyframes leap-levelup-in {
-  0% { opacity: 0; transform: translate(-50%, 8px) scale(0.6); }
-  15% { opacity: 1; transform: translate(-50%, 0) scale(1.08); }
-  25% { transform: translate(-50%, 0) scale(1); }
-  85% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -6px) scale(0.95); }
+/* Feest bij "klaar voor een hoger niveau" (LevelUpCelebration): confetti over
+   het hele scherm, trofee springt in beeld met draaiende stralen, twinkels.
+   Wie "minder beweging" instelt, ziet alleen de kaart (zonder confetti). */
+@keyframes leap-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes leap-confetti-fall {
+  0% { opacity: 0; transform: translate3d(0, -10vh, 0) rotate(0deg); }
+  8% { opacity: 1; }
+  100% { opacity: 0.9; transform: translate3d(var(--leap-drift), 105vh, 0) rotate(var(--leap-spin)); }
 }
-@keyframes leap-confetti-burst {
-  0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--leap-angle)) translateY(0) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--leap-angle)) translateY(-46px) scale(0.4); }
+@keyframes leap-card-pop {
+  0% { opacity: 0; transform: translateY(18px) scale(0.85); }
+  60% { opacity: 1; transform: translateY(-4px) scale(1.03); }
+  100% { transform: translateY(0) scale(1); }
 }
-@keyframes leap-pop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.15); }
-  100% { transform: scale(1); }
+@keyframes leap-trophy-bounce {
+  0% { transform: scale(0.2) rotate(-25deg); }
+  55% { transform: scale(1.15) rotate(8deg); }
+  75% { transform: scale(0.95) rotate(-3deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
-.leap-levelup { transform: translateX(-50%); animation: leap-levelup-in 2.8s ease-out forwards; }
-.leap-confetti {
-  position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; border-radius: 2px;
-  animation: leap-confetti-burst 0.9s ease-out 0.1s forwards;
+@keyframes leap-rays-spin { to { transform: rotate(360deg); } }
+@keyframes leap-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.7) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.15) rotate(20deg); }
 }
-.leap-levelup-pop { animation: leap-pop 0.45s ease-out; }
+.leap-fade-in { animation: leap-fade-in 0.25s ease-out both; }
+.leap-confetti-fall {
+  position: absolute; top: 0; display: block;
+  animation-name: leap-confetti-fall; animation-timing-function: cubic-bezier(0.25, 0.6, 0.4, 1);
+  animation-fill-mode: both; animation-iteration-count: 1;
+}
+.leap-card-pop { animation: leap-card-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.leap-trophy { animation: leap-trophy-bounce 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.3) 0.15s both; }
+.leap-rays {
+  background: repeating-conic-gradient(rgb(var(--leap-accent-300) / 0.55) 0deg 12deg, transparent 12deg 30deg);
+  -webkit-mask-image: radial-gradient(circle, #000 35%, transparent 70%);
+  mask-image: radial-gradient(circle, #000 35%, transparent 70%);
+  animation: leap-rays-spin 9s linear infinite;
+}
+.leap-twinkle { animation: leap-twinkle 1.6s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .leap-levelup { animation: none; }
-  .leap-confetti { display: none; }
-  .leap-levelup-pop { animation: none; }
+  .leap-confetti-fall { display: none; }
+  .leap-card-pop, .leap-trophy, .leap-rays, .leap-twinkle, .leap-fade-in { animation: none; }
 }
 
 @layer components {

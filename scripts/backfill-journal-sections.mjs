@@ -16,7 +16,7 @@
 
 import pg from 'pg';
 import { computeChatConfig } from '../server/chatConfig.js';
-import { journalFormatInstruction, parseJournalSections } from '../server/journalSections.js';
+import { journalRedistributePrompt, parseJournalSections } from '../server/journalSections.js';
 
 const DRY = process.argv.includes('--dry-run');
 const AUTO_TYPES = ['chat_reflection', 'explanation_reflection', 'quiz_reflection', 'project_reflection'];
@@ -33,21 +33,7 @@ if (!process.env.SUPABASE_DB_URL) {
 const MODEL = process.env.OPENAI_MODEL || cfg.deployment || 'gpt-5.5';
 const IS_REASONING = /^(gpt-5|o1|o3|o4)/i.test(MODEL);
 
-function buildPrompt(entry) {
-  return `Below is an existing entry from a student's learning journal (title: "${entry.title}").
-Redistribute this text over the four headings described at the end.
-Rules:
-- Do NOT add new content, facts, judgements or advice that are not in the text. Do not leave out substantive points either; you may tighten the wording slightly.
-- Keep addressing the student directly ("je/jij" in Dutch, "you" in English).
-- Write in the SAME language as the original text.
-- The numbers of points below are maxima here: leave a block short (or with a single point) rather than inventing content. If the text contains no next steps at all, write one step that is literally implied by the improvement points.
-- Keep formulas as they are (LaTeX between $…$).
-
-Original text:
-"""
-${entry.content}
-"""${journalFormatInstruction('en')}`;
-}
+const buildPrompt = (entry) => journalRedistributePrompt(entry.title, entry.content);
 
 async function callAzure(prompt, attempt = 0) {
   const body = {

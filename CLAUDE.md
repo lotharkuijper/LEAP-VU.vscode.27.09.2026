@@ -53,6 +53,10 @@
 ## Learning journal
 - Automatic journal entries (reflections) are stored in three blocks: summary, feedback (went well / to improve) and next steps, in `learning_journal_entries.sections`, plus `learning_level` (the student's level at that moment, where applicable). New generators append `journalFormatInstruction(lang)` to the prompt and save `...journalFieldsFromModel(text, lang)` (`server/journalSections.js`); `content` always stays filled as readable text. The model uses fixed `### SUMMARY` etc. headings, not JSON, so LaTeX survives.
 
+## Achievements
+- Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input, and the topic must be an approved course concept.
+- Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Future kinds (quiz, project badges, learning goals) reuse this table.
+
 ## Sensitive notes
 - Do not put secrets in the repo.
 - Trust `.env` values only when they are actually loaded and resolved in the runtime environment.

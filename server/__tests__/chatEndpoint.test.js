@@ -263,3 +263,27 @@ describe('POST /api/chat — bescherming tegen lege/afgekapte reasoning-respons'
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('POST /api/chat — onzichtbaar readiness-label', () => {
+  it('haalt het label altijd uit het antwoord, zodat de student het nooit ziet', async () => {
+    mockFetchSequence([
+      makeResp(200, chatCompletion({ content: 'Je bent er bijna.\n\n[[LEAP_READINESS verdict=almost topic="Cohortonderzoek"]]', finish: 'stop' })),
+    ]);
+    const res = await postChat(REQUEST);
+    expect(res.status).toBe(200);
+    expect(res.body.choices[0].message.content).toBe('Je bent er bijna.');
+    // Zonder readiness-vraag (en cursus-toegang) geen oordeel in de respons.
+    expect(res.body.readiness).toBeUndefined();
+  });
+
+  it('een readiness-vraag zonder cursustoegang voegt geen instructie toe en kent niets toe', async () => {
+    const fetchMock = mockFetchSequence([
+      makeResp(200, chatCompletion({ content: 'Eerlijk oordeel.', finish: 'stop' })),
+    ]);
+    const res = await postChat({ ...REQUEST, readinessCheck: true, courseId: '00000000-0000-0000-0000-000000000000' });
+    expect(res.status).toBe(200);
+    expect(res.body.readiness).toBeUndefined();
+    const sent = bodyOfCall(fetchMock, 0);
+    expect(JSON.stringify(sent.messages)).not.toContain('LEAP_READINESS');
+  });
+});

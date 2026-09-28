@@ -55,6 +55,26 @@ Use exactly these four headings, each on its own line, in this order and written
 Put nothing before the first heading and nothing after the last block. Formulas may be written in LaTeX between $…$. Keep the headings in English, but write the content in the language requested.`;
 }
 
+/**
+ * Prompt om een BESTAANDE tekst over de blokken te verdelen, zonder iets toe te
+ * voegen (eenmalige omzetting, en het oordeel "klaar voor een hoger niveau").
+ */
+export function journalRedistributePrompt(title, text) {
+  return `Below is an existing entry from a student's learning journal (title: "${title}").
+Redistribute this text over the four headings described at the end.
+Rules:
+- Do NOT add new content, facts, judgements or advice that are not in the text. Do not leave out substantive points either; you may tighten the wording slightly.
+- Keep addressing the student directly ("je/jij" in Dutch, "you" in English).
+- Write in the SAME language as the original text.
+- The numbers of points below are maxima here: leave a block short (or with a single point) rather than inventing content. If the text contains no next steps at all, write one step that is literally implied by the improvement points.
+- Keep formulas as they are (LaTeX between $…$).
+
+Original text:
+"""
+${text}
+"""${journalFormatInstruction('en')}`;
+}
+
 const clip = (s, n) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 
 function toItems(lines) {
