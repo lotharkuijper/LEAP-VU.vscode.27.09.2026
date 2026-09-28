@@ -29,7 +29,7 @@ interface LastActivities {
   explain: { label: string } | null;
   quiz: { label: string } | null;
   project: { label: string } | null;
-  journal: { title: string; content: string; id: string } | null;
+  journal: { title: string; content: string; id: string; nextStep?: string | null } | null;
 }
 
 interface CourseInfoDoc {
@@ -104,6 +104,13 @@ const TILES: TileSpec[] = [
     ctaKey: 'dashboard.tile.project.cta',
   },
 ];
+
+/** Eerste "volgende stap" uit de blokken van een dagboekregel, of null. */
+export function firstNextStep(sections: unknown): string | null {
+  const steps = (sections as { next_steps?: unknown } | null)?.next_steps;
+  const first = Array.isArray(steps) ? steps.find(s => typeof s === 'string' && s.trim()) : null;
+  return typeof first === 'string' ? first.trim() : null;
+}
 
 function truncate(s: string, n: number): string {
   const trimmed = s.replace(/\s+/g, ' ').trim();
@@ -277,7 +284,7 @@ export function DashboardPage() {
                 .maybeSingle(),
           supabase
             .from('learning_journal_entries')
-            .select('id, title, content, updated_at')
+            .select('id, title, content, updated_at, sections')
             .eq('user_id', profile.id)
             .order('updated_at', { ascending: false })
             .limit(1)
@@ -349,6 +356,8 @@ export function DashboardPage() {
             id: journalRes.data.id as string,
             title: ((journalRes.data.title as string | null) ?? '').trim(),
             content: ((journalRes.data.content as string | null) ?? '').trim(),
+            // Uit de drie blokken: de eerste volgende stap is het nuttigst om terug te zien.
+            nextStep: firstNextStep((journalRes.data as { sections?: unknown }).sections),
           };
         }
 
@@ -534,8 +543,11 @@ export function DashboardPage() {
                   <p className="mt-1 text-sm font-medium text-slate-800">{truncate(data.journal.title, 80)}</p>
                 )}
                 <div className="text-sm text-slate-700 line-clamp-2 overflow-hidden">
+                  {data.journal.nextStep && (
+                    <span className="font-semibold text-teal-700" data-testid="text-journal-next-step-label">🚀 {t('dashboard.journal.nextStep')} </span>
+                  )}
                   <MarkdownMessage
-                    content={truncate(data.journal.content, 140)}
+                    content={truncate(data.journal.nextStep || data.journal.content, 140)}
                     className="prose prose-sm max-w-none prose-p:my-0 prose-p:inline prose-p:text-slate-700 prose-strong:text-slate-900"
                   />
                 </div>

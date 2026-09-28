@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Achtergrond",
   "help.personas.avatar.title": "Een gezicht voor je persona",
   "help.personas.avatar.body": "Elke persona krijgt vanzelf een robotje. Kies hier een andere stijl, blader per onderdeel met de pijltjes of klik op \"Verras me\". Studenten zien dit gezicht naast de naam en bij elk antwoord in het gesprek.",
-  "learningLevel.levelUp": "Niveau omhoog: {label}!"
+  "learningLevel.levelUp": "Niveau omhoog: {label}!",
+  "journal.section.summary": "Wat heb je gedaan",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "Ging goed",
+  "journal.section.toImprove": "Kan beter",
+  "journal.section.nextSteps": "Je volgende stap",
+  "feedback.levelBadgeTitle": "Jouw leerniveau op het moment van deze activiteit",
+  "dashboard.journal.nextStep": "Je volgende stap:"
 }

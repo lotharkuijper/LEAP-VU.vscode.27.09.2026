@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Φόντο",
   "help.personas.avatar.title": "Ένα πρόσωπο για την περσόνα σου",
   "help.personas.avatar.body": "Κάθε περσόνα αποκτά αυτόματα ένα ρομποτάκι. Επίλεξε εδώ ένα διαφορετικό στυλ, περιηγήσου ανά τμήμα με τα βελάκια ή κάνε κλικ στο \"Έκπληξέ με\". Οι φοιτητές βλέπουν αυτό το πρόσωπο δίπλα στο όνομα και σε κάθε απάντηση στη συζήτηση.",
-  "learningLevel.levelUp": "Ανέβηκες επίπεδο: {label}!"
+  "learningLevel.levelUp": "Ανέβηκες επίπεδο: {label}!",
+  "journal.section.summary": "Τι έκανες",
+  "journal.section.feedback": "Ανατροφοδότηση",
+  "journal.section.wentWell": "Πήγε καλά",
+  "journal.section.toImprove": "Μπορεί να βελτιωθεί",
+  "journal.section.nextSteps": "Το επόμενο βήμα σου",
+  "feedback.levelBadgeTitle": "Το επίπεδο μάθησής σου τη στιγμή αυτής της δραστηριότητας",
+  "dashboard.journal.nextStep": "Το επόμενο βήμα σου:"
 }

@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Fondo",
   "help.personas.avatar.title": "Un rostro para tu persona",
   "help.personas.avatar.body": "Cada persona recibe automáticamente un robotito. Elige aquí otro estilo, navega por cada parte con las flechas o haz clic en \"Sorpréndeme\". Los estudiantes verán este rostro junto al nombre y en cada respuesta de la conversación.",
-  "learningLevel.levelUp": "¡Nivel superado: {label}!"
+  "learningLevel.levelUp": "¡Nivel superado: {label}!",
+  "journal.section.summary": "Qué has hecho",
+  "journal.section.feedback": "Comentarios",
+  "journal.section.wentWell": "Salió bien",
+  "journal.section.toImprove": "Puede mejorar",
+  "journal.section.nextSteps": "Tu siguiente paso",
+  "feedback.levelBadgeTitle": "Tu nivel de aprendizaje en el momento de esta actividad",
+  "dashboard.journal.nextStep": "Tu siguiente paso:"
 }

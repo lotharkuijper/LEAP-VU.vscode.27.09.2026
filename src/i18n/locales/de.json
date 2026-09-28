@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Hintergrund",
   "help.personas.avatar.title": "Ein Gesicht für deine Persona",
   "help.personas.avatar.body": "Jede Persona bekommt automatisch einen kleinen Roboter. Wähle hier einen anderen Stil, blättere pro Element mit den Pfeilen oder klicke auf „Überrasche mich“. Studierende sehen dieses Gesicht neben dem Namen und bei jeder Antwort im Gespräch.",
-  "learningLevel.levelUp": "Niveau erhöht: {label}!"
+  "learningLevel.levelUp": "Niveau erhöht: {label}!",
+  "journal.section.summary": "Was hast du gemacht",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "Lief gut",
+  "journal.section.toImprove": "Kann besser werden",
+  "journal.section.nextSteps": "Dein nächster Schritt",
+  "feedback.levelBadgeTitle": "Dein Lernniveau zum Zeitpunkt dieser Aktivität",
+  "dashboard.journal.nextStep": "Dein nächster Schritt:"
 }

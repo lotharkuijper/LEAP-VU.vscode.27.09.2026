@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "पृष्ठभूमि",
   "help.personas.avatar.title": "तुम्हारे पर्सोना के लिए एक चेहरा",
   "help.personas.avatar.body": "हर पर्सोना को अपने-आप एक छोटा रोबोट मिलता है। यहाँ कोई दूसरी शैली चुनो, तीरों से हर हिस्से को ब्राउज़ करो या \"मुझे चौंकाओ\" पर क्लिक करो। विद्यार्थी यह चेहरा नाम के बगल में और बातचीत में हर जवाब के साथ देखते हैं।",
-  "learningLevel.levelUp": "स्तर बढ़ा: {label}!"
+  "learningLevel.levelUp": "स्तर बढ़ा: {label}!",
+  "journal.section.summary": "तुमने क्या किया",
+  "journal.section.feedback": "फ़ीडबैक",
+  "journal.section.wentWell": "अच्छा रहा",
+  "journal.section.toImprove": "बेहतर हो सकता है",
+  "journal.section.nextSteps": "तुम्हारा अगला कदम",
+  "feedback.levelBadgeTitle": "इस गतिविधि के समय तुम्हारा सीखने का स्तर",
+  "dashboard.journal.nextStep": "तुम्हारा अगला कदम:"
 }

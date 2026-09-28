@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Тло",
   "help.personas.avatar.title": "Обличчя для твоєї персони",
   "help.personas.avatar.body": "Кожна персона автоматично отримує робота. Вибери тут інший стиль, переглядай окремі елементи стрілками або натисни «Здивуй мене». Студенти бачитимуть це обличчя поруч з іменем і біля кожної відповіді в розмові.",
-  "learningLevel.levelUp": "Рівень підвищено: {label}!"
+  "learningLevel.levelUp": "Рівень підвищено: {label}!",
+  "journal.section.summary": "Що ти зробив(-ла)",
+  "journal.section.feedback": "Зворотний зв’язок",
+  "journal.section.wentWell": "Вийшло добре",
+  "journal.section.toImprove": "Можна краще",
+  "journal.section.nextSteps": "Твій наступний крок",
+  "feedback.levelBadgeTitle": "Твій рівень навчання на момент цієї активності",
+  "dashboard.journal.nextStep": "Твій наступний крок:"
 }

@@ -168,6 +168,7 @@ import {
 } from './consultationLimit.js';
 import { applyRelationshipDeltaImpl } from './threadClose.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
+import { journalFormatInstruction, journalFieldsFromModel } from './journalSections.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -855,6 +856,18 @@ async function courseIdForProject(projectId) {
     return data?.course_id || null;
   } catch { return null; }
 }
+// Leerdagboek: het leerniveau dat de student op dit moment voor deze cursus
+// heeft ingesteld. Geen cursus → null (geen niveau van toepassing); nog niets
+// gekozen → het standaardniveau (dat is dan ook wat de uitleg gebruikte).
+async function currentLearningLevel(userId, courseId) {
+  if (!userId || !courseId || !supabaseAdmin) return null;
+  try {
+    const { data } = await supabaseAdmin.from('student_course_levels').select('level')
+      .eq('user_id', userId).eq('course_id', courseId).maybeSingle();
+    const n = Number(data?.level);
+    return Number.isInteger(n) && n >= LEVEL_MIN && n <= LEVEL_MAX ? n : LEVEL_DEFAULT;
+  } catch { return null; }
+}
 async function resolveJournalCourseId(courseId) {
   if (!courseId || typeof courseId !== 'string' || !JOURNAL_UUID_RE.test(courseId)) return null;
   if (!supabaseAdmin) return null;
@@ -977,7 +990,7 @@ Gesprekstitel: "${conversation.title}"
 Gesprek (regels gemarkeerd met "Jij:" zijn de student aan wie je het verslag richt):
 ${chatText}
 
-Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`) + buildLanguageInstruction(lang);
+Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
 
         if (AZURE_CHAT_READY) {
           try {
@@ -991,14 +1004,16 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`
               const chatData = await chatResp.json();
               const summaryContent = chatData.choices?.[0]?.message?.content;
               if (summaryContent) {
+                const journalCourseId = await resolveJournalCourseId(courseId);
                 const { data: entry, error: journalError } = await supabaseAdmin
                   .from('learning_journal_entries')
                   .insert({
                     user_id: user.id,
                     title: lang === 'nl' ? `Chatreflectie: ${conversation.title}` : `Chat reflection: ${conversation.title}`,
-                    content: summaryContent,
+                    ...journalFieldsFromModel(summaryContent, lang),
                     activity_type: 'chat_reflection',
-                    course_id: await resolveJournalCourseId(courseId),
+                    course_id: journalCourseId,
+                    learning_level: await currentLearningLevel(user.id, journalCourseId),
                   })
                   .select('id')
                   .single();
@@ -6425,15 +6440,18 @@ app.patch('/api/journal/:id', async (req, res) => {
     const { title, content, activity_type } = req.body;
 
     // Controleer eigenaar tenzij admin
+    const { data: existingEntry } = await supabaseAdmin
+      .from('learning_journal_entries').select('user_id, content').eq('id', id).maybeSingle();
     if (!isAdmin) {
-      const { data: entry } = await supabaseAdmin
-        .from('learning_journal_entries').select('user_id').eq('id', id).maybeSingle();
-      if (!entry || entry.user_id !== user.id) return res.status(403).json({ error: 'Geen toegang tot deze notitie' });
+      if (!existingEntry || existingEntry.user_id !== user.id) return res.status(403).json({ error: 'Geen toegang tot deze notitie' });
     }
 
+    const journalPatch = { title, content, activity_type, updated_at: new Date().toISOString() };
+    // Eigen tekst van de student wint: de automatische blokken vervallen dan.
+    if (existingEntry && content !== undefined && content !== existingEntry.content) journalPatch.sections = null;
     const { data, error } = await supabaseAdmin
       .from('learning_journal_entries')
-      .update({ title, content, activity_type, updated_at: new Date().toISOString() })
+      .update(journalPatch)
       .eq('id', id)
       .select()
       .single();
@@ -6814,7 +6832,7 @@ ${row.explanation_text}
 Feedback van de leerassistent:
 ${feedbackText}
 
-Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`) + buildLanguageInstruction(lang);
+Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
 
       if (AZURE_CHAT_READY) {
         try {
@@ -6828,14 +6846,16 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`
             const chatData = await chatResp.json();
             const summaryContent = chatData.choices?.[0]?.message?.content;
             if (summaryContent) {
+              const journalCourseId = await resolveJournalCourseId(courseId);
               const { data: entry, error: journalError } = await supabaseAdmin
                 .from('learning_journal_entries')
                 .insert({
                   user_id: user.id,
                   title: lang === 'nl' ? `Uitleg-reflectie: ${conceptName}` : `Explanation reflection: ${conceptName}`,
-                  content: summaryContent,
+                  ...journalFieldsFromModel(summaryContent, lang),
                   activity_type: 'explanation_reflection',
-                  course_id: await resolveJournalCourseId(courseId),
+                  course_id: journalCourseId,
+                  learning_level: await currentLearningLevel(user.id, journalCourseId),
                 })
                 .select('id')
                 .single();
@@ -7030,7 +7050,7 @@ ${detailLines || '(no details available)'}
 
 Write the report directly, without a greeting or closing. Be concrete, honest and motivating; avoid vague generalities and clichés.`;
 
-  const summaryPrompt = (lang === 'nl' ? summaryPromptNL : summaryPromptEN) + buildLanguageInstruction(lang);
+  const summaryPrompt = (lang === 'nl' ? summaryPromptNL : summaryPromptEN) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
 
   return {
     summaryPrompt,
@@ -7087,7 +7107,7 @@ async function generateAndSaveQuizSummary({ user, summaryPrompt, topicsLabel, qT
     .insert({
       user_id: user.id,
       title: `${typePrefix}-${reflectionLabel}: ${titleTopics}`,
-      content: summaryContent,
+      ...journalFieldsFromModel(summaryContent, lang),
       activity_type: 'quiz_reflection',
       course_id: courseId,
     })
@@ -7372,7 +7392,7 @@ Jouw werk tot nu toe:
 - Analyse-aantekeningen: ${analysisNotes || '(nog niet ingevuld)'}
 - Conclusies: ${conclusions || '(nog niet ingevuld)'}
 
-Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees concreet, eerlijk en motiverend; vermijd vaagheden en clichés.`;
+Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees concreet, eerlijk en motiverend; vermijd vaagheden en clichés.` + journalFormatInstruction('nl');
 
     let summaryContent;
     try {
@@ -7410,7 +7430,7 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
       .insert({
         user_id: user.id,
         title: journalTitle,
-        content: summaryContent,
+        ...journalFieldsFromModel(summaryContent, 'nl'),
         activity_type: 'project_reflection',
         course_id: await courseIdForProject(row.project_id),
       })
@@ -13534,6 +13554,11 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
         activity_type: 'project_reflection',
         source_ref: sourceRef,
         course_id: docReviewCourseId,
+        sections: {
+          summary: '', went_well: [], to_improve: [],
+          feedback: validation.value.reasoning,
+          next_steps: feedForward ? [feedForward] : [],
+        },
       };
     });
     if (rows.length > 0) {
@@ -13541,9 +13566,9 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
       if (jErr) {
         // Defensief: source_ref-kolom kan ontbreken in oudere DBs, en unique
         // violation duidt op idempotentie (dubbele post).
-        if (jErr.code === '42703' || /source_ref/i.test(jErr.message || '')) {
+        if (jErr.code === '42703' || /source_ref|sections/i.test(jErr.message || '')) {
           await supabaseAdmin.from('learning_journal_entries').insert(
-            rows.map(({ source_ref: _ignored, ...rest }) => rest)
+            rows.map(({ source_ref: _ignored, sections: _s, ...rest }) => rest)
           );
         } else if (jErr.code !== '23505') {
           console.warn('[document_review] journal-spiegeling mislukte:', jErr.message);

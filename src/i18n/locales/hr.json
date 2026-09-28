@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Pozadina",
   "help.personas.avatar.title": "Lice za tvoju personu",
   "help.personas.avatar.body": "Svaka persona automatski dobiva robotića. Ovdje odaberi drugi stil, pregledavaj po dijelovima pomoću strelica ili klikni na \"Iznenadi me\". Studenti vide ovo lice pokraj imena i uz svaki odgovor u razgovoru.",
-  "learningLevel.levelUp": "Razina gore: {label}!"
+  "learningLevel.levelUp": "Razina gore: {label}!",
+  "journal.section.summary": "Što si napravio/la",
+  "journal.section.feedback": "Povratne informacije",
+  "journal.section.wentWell": "Dobro je prošlo",
+  "journal.section.toImprove": "Može bolje",
+  "journal.section.nextSteps": "Tvoj sljedeći korak",
+  "feedback.levelBadgeTitle": "Tvoja razina učenja u trenutku ove aktivnosti",
+  "dashboard.journal.nextStep": "Tvoj sljedeći korak:"
 }

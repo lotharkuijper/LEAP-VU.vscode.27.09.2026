@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n';
 import { intlLocale } from '../i18n/languages';
 import { supabase } from '../lib/supabase';
 import { MarkdownMessage } from '../components/MarkdownMessage';
+import { JournalSections, hasJournalSections, type JournalSectionsData } from '../components/JournalSections';
 import {
   BookText,
   Plus,
@@ -29,6 +30,10 @@ interface JournalEntry {
   updated_at: string;
   course_id?: string | null;
   course_name?: string | null;
+  /** Drie blokken (samenvatting, feedback, volgende stap); null = vrije tekst. */
+  sections?: JournalSectionsData | null;
+  /** Leerniveau (1..5) ten tijde van de activiteit; null = niet van toepassing. */
+  learning_level?: number | null;
 }
 
 type GroupKey = 'chat' | 'explain' | 'quiz' | 'project' | 'other';
@@ -52,11 +57,11 @@ const GROUPS: GroupDef[] = [
     label: 'Chat',
     emptyHint: 'Nog geen samenvattingen vanuit Chat — sluit een gesprek af en kies "Verplaats naar leerdagboek" om hier een notitie te zien verschijnen.',
     icon: MessageSquare,
-    color: 'text-green-700',
-    bg: 'bg-green-50',
-    border: 'border-green-200',
-    badgeBg: 'bg-green-100',
-    badgeText: 'text-green-700',
+    color: 'text-emerald-700',
+    bg: 'bg-emerald-50',
+    border: 'border-emerald-200',
+    badgeBg: 'bg-emerald-100',
+    badgeText: 'text-emerald-700',
     activityType: 'chat_reflection',
   },
   {
@@ -76,11 +81,11 @@ const GROUPS: GroupDef[] = [
     label: 'Quiz',
     emptyHint: 'Nog geen samenvattingen vanuit Quiz — rond een quiz af en kies "Sla samenvatting op" om hier een notitie te zien verschijnen.',
     icon: GraduationCap,
-    color: 'text-blue-700',
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    badgeBg: 'bg-blue-100',
-    badgeText: 'text-blue-700',
+    color: 'text-cyan-700',
+    bg: 'bg-cyan-50',
+    border: 'border-cyan-200',
+    badgeBg: 'bg-cyan-100',
+    badgeText: 'text-cyan-700',
     activityType: 'quiz_reflection',
   },
   {
@@ -615,6 +620,15 @@ export function FeedbackPage() {
                                         <span data-testid={`course-${entry.id}`}>{entry.course_name}</span>
                                       </div>
                                     )}
+                                    {entry.learning_level != null && entry.learning_level >= 1 && entry.learning_level <= 5 && (
+                                      <span
+                                        className="inline-flex items-center gap-1 rounded-full bg-teal-50 px-2 py-0.5 font-semibold text-teal-700 ring-1 ring-teal-200"
+                                        title={t('feedback.levelBadgeTitle')}
+                                        data-testid={`level-${entry.id}`}
+                                      >
+                                        🎓 {t(`learningLevel.level${entry.learning_level}.label` as never)}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </div>
@@ -624,7 +638,13 @@ export function FeedbackPage() {
                               <div className="px-6 pb-5 pl-13" data-testid={`body-${entry.id}`}>
                                 <div className="flex items-start justify-between gap-3 mb-3">
                                   <div className="text-gray-700 flex-1 min-w-0" data-testid={`content-${entry.id}`}>
-                                    <MarkdownMessage content={entry.content.replace(/(?<!\n)\n(?!\n)/g, '  \n')} />
+                                    {hasJournalSections(entry.sections) ? (
+                                      <JournalSections sections={entry.sections} />
+                                    ) : (
+                                      <div className="rounded-xl bg-white ring-1 ring-teal-100 border-l-4 border-teal-300 px-4 py-3 leading-relaxed">
+                                        <MarkdownMessage content={entry.content.replace(/(?<!\n)\n(?!\n)/g, '  \n')} />
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="flex items-center gap-1 flex-shrink-0">
                                     <button

@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Fundo",
   "help.personas.avatar.title": "Um rosto para a tua persona",
   "help.personas.avatar.body": "Cada persona recebe automaticamente um robô. Escolhe aqui um estilo diferente, navega por cada elemento com as setas ou clica em \"Surpreende-me\". Os estudantes veem este rosto ao lado do nome e em cada resposta na conversa.",
-  "learningLevel.levelUp": "Nível aumentado: {label}!"
+  "learningLevel.levelUp": "Nível aumentado: {label}!",
+  "journal.section.summary": "O que fizeste",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "Correu bem",
+  "journal.section.toImprove": "Pode melhorar",
+  "journal.section.nextSteps": "O teu próximo passo",
+  "feedback.levelBadgeTitle": "O teu nível de aprendizagem no momento desta atividade",
+  "dashboard.journal.nextStep": "O teu próximo passo:"
 }

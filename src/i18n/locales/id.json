@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Latar belakang",
   "help.personas.avatar.title": "Wajah untuk personamu",
   "help.personas.avatar.body": "Setiap persona otomatis mendapat robot kecil. Pilih gaya lain di sini, jelajahi tiap bagian dengan panah, atau klik \"Kejutkan aku\". Mahasiswa melihat wajah ini di samping nama dan pada setiap jawaban dalam percakapan.",
-  "learningLevel.levelUp": "Naik level: {label}!"
+  "learningLevel.levelUp": "Naik level: {label}!",
+  "journal.section.summary": "Apa yang sudah kamu lakukan",
+  "journal.section.feedback": "Umpan balik",
+  "journal.section.wentWell": "Berjalan baik",
+  "journal.section.toImprove": "Bisa lebih baik",
+  "journal.section.nextSteps": "Langkah berikutnya",
+  "feedback.levelBadgeTitle": "Tingkat belajarmu saat aktivitas ini",
+  "dashboard.journal.nextStep": "Langkah berikutnya:"
 }

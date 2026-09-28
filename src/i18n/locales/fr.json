@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Arrière-plan",
   "help.personas.avatar.title": "Un visage pour ton persona",
   "help.personas.avatar.body": "Chaque persona reçoit automatiquement un petit robot. Choisis ici un autre style, parcours les éléments avec les flèches ou clique sur « Surprends-moi ». Les étudiants voient ce visage à côté du nom et à chaque réponse dans la conversation.",
-  "learningLevel.levelUp": "Niveau supérieur : {label} !"
+  "learningLevel.levelUp": "Niveau supérieur : {label} !",
+  "journal.section.summary": "Ce que tu as fait",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "Ça s’est bien passé",
+  "journal.section.toImprove": "À améliorer",
+  "journal.section.nextSteps": "Ta prochaine étape",
+  "feedback.levelBadgeTitle": "Ton niveau d’apprentissage au moment de cette activité",
+  "dashboard.journal.nextStep": "Ta prochaine étape :"
 }

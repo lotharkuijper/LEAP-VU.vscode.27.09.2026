@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Fundal",
   "help.personas.avatar.title": "O față pentru persona ta",
   "help.personas.avatar.body": "Fiecare persona primește automat un roboțel. Alege aici un alt stil, răsfoiește pe componente cu săgețile sau apasă pe „Surprinde-mă”. Studenții vor vedea această față lângă nume și la fiecare răspuns din conversație.",
-  "learningLevel.levelUp": "Nivel crescut: {label}!"
+  "learningLevel.levelUp": "Nivel crescut: {label}!",
+  "journal.section.summary": "Ce ai făcut",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "A mers bine",
+  "journal.section.toImprove": "Se poate îmbunătăți",
+  "journal.section.nextSteps": "Următorul tău pas",
+  "feedback.levelBadgeTitle": "Nivelul tău de învățare la momentul acestei activități",
+  "dashboard.journal.nextStep": "Următorul tău pas:"
 }

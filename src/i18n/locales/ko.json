@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "배경",
   "help.personas.avatar.title": "페르소나에 얼굴 만들기",
   "help.personas.avatar.body": "각 페르소나는 자동으로 작은 로봇을 갖게 돼. 여기서 다른 스타일을 고르고, 화살표로 각 부분을 넘겨보거나 \"나를 놀라게 해줘\"를 클릭해. 학생들은 대화에서 이름 옆과 각 답변마다 이 얼굴을 보게 돼.",
-  "learningLevel.levelUp": "레벨 업: {label}!"
+  "learningLevel.levelUp": "레벨 업: {label}!",
+  "journal.section.summary": "무엇을 했나요",
+  "journal.section.feedback": "피드백",
+  "journal.section.wentWell": "잘한 점",
+  "journal.section.toImprove": "개선할 점",
+  "journal.section.nextSteps": "다음 단계",
+  "feedback.levelBadgeTitle": "이 활동을 하는 현재 너의 학습 수준",
+  "dashboard.journal.nextStep": "다음 단계:"
 }

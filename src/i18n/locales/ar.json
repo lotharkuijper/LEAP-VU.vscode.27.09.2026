@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "الخلفية",
   "help.personas.avatar.title": "وجه لشخصيتك",
   "help.personas.avatar.body": "تحصل كل شخصية تلقائيًا على روبوت صغير. اختر هنا نمطًا آخر، وتصفّح كل جزء باستخدام الأسهم أو انقر على \"فاجئني\". يرى الطلاب هذا الوجه بجانب الاسم ومع كل إجابة في المحادثة.",
-  "learningLevel.levelUp": "ارتفع المستوى: {label}!"
+  "learningLevel.levelUp": "ارتفع المستوى: {label}!",
+  "journal.section.summary": "ماذا فعلت",
+  "journal.section.feedback": "التغذية الراجعة",
+  "journal.section.wentWell": "سار بشكل جيد",
+  "journal.section.toImprove": "يمكن تحسينه",
+  "journal.section.nextSteps": "خطوتك التالية",
+  "feedback.levelBadgeTitle": "مستواك التعليمي في وقت هذا النشاط",
+  "dashboard.journal.nextStep": "خطوتك التالية:"
 }

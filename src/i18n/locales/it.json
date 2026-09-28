@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Sfondo",
   "help.personas.avatar.title": "Un volto per la tua persona",
   "help.personas.avatar.body": "Ogni persona riceve automaticamente un robottino. Scegli qui uno stile diverso, sfoglia le varie parti con le frecce oppure fai clic su \"Sorprendimi\". Gli studenti vedono questo volto accanto al nome e a ogni risposta nella conversazione.",
-  "learningLevel.levelUp": "Livello aumentato: {label}!"
+  "learningLevel.levelUp": "Livello aumentato: {label}!",
+  "journal.section.summary": "Cosa hai fatto",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "È andata bene",
+  "journal.section.toImprove": "Da migliorare",
+  "journal.section.nextSteps": "Il tuo prossimo passo",
+  "feedback.levelBadgeTitle": "Il tuo livello di apprendimento al momento di questa attività",
+  "dashboard.journal.nextStep": "Il tuo prossimo passo:"
 }

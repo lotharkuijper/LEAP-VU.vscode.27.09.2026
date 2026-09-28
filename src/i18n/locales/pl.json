@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Tło",
   "help.personas.avatar.title": "Twarz dla twojej persony",
   "help.personas.avatar.body": "Każda persona automatycznie otrzymuje robocika. Wybierz tutaj inny styl, przeglądaj poszczególne elementy strzałkami albo kliknij „Zaskocz mnie”. Studenci zobaczą tę twarz obok imienia oraz przy każdej odpowiedzi w rozmowie.",
-  "learningLevel.levelUp": "Poziom wyżej: {label}!"
+  "learningLevel.levelUp": "Poziom wyżej: {label}!",
+  "journal.section.summary": "Co zrobiłeś(-aś)",
+  "journal.section.feedback": "Informacje zwrotne",
+  "journal.section.wentWell": "Poszło dobrze",
+  "journal.section.toImprove": "Może być lepiej",
+  "journal.section.nextSteps": "Twój następny krok",
+  "feedback.levelBadgeTitle": "Twój poziom nauki w momencie tej aktywności",
+  "dashboard.journal.nextStep": "Twój następny krok:"
 }

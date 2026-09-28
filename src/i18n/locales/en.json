@@ -2609,5 +2609,12 @@
   "persona.avatar.part.background": "Background",
   "help.personas.avatar.title": "A face for your persona",
   "help.personas.avatar.body": "Every persona automatically gets a robot. Choose another style here, browse each feature with the arrows or click \"Surprise me\". Students see this face next to the name and beside every answer in the chat.",
-  "learningLevel.levelUp": "Level up: {label}!"
+  "learningLevel.levelUp": "Level up: {label}!",
+  "journal.section.summary": "What you did",
+  "journal.section.feedback": "Feedback",
+  "journal.section.wentWell": "Went well",
+  "journal.section.toImprove": "Can be improved",
+  "journal.section.nextSteps": "Your next step",
+  "feedback.levelBadgeTitle": "Your learning level at the time of this activity",
+  "dashboard.journal.nextStep": "Your next step:"
 }
