@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>LEAP-VU — Handleiding voor docenten</title>
+<style>
+  @font-face { font-family: 'Nunito'; src: url('fonts/nunito-latin-wght-normal.woff2') format('woff2'); font-weight: 200 1000; }
+  @page { size: A4; margin: 18mm 17mm 20mm 17mm; }
+  @page :first { margin: 0; }
+  :root {
+    --brand: #0b72c2; --brand-dark: #0a5d9f; --brand-soft: #eff8ff; --brand-line: #bfe3fe;
+    --ink: #1e293b; --ink-soft: #475569; --ink-faint: #94a3b8; --line: #e2e8f0; --paper: #ffffff;
+    --chat: #059669; --explain: #d97706; --quiz: #0891b2; --projects: #ea580c; --cafe: #8b5cf6; --journal: #0d9488;
+    --accent: #f97316;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font-family: 'Nunito', 'Segoe UI', sans-serif; color: var(--ink); font-size: 10.6pt; line-height: 1.55; background: var(--paper); }
+  h1, h2, h3, h4 { line-height: 1.2; letter-spacing: -0.01em; margin: 0; }
+  p { margin: 0 0 0.7em; }
+  ul, ol { margin: 0 0 0.8em; padding-left: 1.2em; }
+  li { margin-bottom: 0.25em; }
+  strong { font-weight: 800; }
+  a { color: var(--brand); text-decoration: none; }
+
+  /* ── Voorblad ── */
+  .cover { height: 297mm; width: 210mm; position: relative; overflow: hidden; page-break-after: always;
+    background: linear-gradient(160deg, #dbeafe 0%, #eff8ff 35%, #f8fafc 60%, #d1fae5 100%); }
+  .cover-inner { position: absolute; left: 22mm; right: 22mm; top: 58mm; }
+  .cover .kicker { font-size: 12pt; font-weight: 800; color: var(--brand); letter-spacing: 0.12em; text-transform: uppercase; }
+  .cover h1 { font-size: 46pt; font-weight: 900; margin: 6mm 0 4mm; color: #0f172a; }
+  .cover .sub { font-size: 17pt; color: var(--ink-soft); max-width: 140mm; }
+  .cover .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; margin-top: 22mm; max-width: 150mm; }
+  .cover .tile { border-radius: 5mm; padding: 5mm; color: white; font-weight: 800; font-size: 12pt; min-height: 22mm; display: flex; align-items: flex-end; }
+  .cover .meta { position: absolute; left: 22mm; bottom: 20mm; font-size: 10pt; color: var(--ink-soft); }
+  .cover .meta b { color: var(--ink); }
+
+  /* ── Hoofdstukken ── */
+  .chapter { page-break-before: always; }
+  .chapter-head { display: flex; align-items: center; gap: 5mm; margin-bottom: 7mm; padding-bottom: 4mm; border-bottom: 2px solid var(--brand-line); }
+  .chapter-num { width: 15mm; height: 15mm; border-radius: 4mm; background: var(--brand); color: white; font-size: 20pt; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .chapter-head h1 { font-size: 24pt; font-weight: 900; }
+  .chapter-head p { margin: 1mm 0 0; color: var(--ink-soft); font-size: 11pt; }
+  h2 { font-size: 15pt; font-weight: 900; margin: 7mm 0 2.5mm; color: #0f172a; }
+  h3 { font-size: 12pt; font-weight: 800; margin: 5mm 0 1.5mm; }
+  .lead { font-size: 12pt; color: var(--ink-soft); }
+
+  /* ── Bouwstenen ── */
+  figure { margin: 4mm 0 5mm; page-break-inside: avoid; }
+  figure img { width: 84%; margin: 0 auto; border-radius: 3mm; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(15,23,42,0.08); display: block; }
+  figure.half img { width: 100%; }
+  figcaption { font-size: 9pt; color: var(--ink-soft); margin: 2mm auto 0; width: 84%; }
+  .two figure img, .two figcaption { width: 100%; }
+  figcaption b { color: var(--ink); }
+  .box { border-radius: 3mm; padding: 4mm 5mm; margin: 4mm 0; page-break-inside: avoid; }
+  .box h4 { font-size: 10.5pt; font-weight: 900; margin-bottom: 1.5mm; }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  .tip { background: var(--brand-soft); border: 1px solid var(--brand-line); }
+  .tip h4 { color: var(--brand-dark); }
+  .warn { background: #fff7ed; border: 1px solid #fed7aa; }
+  .warn h4 { color: #c2410c; }
+  .theory { background: #f8fafc; border: 1px solid var(--line); border-left: 4px solid var(--ink-faint); }
+  .theory h4 { color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.06em; font-size: 8.5pt; }
+  .principle { display: grid; grid-template-columns: 11mm 1fr; gap: 4mm; margin: 3.5mm 0; page-break-inside: avoid; }
+  .principle .icon { width: 11mm; height: 11mm; border-radius: 3mm; color: white; font-weight: 900; font-size: 13pt; display: flex; align-items: center; justify-content: center; }
+  .principle h3 { margin-top: 0.5mm; }
+  .seen { font-size: 9pt; color: var(--ink-soft); background: #f8fafc; border-radius: 2mm; padding: 2mm 3mm; margin-top: 1.5mm; }
+  .seen b { color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9.6pt; }
+  tr { break-inside: avoid; }
+  h2, h3 { break-after: avoid; page-break-after: avoid; }
+  th { text-align: left; background: #f1f5f9; font-weight: 800; padding: 2mm 3mm; border-bottom: 1px solid var(--line); }
+  td { padding: 2mm 3mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .pill { display: inline-block; border-radius: 99px; padding: 0.3mm 2.5mm; font-size: 8.5pt; font-weight: 800; color: white; }
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps > li { counter-increment: step; position: relative; padding-left: 10mm; margin-bottom: 2.5mm; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: var(--brand); color: white; font-weight: 900; font-size: 9pt; display: flex; align-items: center; justify-content: center; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; align-items: start; }
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding-left: 7mm; position: relative; margin-bottom: 2mm; }
+  .checklist li::before { content: ''; position: absolute; left: 0; top: 1mm; width: 4mm; height: 4mm; border: 1.5px solid var(--brand); border-radius: 1mm; }
+  .toc { list-style: none; padding: 0; margin-top: 6mm; }
+  .toc > li { display: flex; gap: 4mm; padding: 3mm 0; border-bottom: 1px solid var(--line); font-size: 12pt; font-weight: 800; }
+  .toc > li span.n { color: var(--brand); width: 8mm; }
+  .toc > li small { display: block; font-weight: 600; color: var(--ink-soft); font-size: 9.5pt; }
+  .qa h3 { color: var(--brand-dark); }
+  .avoid { page-break-inside: avoid; }
+  .small { font-size: 9pt; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ VOORBLAD ═══════════════════════════ -->
+<section class="cover">
+  <div class="cover-inner">
+    <div class="kicker">Handleiding voor docenten</div>
+    <h1>LEAP-VU</h1>
+    <div class="sub">Leren met AI, gegrond in je eigen cursusmateriaal — wat LEAP doet, waarom het zo werkt, en hoe je je cursus inricht.</div>
+    <div class="tiles">
+      <div class="tile" style="background:linear-gradient(135deg,#10b981,#059669)">Chat</div>
+      <div class="tile" style="background:linear-gradient(135deg,#f59e0b,#d97706)">Ik leg uit</div>
+      <div class="tile" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">Quiz</div>
+      <div class="tile" style="background:linear-gradient(135deg,#f97316,#ea580c)">Projecten</div>
+      <div class="tile" style="background:linear-gradient(135deg,#a78bfa,#8b5cf6)">Studiecafé</div>
+      <div class="tile" style="background:linear-gradient(135deg,#14b8a6,#0d9488)">Leerdagboek</div>
+    </div>
+  </div>
+  <div class="meta"><b>Vrije Universiteit Amsterdam</b> · versie september 2026</div>
+</section>
+
+<!-- ═══════════════════════════ INHOUD ═══════════════════════════ -->
+<section>
+  <h1 style="font-size:24pt;font-weight:900;margin-bottom:2mm">Inhoud</h1>
+  <p class="lead">Lees hoofdstuk 1 en 2 om te begrijpen wat LEAP is en waarom het zo werkt. Hoofdstuk 4 is het praktische stappenplan om je cursus in te richten.</p>
+  <ol class="toc">
+    <li><span class="n">1</span><div>Wat is LEAP?<small>In één oogopslag: wat studenten doen en wat jij als docent regelt</small></div></li>
+    <li><span class="n">2</span><div>De onderwijsfilosofie<small>Zeven principes achter het ontwerp — en jij houdt de regie</small></div></li>
+    <li><span class="n">3</span><div>Rondleiding: wat je studenten zien<small>Dashboard, Chat, Ik leg uit, Quiz, Projecten, Studiecafé, Leerdagboek</small></div></li>
+    <li><span class="n">4</span><div>Je cursus inrichten, stap voor stap<small>Van lege cursus tot “klaar voor studenten”</small></div></li>
+    <li><span class="n">5</span><div>Handig om te weten<small>Achtergrondtaken, uitleg, talen, privacy en veiligheid</small></div></li>
+    <li><span class="n">6</span><div>Checklist en veelgestelde vragen<small>Controleer vóór de start; oplossingen voor veelvoorkomende situaties</small></div></li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════════ 1. WAT IS LEAP ═══════════════════════════ -->
+<section class="chapter">
+  <div class="chapter-head"><div class="chapter-num">1</div><div><h1>Wat is LEAP?</h1><p>Een AI-leeromgeving die werkt met jóuw cursusmateriaal</p></div></div>
+
+  <p class="lead">LEAP-VU (Learning &amp; Engagement AI-Platform) is een webapplicatie van de VU waarin studenten met AI-ondersteuning oefenen met de stof van jouw cursus. Het bijzondere: alles wat de AI zegt, is gegrond in het materiaal dat jij uploadt — je colleges, readers, slides en websites.</p>
+
+  <figure>
+    <img src="img/dashboard.png" alt="">
+    <figcaption><b>Het dashboard van een student.</b> Vier manieren om te oefenen, elk met een eigen kleur die in de hele app terugkomt, en daaronder het leerdagboek.</figcaption>
+  </figure>
+
+  <h2>Wat studenten doen</h2>
+  <table>
+    <tr><th style="width:28%">Onderdeel</th><th>Wat de student doet</th></tr>
+    <tr><td><span class="pill" style="background:var(--chat)">Chat</span></td><td>Stelt vragen aan een tutor die meedenkt en wedervragen stelt, in plaats van meteen het antwoord te geven.</td></tr>
+    <tr><td><span class="pill" style="background:var(--explain)">Ik leg uit</span></td><td>Legt een begrip uit de cursus in eigen woorden uit en krijgt gerichte feedback: wat klopt, wat ontbreekt, welke misvatting speelt.</td></tr>
+    <tr><td><span class="pill" style="background:var(--quiz)">Quiz</span></td><td>Oefent met meerkeuze-, open en casusvragen over gekozen onderwerpen, met feedback en een volgende stap.</td></tr>
+    <tr><td><span class="pill" style="background:var(--projects)">Projecten</span></td><td>Werkt in een groep aan een opdracht en voert gesprekken met persona's, zoals een opdrachtgever of een expert.</td></tr>
+    <tr><td><span class="pill" style="background:var(--cafe)">Studiecafé</span></td><td>Stelt vragen aan medestudenten, discussieert en laat AI-antwoorden door anderen controleren.</td></tr>
+    <tr><td><span class="pill" style="background:var(--journal)">Leerdagboek</span></td><td>Kijkt terug op wat hij of zij heeft gedaan, met feedback en een volgende stap, en verzamelt achievements.</td></tr>
+  </table>
+
+  <h2>Wat jij als docent regelt</h2>
+  <ul>
+    <li><strong>Het materiaal</strong>: welke bestanden en websites LEAP gebruikt, en waarvoor (leerstof, cursusinformatie, projectmateriaal, alleen delen, alleen voor docenten).</li>
+    <li><strong>De begrippen</strong> waarover studenten uitleggen en quizzen — LEAP haalt ze uit je leerstof, jij beoordeelt ze.</li>
+    <li><strong>De quiz</strong>: uit welke bronnen de vragen komen (je materiaal, een vraagbank, of vrij door de AI).</li>
+    <li><strong>De toon en aanpak</strong> van de chat, en hoe streng LEAP bij je materiaal blijft.</li>
+    <li><strong>De projecten</strong>: opdrachten, persona's met een eigen gezicht, beoordelaars met een verborgen rubric.</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════ 2. FILOSOFIE ═══════════════════════════ -->
+<section class="chapter">
+  <div class="chapter-head"><div class="chapter-num">2</div><div><h1>De onderwijsfilosofie</h1><p>Waarom LEAP werkt zoals het werkt</p></div></div>
+
+  <p class="lead">Generatieve AI kan een student in een paar seconden een antwoord geven. Dat is precies het risico: wie het antwoord krijgt, hoeft niet meer na te denken. LEAP is ontworpen om het omgekeerde te doen — AI inzetten om studenten <em>meer</em> te laten denken, en altijd binnen de stof die jij als docent hebt gekozen.</p>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--brand)">1</div>
+    <div>
+      <h3>Gegrond in jouw cursusmateriaal</h3>
+      <p>De AI zoekt eerst in je eigen materiaal en baseert haar antwoord daarop, met bronverwijzingen [1], [2] naar de passages. Staat iets niet in je materiaal, dan zegt ze dat eerlijk in plaats van te gokken. Zo leren studenten de stof zoals die in jóuw cursus wordt behandeld — met jouw terminologie en jouw nadruk.</p>
+      <div class="seen"><b>In LEAP:</b> bronnummers in chat en feedback; de melding “RAG beschikbaar” met het aantal documenten; de instelling “Strikt: alleen cursusbronnen”; begrippen die alleen verschijnen als ze in je materiaal te vinden zijn.</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--chat)">2</div>
+    <div>
+      <h3>Denken in plaats van antwoorden krijgen</h3>
+      <p>De chat werkt <strong>Socratisch</strong>: de tutor stelt vaak eerst een wedervraag en bouwt voort op wat de student al weet. In <strong>Ik leg uit</strong> draait het om: de student legt uit, de AI luistert en geeft feedback. Uitleggen in eigen woorden is een van de krachtigste manieren om te leren, omdat je gaten in je eigen begrip zelf ontdekt. De <strong>quiz</strong> laat studenten kennis actief ophalen, wat beter beklijft dan herlezen.</p>
+      <div class="seen"><b>In LEAP:</b> wedervragen in de chat; “Leg dit begrip uit in je eigen woorden”; quizvragen met feedback per antwoord.</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--quiz)">3</div>
+    <div>
+      <h3>Formatieve feedback: waar sta je, en wat is je volgende stap?</h3>
+      <p>Feedback werkt pas echt als een student weet wat goed ging, wat beter kan <em>en</em> wat de volgende stap is. LEAP geeft daarom steeds feedback én <strong>feed-forward</strong>: niet alleen een oordeel, maar een concrete vervolgstap, bij voorkeur met verwijzing naar je cursusmateriaal.</p>
+      <div class="seen"><b>In LEAP:</b> feedback bij Ik leg uit (goed / ontbreekt / misvattingen); feedback en feed-forward bij open quizvragen; het leerdagboek in drie blokken: <i>Wat heb je gedaan</i>, <i>Feedback</i> en <i>Je volgende stap</i>.</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--journal)">4</div>
+    <div>
+      <h3>Reflectie en eigenaarschap: de student blijft de baas</h3>
+      <p>Studenten kiezen <strong>zelf hun leerniveau</strong> (van Nieuw tot Expert); LEAP past de diepgang van de uitleg daarop aan. De AI verandert dat niveau nooit uit zichzelf: een student kan vragen of hij klaar is voor een hoger niveau, krijgt een eerlijk oordeel, en besluit dan zelf. Het leerdagboek maakt het leerproces zichtbaar en nodigt uit tot terugkijken.</p>
+      <div class="seen"><b>In LEAP:</b> de niveaukeuze onder de chat en bij Ik leg uit; de knop “Klaar voor een hoger niveau?”; automatische reflecties in het leerdagboek, en ruimte voor eigen notities.</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--accent)">5</div>
+    <div>
+      <h3>Motivatie door verdiende successen</h3>
+      <p>Een beloning motiveert als hij iets betekent. In LEAP verdient een student een <strong>achievement</strong> pas als de tutor, na een inhoudelijk gesprek, oordeelt dat hij een onderwerp op een hoger niveau beheerst — niet door op een knop te klikken. Autonomie (zelf kiezen), competentie (merken dat je groeit) en verbondenheid (samen in groepen en het studiecafé) zijn de drie bronnen van motivatie die LEAP bewust voedt.</p>
+      <div class="seen"><b>In LEAP:</b> een feestelijk moment bij een positief oordeel; medailles per niveau (brons tot platina) in de prijzenkast van het leerdagboek, met het oordeel als bewijs.</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--projects)">6</div>
+    <div>
+      <h3>Samen leren aan authentieke opdrachten</h3>
+      <p>In projecten werken studenten in groepen aan realistische vraagstukken. Ze voeren gesprekken met <strong>persona's</strong> — een opdrachtgever, een epidemioloog, een beleidsmaker — die reageren vanuit hun rol en de stof van de cursus. Hoe de groep zich opstelt, beïnvloedt de verstandhouding met een persona, zoals in de praktijk. Een <strong>beoordelaar</strong>-persona geeft formatieve feedback op ingeleverd werk met jouw rubric.</p>
+      <div class="seen"><b>In LEAP:</b> projectruimte per groep; persona's met een eigen gezicht; verstandhouding en een maximum aantal gesprekken; beoordelaars met een verborgen rubric; het studiecafé voor vragen aan elkaar.</div>
+    </div>
+  </div>
+
+  <div class="principle">
+    <div class="icon" style="background:var(--cafe)">7</div>
+    <div>
+      <h3>Kritisch leren omgaan met AI</h3>
+      <p>AI maakt fouten. LEAP leert studenten daar bewust mee omgaan: bronnen zijn zichtbaar, en met <strong>“Check de LLM”</strong> zet een student een AI-antwoord in het studiecafé, zodat medestudenten en docenten het kunnen controleren. Zo wordt kritisch lezen van AI-output een vaardigheid, geen bijzaak.</p>
+      <div class="seen"><b>In LEAP:</b> de knop “Check de LLM” onder elk antwoord; de categorie “check-llm” in het studiecafé.</div>
+    </div>
+  </div>
+
+  <div class="box tip">
+    <h4>En jij houdt de regie</h4>
+    <p>Jij bepaalt welk materiaal LEAP gebruikt en wat studenten wel of niet zien, hoe de chat klinkt, waar quizvragen vandaan komen en hoe streng de AI bij je bronnen blijft. Antwoordmodellen en tentamens die je als “Alleen voor docenten” markeert, bereiken studenten nooit — ook niet via de AI.</p>
+  </div>
+
+  <div class="box theory">
+    <h4>Achtergrond</h4>
+    <p class="small">Het ontwerp sluit aan bij bekend onderwijsonderzoek, onder meer: het <i>self-explanation</i>-effect (Chi e.a., 1994) — Ik leg uit; het <i>testing effect</i> of <i>retrieval practice</i> (Roediger &amp; Karpicke, 2006) — de quiz; het feedbackmodel met feed up, feed back en feed forward (Hattie &amp; Timperley, 2007) — feedback en het leerdagboek; en de zelfdeterminatietheorie van Deci &amp; Ryan (autonomie, competentie, verbondenheid) — niveaukeuze, achievements en samenwerken.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ 3. RONDLEIDING ═══════════════════════════ -->
+<section class="chapter">
+  <div class="chapter-head"><div class="chapter-num">3</div><div><h1>Rondleiding: wat je studenten zien</h1><p>Zo ziet LEAP eruit voor een student in jouw cursus</p></div></div>
+
+  <h2 style="color:var(--chat)">Chat — de Socratische tutor</h2>
+  <p>De student stelt een vraag; de tutor zoekt in je materiaal en antwoordt, vaak met een wedervraag om de student zelf te laten nadenken. Onder de chat kiest de student zijn leerniveau en kan hij vragen of hij klaar is voor een hoger niveau. Een afgerond gesprek kan de student naar het leerdagboek verplaatsen; LEAP maakt er dan een reflectie van.</p>
+  <figure>
+    <img src="img/chat.png" alt="">
+    <figcaption><b>Een echte vraag over E&amp;B1.</b> De tutor geeft niet meteen het antwoord, maar vraagt eerst wat de student zelf denkt. Onderaan: het leerniveau en “Klaar voor een hoger niveau?”; onder het antwoord: “Check de LLM”.</figcaption>
+  </figure>
+
+  <h2 style="color:var(--explain)">Ik leg uit — leren door uitleggen</h2>
+  <p>De student kiest een begrip uit je cursus en legt het in eigen woorden uit. LEAP vergelijkt de uitleg met je materiaal en geeft feedback in vaste delen: wat goed is, wat ontbreekt of onduidelijk is, en welke misvattingen gecorrigeerd moeten worden — met bronverwijzingen.</p>
+  <div class="two">
+    <figure><img src="img/uitleg.png" alt=""><figcaption><b>De student legt uit</b> wat een 95%-betrouwbaarheidsinterval is.</figcaption></figure>
+    <figure><img src="img/uitleg-feedback.png" alt=""><figcaption><b>De feedback</b>, met verwijzingen [1][2][3] naar de passages in het cursusmateriaal.</figcaption></figure>
+  </div>
+
+  <h2 style="color:var(--quiz)">Quiz — oefenen met ophalen</h2>
+  <p>De student kiest een of meer onderwerpen, een vraagtype (meerkeuze, open vraag of casus) en een moeilijkheid. Bij meerkeuze ziet hij direct of het goed is; open antwoorden krijgen feedback, feed-forward en een score van 0–100. Een afgeronde quiz kan als reflectie in het leerdagboek.</p>
+  <figure>
+    <img src="img/quiz.png" alt="">
+    <figcaption><b>Een quiz starten.</b> De onderwerpen zijn de begrippen van je cursus (hoofdstuk 4, stap 3); de vraagbronnen stel jij in (stap 5).</figcaption>
+  </figure>
+
+  <h2 style="color:var(--projects)">Projecten — samen aan een opdracht</h2>
+  <p>In de projectruimte werkt een groep aan een opdracht. De groep kiest een persona om mee te praten; elke persona heeft een eigen gezicht, rol en toon, en verwijst naar de stof. Hoe vaak een groep een persona mag raadplegen, stel jij in. De groep levert zijn product in; een beoordelaar-persona geeft daar formatieve feedback op, eventueel met een medaille. Na afronding komen samenvattingen van de gesprekken in het leerdagboek van alle groepsleden.</p>
+
+  <h2 style="color:var(--cafe)">Studiecafé — van en met elkaar leren</h2>
+  <p>Een forum per cursus, met de categorieën <i>vraag</i>, <i>discussie</i>, <i>samenwerken</i> en <i>check-llm</i>. Studenten reageren op elkaar, geven kudos en kunnen een stukje uit de chat of een quiz meesturen. Jij kunt aankondigingen plaatsen en berichten vastzetten of sluiten. Studenten krijgen desgewenst een e-mail bij reacties.</p>
+
+  <h2 style="color:var(--journal)">Leerdagboek en achievements</h2>
+  <p>Hier komt alles samen. Na een chat, uitleg, quiz of project maakt LEAP een reflectie in drie blokken, met het leerniveau van dat moment erbij. Studenten kunnen ook eigen notities schrijven. In het tabblad <b>Achievements</b> staat de prijzenkast: verdiende medailles per onderwerp en niveau, en wat er nog te verdienen valt.</p>
+  <figure>
+    <img src="img/leerdagboek-blokken.png" alt="">
+    <figcaption><b>Een reflectie in het leerdagboek:</b> wat heb je gedaan, feedback (ging goed / kan beter) en je volgende stap — met het leerniveau in de kop.</figcaption>
+  </figure>
+  <figure>
+    <img src="img/feest.png" alt="">
+    <figcaption><b>Verdiend, niet geklikt.</b> Oordeelt de tutor na een inhoudelijk gesprek dat de student klaar is voor een hoger niveau, dan volgt dit feest en een achievement. Het niveau gaat pas omhoog als de student dat zelf bevestigt.</figcaption>
+  </figure>
+</section>
+
+<!-- ═══════════════════════════ 4. INRICHTEN ═══════════════════════════ -->
+<section class="chapter">
+  <div class="chapter-head"><div class="chapter-num">4</div><div><h1>Je cursus inrichten, stap voor stap</h1><p>Van lege cursus tot “klaar voor studenten”</p></div></div>
+
+  <p class="lead">Je richt je cursus in via <b>Beheer</b> (linkermenu). Bovenaan staat altijd de actieve cursus; alles wat je doet, geldt voor die cursus. Twijfel je ergens over, klik dan op het vraagteken ⓘ naast een onderdeel voor een korte uitleg.</p>
+
+  <h2>Stap 0 — Cursus en leden</h2>
+  <p>Via <b>Beheer → Cursussen beheren</b> maak je een cursus aan (naam en beschrijving). Per cursus zie je of hij <i>actief</i> en <i>beschikbaar voor studenten</i> is; met <b>Beheer leden</b> voeg je docenten en studenten toe. Minder gebruikte en ingrijpende acties, zoals een cursus verwijderen, staan onder <b>⋯ Meer</b>.</p>
+  <div class="box tip"><h4>Tip</h4><p>Houd een nieuwe cursus op <i>niet beschikbaar</i> tot je stap 4 (“Klaar voor studenten”) hebt afgerond. Studenten zien de cursus dan nog niet.</p></div>
+
+  <h2>Stap 1 — Bestanden en websites toevoegen</h2>
+  <p>In <b>Beheer → Cursusmateriaal</b> werk je vier stappen van links naar rechts af. In stap 1 upload je bestanden (pdf, docx, pptx, txt) of voeg je een website toe, zoals een online boek of je leeromgeving. Per bestand kies je een <b>doel</b>; LEAP doet een voorstel op basis van naam en inhoud.</p>
+  <figure>
+    <img src="img/beheer-materiaal.png" alt="">
+    <figcaption><b>Cursusmateriaal</b> met de vier stappen. Elke stap toont of alles in orde is.</figcaption>
+  </figure>
+  <table>
+    <tr><th>Doel</th><th>Voorbeelden</th><th>Wat de AI ermee doet</th><th>Studenten</th></tr>
+    <tr><td><b>Leerstof</b></td><td>colleges, slides, reader, syllabus</td><td>chat, Ik leg uit, quiz en begrippen</td><td>ja</td></tr>
+    <tr><td><b>Cursusinformatie</b></td><td>studiehandleiding, rooster</td><td>alleen praktische vragen in de chat</td><td>ja</td></tr>
+    <tr><td><b>Projectmateriaal</b></td><td>opdracht, dataset, literatuur</td><td>projectbegeleiding door persona's</td><td>in het project</td></tr>
+    <tr><td><b>Alleen delen</b></td><td>formats, sjablonen</td><td>niets</td><td>downloaden via Bronnen</td></tr>
+    <tr><td><b>Alleen voor docenten</b></td><td>antwoordmodellen, tentamens</td><td>nooit</td><td>nooit</td></tr>
+  </table>
+  <div class="box tip"><h4>Goed om te weten</h4>
+    <ul>
+      <li><b>Sprekersnotities</b> in PowerPoint worden meegenomen: schrijf daar gerust uitleg die je in het college vertelt.</li>
+      <li>Bij een <b>website</b> zoekt LEAP de pagina's; jij kiest welke meegaan. Met <i>Opnieuw ophalen</i> verwerkt LEAP alleen gewijzigde pagina's; verdwenen pagina's worden gemeld, niet stilletjes verwijderd.</li>
+      <li>Je kunt het doel van een bestand later altijd wijzigen.</li>
+    </ul>
+  </div>
+
+  <h2>Stap 2 — Verwerking controleren</h2>
+  <p>LEAP leest je leerstof in en maakt er doorzoekbare fragmenten van. Hier zie je per bestand of dat gelukt is en uit hoeveel fragmenten het bestaat. Staat er een fout, verwerk het bestand dan opnieuw of upload een tekstversie.</p>
+
+  <h2>Stap 3 — Begrippen</h2>
+  <p>LEAP leest je <b>hele</b> leerstof, document voor document, en haalt de kernbegrippen eruit. Elk begrip wordt gecontroleerd tegen je materiaal: alleen begrippen die daarin terug te vinden zijn, komen op de lijst. Studenten oefenen met deze begrippen in Ik leg uit en de quiz.</p>
+  <figure>
+    <img src="img/beheer-begrippen.png" alt="">
+    <figcaption><b>Stap 3 — Begrippen.</b> Met “Zoek nieuwe begrippen” vult LEAP de lijst aan zonder je bestaande keuzes te veranderen.</figcaption>
+  </figure>
+  <ul>
+    <li><b>Begrippen per document</b> — laat zien hoeveel begrippen elk document oplevert. Een document met 0 staat in oranje: controleer dan of het goed is ingelezen.</li>
+    <li><b>Mogelijke dubbelingen</b> — spellingvarianten voegt LEAP zelf samen. Synoniemen, afkortingen en vertalingen (zoals RCT en Randomized Controlled Trial) legt LEAP je voor: kies <i>Samenvoegen</i> of <i>Geen dubbeling</i>. De andere naam blijft bewaard, zodat studenten het begrip onder beide namen vinden.</li>
+    <li><b>Maximum aantal begrippen</b> — LEAP verdeelt de plaatsen eerlijk over je documenten, met voorrang voor begrippen die in meerdere modules terugkomen. Heeft je cursus veel modules, zet het maximum dan ruim (bijvoorbeeld 150–200).</li>
+    <li>Je kunt begrippen <b>verbergen</b> of aanpassen; verborgen begrippen zien studenten niet.</li>
+  </ul>
+  <div class="box warn"><h4>Let op</h4><p>Neem bij voorstellen voor samenvoegen even de tijd: soms lijken twee begrippen op elkaar maar betekenen ze iets anders (bijvoorbeeld <i>betrouwbaarheid</i> van een meting en het <i>betrouwbaarheidsniveau</i> van een interval). Klik dan op <i>Geen dubbeling</i>; dat voorstel komt niet terug.</p></div>
+
+  <h2>Stap 4 — Klaar voor studenten</h2>
+  <p>Een laatste controle: bijvoorbeeld begrippen zonder bron in je materiaal, of een antwoordmodel dat studenten nog kunnen zien. Je kunt hier ook een voorbeeldvraag maken zoals een student die krijgt. Is alles in orde, maak de cursus dan <i>beschikbaar</i> (stap 0).</p>
+
+  <h2>Stap 5 — Quizbronnen</h2>
+  <p>In <b>Beheer → Quiz-bronnen</b> bepaal je waar de quizvragen vandaan komen:</p>
+  <ul>
+    <li><b>RAG (cursusmateriaal)</b> — vragen op basis van passages uit je leerstof;</li>
+    <li><b>ItemBank</b> — vragen uit een vraagbank, zoals ShareStats (via <i>Imports</i>) of je eigen vragen als CSV-bestand;</li>
+    <li><b>LLM-creatief</b> — vragen die de AI vrij bedenkt over het begrip.</li>
+  </ul>
+  <figure>
+    <img src="img/beheer-quizbronnen.png" alt="">
+    <figcaption><b>De bronnen-mix per cursus.</b> Daaronder het dekkingsoverzicht (hoeveel vraagbankvragen er per begrip zijn) en de koppeling van begrippen aan onderdelen van de vraagbank.</figcaption>
+  </figure>
+  <div class="box tip"><h4>Tip</h4><p>Een begrip krijgt alleen vraagbankvragen als je het koppelt aan een onderdeel van de vraagbank én het vraagbank-percentage hoger dan 0 is. Ontbreken er vraagbankvragen, dan vult de AI aan. Meer “cursusmateriaal” betekent vragen die dichter bij jouw stof liggen.</p></div>
+
+  <h2>Stap 6 — Chat-instructies en zoekgevoeligheid</h2>
+  <p><b>Chat-instructies</b> zijn de vaste aanwijzingen die LEAP meekrijgt bij de chat en bij Ik leg uit: toon, aanpak en wat de AI wel of niet mag doen. Je kunt een cursus eigen instructies geven, bijvoorbeeld een vakspecifieke toon. Een wijziging geldt meteen voor alle studenten — wijzig met zorg.</p>
+  <p><b>Zoekgevoeligheid AI</b> bepaalt hoe ruim LEAP passages uit je materiaal meeneemt: <i>Ruim</i> (meer passages, soms minder precies), <i>Gebalanceerd</i> (aanbevolen) of <i>Streng</i> (alleen passages die duidelijk over de vraag gaan). Met “Probeer met een begrip” zie je vooraf wat een instelling doet, zonder dat studenten er iets van merken.</p>
+
+  <h2>Stap 7 — Projecten en persona's</h2>
+  <p>In <b>Beheer → Projecten</b> maak je groepsopdrachten aan. Per project voeg je materiaal toe (met het oogje bepaal je of studenten het zien), stel je in of groepen iets mogen inleveren, en kies je de persona's.</p>
+  <ol class="steps">
+    <li><b>Persona-sjablonen</b> — maak een persona één keer als sjabloon voor je cursus en voeg hem toe aan elk project waar je hem nodig hebt. Elk project krijgt een eigen kopie die je daar vrij kunt aanpassen.</li>
+    <li><b>Een gezicht</b> — elke persona krijgt vanzelf een robotje. Met <i>Gezicht aanpassen</i> kies je een stijl (robot, cartoon, lijntekening, schets, handgetekend), blader je per onderdeel of klik je op <i>Verras me</i>. Het gezicht verschijnt overal waar de persona voorkomt.</li>
+    <li><b>Gesprekspartner of beoordelaar</b> — een gesprekspartner (zoals een opdrachtgever) praat met de groepen. Een <i>beoordelaar</i> is verborgen: hij geeft feedback op ingeleverd werk met jouw rubric, die studenten niet zien.</li>
+    <li><b>Aantal gesprekken en verstandhouding</b> — beperk hoe vaak een groep een persona mag raadplegen, en laat de houding van een persona meebewegen met hoe de groep zich opstelt.</li>
+  </ol>
+  <figure>
+    <img src="img/persona-gezicht.png" alt="">
+    <figcaption><b>Een persona-sjabloon bewerken</b>, met de editor voor het gezicht open.</figcaption>
+  </figure>
+
+  <h2>Stap 8 — Cursus-info en leerniveaus</h2>
+  <p>Bij <b>Cursus-info</b> zet je praktische informatie die de chat mag gebruiken voor vragen als “wanneer is de deadline?”. Bij <b>Leerniveaus</b> zie je welk niveau studenten zelf hebben gekozen. Je kunt dat alleen bekijken, niet wijzigen: de student blijft de baas over zijn niveau.</p>
+</section>
+
+<!-- ═══════════════════════════ 5. HANDIG ═══════════════════════════ -->
+<section class="chapter">
+  <div class="chapter-head"><div class="chapter-num">5</div><div><h1>Handig om te weten</h1><p>Kleine dingen die het werken prettiger maken</p></div></div>
+
+  <h2>Taken lopen door terwijl je verder werkt</h2>
+  <p>Langere taken — begrippen zoeken, bestanden uploaden, een website importeren of bijwerken, een vraagbank importeren — lopen door als je naar een ander deel van LEAP gaat. Rechtsonder zie je de voortgang; is een taak klaar, dan krijg je een seintje met een link naar het resultaat.</p>
+  <figure style="max-width:82mm;margin-left:0">
+    <img src="img/takenvak.png" alt="">
+    <figcaption><b>Het takenvak</b> rechtsonder: een afgeronde upload en een lopende begrippenextractie.</figcaption>
+  </figure>
+  <div class="box warn"><h4>Let op</h4><p>Begrippen zoeken gebeurt op de server en gaat zelfs door als je de pagina ververst. Uploaden en importeren doet je browser zelf: houd dan het tabblad open. LEAP waarschuwt als je het tabblad wilt sluiten.</p></div>
+
+  <h2>Uitleg aan of uit</h2>
+  <p>Rechtsboven in Beheer staat de schakelaar <b>Uitleg tonen</b>. Staat hij aan, dan zie je bij elk onderdeel een vraagteken met een korte uitleg en tips. Ken je LEAP goed, zet hem dan uit voor een rustiger scherm; je keuze wordt onthouden.</p>
+
+  <h2>Twintig talen</h2>
+  <p>LEAP is beschikbaar in twintig talen, waaronder Nederlands, Engels, Duits, Frans, Spaans, Chinees en Arabisch. Studenten kiezen rechtsboven hun taal; de AI antwoordt dan ook in die taal. Je hoeft je materiaal daarvoor niet te vertalen.</p>
+
+  <h2>Privacy en veiligheid</h2>
+  <ul>
+    <li>De AI draait op de <b>Azure-omgeving van de VU</b>; LEAP gebruikt geen publieke AI-diensten als terugval.</li>
+    <li>Bestanden met het doel <b>Alleen voor docenten</b> zijn in de database afgeschermd: studenten zien ze nooit en de AI gebruikt ze niet.</li>
+    <li>Het leerdagboek en de achievements van een student zijn alleen voor die student zichtbaar.</li>
+    <li>Voeg alleen materiaal en websites toe waarvan je het gebruik mag toestaan.</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════ 6. CHECKLIST + FAQ ═══════════════════════════ -->
+<section class="chapter">
+  <div class="chapter-head"><div class="chapter-num">6</div><div><h1>Checklist en veelgestelde vragen</h1><p>Vóór de start, en als iets anders gaat dan je verwacht</p></div></div>
+
+  <h2>Checklist: klaar om te starten?</h2>
+  <ul class="checklist">
+    <li>Alle leerstof staat in Cursusmateriaal, met het juiste doel.</li>
+    <li>Antwoordmodellen en tentamens staan op <i>Alleen voor docenten</i>.</li>
+    <li>Stap 2 (Verwerking) is overal in orde.</li>
+    <li>Elk document levert begrippen op (geen oranje nullen bij <i>Begrippen per document</i>).</li>
+    <li>Je hebt de voorgestelde dubbelingen bekeken.</li>
+    <li>De bronnen-mix van de quiz past bij je cursus.</li>
+    <li>Je hebt zelf een paar vragen gesteld in de chat en een begrip uitgelegd.</li>
+    <li>Stap 4 (Klaar voor studenten) geeft geen waarschuwingen meer.</li>
+    <li>Studenten zijn lid van de cursus, en de cursus staat op <i>beschikbaar</i>.</li>
+  </ul>
+
+  <div class="qa">
+    <h2>Veelgestelde vragen</h2>
+
+    <h3>Een document levert geen begrippen op.</h3>
+    <p>Kijk in stap 2 of het goed is ingelezen (aantal fragmenten). Een gescande pdf zonder tekstlaag kan LEAP niet lezen; upload dan een tekstversie. Is het document wel ingelezen, zoek dan nieuwe begrippen of verhoog het maximum aantal begrippen.</p>
+
+    <h3>Ik zie twee begrippen die eigenlijk hetzelfde zijn.</h3>
+    <p>Klik bij <i>Mogelijke dubbelingen</i> op <i>Zoek dubbelingen</i> en kies <i>Samenvoegen</i>. De uitleg van studenten en quizkoppelingen verhuizen mee; de andere naam blijft bewaard.</p>
+
+    <h3>De chat antwoordt te veel buiten mijn stof.</h3>
+    <p>Zet de zoekgevoeligheid op <i>Streng</i> of zet “alleen cursusbronnen” aan, en controleer met “Probeer met een begrip” of er voor die onderwerpen passages worden gevonden. Ontbreken ze, voeg dan materiaal toe.</p>
+
+    <h3>Quizvragen passen niet goed bij een begrip.</h3>
+    <p>Verhoog in Quiz-bronnen het aandeel <i>RAG (cursusmateriaal)</i>, of koppel het begrip aan de map waarin de stof erover staat. Met het dekkingsoverzicht zie je waarom een begrip geen vraagbankvragen krijgt.</p>
+
+    <h3>Kan ik het niveau van een student aanpassen?</h3>
+    <p>Nee, bewust niet. De student kiest zelf; jij kunt het bekijken bij Leerniveaus. Een student die wil weten of hij verder kan, vraagt dat in de chat via “Klaar voor een hoger niveau?”.</p>
+
+    <h3>Ik wil de toon van de chat voor mijn vak aanpassen.</h3>
+    <p>Geef je cursus eigen chat-instructies (Beheer → Chat-instructies). Test de wijziging direct zelf in de chat, want hij geldt meteen voor al je studenten.</p>
+  </div>
+
+  <div class="box tip">
+    <h4>Vragen of ideeën?</h4>
+    <p>LEAP wordt steeds verder ontwikkeld, mede op basis van ervaringen van docenten en studenten. Neem bij vragen, problemen of ideeën contact op met het LEAP-team van de VU.</p>
+  </div>
+</section>
+
+</body>
+</html>
