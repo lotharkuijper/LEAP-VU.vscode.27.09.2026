@@ -427,7 +427,7 @@
   "projects.inviteCode": "Код запрошення",
   "projects.join": "Приєднатися",
   "projects.cancel": "Скасувати",
-  "projects.research": "Дослідницьке питання",
+  "projects.research": "Результат проєкту",
   "projects.groupOf": "Група з {n}",
   "projects.lastActivity": "Остання активність",
   "projects.restart": "Перезапустити проєкт",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Редагувати проєкт",
   "admin.projects.newTitle": "Новий проєкт",
   "admin.projects.fieldTitle": "Назва",
-  "admin.projects.fieldQuestion": "Дослідницьке питання",
+  "admin.projects.fieldQuestion": "Результат проєкту",
   "admin.projects.fieldDesc": "Опис (коротко)",
   "admin.projects.fieldGoals": "Цілі / навчальні цілі",
   "admin.projects.fieldGoalsPlaceholder": "Що студенти мають уміти після цього проєкту?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Скасувати",
   "admin.projects.saveBtn": "Зберегти",
   "admin.projects.saving": "Збереження…",
-  "admin.projects.errorTitleRequired": "Назва та дослідницьке питання обов’язкові",
+  "admin.projects.errorTitleRequired": "Назва та результат проєкту обов’язкові",
   "admin.projects.errorMinMax": "Мінімальний розмір групи не може бути більшим за максимальний",
   "admin.projects.fieldSelfSignup": "Самостійна реєстрація",
   "admin.projects.detail.subtitle": "Керуй персонами, документами та рубриками для цього проєкту.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Гарна робота! Розмова зараховується для досягнення лише тоді, коли ти сам(а) поставив(ла) у ній кілька змістовних запитань або дав(ла) пояснення. Продовжуй ще трохи, а потім запитай знову.",
   "achievements.notice.maxLevel": "Ти вже на найвищому рівні: Експерт. Чудово!",
   "common.more": "Більше",
-  "common.moreActions": "Більше дій"
+  "common.moreActions": "Більше дій",
+  "admin.projects.fieldQuestionPlaceholder": "Напр. постер, звіт, аналіз даних або презентація"
 }

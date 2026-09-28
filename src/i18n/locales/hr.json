@@ -427,7 +427,7 @@
   "projects.inviteCode": "Pozivni kod",
   "projects.join": "Sudjeluj",
   "projects.cancel": "Odustani",
-  "projects.research": "Istraživačko pitanje",
+  "projects.research": "Ishod projekta",
   "projects.groupOf": "Grupa od {n}",
   "projects.lastActivity": "Zadnja aktivnost",
   "projects.restart": "Ponovno pokreni projekt",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Uredi projekt",
   "admin.projects.newTitle": "Novi projekt",
   "admin.projects.fieldTitle": "Naslov",
-  "admin.projects.fieldQuestion": "Istraživačko pitanje",
+  "admin.projects.fieldQuestion": "Ishod projekta",
   "admin.projects.fieldDesc": "Opis (kratko)",
   "admin.projects.fieldGoals": "Ciljevi / ishodi učenja",
   "admin.projects.fieldGoalsPlaceholder": "Što studenti trebaju moći nakon ovog projekta?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Odustani",
   "admin.projects.saveBtn": "Spremi",
   "admin.projects.saving": "Spremanje…",
-  "admin.projects.errorTitleRequired": "Naslov i istraživačko pitanje su obavezni",
+  "admin.projects.errorTitleRequired": "Naslov i ishod projekta su obvezni",
   "admin.projects.errorMinMax": "Minimalna veličina grupe ne smije biti veća od maksimalne",
   "admin.projects.fieldSelfSignup": "Samostalna prijava",
   "admin.projects.detail.subtitle": "Upravljaj personama, dokumentima i rubrikama za ovaj projekt.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Dobro ti ide! Razgovor se računa za postignuće tek kad u njemu sam/a postaviš nekoliko sadržajnih pitanja ili pružiš objašnjenja. Nastavi još malo pa onda ponovno pitaj.",
   "achievements.notice.maxLevel": "Već si na najvišoj razini: Expert. Bravo!",
   "common.more": "Više",
-  "common.moreActions": "Više radnji"
+  "common.moreActions": "Više radnji",
+  "admin.projects.fieldQuestionPlaceholder": "Npr. poster, izvješće, analiza podataka ili prezentacija"
 }

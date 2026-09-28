@@ -427,7 +427,7 @@
   "projects.inviteCode": "Código de invitación",
   "projects.join": "Participar",
   "projects.cancel": "Cancelar",
-  "projects.research": "Pregunta de investigación",
+  "projects.research": "Resultado del proyecto",
   "projects.groupOf": "Grupo de {n}",
   "projects.lastActivity": "Última actividad",
   "projects.restart": "Reiniciar proyecto",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Editar proyecto",
   "admin.projects.newTitle": "Nuevo proyecto",
   "admin.projects.fieldTitle": "Título",
-  "admin.projects.fieldQuestion": "Pregunta de investigación",
+  "admin.projects.fieldQuestion": "Resultado del proyecto",
   "admin.projects.fieldDesc": "Descripción (breve)",
   "admin.projects.fieldGoals": "Objetivos / objetivos de aprendizaje",
   "admin.projects.fieldGoalsPlaceholder": "¿Qué deben ser capaces de hacer los estudiantes después de este proyecto?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Cancelar",
   "admin.projects.saveBtn": "Guardar",
   "admin.projects.saving": "Guardando…",
-  "admin.projects.errorTitleRequired": "El título y la pregunta de investigación son obligatorios",
+  "admin.projects.errorTitleRequired": "El título y el resultado del proyecto son obligatorios",
   "admin.projects.errorMinMax": "El tamaño mínimo del grupo no puede ser mayor que el máximo",
   "admin.projects.fieldSelfSignup": "Autoinscripción",
   "admin.projects.detail.subtitle": "Gestiona personas, documentos y rúbricas para este proyecto.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "¡Vas bien! Una conversación solo cuenta para un logro si tú mismo has hecho algunas preguntas de contenido o has dado alguna explicación en ella. Sigue un poco más y vuelve a intentarlo.",
   "achievements.notice.maxLevel": "Ya estás en el nivel más alto: Experto. ¡Bien hecho!",
   "common.more": "Más",
-  "common.moreActions": "Más acciones"
+  "common.moreActions": "Más acciones",
+  "admin.projects.fieldQuestionPlaceholder": "Por ejemplo, un póster, un informe, un análisis de datos o una presentación"
 }

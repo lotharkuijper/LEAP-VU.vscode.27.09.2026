@@ -427,7 +427,7 @@
   "projects.inviteCode": "邀请码",
   "projects.join": "参加",
   "projects.cancel": "取消",
-  "projects.research": "研究问题",
+  "projects.research": "项目成果",
   "projects.groupOf": "{n} 人小组",
   "projects.lastActivity": "最后活动",
   "projects.restart": "重启项目",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "编辑项目",
   "admin.projects.newTitle": "新建项目",
   "admin.projects.fieldTitle": "标题",
-  "admin.projects.fieldQuestion": "研究问题",
+  "admin.projects.fieldQuestion": "项目成果",
   "admin.projects.fieldDesc": "描述（简短）",
   "admin.projects.fieldGoals": "目标 / 学习目标",
   "admin.projects.fieldGoalsPlaceholder": "学生在完成此项目后应该能够做什么？",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "取消",
   "admin.projects.saveBtn": "保存",
   "admin.projects.saving": "正在保存…",
-  "admin.projects.errorTitleRequired": "标题和研究问题为必填项",
+  "admin.projects.errorTitleRequired": "标题和项目成果为必填项",
   "admin.projects.errorMinMax": "最小小组人数不能大于最大人数",
   "admin.projects.fieldSelfSignup": "自主报名",
   "admin.projects.detail.subtitle": "管理此项目的 persona、文档和评分标准。",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "做得不错！只有当你自己提出了几个有实质内容的问题或作出解释时，一次对话才会计入成就。再继续一会儿，然后再来请求。",
   "achievements.notice.maxLevel": "你已经达到最高等级：专家。真棒！",
   "common.more": "更多",
-  "common.moreActions": "更多操作"
+  "common.moreActions": "更多操作",
+  "admin.projects.fieldQuestionPlaceholder": "例如，一张海报、一份报告、一项数据分析或一次演示"
 }

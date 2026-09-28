@@ -427,7 +427,7 @@
   "projects.inviteCode": "Davet kodu",
   "projects.join": "Katıl",
   "projects.cancel": "İptal",
-  "projects.research": "Araştırma sorusu",
+  "projects.research": "Proje çıktısı",
   "projects.groupOf": "{n} kişilik grup",
   "projects.lastActivity": "Son etkinlik",
   "projects.restart": "Projeyi yeniden başlat",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Projeyi düzenle",
   "admin.projects.newTitle": "Yeni proje",
   "admin.projects.fieldTitle": "Başlık",
-  "admin.projects.fieldQuestion": "Araştırma sorusu",
+  "admin.projects.fieldQuestion": "Proje çıktısı",
   "admin.projects.fieldDesc": "Açıklama (kısa)",
   "admin.projects.fieldGoals": "Hedefler / öğrenme hedefleri",
   "admin.projects.fieldGoalsPlaceholder": "Bu projeden sonra öğrenciler ne yapabilmeli?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "İptal",
   "admin.projects.saveBtn": "Kaydet",
   "admin.projects.saving": "Kaydediliyor…",
-  "admin.projects.errorTitleRequired": "Başlık ve araştırma sorusu zorunludur",
+  "admin.projects.errorTitleRequired": "Başlık ve proje çıktısı zorunludur",
   "admin.projects.errorMinMax": "Minimum grup büyüklüğü maksimumdan büyük olamaz",
   "admin.projects.fieldSelfSignup": "Kendi kendine kayıt",
   "admin.projects.detail.subtitle": "Bu proje için personaları, belgeleri ve rubrikleri yönet.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "İyi gidiyorsun! Bir konuşmanın achievement için sayılabilmesi için içinde senin de birkaç içerikli soru sorman veya açıklama yapman gerekir. Biraz daha devam et ve sonra tekrar sor.",
   "achievements.notice.maxLevel": "Zaten en yüksek seviyedesin: Uzman. Harika!",
   "common.more": "Daha fazla",
-  "common.moreActions": "Daha fazla işlem"
+  "common.moreActions": "Daha fazla işlem",
+  "admin.projects.fieldQuestionPlaceholder": "Örn. bir poster, bir rapor, bir veri analizi veya bir sunum"
 }

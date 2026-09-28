@@ -427,7 +427,7 @@
   "projects.inviteCode": "Kod zaproszenia",
   "projects.join": "Dołącz",
   "projects.cancel": "Anuluj",
-  "projects.research": "Pytanie badawcze",
+  "projects.research": "Wynik projektu",
   "projects.groupOf": "Grupa {n}",
   "projects.lastActivity": "Ostatnia aktywność",
   "projects.restart": "Uruchom projekt ponownie",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Edytuj projekt",
   "admin.projects.newTitle": "Nowy projekt",
   "admin.projects.fieldTitle": "Tytuł",
-  "admin.projects.fieldQuestion": "Pytanie badawcze",
+  "admin.projects.fieldQuestion": "Wynik projektu",
   "admin.projects.fieldDesc": "Opis (krótki)",
   "admin.projects.fieldGoals": "Cele / cele edukacyjne",
   "admin.projects.fieldGoalsPlaceholder": "Co studenci powinni umieć po tym projekcie?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Anuluj",
   "admin.projects.saveBtn": "Zapisz",
   "admin.projects.saving": "Zapisywanie…",
-  "admin.projects.errorTitleRequired": "Tytuł i pytanie badawcze są wymagane",
+  "admin.projects.errorTitleRequired": "Tytuł i wynik projektu są wymagane",
   "admin.projects.errorMinMax": "Minimalna wielkość grupy nie może być większa niż maksymalna",
   "admin.projects.fieldSelfSignup": "Samodzielny zapis",
   "admin.projects.detail.subtitle": "Zarządzaj personami, dokumentami i rubrykami dla tego projektu.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Dobra robota! Rozmowa liczy się do osiągnięcia dopiero wtedy, gdy samodzielnie zadasz w niej kilka merytorycznych pytań lub udzielisz wyjaśnień. Kontynuuj jeszcze chwilę, a potem poproś ponownie.",
   "achievements.notice.maxLevel": "Jesteś już na najwyższym poziomie: Expert. Świetnie!",
   "common.more": "Więcej",
-  "common.moreActions": "Więcej działań"
+  "common.moreActions": "Więcej działań",
+  "admin.projects.fieldQuestionPlaceholder": "Np. plakat, raport, analiza danych lub prezentacja"
 }

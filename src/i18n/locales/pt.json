@@ -427,7 +427,7 @@
   "projects.inviteCode": "Código de convite",
   "projects.join": "Participar",
   "projects.cancel": "Cancelar",
-  "projects.research": "Pergunta de investigação",
+  "projects.research": "Resultado do projeto",
   "projects.groupOf": "Grupo de {n}",
   "projects.lastActivity": "Última atividade",
   "projects.restart": "Reiniciar projeto",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Editar projeto",
   "admin.projects.newTitle": "Novo projeto",
   "admin.projects.fieldTitle": "Título",
-  "admin.projects.fieldQuestion": "Pergunta de investigação",
+  "admin.projects.fieldQuestion": "Resultado do projeto",
   "admin.projects.fieldDesc": "Descrição (curta)",
   "admin.projects.fieldGoals": "Objetivos / objetivos de aprendizagem",
   "admin.projects.fieldGoalsPlaceholder": "O que os estudantes devem ser capazes de fazer após este projeto?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Cancelar",
   "admin.projects.saveBtn": "Guardar",
   "admin.projects.saving": "A guardar…",
-  "admin.projects.errorTitleRequired": "O título e a pergunta de investigação são obrigatórios",
+  "admin.projects.errorTitleRequired": "Título e resultado do projeto são obrigatórios",
   "admin.projects.errorMinMax": "O tamanho mínimo do grupo não pode ser maior do que o máximo",
   "admin.projects.fieldSelfSignup": "Inscrição autónoma",
   "admin.projects.detail.subtitle": "Gere personas, documentos e rubricas para este projeto.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Bom trabalho! Uma conversa só conta para uma conquista se tiveres feito algumas perguntas substantivas ou dado alguma explicação. Continua mais um pouco e volta a perguntar.",
   "achievements.notice.maxLevel": "Já estás no nível mais alto: Especialista. Excelente!",
   "common.more": "Mais",
-  "common.moreActions": "Mais ações"
+  "common.moreActions": "Mais ações",
+  "admin.projects.fieldQuestionPlaceholder": "Ex.: um pôster, um relatório, uma análise de dados ou uma apresentação"
 }

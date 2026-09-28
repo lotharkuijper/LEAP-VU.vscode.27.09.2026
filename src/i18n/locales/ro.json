@@ -427,7 +427,7 @@
   "projects.inviteCode": "Cod de invitație",
   "projects.join": "Participă",
   "projects.cancel": "Anulează",
-  "projects.research": "Întrebare de cercetare",
+  "projects.research": "Rezultatul proiectului",
   "projects.groupOf": "Grup de {n}",
   "projects.lastActivity": "Ultima activitate",
   "projects.restart": "Repornește proiectul",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Editează proiectul",
   "admin.projects.newTitle": "Proiect nou",
   "admin.projects.fieldTitle": "Titlu",
-  "admin.projects.fieldQuestion": "Întrebare de cercetare",
+  "admin.projects.fieldQuestion": "Rezultatul proiectului",
   "admin.projects.fieldDesc": "Descriere (scurtă)",
   "admin.projects.fieldGoals": "Obiective / obiective de învățare",
   "admin.projects.fieldGoalsPlaceholder": "Ce ar trebui să poată face studenții după acest proiect?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Anulează",
   "admin.projects.saveBtn": "Salvează",
   "admin.projects.saving": "Se salvează…",
-  "admin.projects.errorTitleRequired": "Titlul și întrebarea de cercetare sunt obligatorii",
+  "admin.projects.errorTitleRequired": "Titlul și rezultatul proiectului sunt obligatorii",
   "admin.projects.errorMinMax": "Dimensiunea minimă a grupului nu poate fi mai mare decât cea maximă",
   "admin.projects.fieldSelfSignup": "Înscriere pe cont propriu",
   "admin.projects.detail.subtitle": "Gestionează persona-urile, documentele și rubricile pentru acest proiect.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Bravo! O conversație contează pentru o realizare doar dacă ai pus tu câteva întrebări de conținut sau ai oferit explicații. Mai continuă puțin și apoi întreabă din nou.",
   "achievements.notice.maxLevel": "Ești deja la cel mai înalt nivel: Expert. Felicitări!",
   "common.more": "Mai mult",
-  "common.moreActions": "Mai multe acțiuni"
+  "common.moreActions": "Mai multe acțiuni",
+  "admin.projects.fieldQuestionPlaceholder": "De ex. un poster, un raport, o analiză de date sau o prezentare"
 }

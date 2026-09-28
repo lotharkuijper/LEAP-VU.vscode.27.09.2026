@@ -427,7 +427,7 @@
   "projects.inviteCode": "Einladungscode",
   "projects.join": "Teilnehmen",
   "projects.cancel": "Abbrechen",
-  "projects.research": "Forschungsfrage",
+  "projects.research": "Projektergebnis",
   "projects.groupOf": "Gruppe von {n}",
   "projects.lastActivity": "Letzte Aktivität",
   "projects.restart": "Projekt neu starten",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Projekt bearbeiten",
   "admin.projects.newTitle": "Neues Projekt",
   "admin.projects.fieldTitle": "Titel",
-  "admin.projects.fieldQuestion": "Forschungsfrage",
+  "admin.projects.fieldQuestion": "Projektergebnis",
   "admin.projects.fieldDesc": "Beschreibung (kurz)",
   "admin.projects.fieldGoals": "Ziele / Lernziele",
   "admin.projects.fieldGoalsPlaceholder": "Was sollen Studierende nach diesem Projekt können?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Abbrechen",
   "admin.projects.saveBtn": "Speichern",
   "admin.projects.saving": "Speichern…",
-  "admin.projects.errorTitleRequired": "Titel und Forschungsfrage sind erforderlich",
+  "admin.projects.errorTitleRequired": "Titel und Projektergebnis sind erforderlich",
   "admin.projects.errorMinMax": "Die minimale Gruppengröße darf nicht größer sein als das Maximum",
   "admin.projects.fieldSelfSignup": "Selbstanmeldung",
   "admin.projects.detail.subtitle": "Verwalte Personas, Dokumente und Rubrics für dieses Projekt.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Gut gemacht! Ein Gespräch zählt erst für ein Achievement, wenn du selbst ein paar inhaltliche Fragen gestellt oder Erklärungen gegeben hast. Mach noch kurz weiter und frag dann erneut.",
   "achievements.notice.maxLevel": "Du bist bereits auf dem höchsten Niveau: Experte. Klasse!",
   "common.more": "Mehr",
-  "common.moreActions": "Weitere Aktionen"
+  "common.moreActions": "Weitere Aktionen",
+  "admin.projects.fieldQuestionPlaceholder": "Z. B. ein Poster, ein Bericht, eine Datenanalyse oder eine Präsentation"
 }

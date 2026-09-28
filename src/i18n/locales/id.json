@@ -427,7 +427,7 @@
   "projects.inviteCode": "Kode undangan",
   "projects.join": "Bergabung",
   "projects.cancel": "Batal",
-  "projects.research": "Pertanyaan penelitian",
+  "projects.research": "Hasil proyek",
   "projects.groupOf": "Grup berisi {n}",
   "projects.lastActivity": "Aktivitas terakhir",
   "projects.restart": "Mulai ulang proyek",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Edit proyek",
   "admin.projects.newTitle": "Proyek baru",
   "admin.projects.fieldTitle": "Judul",
-  "admin.projects.fieldQuestion": "Pertanyaan penelitian",
+  "admin.projects.fieldQuestion": "Hasil proyek",
   "admin.projects.fieldDesc": "Deskripsi (singkat)",
   "admin.projects.fieldGoals": "Tujuan / tujuan pembelajaran",
   "admin.projects.fieldGoalsPlaceholder": "Apa yang harus bisa dilakukan mahasiswa setelah proyek ini?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Batal",
   "admin.projects.saveBtn": "Simpan",
   "admin.projects.saving": "Menyimpan…",
-  "admin.projects.errorTitleRequired": "Judul dan pertanyaan penelitian wajib diisi",
+  "admin.projects.errorTitleRequired": "Judul dan hasil proyek wajib diisi",
   "admin.projects.errorMinMax": "Ukuran grup minimum tidak boleh lebih besar dari maksimum",
   "admin.projects.fieldSelfSignup": "Self-signup",
   "admin.projects.detail.subtitle": "Kelola persona, dokumen, dan rubric untuk proyek ini.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Bagus! Sebuah percakapan baru dihitung untuk achievement jika kamu sendiri sudah mengajukan beberapa pertanyaan berbobot atau memberikan penjelasan di dalamnya. Lanjutkan sebentar lagi, lalu minta lagi.",
   "achievements.notice.maxLevel": "Kamu sudah berada di level tertinggi: Expert. Hebat!",
   "common.more": "Lainnya",
-  "common.moreActions": "Tindakan lainnya"
+  "common.moreActions": "Tindakan lainnya",
+  "admin.projects.fieldQuestionPlaceholder": "Mis. poster, laporan, analisis data, atau presentasi"
 }

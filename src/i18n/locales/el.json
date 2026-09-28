@@ -427,7 +427,7 @@
   "projects.inviteCode": "Κωδικός πρόσκλησης",
   "projects.join": "Συμμετοχή",
   "projects.cancel": "Ακύρωση",
-  "projects.research": "Ερευνητικό ερώτημα",
+  "projects.research": "Αποτέλεσμα έργου",
   "projects.groupOf": "Ομάδα των {n}",
   "projects.lastActivity": "Τελευταία δραστηριότητα",
   "projects.restart": "Επανεκκίνηση έργου",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Επεξεργασία έργου",
   "admin.projects.newTitle": "Νέο έργο",
   "admin.projects.fieldTitle": "Τίτλος",
-  "admin.projects.fieldQuestion": "Ερευνητικό ερώτημα",
+  "admin.projects.fieldQuestion": "Αποτέλεσμα έργου",
   "admin.projects.fieldDesc": "Περιγραφή (σύντομη)",
   "admin.projects.fieldGoals": "Στόχοι / μαθησιακοί στόχοι",
   "admin.projects.fieldGoalsPlaceholder": "Τι πρέπει να μπορούν να κάνουν οι φοιτητές μετά από αυτό το έργο;",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Ακύρωση",
   "admin.projects.saveBtn": "Αποθήκευση",
   "admin.projects.saving": "Αποθήκευση…",
-  "admin.projects.errorTitleRequired": "Ο τίτλος και το ερευνητικό ερώτημα είναι υποχρεωτικά",
+  "admin.projects.errorTitleRequired": "Ο τίτλος και το αποτέλεσμα του έργου είναι υποχρεωτικά",
   "admin.projects.errorMinMax": "Το ελάχιστο μέγεθος ομάδας δεν μπορεί να είναι μεγαλύτερο από το μέγιστο",
   "admin.projects.fieldSelfSignup": "Αυτοεγγραφή",
   "admin.projects.detail.subtitle": "Διαχειρίσου περσόνες, έγγραφα και ρουμπρίκες για αυτό το έργο.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Καλή προσπάθεια! Μια συζήτηση μετράει για ένα achievement μόνο αν έχεις κάνει ο ίδιος μερικές ουσιαστικές ερωτήσεις ή έχεις δώσει εξηγήσεις. Συνέχισε λίγο ακόμα και μετά ζήτησέ το ξανά.",
   "achievements.notice.maxLevel": "Είσαι ήδη στο υψηλότερο επίπεδο: Expert. Μπράβο!",
   "common.more": "Περισσότερα",
-  "common.moreActions": "Περισσότερες ενέργειες"
+  "common.moreActions": "Περισσότερες ενέργειες",
+  "admin.projects.fieldQuestionPlaceholder": "Π.χ. μια αφίσα, μια αναφορά, μια ανάλυση δεδομένων ή μια παρουσίαση"
 }

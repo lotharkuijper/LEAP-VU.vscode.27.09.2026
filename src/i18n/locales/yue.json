@@ -427,7 +427,7 @@
   "projects.inviteCode": "邀請碼",
   "projects.join": "參加",
   "projects.cancel": "取消",
-  "projects.research": "研究問題",
+  "projects.research": "項目成果",
   "projects.groupOf": "{n}人小組",
   "projects.lastActivity": "最後活動",
   "projects.restart": "重新開始項目",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "編輯項目",
   "admin.projects.newTitle": "新項目",
   "admin.projects.fieldTitle": "標題",
-  "admin.projects.fieldQuestion": "研究問題",
+  "admin.projects.fieldQuestion": "項目成果",
   "admin.projects.fieldDesc": "描述（簡短）",
   "admin.projects.fieldGoals": "目標 / 學習目標",
   "admin.projects.fieldGoalsPlaceholder": "學生完成呢個項目後應該識做啲咩？",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "取消",
   "admin.projects.saveBtn": "儲存",
   "admin.projects.saving": "儲存中…",
-  "admin.projects.errorTitleRequired": "標題同研究問題係必填",
+  "admin.projects.errorTitleRequired": "標題同項目成果為必填",
   "admin.projects.errorMinMax": "最少小組人數唔可以大過最多人數",
   "admin.projects.fieldSelfSignup": "自行報名",
   "admin.projects.detail.subtitle": "管理呢個專案嘅 persona、文件同評分準則。",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "做得好！一次對話要計入 achievement，你自己要喺入面問幾條有內容嘅問題，或者提供啲解釋。再繼續多陣，然後再問過。",
   "achievements.notice.maxLevel": "你已經去到最高級別：Expert。好叻！",
   "common.more": "更多",
-  "common.moreActions": "更多操作"
+  "common.moreActions": "更多操作",
+  "admin.projects.fieldQuestionPlaceholder": "例如：海報、報告、數據分析或簡報"
 }

@@ -427,7 +427,7 @@
   "projects.inviteCode": "초대 코드",
   "projects.join": "참여",
   "projects.cancel": "취소",
-  "projects.research": "연구 질문",
+  "projects.research": "프로젝트 결과물",
   "projects.groupOf": "{n}명 그룹",
   "projects.lastActivity": "마지막 활동",
   "projects.restart": "프로젝트 다시 시작",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "프로젝트 수정",
   "admin.projects.newTitle": "새 프로젝트",
   "admin.projects.fieldTitle": "제목",
-  "admin.projects.fieldQuestion": "연구 질문",
+  "admin.projects.fieldQuestion": "프로젝트 결과물",
   "admin.projects.fieldDesc": "설명(짧게)",
   "admin.projects.fieldGoals": "목표 / 학습 목표",
   "admin.projects.fieldGoalsPlaceholder": "이 프로젝트 후 학생들이 무엇을 할 수 있어야 할까?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "취소",
   "admin.projects.saveBtn": "저장",
   "admin.projects.saving": "저장 중…",
-  "admin.projects.errorTitleRequired": "제목과 연구 질문은 필수야",
+  "admin.projects.errorTitleRequired": "제목과 프로젝트 결과물은 필수야",
   "admin.projects.errorMinMax": "최소 그룹 크기는 최대값보다 클 수 없어",
   "admin.projects.fieldSelfSignup": "셀프 가입",
   "admin.projects.detail.subtitle": "이 프로젝트의 페르소나, 문서, 루브릭을 관리해.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "잘하고 있어! 대화에서 네가 직접 내용이 있는 질문이나 설명을 몇 가지 해야 achievement에 반영돼. 조금만 더 진행한 다음 다시 요청해 봐.",
   "achievements.notice.maxLevel": "이미 최고 레벨인 Expert에 도달했어. 멋져!",
   "common.more": "더 보기",
-  "common.moreActions": "더 많은 작업"
+  "common.moreActions": "더 많은 작업",
+  "admin.projects.fieldQuestionPlaceholder": "예: 포스터, 보고서, 데이터 분석 또는 발표"
 }

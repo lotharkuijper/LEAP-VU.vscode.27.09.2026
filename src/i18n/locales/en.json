@@ -427,7 +427,7 @@
   "projects.inviteCode": "Invite code",
   "projects.join": "Join",
   "projects.cancel": "Cancel",
-  "projects.research": "Research question",
+  "projects.research": "Project deliverable",
   "projects.groupOf": "Group of {n}",
   "projects.lastActivity": "Last activity",
   "projects.restart": "Restart project",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Edit project",
   "admin.projects.newTitle": "New project",
   "admin.projects.fieldTitle": "Title",
-  "admin.projects.fieldQuestion": "Research question",
+  "admin.projects.fieldQuestion": "Project deliverable",
   "admin.projects.fieldDesc": "Description (short)",
   "admin.projects.fieldGoals": "Goals / learning objectives",
   "admin.projects.fieldGoalsPlaceholder": "What should students be able to do after this project?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Cancel",
   "admin.projects.saveBtn": "Save",
   "admin.projects.saving": "Saving…",
-  "admin.projects.errorTitleRequired": "Title and research question are required",
+  "admin.projects.errorTitleRequired": "Title and project deliverable are required",
   "admin.projects.errorMinMax": "Minimum group size cannot exceed the maximum",
   "admin.projects.fieldSelfSignup": "Self-signup",
   "admin.projects.detail.subtitle": "Manage personas, documents and rubrics for this project.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Good going! A conversation only counts towards an achievement once you have asked a few substantive questions or given explanations yourself. Keep going and then ask again.",
   "achievements.notice.maxLevel": "You are already at the highest level: Expert. Impressive!",
   "common.more": "More",
-  "common.moreActions": "More actions"
+  "common.moreActions": "More actions",
+  "admin.projects.fieldQuestionPlaceholder": "E.g. a poster, a report, a data analysis or a presentation"
 }

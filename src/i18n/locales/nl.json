@@ -427,7 +427,7 @@
   "projects.inviteCode": "Uitnodigingscode",
   "projects.join": "Deelnemen",
   "projects.cancel": "Annuleer",
-  "projects.research": "Onderzoeksvraag",
+  "projects.research": "Projectresultaat",
   "projects.groupOf": "Groep van {n}",
   "projects.lastActivity": "Laatste activiteit",
   "projects.restart": "Herstart project",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Project bewerken",
   "admin.projects.newTitle": "Nieuw project",
   "admin.projects.fieldTitle": "Titel",
-  "admin.projects.fieldQuestion": "Onderzoeksvraag",
+  "admin.projects.fieldQuestion": "Projectresultaat",
   "admin.projects.fieldDesc": "Beschrijving (kort)",
   "admin.projects.fieldGoals": "Doelen / leerdoelen",
   "admin.projects.fieldGoalsPlaceholder": "Wat moeten studenten kunnen na dit project?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Annuleren",
   "admin.projects.saveBtn": "Opslaan",
   "admin.projects.saving": "Opslaan…",
-  "admin.projects.errorTitleRequired": "Titel en onderzoeksvraag zijn verplicht",
+  "admin.projects.errorTitleRequired": "Titel en projectresultaat zijn verplicht",
   "admin.projects.errorMinMax": "Minimum groepsgrootte mag niet groter zijn dan het maximum",
   "admin.projects.fieldSelfSignup": "Self-signup",
   "admin.projects.detail.subtitle": "Beheer persona's, documenten en rubrics voor dit project.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Goed bezig! Een gesprek telt pas mee voor een achievement als je er zelf een paar inhoudelijke vragen of uitleg in hebt gegeven. Ga nog even door en vraag het dan opnieuw.",
   "achievements.notice.maxLevel": "Je zit al op het hoogste niveau: Expert. Knap!",
   "common.more": "Meer",
-  "common.moreActions": "Meer acties"
+  "common.moreActions": "Meer acties",
+  "admin.projects.fieldQuestionPlaceholder": "Bijv. een poster, een verslag, een data-analyse of een presentatie"
 }

@@ -427,7 +427,7 @@
   "projects.inviteCode": "招待コード",
   "projects.join": "参加",
   "projects.cancel": "キャンセル",
-  "projects.research": "研究課題",
+  "projects.research": "プロジェクト成果物",
   "projects.groupOf": "{n}人のグループ",
   "projects.lastActivity": "最終アクティビティ",
   "projects.restart": "プロジェクトを再開",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "プロジェクトを編集",
   "admin.projects.newTitle": "新しいプロジェクト",
   "admin.projects.fieldTitle": "タイトル",
-  "admin.projects.fieldQuestion": "研究課題",
+  "admin.projects.fieldQuestion": "プロジェクト成果物",
   "admin.projects.fieldDesc": "説明（短め）",
   "admin.projects.fieldGoals": "目標 / 学習目標",
   "admin.projects.fieldGoalsPlaceholder": "このプロジェクト後に学生は何ができるようになるべきですか？",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "キャンセル",
   "admin.projects.saveBtn": "保存",
   "admin.projects.saving": "保存中…",
-  "admin.projects.errorTitleRequired": "タイトルと研究課題は必須です",
+  "admin.projects.errorTitleRequired": "タイトルとプロジェクト成果物は必須です",
   "admin.projects.errorMinMax": "最小グループサイズは最大グループサイズより大きくできません",
   "admin.projects.fieldSelfSignup": "セルフサインアップ",
   "admin.projects.detail.subtitle": "このプロジェクトのペルソナ、ドキュメント、ルーブリックを管理します。",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "いい調子！会話がアチーブメントにカウントされるのは、自分で内容のある質問をいくつかしたり、説明をしたりしてからだよ。もう少し続けてから、もう一度確認してみて。",
   "achievements.notice.maxLevel": "すでに最高レベルのエキスパートに到達しているよ。すごい！",
   "common.more": "もっと見る",
-  "common.moreActions": "その他の操作"
+  "common.moreActions": "その他の操作",
+  "admin.projects.fieldQuestionPlaceholder": "例：ポスター、レポート、データ分析、プレゼンテーション"
 }

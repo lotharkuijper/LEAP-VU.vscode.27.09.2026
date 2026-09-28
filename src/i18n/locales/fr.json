@@ -427,7 +427,7 @@
   "projects.inviteCode": "Code d’invitation",
   "projects.join": "Participer",
   "projects.cancel": "Annuler",
-  "projects.research": "Question de recherche",
+  "projects.research": "Résultat du projet",
   "projects.groupOf": "Groupe de {n}",
   "projects.lastActivity": "Dernière activité",
   "projects.restart": "Redémarrer le projet",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Modifier le projet",
   "admin.projects.newTitle": "Nouveau projet",
   "admin.projects.fieldTitle": "Titre",
-  "admin.projects.fieldQuestion": "Question de recherche",
+  "admin.projects.fieldQuestion": "Résultat du projet",
   "admin.projects.fieldDesc": "Description (courte)",
   "admin.projects.fieldGoals": "Objectifs / objectifs d’apprentissage",
   "admin.projects.fieldGoalsPlaceholder": "Que doivent être capables de faire les étudiants après ce projet ?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Annuler",
   "admin.projects.saveBtn": "Enregistrer",
   "admin.projects.saving": "Enregistrement…",
-  "admin.projects.errorTitleRequired": "Le titre et la question de recherche sont obligatoires",
+  "admin.projects.errorTitleRequired": "Le titre et le résultat du projet sont obligatoires",
   "admin.projects.errorMinMax": "La taille minimale du groupe ne peut pas être supérieure à la taille maximale",
   "admin.projects.fieldSelfSignup": "Auto-inscription",
   "admin.projects.detail.subtitle": "Gère les personas, documents et rubriques pour ce projet.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Bien joué ! Une conversation ne compte pour un achievement que si tu y as toi-même posé quelques questions de fond ou donné des explications. Continue encore un peu, puis redemande.",
   "achievements.notice.maxLevel": "Tu es déjà au niveau le plus élevé : Expert. Bravo !",
   "common.more": "Plus",
-  "common.moreActions": "Plus d’actions"
+  "common.moreActions": "Plus d’actions",
+  "admin.projects.fieldQuestionPlaceholder": "Par ex. une affiche, un rapport, une analyse de données ou une présentation"
 }

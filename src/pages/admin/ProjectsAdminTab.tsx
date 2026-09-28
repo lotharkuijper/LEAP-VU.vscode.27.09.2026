@@ -435,7 +435,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldQuestion')}</label>
-                <input value={editing.research_question || ''} onChange={e => setEditing({ ...editing, research_question: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-question" />
+                <input value={editing.research_question || ''} onChange={e => setEditing({ ...editing, research_question: e.target.value })} placeholder={t('admin.projects.fieldQuestionPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-question" />
               </div>
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldDesc')}</label>

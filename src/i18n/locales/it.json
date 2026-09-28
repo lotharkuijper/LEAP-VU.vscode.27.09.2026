@@ -427,7 +427,7 @@
   "projects.inviteCode": "Codice di invito",
   "projects.join": "Partecipa",
   "projects.cancel": "Annulla",
-  "projects.research": "Domanda di ricerca",
+  "projects.research": "Risultato del progetto",
   "projects.groupOf": "Gruppo di {n}",
   "projects.lastActivity": "Ultima attività",
   "projects.restart": "Riavvia progetto",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "Modifica progetto",
   "admin.projects.newTitle": "Nuovo progetto",
   "admin.projects.fieldTitle": "Titolo",
-  "admin.projects.fieldQuestion": "Domanda di ricerca",
+  "admin.projects.fieldQuestion": "Risultato del progetto",
   "admin.projects.fieldDesc": "Descrizione (breve)",
   "admin.projects.fieldGoals": "Obiettivi / obiettivi di apprendimento",
   "admin.projects.fieldGoalsPlaceholder": "Cosa dovrebbero saper fare gli studenti dopo questo progetto?",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "Annulla",
   "admin.projects.saveBtn": "Salva",
   "admin.projects.saving": "Salvataggio…",
-  "admin.projects.errorTitleRequired": "Titolo e domanda di ricerca sono obbligatori",
+  "admin.projects.errorTitleRequired": "Titolo e risultato del progetto sono obbligatori",
   "admin.projects.errorMinMax": "La dimensione minima del gruppo non può essere maggiore della massima",
   "admin.projects.fieldSelfSignup": "Iscrizione autonoma",
   "admin.projects.detail.subtitle": "Gestisci persona, documenti e rubriche per questo progetto.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "Ottimo lavoro! Una conversazione conta per un achievement solo se hai posto alcune domande di contenuto o hai dato spiegazioni tu stesso. Continua ancora un po’ e poi richiedilo di nuovo.",
   "achievements.notice.maxLevel": "Sei già al livello più alto: Esperto. Complimenti!",
   "common.more": "Altro",
-  "common.moreActions": "Altre azioni"
+  "common.moreActions": "Altre azioni",
+  "admin.projects.fieldQuestionPlaceholder": "Ad es. un poster, una relazione, un'analisi dei dati o una presentazione"
 }

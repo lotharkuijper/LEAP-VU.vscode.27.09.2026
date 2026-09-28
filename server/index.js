@@ -7491,7 +7491,7 @@ Je verslag bevat — in deze volgorde, met deze (vetgedrukte) kopjes op aparte r
 Project-context:
 - Titel: ${projectTitle}
 - Status: ${status} (huidige fase: ${phase})
-- Niveau: ${difficulty}${researchQuestion ? `\n- Onderzoeksvraag: ${researchQuestion}` : ''}${projectDescription ? `\n- Projectbeschrijving: ${projectDescription}` : ''}
+- Niveau: ${difficulty}${researchQuestion ? `\n- Beoogd projectresultaat: ${researchQuestion}` : ''}${projectDescription ? `\n- Projectbeschrijving: ${projectDescription}` : ''}
 
 Jouw werk tot nu toe:
 - Hypothese: ${hypothesis || '(nog niet ingevuld)'}
@@ -11620,7 +11620,7 @@ app.post('/api/projects/groups/:groupId/checkpoint', async (req, res) => {
         ? `You are a "critical friend" for a group of VU students (epi/biostat). The group has completed a research project and submits a joint final reflection below. Assess the work per rubric criterion — honestly, formatively and concretely. Address the group as "you" (plural).
 
 Project: ${project?.title || '(unnamed)'}
-Research question: ${project?.research_question || '(none)'}
+Intended project deliverable: ${project?.research_question || '(none)'}
 
 Rubric:
 ${rubricText}
@@ -11639,7 +11639,7 @@ No text outside the JSON.`
         : (`Je bent een "critical friend" voor een groep VU-studenten epi/biostat. De groep heeft een onderzoeksproject afgerond en geeft hieronder een gezamenlijke eindreflectie. Beoordeel het werk per rubriekspunt — eerlijk, formatief en concreet. Spreek de groep aan met "jullie".
 
 Project: ${project?.title || '(naamloos)'}
-Onderzoeksvraag: ${project?.research_question || '(geen)'}
+Beoogd projectresultaat: ${project?.research_question || '(geen)'}
 
 Rubriek:
 ${rubricText}
@@ -13509,7 +13509,7 @@ app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =
 ${personaIntro || '(geen extra persona-instructies)'}
 
 Project: ${project.title || '(naamloos)'}
-Onderzoeksvraag: ${project.research_question || '(geen)'}
+Beoogd projectresultaat: ${project.research_question || '(geen)'}
 Leerdoelen: ${project.goals || '(geen)'}
 
 Verborgen rubric/criteria (alleen voor jou):
@@ -14473,7 +14473,7 @@ ${enMode
   ? `Below you will find the learning objectives/rubric (for your eyes only — students cannot see this), the project material, and all conversations the group has had with the other personas. Provide a formative assessment per learning objective/criterion. Address the students as "you" (plural).
 
 Project: ${project?.title || '(unnamed)'}
-Research question: ${project?.research_question || '(none)'}
+Intended project deliverable: ${project?.research_question || '(none)'}
 Learning objectives: ${project?.goals || '(none)'}
 
 Hidden rubric/criteria:
@@ -14492,7 +14492,7 @@ End with a short heading "Next steps" with 2-3 suggestions. Do NOT quote exact r
   : `Je krijgt hieronder de leerdoelen/rubric (alléén voor jou — de studenten zien deze niet), het projectmateriaal, en alle gesprekken die de groep met de andere persona's heeft gevoerd. Geef een formatieve beoordeling per leerdoel/criterium. Spreek de studenten aan met "jullie".
 
 Project: ${project?.title || '(naamloos)'}
-Onderzoeksvraag: ${project?.research_question || '(geen)'}
+Beoogd projectresultaat: ${project?.research_question || '(geen)'}
 Leerdoelen: ${project?.goals || '(geen)'}
 
 Verborgen rubric/criteria:

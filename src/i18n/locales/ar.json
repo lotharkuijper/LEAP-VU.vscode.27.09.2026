@@ -427,7 +427,7 @@
   "projects.inviteCode": "رمز الدعوة",
   "projects.join": "انضمام",
   "projects.cancel": "إلغاء",
-  "projects.research": "سؤال البحث",
+  "projects.research": "نتيجة المشروع",
   "projects.groupOf": "مجموعة من {n}",
   "projects.lastActivity": "آخر نشاط",
   "projects.restart": "إعادة تشغيل المشروع",
@@ -1474,7 +1474,7 @@
   "admin.projects.editTitle": "تعديل المشروع",
   "admin.projects.newTitle": "مشروع جديد",
   "admin.projects.fieldTitle": "العنوان",
-  "admin.projects.fieldQuestion": "سؤال البحث",
+  "admin.projects.fieldQuestion": "نتيجة المشروع",
   "admin.projects.fieldDesc": "الوصف (قصير)",
   "admin.projects.fieldGoals": "الأهداف / أهداف التعلم",
   "admin.projects.fieldGoalsPlaceholder": "ماذا يجب أن يتمكن الطلاب من فعله بعد هذا المشروع؟",
@@ -1487,7 +1487,7 @@
   "admin.projects.cancelBtn": "إلغاء",
   "admin.projects.saveBtn": "حفظ",
   "admin.projects.saving": "جارٍ الحفظ…",
-  "admin.projects.errorTitleRequired": "العنوان وسؤال البحث مطلوبان",
+  "admin.projects.errorTitleRequired": "العنوان ونتيجة المشروع مطلوبان",
   "admin.projects.errorMinMax": "لا يجوز أن يكون الحد الأدنى لحجم المجموعة أكبر من الحد الأقصى",
   "admin.projects.fieldSelfSignup": "التسجيل الذاتي",
   "admin.projects.detail.subtitle": "أدر الشخصيات والوثائق وrubrics لهذا المشروع.",
@@ -2640,5 +2640,6 @@
   "achievements.notice.tooShort": "أحسنت! لا تُحتسب المحادثة ضمن الإنجاز إلا إذا طرحتَ فيها بنفسك بعض الأسئلة ذات المحتوى أو قدّمتَ شرحًا. تابع قليلًا ثم اطلب ذلك مرة أخرى.",
   "achievements.notice.maxLevel": "أنت بالفعل في أعلى مستوى: خبير. رائع!",
   "common.more": "المزيد",
-  "common.moreActions": "المزيد من الإجراءات"
+  "common.moreActions": "المزيد من الإجراءات",
+  "admin.projects.fieldQuestionPlaceholder": "مثلاً: ملصق، تقرير، تحليل بيانات أو عرض تقديمي"
 }
