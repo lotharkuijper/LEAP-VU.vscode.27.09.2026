@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP은 같은 의미를 가진 개념(동의어, 약어, 번역어)을 찾아. 합치면 하나의 개념만 남고, 다른 이름은 보존돼서 학생들이 두 이름 모두로 찾을 수 있어. 설명과 퀴즈 연결도 함께 옮겨져.",
   "admin.conceptJob.reading": "과목 읽는 중: {total}개 중 {done}개…",
   "admin.conceptJob.merging": "중복 항목 병합 중…",
-  "admin.conceptJob.verifying": "과목 자료와 대조 확인 중: {total}개 중 {done}개…"
+  "admin.conceptJob.verifying": "과목 자료와 대조 확인 중: {total}개 중 {done}개…",
+  "tasks.concepts.title": "개념 추출하기({course})",
+  "tasks.doneTitle": "{title} 완료됨",
+  "tasks.errorTitle": "{title} 실패함",
+  "tasks.starting": "시작 중…",
+  "tasks.keepsRunning": "앱의 다른 곳에서 계속 작업해도 계속 실행돼.",
+  "tasks.keepTabOpen": "앱에서 계속 실행돼. 이 탭을 열어 둬.",
+  "tasks.viewResult": "결과 보기",
+  "tasks.regionLabel": "백그라운드 작업",
+  "tasks.runningCount": "{n}개 작업 진행 중",
+  "tasks.finishedCount": "알림 {n}개",
+  "tasks.upload.title": "파일 업로드({n})",
+  "tasks.upload.progress": "파일 {done}/{total}…",
+  "tasks.webImport.title": "웹사이트 가져오기({site})",
+  "tasks.webSync.title": "웹사이트 업데이트({site})",
+  "tasks.web.progress": "페이지 {done}/{total}…",
+  "tasks.sharestats.title": "ShareStats 질문 가져오기",
+  "tasks.sharestats.progress": "질문 가져오는 중: {done}%"
 }

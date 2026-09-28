@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP 会查找含义相同的概念（同义词、缩写、翻译）。合并后只保留一个概念；另一个名称会被保留，这样学生用两个名称都能找到它。讲解和测验关联也会一并保留。",
   "admin.conceptJob.reading": "正在读取课程：第 {done} 部分，共 {total} 部分…",
   "admin.conceptJob.merging": "正在合并重复项…",
-  "admin.conceptJob.verifying": "正在根据课程材料进行检查：第 {done} 项，共 {total} 项…"
+  "admin.conceptJob.verifying": "正在根据课程材料进行检查：第 {done} 项，共 {total} 项…",
+  "tasks.concepts.title": "提取概念（{course}）",
+  "tasks.doneTitle": "{title} 已完成",
+  "tasks.errorTitle": "{title} 失败",
+  "tasks.starting": "正在启动…",
+  "tasks.keepsRunning": "即使你在应用的其他地方继续操作，也会继续运行。",
+  "tasks.keepTabOpen": "会在应用中继续运行；请保持此标签页打开。",
+  "tasks.viewResult": "查看结果",
+  "tasks.regionLabel": "后台任务",
+  "tasks.runningCount": "{n} 个任务进行中",
+  "tasks.finishedCount": "{n} 条通知",
+  "tasks.upload.title": "上传文件（{n}）",
+  "tasks.upload.progress": "文件 {done}/{total}…",
+  "tasks.webImport.title": "导入网站（{site}）",
+  "tasks.webSync.title": "更新网站（{site}）",
+  "tasks.web.progress": "页面 {done}/{total}…",
+  "tasks.sharestats.title": "导入 ShareStats 问题",
+  "tasks.sharestats.progress": "正在导入问题：{done}%"
 }

@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP szuka pojęć, które znaczą to samo (synonim, skrót, tłumaczenie). Scalanie pozostawia jedno pojęcie; druga nazwa zostaje zachowana, dzięki czemu studenci znajdą je pod obiema nazwami. Wyjaśnienia i powiązania z quizami zostają przeniesione.",
   "admin.conceptJob.reading": "Odczytywanie kursu: część {done} z {total}…",
   "admin.conceptJob.merging": "Scalanie duplikatów…",
-  "admin.conceptJob.verifying": "Sprawdzanie względem materiałów kursu: {done} z {total}…"
+  "admin.conceptJob.verifying": "Sprawdzanie względem materiałów kursu: {done} z {total}…",
+  "tasks.concepts.title": "Wyodrębnianie pojęć ({course})",
+  "tasks.doneTitle": "{title} jest gotowe",
+  "tasks.errorTitle": "{title} nie powiodło się",
+  "tasks.starting": "Uruchamianie…",
+  "tasks.keepsRunning": "Działa dalej, nawet gdy pracujesz w innym miejscu aplikacji.",
+  "tasks.keepTabOpen": "Działa dalej w aplikacji; pozostaw tę kartę otwartą.",
+  "tasks.viewResult": "Zobacz wynik",
+  "tasks.regionLabel": "Zadania w tle",
+  "tasks.runningCount": "{n} zadanie w toku",
+  "tasks.finishedCount": "{n} powiadomienie/powiadomienia",
+  "tasks.upload.title": "Przesyłanie plików ({n})",
+  "tasks.upload.progress": "Plik {done} z {total}…",
+  "tasks.webImport.title": "Importowanie strony ({site})",
+  "tasks.webSync.title": "Aktualizowanie strony ({site})",
+  "tasks.web.progress": "Strona {done} z {total}…",
+  "tasks.sharestats.title": "Importowanie pytań ShareStats",
+  "tasks.sharestats.progress": "Importowanie pytań: {done}%"
 }

@@ -9,6 +9,7 @@ import { useLanguage } from '../i18n';
 import { Tooltip } from '../components/help/Tooltip';
 import { intlLocale } from '../i18n/languages';
 import { getActiveLang } from '../i18n/activeLang';
+import { startTask } from '../lib/backgroundTasks';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -324,29 +325,44 @@ export default function DocumentsPage() {
     if (!files?.length || !selectedId) return;
     setUploading(true);
     clearNotice();
-    try {
-      for (const file of Array.from(files)) {
-        const arrayBuffer = await file.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = '';
-        for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-        const base64 = btoa(binary);
-        await apiFetch(`/api/admin/folders/${selectedId}/upload`, {
-          method: 'POST',
-          body: JSON.stringify({ filename: file.name, mimeType: file.type, data: base64 }),
-        });
-      }
-      setNotice({
-        kind: 'success',
-        message: t(files.length === 1 ? 'documents.fileUploaded' : 'documents.filesUploaded'),
-      });
-      await Promise.all([loadDocuments(selectedId), loadTree()]);
-    } catch (e: unknown) {
-      setNotice({ kind: 'error', message: (e as Error).message });
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    const list = Array.from(files);
+    const folderId = selectedId;
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    // Als achtergrondtaak: loopt door (en meldt zich in het takenvak) als je
+    // intussen naar een ander deel van de app gaat; het tabblad moet open blijven.
+    await startTask<string>({
+      kind: 'upload',
+      key: folderId,
+      parallel: true,
+      title: t('tasks.upload.title', { n: String(list.length) }),
+      resultLink: '/admin/documenten',
+      run: async (ctx) => {
+        try {
+          for (const [i, file] of list.entries()) {
+            ctx.report({ done: i + 1, total: list.length, labelKey: 'tasks.upload.progress' });
+            const arrayBuffer = await file.arrayBuffer();
+            const bytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let j = 0; j < bytes.byteLength; j++) binary += String.fromCharCode(bytes[j]);
+            const base64 = btoa(binary);
+            await apiFetch(`/api/admin/folders/${folderId}/upload`, {
+              method: 'POST',
+              body: JSON.stringify({ filename: file.name, mimeType: file.type, data: base64 }),
+            });
+          }
+          const message = t(list.length === 1 ? 'documents.fileUploaded' : 'documents.filesUploaded');
+          setNotice({ kind: 'success', message });
+          await Promise.all([loadDocuments(folderId), loadTree()]);
+          return message;
+        } catch (e: unknown) {
+          setNotice({ kind: 'error', message: (e as Error).message });
+          throw e;
+        } finally {
+          setUploading(false);
+        }
+      },
+      summarize: (message) => message,
+    }).promise.catch(() => { /* melding staat al op de pagina en in het takenvak */ });
   }
 
   async function handleDeleteDocument() {

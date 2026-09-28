@@ -17,7 +17,8 @@ import { PurposeReview } from './PurposeReview';
 import { ReadinessStep, WarningList, type MaterialStep } from './ReadinessStep';
 import { HelpTip } from '../help/HelpTip';
 import { ExtractionProgressText } from '../ExtractionProgressText';
-import { runConceptExtraction, type ExtractionProgress } from '../../lib/conceptExtractionJob';
+import { startConceptExtractionTask, CONCEPT_TASK_KIND } from '../../lib/conceptExtractionJob';
+import { useTask } from '../../lib/backgroundTasks';
 import { AdminHint } from '../help/AdminHint';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
@@ -56,7 +57,8 @@ export function CourseMaterialWorkspace({
   const [reviewDeferred, setReviewDeferred] = useState(false);
   const [findingNew, setFindingNew] = useState(false);
   const [findResult, setFindResult] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
-  const [findProgress, setFindProgress] = useState<ExtractionProgress | null>(null);
+  const conceptTask = useTask(CONCEPT_TASK_KIND, activeCourseId || '');
+  const conceptTaskRunning = conceptTask?.status === 'running';
 
   // Nieuwe begrippen zoeken zonder de bestaande lijst (en eerdere goedkeuringen)
   // te vervangen: de server voegt alleen toe (replace:false) en meldt wat nieuw is.
@@ -66,9 +68,14 @@ export function CourseMaterialWorkspace({
     setFindResult(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await runConceptExtraction({ courseId: activeCourseId, replace: false }, session?.access_token || '', setFindProgress);
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(body?.error || `HTTP ${res.status}`);
+      // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
+      const body = await startConceptExtractionTask({
+        courseId: activeCourseId,
+        body: { courseId: activeCourseId, replace: false },
+        token: session?.access_token || '',
+        title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
+        resultLink: '/admin?tab=material&step=concepts',
+      }).promise as { concepts?: Array<{ name: string }> };
       const names: string[] = (body.concepts || []).map((c: { name: string }) => c.name);
       setFindResult({
         kind: 'ok',
@@ -79,7 +86,6 @@ export function CourseMaterialWorkspace({
       setFindResult({ kind: 'error', text: t('material.concepts.findFailed', { error: err instanceof Error ? err.message : String(err) }) });
     } finally {
       setFindingNew(false);
-      setFindProgress(null);
     }
   };
 
@@ -212,7 +218,7 @@ export function CourseMaterialWorkspace({
             <button
               type="button"
               onClick={findNewConcepts}
-              disabled={findingNew}
+              disabled={findingNew || conceptTaskRunning}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-sky-300 text-sky-800 bg-white hover:bg-sky-50 disabled:opacity-50"
               data-testid="button-find-new-concepts"
             >
@@ -220,7 +226,7 @@ export function CourseMaterialWorkspace({
               {findingNew ? t('material.concepts.findingNew') : t('material.concepts.findNew')}
             </button>
             <HelpTip id="material.findNewConcepts" />
-            {findingNew && <ExtractionProgressText progress={findProgress} />}
+            {(findingNew || conceptTaskRunning) && <ExtractionProgressText progress={conceptTask?.progress} />}
             {findResult && (
               <span className={`text-sm ${findResult.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} data-testid="text-find-new-result">{findResult.text}</span>
             )}

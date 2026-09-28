@@ -13,6 +13,7 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLanguage } from '../i18n';
 import { AdminHint } from './help/AdminHint';
 import { Tooltip } from './help/Tooltip';
+import { startTask } from '../lib/backgroundTasks';
 
 type NoticeKind = 'info' | 'warning' | 'error' | 'success';
 interface Notice {
@@ -160,43 +161,57 @@ export function WebImportPanel({
     setResult(null);
     setProgress(null);
     setNotice({ kind: 'info', message: t('admin.imports.web.noticeImportStarted', { count: String(chosen.length) }) });
-    try {
-      const res = await importWebPages(activeCourseId, baseUrl, chosen, setProgress, { purpose });
-      setResult(res);
-      onImported?.(res);
-      setNotice({
-        kind: 'success',
-        message: t('admin.imports.web.noticeDone', {
-          imported: String(res.imported),
-          skipped: String(res.skipped),
-          errors: String(res.errors),
-          chunks: String(res.totalChunks),
-        }),
-      });
-    } catch (err) {
-      if (err instanceof WebImportInterruptedError) {
-        // De stream is afgekapt (proxy-timeout), maar de tot dan toe verwerkte
-        // pagina's zijn opgeslagen. Toon een waarschuwing i.p.v. een harde fout:
-        // opnieuw draaien is veilig (ongewijzigde pagina's worden overgeslagen).
-        setNotice({
-          kind: 'warning',
-          message: t('admin.imports.web.noticeInterrupted', {
-            processed: String(err.processed),
-            total: String(err.total),
-          }),
-        });
-        onImported?.(null);
-      } else {
-        setNotice({
-          kind: 'error',
-          message: t('admin.imports.web.noticeImportFailed', {
+    // Als achtergrondtaak: loopt door (en meldt zich in het takenvak) als je
+    // intussen naar een ander deel van de app gaat.
+    let site = baseUrl;
+    try { site = new URL(baseUrl).hostname; } catch { /* laat zoals ingevuld */ }
+    await startTask<string>({
+      kind: 'web-import',
+      key: activeCourseId,
+      title: t('tasks.webImport.title', { site }),
+      resultLink: '/admin?tab=material&step=files',
+      run: async (ctx) => {
+        const onProgress = (p: WebImportProgress | null) => {
+          setProgress(p);
+          ctx.report(p ? { done: p.current, total: p.total, labelKey: 'tasks.web.progress' } : null);
+        };
+        try {
+          const res = await importWebPages(activeCourseId, baseUrl, chosen, onProgress, { purpose });
+          setResult(res);
+          onImported?.(res);
+          const message = t('admin.imports.web.noticeDone', {
+            imported: String(res.imported),
+            skipped: String(res.skipped),
+            errors: String(res.errors),
+            chunks: String(res.totalChunks),
+          });
+          setNotice({ kind: 'success', message });
+          return message;
+        } catch (err) {
+          if (err instanceof WebImportInterruptedError) {
+            // De stream is afgekapt (proxy-timeout), maar de tot dan toe verwerkte
+            // pagina's zijn opgeslagen. Toon een waarschuwing i.p.v. een harde fout:
+            // opnieuw draaien is veilig (ongewijzigde pagina's worden overgeslagen).
+            const message = t('admin.imports.web.noticeInterrupted', {
+              processed: String(err.processed),
+              total: String(err.total),
+            });
+            setNotice({ kind: 'warning', message });
+            onImported?.(null);
+            return message;
+          }
+          const message = t('admin.imports.web.noticeImportFailed', {
             error: err instanceof Error ? err.message : t('admin.imports.web.unknownError'),
-          }),
-        });
-      }
-    }
-    setImporting(false);
-    setProgress(null);
+          });
+          setNotice({ kind: 'error', message });
+          throw new Error(message);
+        } finally {
+          setImporting(false);
+          setProgress(null);
+        }
+      },
+      summarize: (message) => message,
+    }).promise.catch(() => { /* melding staat al op de pagina en in het takenvak */ });
   };
 
   const renderNoticeIcon = (kind: NoticeKind, className: string) => {

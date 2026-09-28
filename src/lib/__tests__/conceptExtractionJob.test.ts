@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { runConceptExtraction, progressLabel } from '../conceptExtractionJob';
+import { runConceptExtraction, toTaskProgress } from '../conceptExtractionJob';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -43,9 +43,10 @@ describe('runConceptExtraction — als achtergrondtaak', () => {
   });
 });
 
-describe('progressLabel', () => {
-  it('kiest de tekst per stap', () => {
-    expect(progressLabel({ step: 'reading', done: 2, total: 9 })).toEqual({ key: 'admin.conceptJob.reading', vars: { done: '2', total: '9' } });
-    expect(progressLabel(null)).toBeNull();
+describe('toTaskProgress', () => {
+  it('zet de stap om in een vertaalsleutel voor het takenvak', () => {
+    expect(toTaskProgress({ step: 'reading', done: 2, total: 9 })).toEqual({ done: 2, total: 9, labelKey: 'admin.conceptJob.reading' });
+    expect(toTaskProgress({ step: 'verifying', done: 1, total: 3 })?.labelKey).toBe('admin.conceptJob.verifying');
+    expect(toTaskProgress(null)).toBeNull();
   });
 });

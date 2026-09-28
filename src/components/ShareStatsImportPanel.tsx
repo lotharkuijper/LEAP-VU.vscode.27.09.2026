@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 import type { TranslationKey } from '../i18n/translations';
 import { AdminHint } from './help/AdminHint';
+import { startTask, type TaskContext } from '../lib/backgroundTasks';
 import { Tooltip } from './help/Tooltip';
 
 interface ImportResult {
@@ -277,11 +278,29 @@ export function ShareStatsImportPanel() {
     setAutoLinkResult(null);
     setNotice({ kind: 'info', message: startMessage });
 
+    // Als achtergrondtaak in het takenvak: de import (en het automatisch
+    // koppelen daarna) loopt door als je intussen naar een ander deel van de
+    // app gaat; hier melden we alleen voortgang en uitkomst.
+    let taskCtx: TaskContext | null = null;
+    let taskDone: ((message: string) => void) | null = null;
+    let taskFail: ((err: Error) => void) | null = null;
+    startTask<string>({
+      kind: 'sharestats',
+      title: t('tasks.sharestats.title'),
+      resultLink: '/admin?tab=imports',
+      run: (ctx) => { taskCtx = ctx; return new Promise<string>((resolve, reject) => { taskDone = resolve; taskFail = reject; }); },
+      summarize: (message) => message,
+    }).promise.catch(() => { /* melding staat al op de pagina en in het takenvak */ });
+    const onProgress: ImportProgressCallback = (p) => {
+      setProgress(p);
+      (taskCtx as TaskContext | null)?.report({ done: Math.round(p.progress), total: 100, labelKey: 'tasks.sharestats.progress' });
+    };
+
     try {
       const importResult = await importQuestionsFromShareStats(
         savedRepoUrl || repoUrl,
         topicsToImport,
-        setProgress as ImportProgressCallback
+        onProgress
       );
       setResult(importResult);
       setNotice({
@@ -313,12 +332,16 @@ export function ShareStatsImportPanel() {
       } catch {
         /* niet kritiek */
       }
+      (taskDone as ((m: string) => void) | null)?.(t('shareStatsImport.importDone', {
+        imported: String(importResult.imported),
+        skipped: String(importResult.skipped),
+        errors: String(importResult.errors),
+      }));
     } catch (error) {
       console.error('Error importing questions:', error);
-      setNotice({
-        kind: 'error',
-        message: t('shareStatsImport.importFailed', { error: error instanceof Error ? error.message : t('common.unknownError') }),
-      });
+      const message = t('shareStatsImport.importFailed', { error: error instanceof Error ? error.message : t('common.unknownError') });
+      setNotice({ kind: 'error', message });
+      (taskFail as ((e: Error) => void) | null)?.(new Error(message));
     }
 
     setImporting(false);

@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "O LEAP procura conceitos que significam o mesmo (sinónimo, abreviatura, tradução). Ao juntar, fica apenas um conceito; o outro nome é preservado, para que os estudantes o encontrem pelos dois nomes. As explicações e ligações aos quizzes são mantidas.",
   "admin.conceptJob.reading": "A ler o curso: parte {done} de {total}…",
   "admin.conceptJob.merging": "A juntar duplicados…",
-  "admin.conceptJob.verifying": "A verificar com o material do curso: {done} de {total}…"
+  "admin.conceptJob.verifying": "A verificar com o material do curso: {done} de {total}…",
+  "tasks.concepts.title": "Extrair conceitos ({course})",
+  "tasks.doneTitle": "{title} está concluído",
+  "tasks.errorTitle": "{title} falhou",
+  "tasks.starting": "A iniciar…",
+  "tasks.keepsRunning": "Continua em execução, mesmo se continuares noutra parte da aplicação.",
+  "tasks.keepTabOpen": "Continua em execução na aplicação; mantém este separador aberto.",
+  "tasks.viewResult": "Ver resultado",
+  "tasks.regionLabel": "Tarefas em segundo plano",
+  "tasks.runningCount": "{n} tarefa em curso",
+  "tasks.finishedCount": "{n} notificação(ões)",
+  "tasks.upload.title": "Carregar ficheiros ({n})",
+  "tasks.upload.progress": "Ficheiro {done} de {total}…",
+  "tasks.webImport.title": "Importar website ({site})",
+  "tasks.webSync.title": "Atualizar website ({site})",
+  "tasks.web.progress": "Página {done} de {total}…",
+  "tasks.sharestats.title": "Importar perguntas do ShareStats",
+  "tasks.sharestats.progress": "A importar perguntas: {done}%"
 }

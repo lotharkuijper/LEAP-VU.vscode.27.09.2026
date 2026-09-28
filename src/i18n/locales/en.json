@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP looks for concepts that mean the same (synonym, abbreviation, translation). Merging keeps one concept; the other name is kept, so students find it under both names. Explanations and quiz links move along.",
   "admin.conceptJob.reading": "Reading the course: part {done} of {total}…",
   "admin.conceptJob.merging": "Merging duplicates…",
-  "admin.conceptJob.verifying": "Checking against the course material: {done} of {total}…"
+  "admin.conceptJob.verifying": "Checking against the course material: {done} of {total}…",
+  "tasks.concepts.title": "Extracting concepts ({course})",
+  "tasks.doneTitle": "{title} is done",
+  "tasks.errorTitle": "{title} failed",
+  "tasks.starting": "Starting…",
+  "tasks.keepsRunning": "Keeps running, also while you work elsewhere in the app.",
+  "tasks.keepTabOpen": "Keeps running in the app; keep this tab open.",
+  "tasks.viewResult": "View result",
+  "tasks.regionLabel": "Background tasks",
+  "tasks.runningCount": "{n} task running",
+  "tasks.finishedCount": "{n} notification(s)",
+  "tasks.upload.title": "Uploading files ({n})",
+  "tasks.upload.progress": "File {done} of {total}…",
+  "tasks.webImport.title": "Importing website ({site})",
+  "tasks.webSync.title": "Updating website ({site})",
+  "tasks.web.progress": "Page {done} of {total}…",
+  "tasks.sharestats.title": "Importing ShareStats questions",
+  "tasks.sharestats.progress": "Importing questions: {done}%"
 }

@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP шукає поняття, що означають те саме (синонім, скорочення, переклад). Об’єднання залишає одне поняття; інша назва зберігається, щоб студенти знаходили його за обома назвами. Пояснення та зв’язки з вікториною також переносяться.",
   "admin.conceptJob.reading": "Читання курсу: частина {done} з {total}…",
   "admin.conceptJob.merging": "Об’єднання дублікатів…",
-  "admin.conceptJob.verifying": "Перевірка за матеріалами курсу: {done} з {total}…"
+  "admin.conceptJob.verifying": "Перевірка за матеріалами курсу: {done} з {total}…",
+  "tasks.concepts.title": "Витягування понять ({course})",
+  "tasks.doneTitle": "{title} готово",
+  "tasks.errorTitle": "Не вдалося виконати {title}",
+  "tasks.starting": "Запускається…",
+  "tasks.keepsRunning": "Працює далі, навіть якщо ти продовжиш роботу в іншому місці застосунку.",
+  "tasks.keepTabOpen": "Працює далі в застосунку; тримай цю вкладку відкритою.",
+  "tasks.viewResult": "Переглянути результат",
+  "tasks.regionLabel": "Фонові завдання",
+  "tasks.runningCount": "{n} завдання виконується",
+  "tasks.finishedCount": "{n} сповіщення(ь)",
+  "tasks.upload.title": "Завантаження файлів ({n})",
+  "tasks.upload.progress": "Файл {done} з {total}…",
+  "tasks.webImport.title": "Імпорт вебсайту ({site})",
+  "tasks.webSync.title": "Оновлення вебсайту ({site})",
+  "tasks.web.progress": "Сторінка {done} з {total}…",
+  "tasks.sharestats.title": "Імпорт запитань ShareStats",
+  "tasks.sharestats.progress": "Імпорт запитань: {done}%"
 }

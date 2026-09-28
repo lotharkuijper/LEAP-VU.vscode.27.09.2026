@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "يبحث LEAP عن المفاهيم التي تعني الشيء نفسه (مرادف، اختصار، ترجمة). يترك الدمج مفهومًا واحدًا؛ ويبقى الاسم الآخر محفوظًا، حتى يتمكن الطلاب من العثور عليه بالاسمين. تنتقل الشروحات وروابط الاختبارات معه.",
   "admin.conceptJob.reading": "جارٍ قراءة المقرر: الجزء {done} من {total}…",
   "admin.conceptJob.merging": "جارٍ دمج التكرارات…",
-  "admin.conceptJob.verifying": "جارٍ التحقق مقابل مواد المقرر: {done} من {total}…"
+  "admin.conceptJob.verifying": "جارٍ التحقق مقابل مواد المقرر: {done} من {total}…",
+  "tasks.concepts.title": "استخراج المفاهيم ({course})",
+  "tasks.doneTitle": "{title} جاهز",
+  "tasks.errorTitle": "فشل {title}",
+  "tasks.starting": "جارٍ البدء…",
+  "tasks.keepsRunning": "يستمر في العمل، حتى إذا تابعت العمل في مكان آخر في التطبيق.",
+  "tasks.keepTabOpen": "يستمر في العمل في التطبيق؛ أبقِ علامة التبويب هذه مفتوحة.",
+  "tasks.viewResult": "اعرض النتيجة",
+  "tasks.regionLabel": "مهام الخلفية",
+  "tasks.runningCount": "{n} مهمة قيد التنفيذ",
+  "tasks.finishedCount": "{n} إشعار",
+  "tasks.upload.title": "تحميل الملفات ({n})",
+  "tasks.upload.progress": "الملف {done} من {total}…",
+  "tasks.webImport.title": "استيراد موقع ويب ({site})",
+  "tasks.webSync.title": "تحديث موقع ويب ({site})",
+  "tasks.web.progress": "الصفحة {done} من {total}…",
+  "tasks.sharestats.title": "استيراد أسئلة ShareStats",
+  "tasks.sharestats.progress": "استيراد الأسئلة: {done}%"
 }

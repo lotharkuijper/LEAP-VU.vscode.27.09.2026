@@ -11,6 +11,7 @@ import {
 import { importWebPages, WebImportInterruptedError, type WebImportProgress } from '../../services/web-import.service';
 import { HelpTip } from '../help/HelpTip';
 import { Tooltip } from '../help/Tooltip';
+import { startTask } from '../../lib/backgroundTasks';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 type WebPurpose = WebSource['purpose'];
@@ -50,26 +51,46 @@ export function WebSourceRow({
     setSyncing(true);
     setNotice(null);
     setProgress(null);
-    try {
-      const res = await importWebPages(courseId, source.baseUrl, [], setProgress, { webSourceId: source.id, resync: true });
-      const s = res.summary;
-      const text = s
-        ? t('material.web.syncDone', {
-          imported: String(s.imported), unchanged: String(s.unchanged), errors: String(s.errors),
-        }) + (s.notFound ? ` ${t('material.web.syncNotFound', { n: String(s.notFound) })}` : '')
-        : t('material.web.syncDoneShort');
-      setNotice({ kind: s && s.errors ? 'warn' : 'ok', text });
-    } catch (err) {
-      if (err instanceof WebImportInterruptedError) {
-        setNotice({ kind: 'warn', text: t('admin.imports.web.noticeInterrupted', { processed: String(err.processed), total: String(err.total) }) });
-      } else {
-        setNotice({ kind: 'error', text: errText(err) });
-      }
-    } finally {
-      setSyncing(false);
-      setProgress(null);
-      onChanged();
-    }
+    let site = source.baseUrl;
+    try { site = new URL(source.baseUrl).hostname; } catch { /* laat zoals opgeslagen */ }
+    // Als achtergrondtaak: loopt door (en meldt zich in het takenvak) als je
+    // intussen naar een ander deel van de app gaat.
+    await startTask<string>({
+      kind: 'web-sync',
+      key: source.id,
+      title: t('tasks.webSync.title', { site }),
+      resultLink: '/admin?tab=material&step=files',
+      run: async (ctx) => {
+        const onProgress = (p: WebImportProgress | null) => {
+          setProgress(p);
+          ctx.report(p ? { done: p.current, total: p.total, labelKey: 'tasks.web.progress' } : null);
+        };
+        try {
+          const res = await importWebPages(courseId, source.baseUrl, [], onProgress, { webSourceId: source.id, resync: true });
+          const s = res.summary;
+          const text = s
+            ? t('material.web.syncDone', {
+              imported: String(s.imported), unchanged: String(s.unchanged), errors: String(s.errors),
+            }) + (s.notFound ? ` ${t('material.web.syncNotFound', { n: String(s.notFound) })}` : '')
+            : t('material.web.syncDoneShort');
+          setNotice({ kind: s && s.errors ? 'warn' : 'ok', text });
+          return text;
+        } catch (err) {
+          if (err instanceof WebImportInterruptedError) {
+            const text = t('admin.imports.web.noticeInterrupted', { processed: String(err.processed), total: String(err.total) });
+            setNotice({ kind: 'warn', text });
+            return text;
+          }
+          setNotice({ kind: 'error', text: errText(err) });
+          throw err;
+        } finally {
+          setSyncing(false);
+          setProgress(null);
+          onChanged();
+        }
+      },
+      summarize: (text) => text,
+    }).promise.catch(() => { /* melding staat al op de pagina en in het takenvak */ });
   };
 
   const applyPurpose = async () => {

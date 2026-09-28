@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP cerca concetti che significano la stessa cosa (sinonimo, abbreviazione, traduzione). L'unione mantiene un solo concetto; l'altro nome resta salvato, così gli studenti lo trovano con entrambi i nomi. Spiegazioni e collegamenti ai quiz vengono trasferiti.",
   "admin.conceptJob.reading": "Lettura del corso: parte {done} di {total}…",
   "admin.conceptJob.merging": "Unione dei duplicati…",
-  "admin.conceptJob.verifying": "Verifica rispetto al materiale del corso: {done} di {total}…"
+  "admin.conceptJob.verifying": "Verifica rispetto al materiale del corso: {done} di {total}…",
+  "tasks.concepts.title": "Estrai concetti ({course})",
+  "tasks.doneTitle": "{title} è pronto",
+  "tasks.errorTitle": "{title} non è riuscito",
+  "tasks.starting": "Avvio in corso…",
+  "tasks.keepsRunning": "Continua in esecuzione, anche se prosegui altrove nell'app.",
+  "tasks.keepTabOpen": "Continua in esecuzione nell'app; tieni aperta questa scheda.",
+  "tasks.viewResult": "Visualizza risultato",
+  "tasks.regionLabel": "Attività in background",
+  "tasks.runningCount": "{n} attività in corso",
+  "tasks.finishedCount": "{n} notifica/notifiche",
+  "tasks.upload.title": "Caricamento file ({n})",
+  "tasks.upload.progress": "File {done} di {total}…",
+  "tasks.webImport.title": "Importa sito web ({site})",
+  "tasks.webSync.title": "Aggiorna sito web ({site})",
+  "tasks.web.progress": "Pagina {done} di {total}…",
+  "tasks.sharestats.title": "Importa domande ShareStats",
+  "tasks.sharestats.progress": "Importazione domande: {done}%"
 }

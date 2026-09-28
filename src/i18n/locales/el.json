@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "Το LEAP αναζητά έννοιες που σημαίνουν το ίδιο (συνώνυμο, συντομογραφία, μετάφραση). Η συγχώνευση αφήνει μία έννοια· το άλλο όνομα διατηρείται, ώστε οι φοιτητές να τη βρίσκουν και με τα δύο ονόματα. Οι εξηγήσεις και οι συνδέσεις με κουίζ μεταφέρονται μαζί.",
   "admin.conceptJob.reading": "Ανάγνωση μαθήματος: μέρος {done} από {total}…",
   "admin.conceptJob.merging": "Συγχώνευση διπλότυπων…",
-  "admin.conceptJob.verifying": "Έλεγχος σε σχέση με το υλικό του μαθήματος: {done} από {total}…"
+  "admin.conceptJob.verifying": "Έλεγχος σε σχέση με το υλικό του μαθήματος: {done} από {total}…",
+  "tasks.concepts.title": "Εξαγωγή εννοιών ({course})",
+  "tasks.doneTitle": "Το {title} είναι έτοιμο",
+  "tasks.errorTitle": "Το {title} απέτυχε",
+  "tasks.starting": "Ξεκινά…",
+  "tasks.keepsRunning": "Συνεχίζει να εκτελείται, ακόμα κι αν συνεχίσεις αλλού στην εφαρμογή.",
+  "tasks.keepTabOpen": "Συνεχίζει να εκτελείται στην εφαρμογή· κράτα αυτήν την καρτέλα ανοιχτή.",
+  "tasks.viewResult": "Προβολή αποτελέσματος",
+  "tasks.regionLabel": "Εργασίες παρασκηνίου",
+  "tasks.runningCount": "{n} εργασία σε εξέλιξη",
+  "tasks.finishedCount": "{n} ειδοποίηση(εις)",
+  "tasks.upload.title": "Μεταφόρτωση αρχείων ({n})",
+  "tasks.upload.progress": "Αρχείο {done} από {total}…",
+  "tasks.webImport.title": "Εισαγωγή ιστότοπου ({site})",
+  "tasks.webSync.title": "Ενημέρωση ιστότοπου ({site})",
+  "tasks.web.progress": "Σελίδα {done} από {total}…",
+  "tasks.sharestats.title": "Εισαγωγή ερωτήσεων ShareStats",
+  "tasks.sharestats.progress": "Εισαγωγή ερωτήσεων: {done}%"
 }

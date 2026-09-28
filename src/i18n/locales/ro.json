@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP caută concepte care înseamnă același lucru (sinonim, abreviere, traducere). Îmbinarea păstrează un singur concept; celălalt nume rămâne salvat, astfel încât studenții să îl găsească sub ambele denumiri. Explicațiile și legăturile cu quizurile sunt transferate.",
   "admin.conceptJob.reading": "Se citește cursul: partea {done} din {total}…",
   "admin.conceptJob.merging": "Se îmbină duplicatele…",
-  "admin.conceptJob.verifying": "Se verifică în raport cu materialul cursului: {done} din {total}…"
+  "admin.conceptJob.verifying": "Se verifică în raport cu materialul cursului: {done} din {total}…",
+  "tasks.concepts.title": "Extragere concepte ({course})",
+  "tasks.doneTitle": "{title} este gata",
+  "tasks.errorTitle": "{title} a eșuat",
+  "tasks.starting": "Se pornește…",
+  "tasks.keepsRunning": "Continuă să ruleze, chiar dacă lucrezi mai departe în altă parte a aplicației.",
+  "tasks.keepTabOpen": "Continuă să ruleze în aplicație; păstrează această filă deschisă.",
+  "tasks.viewResult": "Vezi rezultatul",
+  "tasks.regionLabel": "Sarcini în fundal",
+  "tasks.runningCount": "{n} sarcină în desfășurare",
+  "tasks.finishedCount": "{n} notificare(i)",
+  "tasks.upload.title": "Încărcare fișiere ({n})",
+  "tasks.upload.progress": "Fișierul {done} din {total}…",
+  "tasks.webImport.title": "Importare website ({site})",
+  "tasks.webSync.title": "Actualizare website ({site})",
+  "tasks.web.progress": "Pagina {done} din {total}…",
+  "tasks.sharestats.title": "Importare întrebări ShareStats",
+  "tasks.sharestats.progress": "Se importă întrebările: {done}%"
 }

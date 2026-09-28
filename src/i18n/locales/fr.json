@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP recherche les notions qui signifient la même chose (synonyme, abréviation, traduction). La fusion conserve une seule notion ; l’autre nom reste enregistré, afin que les étudiants la trouvent sous les deux noms. Les explications et les liens avec les quiz sont aussi conservés.",
   "admin.conceptJob.reading": "Lecture du cours : partie {done} sur {total}…",
   "admin.conceptJob.merging": "Fusion des doublons…",
-  "admin.conceptJob.verifying": "Vérification par rapport au matériel du cours : {done} sur {total}…"
+  "admin.conceptJob.verifying": "Vérification par rapport au matériel du cours : {done} sur {total}…",
+  "tasks.concepts.title": "Extraire les notions ({course})",
+  "tasks.doneTitle": "{title} est prêt",
+  "tasks.errorTitle": "{title} a échoué",
+  "tasks.starting": "Démarrage…",
+  "tasks.keepsRunning": "Continue de s’exécuter, même si tu poursuis ailleurs dans l’application.",
+  "tasks.keepTabOpen": "Continue de s’exécuter dans l’application ; garde cet onglet ouvert.",
+  "tasks.viewResult": "Voir le résultat",
+  "tasks.regionLabel": "Tâches en arrière-plan",
+  "tasks.runningCount": "{n} tâche en cours",
+  "tasks.finishedCount": "{n} notification(s)",
+  "tasks.upload.title": "Téléverser des fichiers ({n})",
+  "tasks.upload.progress": "Fichier {done} sur {total}…",
+  "tasks.webImport.title": "Importer le site web ({site})",
+  "tasks.webSync.title": "Mettre à jour le site web ({site})",
+  "tasks.web.progress": "Page {done} sur {total}…",
+  "tasks.sharestats.title": "Importer les questions ShareStats",
+  "tasks.sharestats.progress": "Importation des questions : {done}%"
 }

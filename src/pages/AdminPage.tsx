@@ -29,7 +29,8 @@ import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset 
 import { HelpToggle } from '../components/help/HelpToggle';
 import { ConceptQualityPanel } from '../components/ConceptQualityPanel';
 import { ExtractionProgressText } from '../components/ExtractionProgressText';
-import { runConceptExtraction, type ExtractionProgress } from '../lib/conceptExtractionJob';
+import { startConceptExtractionTask, CONCEPT_TASK_KIND } from '../lib/conceptExtractionJob';
+import { useTask } from '../lib/backgroundTasks';
 import { Tooltip } from '../components/help/Tooltip';
 import { AdminHint } from '../components/help/AdminHint';
 import { HelpTip } from '../components/help/HelpTip';
@@ -325,9 +326,11 @@ export function AdminPage() {
   const [addConceptError, setAddConceptError] = useState<string | null>(null);
   const [addConceptSuccess, setAddConceptSuccess] = useState(false);
   const [regeneratingConcepts, setRegeneratingConcepts] = useState(false);
+  // Loopt er (nog) een extractie voor deze cursus? Ook als die startte vóórdat je hier terugkwam.
+  const conceptTask = useTask(CONCEPT_TASK_KIND, activeCourseId || '');
+  const conceptTaskRunning = conceptTask?.status === 'running';
   const [regenerateResult, setRegenerateResult] = useState<{ message: string } | null>(null);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
-  const [regenProgress, setRegenProgress] = useState<ExtractionProgress | null>(null);
   const [selectedConceptIds, setSelectedConceptIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
@@ -1303,12 +1306,13 @@ export function AdminPage() {
     setRegenerateResult(null);
     setRegenerateError(null);
     try {
-      // Als achtergrondtaak met voortgang: de hele cursus lezen duurt minuten.
-      const response = await runConceptExtraction({ courseId: activeCourseId, replace: true }, session.access_token, setRegenProgress);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || t('admin.ragSettings.serverErrorStatus', { status: String(response.status) }));
-      }
+      // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
+      const data = await startConceptExtractionTask({
+        courseId: activeCourseId,
+        body: { courseId: activeCourseId, replace: true },
+        token: session.access_token,
+        title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
+      }).promise as { message?: string };
       setRegenerateResult({ message: data.message || '' });
       await loadConcepts();
       await loadConceptsMeta();
@@ -1317,7 +1321,6 @@ export function AdminPage() {
       setRegenerateError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
     } finally {
       setRegeneratingConcepts(false);
-      setRegenProgress(null);
     }
   };
 
@@ -2013,7 +2016,7 @@ const tabGroups = [
         </div>
         <button
           onClick={handleRegenerateConcepts}
-          disabled={regeneratingConcepts}
+          disabled={regeneratingConcepts || conceptTaskRunning}
           className="flex-shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
           data-testid="button-regenerate-now-rag"
         >
@@ -2097,7 +2100,7 @@ const tabGroups = [
                   {activeCourseId && (
                     <button
                       onClick={handleRegenerateConcepts}
-                      disabled={regeneratingConcepts}
+                      disabled={regeneratingConcepts || conceptTaskRunning}
                       className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
                       data-testid="button-regenerate-concepts"
                     >
@@ -2182,7 +2185,7 @@ const tabGroups = [
                   </div>
                   <button
                     onClick={handleRegenerateConcepts}
-                    disabled={regeneratingConcepts}
+                    disabled={regeneratingConcepts || conceptTaskRunning}
                     className="flex-shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
                     data-testid="button-regenerate-now"
                   >
@@ -2201,7 +2204,7 @@ const tabGroups = [
                 </div>
               )}
 
-              {regeneratingConcepts && <ExtractionProgressText progress={regenProgress} />}
+              {(regeneratingConcepts || conceptTaskRunning) && <ExtractionProgressText progress={conceptTask?.progress} />}
               {regenerateResult && (
                 <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800" data-testid="text-regenerate-result">
                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600" />

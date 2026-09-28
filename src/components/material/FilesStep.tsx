@@ -20,6 +20,7 @@ import { WebImportPanel } from '../WebImportPanel';
 import { HelpTip } from '../help/HelpTip';
 import { Tooltip } from '../help/Tooltip';
 import { AdminHint } from '../help/AdminHint';
+import { startTask } from '../../lib/backgroundTasks';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -100,28 +101,51 @@ export function FilesStep({
   const doUpload = async () => {
     setUploading(true);
     setNotice(null);
-    const errors: string[] = [];
-    let ok = 0;
-    for (const file of queue) {
-      if ((target.purpose === 'course_material' || target.purpose === 'course_info') && file.size > MAX_RAG_BYTES) {
-        errors.push(t('material.upload.failed', { name: file.name, error: '> 20 MB' }));
-        continue;
-      }
-      try {
-        await uploadCourseFile(courseId, file, target);
-        ok++;
-      } catch (err) {
-        errors.push(t('material.upload.failed', { name: file.name, error: errorText(err) }));
-      }
-    }
-    setUploading(false);
+    // Vastleggen wat er geüpload wordt: de wachtrij mag intussen leeg of anders worden.
+    const files = [...queue];
+    const tgt = { ...target };
     setQueue([]);
     setSuggested(null);
-    const next = ok && target.purpose === 'course_material' ? ` ${t('material.upload.nextConcepts')}` : '';
-    setNotice(errors.length
-      ? { kind: 'error', text: [ok ? t('material.upload.done', { n: String(ok) }) + next : '', ...errors].filter(Boolean).join(' · ') }
-      : { kind: 'ok', text: t('material.upload.done', { n: String(ok) }) + next });
-    onChanged();
+    // Als achtergrondtaak: loopt door (en meldt zich in het takenvak) als je
+    // intussen naar een ander deel van de app gaat. De browser doet het werk,
+    // dus het tabblad moet open blijven (de app waarschuwt bij sluiten).
+    await startTask<{ kind: 'ok' | 'error'; text: string }>({
+      kind: 'upload',
+      key: courseId,
+      parallel: true,
+      title: t('tasks.upload.title', { n: String(files.length) }),
+      resultLink: '/admin?tab=material&step=files',
+      run: async (ctx) => {
+        const errors: string[] = [];
+        let ok = 0;
+        try {
+          for (const [i, file] of files.entries()) {
+            ctx.report({ done: i + 1, total: files.length, labelKey: 'tasks.upload.progress' });
+            if ((tgt.purpose === 'course_material' || tgt.purpose === 'course_info') && file.size > MAX_RAG_BYTES) {
+              errors.push(t('material.upload.failed', { name: file.name, error: '> 20 MB' }));
+              continue;
+            }
+            try {
+              await uploadCourseFile(courseId, file, tgt);
+              ok++;
+            } catch (err) {
+              errors.push(t('material.upload.failed', { name: file.name, error: errorText(err) }));
+            }
+          }
+        } finally {
+          setUploading(false);
+        }
+        const next = ok && tgt.purpose === 'course_material' ? ` ${t('material.upload.nextConcepts')}` : '';
+        const result = errors.length
+          ? { kind: 'error' as const, text: [ok ? t('material.upload.done', { n: String(ok) }) + next : '', ...errors].filter(Boolean).join(' · ') }
+          : { kind: 'ok' as const, text: t('material.upload.done', { n: String(ok) }) + next };
+        setNotice(result);
+        onChanged();
+        if (!ok && errors.length) throw new Error(result.text);
+        return result;
+      },
+      summarize: (r) => r.text,
+    }).promise.catch(() => { /* melding staat al op de pagina en in het takenvak */ });
   };
 
   const openMove = (f: CourseFile) => {

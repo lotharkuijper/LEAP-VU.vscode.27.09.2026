@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP aynı anlama gelen kavramları arar (eş anlamlı, kısaltma, çeviri). Birleştirme tek bir kavram bırakır; diğer ad korunur, böylece öğrenciler onu iki adla da bulabilir. Açıklamalar ve quiz bağlantıları da taşınır.",
   "admin.conceptJob.reading": "Ders okunuyor: {done}/{total}…",
   "admin.conceptJob.merging": "Yinelenenler birleştiriliyor…",
-  "admin.conceptJob.verifying": "Ders materyaliyle karşılaştırılarak kontrol ediliyor: {done}/{total}…"
+  "admin.conceptJob.verifying": "Ders materyaliyle karşılaştırılarak kontrol ediliyor: {done}/{total}…",
+  "tasks.concepts.title": "Kavramları çıkar ({course})",
+  "tasks.doneTitle": "{title} hazır",
+  "tasks.errorTitle": "{title} başarısız oldu",
+  "tasks.starting": "Başlatılıyor…",
+  "tasks.keepsRunning": "Uygulamada başka bir yerde çalışmaya devam etsen de çalışmaya devam eder.",
+  "tasks.keepTabOpen": "Uygulamada çalışmaya devam eder; bu sekmeyi açık tut.",
+  "tasks.viewResult": "Sonucu görüntüle",
+  "tasks.regionLabel": "Arka plan görevleri",
+  "tasks.runningCount": "{n} görev devam ediyor",
+  "tasks.finishedCount": "{n} bildirim",
+  "tasks.upload.title": "Dosyalar yükleniyor ({n})",
+  "tasks.upload.progress": "Dosya {done}/{total}…",
+  "tasks.webImport.title": "Web sitesi içe aktarılıyor ({site})",
+  "tasks.webSync.title": "Web sitesi güncelleniyor ({site})",
+  "tasks.web.progress": "Sayfa {done}/{total}…",
+  "tasks.sharestats.title": "ShareStats sorularını içe aktar",
+  "tasks.sharestats.progress": "Sorular içe aktarılıyor: {done}%"
 }

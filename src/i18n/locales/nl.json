@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP zoekt begrippen die hetzelfde betekenen (synoniem, afkorting, vertaling). Samenvoegen houdt één begrip over; de andere naam blijft bewaard, zodat studenten het onder beide namen vinden. Uitleg en quizkoppelingen gaan mee.",
   "admin.conceptJob.reading": "Cursus lezen: deel {done} van {total}…",
   "admin.conceptJob.merging": "Dubbelingen samenvoegen…",
-  "admin.conceptJob.verifying": "Controleren tegen het cursusmateriaal: {done} van {total}…"
+  "admin.conceptJob.verifying": "Controleren tegen het cursusmateriaal: {done} van {total}…",
+  "tasks.concepts.title": "Begrippen extraheren ({course})",
+  "tasks.doneTitle": "{title} is klaar",
+  "tasks.errorTitle": "{title} is mislukt",
+  "tasks.starting": "Wordt gestart…",
+  "tasks.keepsRunning": "Loopt door, ook als je elders in de app verder werkt.",
+  "tasks.keepTabOpen": "Loopt door in de app; houd dit tabblad open.",
+  "tasks.viewResult": "Bekijk resultaat",
+  "tasks.regionLabel": "Achtergrondtaken",
+  "tasks.runningCount": "{n} taak bezig",
+  "tasks.finishedCount": "{n} melding(en)",
+  "tasks.upload.title": "Bestanden uploaden ({n})",
+  "tasks.upload.progress": "Bestand {done} van {total}…",
+  "tasks.webImport.title": "Website importeren ({site})",
+  "tasks.webSync.title": "Website bijwerken ({site})",
+  "tasks.web.progress": "Pagina {done} van {total}…",
+  "tasks.sharestats.title": "ShareStats-vragen importeren",
+  "tasks.sharestats.progress": "Vragen importeren: {done}%"
 }

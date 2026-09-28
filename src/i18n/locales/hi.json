@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP ऐसी अवधारणाएँ खोजता है जिनका मतलब एक जैसा होता है (समानार्थी, संक्षेप, अनुवाद)। मर्ज करने पर एक ही अवधारणा बचती है; दूसरा नाम सेव रहता है, ताकि छात्र उसे दोनों नामों से ढूँढ सकें। व्याख्याएँ और क्विज़ लिंक भी साथ चले जाते हैं।",
   "admin.conceptJob.reading": "पाठ्यक्रम पढ़ा जा रहा है: {total} में से {done} भाग…",
   "admin.conceptJob.merging": "डुप्लिकेट्स मर्ज किए जा रहे हैं…",
-  "admin.conceptJob.verifying": "पाठ्यक्रम सामग्री से जाँच की जा रही है: {total} में से {done}…"
+  "admin.conceptJob.verifying": "पाठ्यक्रम सामग्री से जाँच की जा रही है: {total} में से {done}…",
+  "tasks.concepts.title": "अवधारणाएँ निकालें ({course})",
+  "tasks.doneTitle": "{title} तैयार है",
+  "tasks.errorTitle": "{title} विफल रहा",
+  "tasks.starting": "शुरू हो रहा है…",
+  "tasks.keepsRunning": "चलता रहेगा, भले ही तुम ऐप में कहीं और काम जारी रखो।",
+  "tasks.keepTabOpen": "ऐप में चलता रहेगा; इस टैब को खुला रखो।",
+  "tasks.viewResult": "परिणाम देखें",
+  "tasks.regionLabel": "बैकग्राउंड कार्य",
+  "tasks.runningCount": "{n} कार्य चल रहा है",
+  "tasks.finishedCount": "{n} सूचना(एँ)",
+  "tasks.upload.title": "फ़ाइलें अपलोड करें ({n})",
+  "tasks.upload.progress": "फ़ाइल {done} / {total}…",
+  "tasks.webImport.title": "वेबसाइट आयात करें ({site})",
+  "tasks.webSync.title": "वेबसाइट अपडेट करें ({site})",
+  "tasks.web.progress": "पृष्ठ {done} / {total}…",
+  "tasks.sharestats.title": "ShareStats प्रश्न आयात करें",
+  "tasks.sharestats.progress": "प्रश्न आयात हो रहे हैं: {done}%"
 }

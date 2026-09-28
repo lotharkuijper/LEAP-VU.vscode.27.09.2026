@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP traži pojmove koji znače isto (sinonim, kratica, prijevod). Spajanjem ostaje jedan pojam; drugi naziv ostaje sačuvan, tako da ga studenti mogu pronaći pod oba naziva. Objašnjenja i poveznice s kvizovima prenose se zajedno.",
   "admin.conceptJob.reading": "Čitanje kolegija: dio {done} od {total}…",
   "admin.conceptJob.merging": "Spajanje duplikata…",
-  "admin.conceptJob.verifying": "Provjera prema nastavnom materijalu: {done} od {total}…"
+  "admin.conceptJob.verifying": "Provjera prema nastavnom materijalu: {done} od {total}…",
+  "tasks.concepts.title": "Izdvajanje pojmova ({course})",
+  "tasks.doneTitle": "{title} je spremno",
+  "tasks.errorTitle": "{title} nije uspjelo",
+  "tasks.starting": "Pokreće se…",
+  "tasks.keepsRunning": "Nastavlja se izvoditi, čak i ako nastaviš raditi drugdje u aplikaciji.",
+  "tasks.keepTabOpen": "Izvodi se u aplikaciji; drži ovu karticu otvorenom.",
+  "tasks.viewResult": "Prikaži rezultat",
+  "tasks.regionLabel": "Pozadinski zadaci",
+  "tasks.runningCount": "{n} zadatak u tijeku",
+  "tasks.finishedCount": "{n} obavijest(i)",
+  "tasks.upload.title": "Prijenos datoteka ({n})",
+  "tasks.upload.progress": "Datoteka {done} od {total}…",
+  "tasks.webImport.title": "Uvoz web-mjesta ({site})",
+  "tasks.webSync.title": "Ažuriranje web-mjesta ({site})",
+  "tasks.web.progress": "Stranica {done} od {total}…",
+  "tasks.sharestats.title": "Uvoz ShareStats pitanja",
+  "tasks.sharestats.progress": "Uvoz pitanja: {done}%"
 }

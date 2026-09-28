@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP は同じ意味の概念（類義語、略語、翻訳語）を探します。統合すると概念は1つだけ残り、もう一方の名称も保存されるため、学生はどちらの名称でも見つけられます。説明やクイズとの関連付けも引き継がれます。",
   "admin.conceptJob.reading": "コースを読み込み中: {done}/{total}…",
   "admin.conceptJob.merging": "重複を統合中…",
-  "admin.conceptJob.verifying": "コース教材と照合中: {done}/{total}…"
+  "admin.conceptJob.verifying": "コース教材と照合中: {done}/{total}…",
+  "tasks.concepts.title": "概念を抽出（{course}）",
+  "tasks.doneTitle": "{title}が完了しました",
+  "tasks.errorTitle": "{title}に失敗しました",
+  "tasks.starting": "開始中…",
+  "tasks.keepsRunning": "アプリ内の別の場所で作業を続けても、バックグラウンドで実行されます。",
+  "tasks.keepTabOpen": "アプリ内で実行されます。このタブは開いたままにしておいてください。",
+  "tasks.viewResult": "結果を表示",
+  "tasks.regionLabel": "バックグラウンドタスク",
+  "tasks.runningCount": "{n}件のタスクが実行中",
+  "tasks.finishedCount": "{n}件のお知らせ",
+  "tasks.upload.title": "ファイルをアップロード（{n}）",
+  "tasks.upload.progress": "ファイル {done}/{total}…",
+  "tasks.webImport.title": "ウェブサイトをインポート（{site}）",
+  "tasks.webSync.title": "ウェブサイトを更新（{site}）",
+  "tasks.web.progress": "ページ {done}/{total}…",
+  "tasks.sharestats.title": "ShareStatsの質問をインポート",
+  "tasks.sharestats.progress": "質問をインポート中: {done}%"
 }

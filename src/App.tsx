@@ -11,6 +11,7 @@ import { getActiveLang } from './i18n/activeLang';
 import { ProfileLangSync } from './components/ProfileLangSync';
 import ChooseCoursePage from "./pages/ChooseCoursePage";
 import ShareStatsTopicsPage from "./pages/ShareStatsTopicsPage";
+import { TaskTray } from './components/TaskTray';
 import ShareStatsQuizPage from "./pages/ShareStatsQuizPage";
 
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
@@ -278,6 +279,8 @@ function App() {
           <CourseAccessProvider>
             <ActiveCourseProvider>
               <AppRoutes />
+              {/* Achtergrondtaken: buiten de routes, dus blijft staan bij navigeren. */}
+              <TaskTray />
             </ActiveCourseProvider>
           </CourseAccessProvider>
         </AuthProvider>

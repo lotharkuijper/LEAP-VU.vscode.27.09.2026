@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP 會搜尋意思相同嘅概念（同義詞、縮寫、翻譯）。合併後只保留一個概念；另一個名稱會保存，令學生可以用兩個名稱搵到。解釋同測驗連結都會一併保留。",
   "admin.conceptJob.reading": "讀取課程：第 {done} 部分，共 {total} 部分…",
   "admin.conceptJob.merging": "正在合併重複項目…",
-  "admin.conceptJob.verifying": "對照課程材料檢查：{done} / {total}…"
+  "admin.conceptJob.verifying": "對照課程材料檢查：{done} / {total}…",
+  "tasks.concepts.title": "擷取概念（{course}）",
+  "tasks.doneTitle": "{title} 已完成",
+  "tasks.errorTitle": "{title} 失敗咗",
+  "tasks.starting": "正在開始…",
+  "tasks.keepsRunning": "即使你喺應用程式其他地方繼續操作，佢都會繼續執行。",
+  "tasks.keepTabOpen": "會喺應用程式入面繼續執行；請保持呢個分頁開啟。",
+  "tasks.viewResult": "查看結果",
+  "tasks.regionLabel": "背景任務",
+  "tasks.runningCount": "{n} 個任務進行中",
+  "tasks.finishedCount": "{n} 個通知",
+  "tasks.upload.title": "上載檔案（{n}）",
+  "tasks.upload.progress": "檔案 {done} / {total}…",
+  "tasks.webImport.title": "匯入網站（{site}）",
+  "tasks.webSync.title": "更新網站（{site}）",
+  "tasks.web.progress": "頁面 {done} / {total}…",
+  "tasks.sharestats.title": "匯入 ShareStats 問題",
+  "tasks.sharestats.progress": "正在匯入問題：{done}%"
 }

@@ -11,7 +11,8 @@ import { RAGDocumentStatusPanel } from './RAGDocumentStatusPanel';
 import { useLanguage } from '../i18n';
 import { Tooltip } from './help/Tooltip';
 import { ExtractionProgressText } from './ExtractionProgressText';
-import { runConceptExtraction, type ExtractionProgress } from '../lib/conceptExtractionJob';
+import { startConceptExtractionTask, CONCEPT_TASK_KIND } from '../lib/conceptExtractionJob';
+import { useTask } from '../lib/backgroundTasks';
 import { AdminHint } from './help/AdminHint';
 
 const SUPPORTED_EXTENSIONS = ['.pdf', '.docx', '.pptx', '.txt'];
@@ -90,7 +91,8 @@ export function RAGSetupPanel() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<ActiveSection>('upload');
   const [extracting, setExtracting] = useState(false);
-  const [extractProgress, setExtractProgress] = useState<ExtractionProgress | null>(null);
+  const conceptTask = useTask(CONCEPT_TASK_KIND, activeCourseId || '');
+  const conceptTaskRunning = conceptTask?.status === 'running';
   const [extractResult, setExtractResult] = useState<{
     count: number;
     skipped: number;
@@ -212,16 +214,20 @@ export function RAGSetupPanel() {
     setExtractResult(null);
     setLowerThresholdNote(null);
     try {
-      const response = await runConceptExtraction({
+      // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data: any = await startConceptExtractionTask({
         courseId: activeCourseId,
-        replace: replaceMode,
-        language: conceptLanguage,
-        documentIds: selectedDocIds.size < processedDocs.length ? Array.from(selectedDocIds) : [],
-      }, session.access_token, setExtractProgress);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || `Server error ${response.status}`);
-      }
+        body: {
+          courseId: activeCourseId,
+          replace: replaceMode,
+          language: conceptLanguage,
+          documentIds: selectedDocIds.size < processedDocs.length ? Array.from(selectedDocIds) : [],
+        },
+        token: session.access_token,
+        title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
+        resultLink: '/admin?tab=rag_beheer',
+      }).promise;
       setExtractResult({
         count: (data.concepts?.length ?? 0) + (data.updated ?? 0),
         skipped: data.skipped ?? 0,
@@ -243,7 +249,6 @@ export function RAGSetupPanel() {
       });
     } finally {
       setExtracting(false);
-      setExtractProgress(null);
     }
   };
 
@@ -447,7 +452,7 @@ export function RAGSetupPanel() {
               </div>
             )}
 
-            {extracting && <ExtractionProgressText progress={extractProgress} />}
+            {(extracting || conceptTaskRunning) && <ExtractionProgressText progress={conceptTask?.progress} />}
             {extractResult && (
               <div
                 className={`mb-3 text-sm px-3 py-2.5 rounded-lg space-y-2 ${
@@ -579,7 +584,7 @@ export function RAGSetupPanel() {
               </label>
               <button
                 onClick={handleExtractConcepts}
-                disabled={extracting || processedDocs.length === 0}
+                disabled={extracting || conceptTaskRunning || processedDocs.length === 0}
                 data-testid="button-extract-concepts"
                 className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors self-start"
               >

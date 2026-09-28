@@ -2661,5 +2661,22 @@
   "help.concepts.merge.body": "LEAP mencari konsep yang berarti sama (sinonim, singkatan, terjemahan). Menggabungkan akan menyisakan satu konsep; nama lainnya tetap disimpan, sehingga mahasiswa dapat menemukannya dengan kedua nama. Penjelasan dan tautan kuis ikut terbawa.",
   "admin.conceptJob.reading": "Membaca kursus: bagian {done} dari {total}…",
   "admin.conceptJob.merging": "Menggabungkan duplikat…",
-  "admin.conceptJob.verifying": "Memeriksa terhadap materi kursus: {done} dari {total}…"
+  "admin.conceptJob.verifying": "Memeriksa terhadap materi kursus: {done} dari {total}…",
+  "tasks.concepts.title": "Mengekstrak konsep ({course})",
+  "tasks.doneTitle": "{title} selesai",
+  "tasks.errorTitle": "{title} gagal",
+  "tasks.starting": "Sedang dimulai…",
+  "tasks.keepsRunning": "Tetap berjalan, meskipun kamu lanjut bekerja di tempat lain dalam aplikasi.",
+  "tasks.keepTabOpen": "Tetap berjalan di aplikasi; biarkan tab ini tetap terbuka.",
+  "tasks.viewResult": "Lihat hasil",
+  "tasks.regionLabel": "Tugas latar belakang",
+  "tasks.runningCount": "{n} tugas sedang berjalan",
+  "tasks.finishedCount": "{n} notifikasi",
+  "tasks.upload.title": "Mengunggah berkas ({n})",
+  "tasks.upload.progress": "Berkas {done} dari {total}…",
+  "tasks.webImport.title": "Mengimpor situs web ({site})",
+  "tasks.webSync.title": "Memperbarui situs web ({site})",
+  "tasks.web.progress": "Halaman {done} dari {total}…",
+  "tasks.sharestats.title": "Mengimpor pertanyaan ShareStats",
+  "tasks.sharestats.progress": "Mengimpor pertanyaan: {done}%"
 }
