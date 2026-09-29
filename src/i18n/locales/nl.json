@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "Spellingvarianten, en namen die al als andere naam bij een begrip staan, voegt LEAP zelf samen. Synoniemen, afkortingen, vertalingen en varianten (zoals “95% betrouwbaarheidsinterval” en “betrouwbaarheidsinterval”) legt LEAP je eerst voor. Een moduleconcept dat ook als cursusconcept bestaat, zie je bovenaan.",
   "admin.conceptQuality.none": "Geen dubbelingen gevonden.",
   "admin.conceptQuality.suggestion": "{others} lijkt hetzelfde te betekenen als {keep}.",
-  "admin.conceptQuality.mergeButton": "Samenvoegen",
   "admin.conceptQuality.dismissButton": "Geen dubbeling",
   "admin.conceptQuality.err.suggest": "Kon geen voorstellen ophalen.",
   "admin.conceptQuality.err.merge": "Samenvoegen mislukt.",
   "help.concepts.coverage.title": "Begrippen per document",
   "help.concepts.coverage.body": "Hoeveel begrippen LEAP uit elk leerstofdocument haalt. Levert een document er 0 op, dan staat het in oranje: controleer of het goed is ingelezen. Studenten krijgen alleen uitleg en quizvragen over begrippen die hier staan.",
   "help.concepts.merge.title": "Dubbelingen samenvoegen",
-  "help.concepts.merge.body": "Elk begrip hoort één keer in de lijst. Zekere dubbelingen voegt LEAP zelf samen; twijfelgevallen (synoniem, afkorting, variant) legt LEAP je voor. Staat een moduleconcept ook als cursusconcept, dan blijft na samenvoegen alleen het cursusconcept over. De andere naam blijft bewaard; uitleg en quizkoppelingen gaan mee.",
+  "help.concepts.merge.body": "Elk begrip hoort één keer in de lijst. Zekere dubbelingen voegt LEAP zelf samen; twijfelgevallen (synoniem, afkorting, variant) legt LEAP je voor. Jij kiest welke naam blijft; de andere namen blijven bewaard. Staat een begrip ook als cursusconcept, dan komt het daarna onder Cursusconcepten. Uitleg en quizkoppelingen gaan mee.",
   "admin.conceptJob.reading": "Cursus lezen: deel {done} van {total}…",
   "admin.conceptJob.merging": "Dubbelingen samenvoegen…",
   "admin.conceptJob.verifying": "Controleren tegen het cursusmateriaal: {done} van {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "ShareStats-vragen importeren",
   "tasks.sharestats.progress": "Vragen importeren: {done}%",
   "admin.conceptQuality.autoMerged": "{n} zekere dubbeling(en) meteen samengevoegd.",
-  "admin.conceptQuality.suggestionCrossClass": "Moduleconcept {others} staat ook als cursusconcept {keep}. Samenvoegen houdt alleen het cursusconcept over."
+  "admin.conceptQuality.suggestionCrossClass": "Moduleconcept {others} staat ook als cursusconcept {keep}. Na samenvoegen staat het begrip één keer in de lijst, onder Cursusconcepten.",
+  "admin.conceptQuality.keepNameLabel": "Naam die blijft:",
+  "admin.conceptQuality.mergeAs": "Samenvoegen als {name}",
+  "admin.conceptQuality.cls.course": "cursusconcept",
+  "admin.conceptQuality.cls.module": "moduleconcept",
+  "admin.conceptQuality.cls.example": "voorbeeld"
 }

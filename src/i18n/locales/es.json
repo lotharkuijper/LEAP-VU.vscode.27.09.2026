@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP fusiona automáticamente las variantes ortográficas y los nombres que ya figuran como otro nombre de un concepto. Los sinónimos, abreviaturas, traducciones y variantes (como “intervalo de confianza del 95%” e “intervalo de confianza”) te los muestra primero. Un concepto de módulo que también existe como concepto de curso aparece arriba.",
   "admin.conceptQuality.none": "No se han encontrado duplicados.",
   "admin.conceptQuality.suggestion": "{others} parece significar lo mismo que {keep}.",
-  "admin.conceptQuality.mergeButton": "Combinar",
   "admin.conceptQuality.dismissButton": "No es duplicado",
   "admin.conceptQuality.err.suggest": "No se han podido obtener sugerencias.",
   "admin.conceptQuality.err.merge": "No se ha podido combinar.",
   "help.concepts.coverage.title": "Conceptos por documento",
   "help.concepts.coverage.body": "Cuántos conceptos extrae LEAP de cada documento de material de estudio. Si un documento genera 0, aparece en naranja: comprueba que se haya leído correctamente. Los estudiantes solo reciben explicaciones y preguntas de quiz sobre los conceptos que aparecen aquí.",
   "help.concepts.merge.title": "Combinar duplicados",
-  "help.concepts.merge.body": "Cada concepto debe aparecer una sola vez en la lista. LEAP fusiona automáticamente los duplicados claros; en los casos dudosos (sinónimo, abreviatura, variante), LEAP te pedirá que decidas. Si un concepto de módulo también aparece como concepto de curso, tras la fusión solo quedará el concepto de curso. El otro nombre se conservará; la explicación y los vínculos con cuestionarios se trasladarán.",
+  "help.concepts.merge.body": "Cada concepto debe aparecer una sola vez en la lista. LEAP fusiona automáticamente los duplicados seguros; en los casos dudosos (sinónimo, abreviatura, variante), LEAP te lo preguntará. Tú eliges qué nombre se conserva; los otros nombres se guardan. Si un concepto también aparece como concepto del curso, después quedará en Conceptos del curso. Las explicaciones y los enlaces a cuestionarios se conservan.",
   "admin.conceptJob.reading": "Leyendo el curso: parte {done} de {total}…",
   "admin.conceptJob.merging": "Fusionando duplicados…",
   "admin.conceptJob.verifying": "Comprobando con el material del curso: {done} de {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Importar preguntas de ShareStats",
   "tasks.sharestats.progress": "Importando preguntas: {done}%",
   "admin.conceptQuality.autoMerged": "{n} duplicado(s) seguro(s) fusionado(s) de inmediato.",
-  "admin.conceptQuality.suggestionCrossClass": "El concepto de módulo {others} también existe como concepto de curso {keep}. Al fusionarlos, solo queda el concepto de curso."
+  "admin.conceptQuality.suggestionCrossClass": "El concepto de módulo {others} también aparece como concepto del curso {keep}. Tras la fusión, el concepto aparecerá una sola vez en la lista, en Conceptos del curso.",
+  "admin.conceptQuality.keepNameLabel": "Nombre que se conserva:",
+  "admin.conceptQuality.mergeAs": "Fusionar como {name}",
+  "admin.conceptQuality.cls.course": "concepto del curso",
+  "admin.conceptQuality.cls.module": "concepto de módulo",
+  "admin.conceptQuality.cls.example": "ejemplo"
 }

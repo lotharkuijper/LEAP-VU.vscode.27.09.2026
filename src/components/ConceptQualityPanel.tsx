@@ -60,10 +60,24 @@ export function ConceptQualityPanel({ courseId, token, onChanged, refreshKey = 0
     } finally { setSearching(false); }
   };
 
+  // Welke naam blijft, per voorstel (sleutel: s.keep.id). Standaard LEAP's
+  // keuze (het cursusconcept); de docent kan elke naam uit de groep kiezen.
+  // Het bewijs uit alle documenten gaat mee, dus een begrip dat ook als
+  // cursusconcept bestond, komt hoe dan ook onder Cursusconcepten.
+  const [chosen, setChosen] = useState<Record<string, string>>({});
+  const membersOf = (s: MergeSuggestion) => [s.keep, ...s.others];
+  const chosenOf = (s: MergeSuggestion) => membersOf(s).find(m => m.id === chosen[s.keep.id]) || s.keep;
+  const classLabel: Record<ConceptClass, string> = {
+    course: t('admin.conceptQuality.cls.course'),
+    module: t('admin.conceptQuality.cls.module'),
+    example: t('admin.conceptQuality.cls.example'),
+  };
+
   const merge = async (s: MergeSuggestion) => {
+    const keep = chosenOf(s);
     setBusyId(s.keep.id); setError(null);
     try {
-      const r = await fetch('/api/admin/concepts/merge', { method: 'POST', headers, body: JSON.stringify({ courseId, keepId: s.keep.id, dupIds: s.others.map(o => o.id) }) });
+      const r = await fetch('/api/admin/concepts/merge', { method: 'POST', headers, body: JSON.stringify({ courseId, keepId: keep.id, dupIds: membersOf(s).filter(m => m.id !== keep.id).map(m => m.id) }) });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || t('admin.conceptQuality.err.merge'));
       setSuggestions(prev => (prev || []).filter(x => x !== s));
@@ -142,16 +156,35 @@ export function ConceptQualityPanel({ courseId, token, onChanged, refreshKey = 0
                 <p className="text-gray-700" data-testid={`text-merge-suggestion-${s.keep.id}`}>
                   {t(s.kind === 'crossClass' ? 'admin.conceptQuality.suggestionCrossClass' : 'admin.conceptQuality.suggestion', { others: s.others.map(o => `“${o.name}”`).join(', '), keep: `“${s.keep.name}”` })}
                 </p>
+                <fieldset className="mt-2">
+                  <legend className="mb-1 font-medium text-gray-700">{t('admin.conceptQuality.keepNameLabel')}</legend>
+                  <div className="flex flex-col gap-1">
+                    {membersOf(s).map(m => (
+                      <label key={m.id} className="flex min-w-0 cursor-pointer items-center gap-2 text-gray-700">
+                        <input
+                          type="radio"
+                          name={`keep-${s.keep.id}`}
+                          checked={chosenOf(s).id === m.id}
+                          onChange={() => setChosen(prev => ({ ...prev, [s.keep.id]: m.id }))}
+                          className="h-3.5 w-3.5 flex-shrink-0 accent-blue-600"
+                          data-testid={`radio-keep-${s.keep.id}-${m.id}`}
+                        />
+                        <span className="min-w-0 break-words">{m.name}</span>
+                        {m.cls && <span className="flex-shrink-0 text-[11px] text-gray-500">{classLabel[m.cls]}</span>}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => merge(s)}
                     disabled={busyId === s.keep.id}
-                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-md bg-blue-600 px-2.5 py-1 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                    className="inline-flex min-w-0 items-center gap-1 rounded-md bg-blue-600 px-2.5 py-1 text-left font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                     data-testid={`button-merge-${s.keep.id}`}
                   >
-                    {busyId === s.keep.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <GitMerge className="h-3 w-3" />}
-                    {t('admin.conceptQuality.mergeButton')}
+                    {busyId === s.keep.id ? <Loader2 className="h-3 w-3 flex-shrink-0 animate-spin" /> : <GitMerge className="h-3 w-3 flex-shrink-0" />}
+                    {t('admin.conceptQuality.mergeAs', { name: `“${chosenOf(s).name}”` })}
                   </button>
                   <button
                     type="button"

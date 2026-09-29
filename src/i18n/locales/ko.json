@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "철자 변형이나 이미 다른 개념의 다른 이름으로 등록된 이름은 LEAP이 자동으로 합쳐. 동의어, 약어, 번역, 변형(예: “95% 신뢰구간”과 “신뢰구간”)은 LEAP이 먼저 너에게 제시해. 강의 개념으로도 존재하는 모듈 개념은 맨 위에 표시돼.",
   "admin.conceptQuality.none": "중복 항목을 찾지 못했어.",
   "admin.conceptQuality.suggestion": "{others}은(는) {keep}와 같은 의미인 것 같아.",
-  "admin.conceptQuality.mergeButton": "합치기",
   "admin.conceptQuality.dismissButton": "중복 아님",
   "admin.conceptQuality.err.suggest": "제안을 가져오지 못했어.",
   "admin.conceptQuality.err.merge": "합치기에 실패했어.",
   "help.concepts.coverage.title": "문서별 개념",
   "help.concepts.coverage.body": "LEAP이 각 학습 자료 문서에서 추출한 개념 수야. 문서에서 0개가 추출되면 주황색으로 표시돼. 제대로 읽어왔는지 확인해 봐. 학생들은 여기에 있는 개념에 대해서만 설명과 퀴즈 질문을 받게 돼.",
   "help.concepts.merge.title": "중복 항목 합치기",
-  "help.concepts.merge.body": "각 개념은 목록에 한 번만 있어야 해. 확실한 중복은 LEAP가 직접 병합하고, 애매한 경우(동의어, 약어, 변형)는 LEAP가 너에게 확인해. 모듈 개념이 코스 개념으로도 있으면, 병합 후에는 코스 개념만 남아. 다른 이름은 보존되고, 설명과 퀴즈 연결도 함께 이동해.",
+  "help.concepts.merge.body": "각 개념은 목록에 한 번만 있어야 해. 확실한 중복은 LEAP이 자동으로 합치고, 애매한 경우(동의어, 약어, 변형)는 LEAP이 너에게 확인해. 어떤 이름을 남길지 네가 선택하고, 다른 이름들은 보존돼. 어떤 개념이 코스 개념이기도 하면, 이후에는 코스 개념 아래에 표시돼. 설명과 퀴즈 연결도 함께 이동해.",
   "admin.conceptJob.reading": "과목 읽는 중: {total}개 중 {done}개…",
   "admin.conceptJob.merging": "중복 항목 병합 중…",
   "admin.conceptJob.verifying": "과목 자료와 대조 확인 중: {total}개 중 {done}개…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "ShareStats 질문 가져오기",
   "tasks.sharestats.progress": "질문 가져오는 중: {done}%",
   "admin.conceptQuality.autoMerged": "확실한 중복 {n}개가 즉시 합쳐졌어.",
-  "admin.conceptQuality.suggestionCrossClass": "모듈 개념 {others}은(는) 강의 개념 {keep}(으)로도 존재해. 합치면 강의 개념만 남아."
+  "admin.conceptQuality.suggestionCrossClass": "모듈 개념 {others}은(는) 코스 개념 {keep}으로도 있어. 합치면 이 개념은 목록에 한 번만, 코스 개념 아래에 표시돼.",
+  "admin.conceptQuality.keepNameLabel": "남길 이름:",
+  "admin.conceptQuality.mergeAs": "{name}(으)로 합치기",
+  "admin.conceptQuality.cls.course": "코스 개념",
+  "admin.conceptQuality.cls.module": "모듈 개념",
+  "admin.conceptQuality.cls.example": "예시"
 }

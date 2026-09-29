@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP sam objedinjuje pravopisne varijante i nazive koji su već navedeni kao drugi naziv za pojam. Sinonime, kratice, prijevode i varijante (kao što su “95% interval pouzdanosti” i “interval pouzdanosti”) LEAP ti prvo predlaže. Koncept modula koji postoji i kao koncept kolegija vidiš na vrhu.",
   "admin.conceptQuality.none": "Nisu pronađeni duplikati.",
   "admin.conceptQuality.suggestion": "{others} izgleda kao da znači isto što i {keep}.",
-  "admin.conceptQuality.mergeButton": "Spoji",
   "admin.conceptQuality.dismissButton": "Nije duplikat",
   "admin.conceptQuality.err.suggest": "Nije moguće dohvatiti prijedloge.",
   "admin.conceptQuality.err.merge": "Spajanje nije uspjelo.",
   "help.concepts.coverage.title": "Pojmovi po dokumentu",
   "help.concepts.coverage.body": "Koliko pojmova LEAP izvlači iz svakog dokumenta s nastavnim materijalom. Ako dokument daje 0 pojmova, prikazan je narančasto: provjeri je li dobro učitan. Studenti dobivaju objašnjenja i pitanja u kvizu samo o pojmovima koji su ovdje navedeni.",
   "help.concepts.merge.title": "Spajanje duplikata",
-  "help.concepts.merge.body": "Svaki pojam pripada popisu samo jednom. Sigurne duplikate LEAP sam spaja; sumnjive slučajeve (sinonim, kratica, varijanta) LEAP ti prikazuje na provjeru. Ako se koncept modula pojavljuje i kao koncept kolegija, nakon spajanja ostaje samo koncept kolegija. Drugi naziv ostaje sačuvan; objašnjenje i poveznice na kviz prenose se zajedno.",
+  "help.concepts.merge.body": "Svaki pojam pripada popisu samo jednom. Sigurna dupliciranja LEAP sam spaja; dvojbene slučajeve (sinonim, kratica, varijanta) LEAP ti prikazuje. Ti biraš koji naziv ostaje; ostali nazivi ostaju sačuvani. Ako je pojam ujedno i koncept kolegija, nakon toga bit će pod Konceptima kolegija. Objašnjenje i poveznice s kvizovima prenose se.",
   "admin.conceptJob.reading": "Čitanje kolegija: dio {done} od {total}…",
   "admin.conceptJob.merging": "Spajanje duplikata…",
   "admin.conceptJob.verifying": "Provjera prema nastavnom materijalu: {done} od {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Uvoz ShareStats pitanja",
   "tasks.sharestats.progress": "Uvoz pitanja: {done}%",
   "admin.conceptQuality.autoMerged": "{n} sigurnih duplikata odmah objedinjeno.",
-  "admin.conceptQuality.suggestionCrossClass": "Koncept modula {others} postoji i kao koncept kolegija {keep}. Objedinjavanjem ostaje samo koncept kolegija."
+  "admin.conceptQuality.suggestionCrossClass": "Koncept modula {others} također je koncept kolegija {keep}. Nakon spajanja pojam se na popisu pojavljuje jednom, pod Konceptima kolegija.",
+  "admin.conceptQuality.keepNameLabel": "Naziv koji ostaje:",
+  "admin.conceptQuality.mergeAs": "Spoji kao {name}",
+  "admin.conceptQuality.cls.course": "koncept kolegija",
+  "admin.conceptQuality.cls.module": "koncept modula",
+  "admin.conceptQuality.cls.example": "primjer"
 }

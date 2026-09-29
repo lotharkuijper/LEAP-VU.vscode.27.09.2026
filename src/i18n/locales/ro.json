@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP îmbină automat variantele de ortografie și numele care apar deja ca alt nume pentru un concept. Sinonimele, abrevierile, traducerile și variantele (precum „interval de încredere de 95%” și „interval de încredere”) îți sunt prezentate mai întâi de LEAP. Un concept de modul care există și ca concept de curs apare în partea de sus.",
   "admin.conceptQuality.none": "Nu s-au găsit dubluri.",
   "admin.conceptQuality.suggestion": "{others} pare să însemne același lucru ca {keep}.",
-  "admin.conceptQuality.mergeButton": "Îmbină",
   "admin.conceptQuality.dismissButton": "Nu este dublură",
   "admin.conceptQuality.err.suggest": "Nu s-au putut prelua sugestiile.",
   "admin.conceptQuality.err.merge": "Îmbinarea a eșuat.",
   "help.concepts.coverage.title": "Concepte per document",
   "help.concepts.coverage.body": "Câte concepte extrage LEAP din fiecare document cu material de învățare. Dacă un document produce 0, apare cu portocaliu: verifică dacă a fost citit corect. Studenții primesc explicații și întrebări de quiz doar despre conceptele afișate aici.",
   "help.concepts.merge.title": "Îmbinarea dublurilor",
-  "help.concepts.merge.body": "Fiecare concept trebuie să apară o singură dată în listă. LEAP unește automat duplicatele certe; cazurile incerte (sinonim, abreviere, variantă) ți le prezintă LEAP. Dacă un concept de modul apare și ca concept de curs, după unire rămâne doar conceptul de curs. Cealaltă denumire se păstrează; explicațiile și asocierile cu quizurile sunt preluate.",
+  "help.concepts.merge.body": "Fiecare concept apare o singură dată în listă. LEAP îmbină automat duplicatele sigure; cazurile incerte (sinonim, abreviere, variantă) ți le prezintă LEAP. Tu alegi ce nume rămâne; celelalte nume sunt păstrate. Dacă un concept există și ca concept de curs, acesta apare apoi la Concepte de curs. Explicațiile și legăturile către quiz sunt păstrate.",
   "admin.conceptJob.reading": "Se citește cursul: partea {done} din {total}…",
   "admin.conceptJob.merging": "Se îmbină duplicatele…",
   "admin.conceptJob.verifying": "Se verifică în raport cu materialul cursului: {done} din {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Importare întrebări ShareStats",
   "tasks.sharestats.progress": "Se importă întrebările: {done}%",
   "admin.conceptQuality.autoMerged": "{n} dublură/dubluri sigură/sigure îmbinată/îmbinate imediat.",
-  "admin.conceptQuality.suggestionCrossClass": "Conceptul de modul {others} există și ca concept de curs {keep}. Îmbinarea păstrează doar conceptul de curs."
+  "admin.conceptQuality.suggestionCrossClass": "Conceptul de modul {others} apare și ca concept de curs {keep}. După îmbinare, conceptul apare o singură dată în listă, la Concepte de curs.",
+  "admin.conceptQuality.keepNameLabel": "Numele care rămâne:",
+  "admin.conceptQuality.mergeAs": "Îmbină ca {name}",
+  "admin.conceptQuality.cls.course": "concept de curs",
+  "admin.conceptQuality.cls.module": "concept de modul",
+  "admin.conceptQuality.cls.example": "exemplu"
 }

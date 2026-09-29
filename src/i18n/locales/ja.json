@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "表記ゆれや、すでに概念の別名として登録されている名前は、LEAP が自動で統合する。類義語、略語、翻訳、バリエーション（例：「95% 信頼区間」と「信頼区間」）は、LEAP がまず君に確認する。コース概念としても存在するモジュール概念は、上部に表示される。",
   "admin.conceptQuality.none": "重複は見つかりませんでした。",
   "admin.conceptQuality.suggestion": "{others} は {keep} と同じ意味のようです。",
-  "admin.conceptQuality.mergeButton": "統合",
   "admin.conceptQuality.dismissButton": "重複ではない",
   "admin.conceptQuality.err.suggest": "候補を取得できませんでした。",
   "admin.conceptQuality.err.merge": "統合に失敗しました。",
   "help.concepts.coverage.title": "ドキュメントごとの概念",
   "help.concepts.coverage.body": "LEAP が各学習教材ドキュメントから抽出する概念の数です。ドキュメントから 0 件しか抽出されない場合はオレンジ色で表示されます。正しく読み込まれているか確認してください。学生には、ここに表示されている概念についてのみ説明とクイズ問題が提示されます。",
   "help.concepts.merge.title": "重複を統合",
-  "help.concepts.merge.body": "各概念はリストに1回だけ表示される必要がある。明らかな重複はLEAPが自動で結合する。判断が難しいもの（同義語、略語、表記ゆれ）はLEAPが君に確認する。モジュール概念がコース概念としても存在する場合、結合後はコース概念だけが残る。もう一方の名前は保存され、説明とクイズの関連付けも引き継がれる。",
+  "help.concepts.merge.body": "各概念はリストに1回だけ表示されるべきです。明らかな重複はLEAPが自動で統合します。判断が必要なもの（同義語、略語、表記ゆれ）はLEAPが君に確認します。君が残す名前を選び、他の名前は保存されます。概念がコース概念でもある場合、その後「コース概念」の下に表示されます。説明とクイズのリンクも引き継がれます。",
   "admin.conceptJob.reading": "コースを読み込み中: {done}/{total}…",
   "admin.conceptJob.merging": "重複を統合中…",
   "admin.conceptJob.verifying": "コース教材と照合中: {done}/{total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "ShareStatsの質問をインポート",
   "tasks.sharestats.progress": "質問をインポート中: {done}%",
   "admin.conceptQuality.autoMerged": "{n} 件の確実な重複をすぐに統合した。",
-  "admin.conceptQuality.suggestionCrossClass": "モジュール概念 {others} はコース概念 {keep} としても存在する。統合するとコース概念だけが残る。"
+  "admin.conceptQuality.suggestionCrossClass": "モジュール概念 {others} はコース概念 {keep} としても存在します。統合後、その概念はリストに1回だけ「コース概念」の下に表示されます。",
+  "admin.conceptQuality.keepNameLabel": "残す名前:",
+  "admin.conceptQuality.mergeAs": "{name} として統合",
+  "admin.conceptQuality.cls.course": "コース概念",
+  "admin.conceptQuality.cls.module": "モジュール概念",
+  "admin.conceptQuality.cls.example": "例"
 }

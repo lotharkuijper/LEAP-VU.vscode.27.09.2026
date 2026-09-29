@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "Varian ejaan dan nama yang sudah tercantum sebagai nama lain pada suatu konsep akan digabungkan sendiri oleh LEAP. Sinonim, singkatan, terjemahan, dan varian (seperti “interval kepercayaan 95%” dan “interval kepercayaan”) akan ditunjukkan LEAP kepadamu terlebih dahulu. Konsep modul yang juga ada sebagai konsep kursus akan kamu lihat di bagian atas.",
   "admin.conceptQuality.none": "Tidak ada duplikasi ditemukan.",
   "admin.conceptQuality.suggestion": "{others} tampaknya berarti sama dengan {keep}.",
-  "admin.conceptQuality.mergeButton": "Gabungkan",
   "admin.conceptQuality.dismissButton": "Bukan duplikasi",
   "admin.conceptQuality.err.suggest": "Tidak dapat mengambil saran.",
   "admin.conceptQuality.err.merge": "Gagal menggabungkan.",
   "help.concepts.coverage.title": "Konsep per dokumen",
   "help.concepts.coverage.body": "Berapa banyak konsep yang diambil LEAP dari tiap dokumen materi pembelajaran. Jika sebuah dokumen menghasilkan 0, dokumen itu ditandai oranye: periksa apakah dokumen sudah terbaca dengan baik. Mahasiswa hanya mendapat penjelasan dan pertanyaan kuis tentang konsep yang tercantum di sini.",
   "help.concepts.merge.title": "Menggabungkan duplikasi",
-  "help.concepts.merge.body": "Setiap konsep hanya muncul satu kali dalam daftar. Duplikasi yang pasti akan digabungkan LEAP secara otomatis; kasus yang meragukan (sinonim, singkatan, varian) akan diajukan LEAP kepadamu. Jika sebuah konsep modul juga ada sebagai konsep kursus, setelah penggabungan hanya konsep kursus yang tersisa. Nama lainnya tetap disimpan; penjelasan dan tautan kuis ikut dipindahkan.",
+  "help.concepts.merge.body": "Setiap konsep hanya muncul sekali dalam daftar. Duplikasi yang pasti akan digabungkan LEAP sendiri; kasus yang meragukan (sinonim, singkatan, varian) akan diajukan LEAP kepadamu. Kamu memilih nama mana yang tetap dipakai; nama lainnya tetap disimpan. Jika sebuah konsep juga merupakan konsep kursus, setelah itu konsep tersebut akan berada di bawah Konsep kursus. Penjelasan dan tautan kuis ikut dipindahkan.",
   "admin.conceptJob.reading": "Membaca kursus: bagian {done} dari {total}…",
   "admin.conceptJob.merging": "Menggabungkan duplikat…",
   "admin.conceptJob.verifying": "Memeriksa terhadap materi kursus: {done} dari {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Mengimpor pertanyaan ShareStats",
   "tasks.sharestats.progress": "Mengimpor pertanyaan: {done}%",
   "admin.conceptQuality.autoMerged": "{n} duplikasi pasti langsung digabungkan.",
-  "admin.conceptQuality.suggestionCrossClass": "Konsep modul {others} juga ada sebagai konsep kursus {keep}. Penggabungan hanya akan menyisakan konsep kursus."
+  "admin.conceptQuality.suggestionCrossClass": "Konsep modul {others} juga ada sebagai konsep kursus {keep}. Setelah digabungkan, konsep tersebut muncul satu kali dalam daftar, di bawah Konsep kursus.",
+  "admin.conceptQuality.keepNameLabel": "Nama yang tetap dipakai:",
+  "admin.conceptQuality.mergeAs": "Gabungkan sebagai {name}",
+  "admin.conceptQuality.cls.course": "konsep kursus",
+  "admin.conceptQuality.cls.module": "konsep modul",
+  "admin.conceptQuality.cls.example": "contoh"
 }

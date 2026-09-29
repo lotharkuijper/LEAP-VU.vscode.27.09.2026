@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "Yazım varyantlarını ve zaten bir kavramın diğer adı olarak yer alan adları LEAP otomatik olarak birleştirir. Eş anlamlıları, kısaltmaları, çevirileri ve varyantları (ör. “%95 güven aralığı” ve “güven aralığı”) LEAP önce sana sunar. Kurs kavramı olarak da bulunan bir modül kavramını en üstte görürsün.",
   "admin.conceptQuality.none": "Yinelenen bulunamadı.",
   "admin.conceptQuality.suggestion": "{others}, {keep} ile aynı anlama geliyor gibi görünüyor.",
-  "admin.conceptQuality.mergeButton": "Birleştir",
   "admin.conceptQuality.dismissButton": "Yinelenen değil",
   "admin.conceptQuality.err.suggest": "Öneriler alınamadı.",
   "admin.conceptQuality.err.merge": "Birleştirme başarısız oldu.",
   "help.concepts.coverage.title": "Belge başına kavramlar",
   "help.concepts.coverage.body": "LEAP'in her öğrenim materyali belgesinden kaç kavram çıkardığı. Bir belge 0 kavram üretirse turuncu gösterilir: düzgün okunup okunmadığını kontrol et. Öğrenciler yalnızca burada yer alan kavramlar hakkında açıklama ve quiz soruları alır.",
   "help.concepts.merge.title": "Yinelenenleri birleştir",
-  "help.concepts.merge.body": "Her kavram listede bir kez yer alır. Kesin tekrarları LEAP kendisi birleştirir; şüpheli durumları (eş anlamlı, kısaltma, varyant) LEAP sana sunar. Bir modül kavramı aynı zamanda ders kavramı olarak da varsa, birleştirmeden sonra yalnızca ders kavramı kalır. Diğer ad korunur; açıklama ve quiz bağlantıları da aktarılır.",
+  "help.concepts.merge.body": "Her kavram listede bir kez yer alır. Kesin yinelemeleri LEAP kendisi birleştirir; şüpheli durumları (eş anlamlı, kısaltma, varyant) LEAP sana sorar. Hangi adın kalacağını sen seçersin; diğer adlar saklanır. Bir kavram aynı zamanda ders kavramıysa, sonrasında Ders kavramları altında yer alır. Açıklama ve quiz bağlantıları da taşınır.",
   "admin.conceptJob.reading": "Ders okunuyor: {done}/{total}…",
   "admin.conceptJob.merging": "Yinelenenler birleştiriliyor…",
   "admin.conceptJob.verifying": "Ders materyaliyle karşılaştırılarak kontrol ediliyor: {done}/{total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "ShareStats sorularını içe aktar",
   "tasks.sharestats.progress": "Sorular içe aktarılıyor: {done}%",
   "admin.conceptQuality.autoMerged": "{n} kesin yineleme hemen birleştirildi.",
-  "admin.conceptQuality.suggestionCrossClass": "Modül kavramı {others}, kurs kavramı {keep} olarak da mevcut. Birleştirme yalnızca kurs kavramını tutar."
+  "admin.conceptQuality.suggestionCrossClass": "Modül kavramı {others} aynı zamanda ders kavramı {keep} olarak da var. Birleştirmeden sonra kavram listede bir kez, Ders kavramları altında yer alır.",
+  "admin.conceptQuality.keepNameLabel": "Kalacak ad:",
+  "admin.conceptQuality.mergeAs": "{name} olarak birleştir",
+  "admin.conceptQuality.cls.course": "ders kavramı",
+  "admin.conceptQuality.cls.module": "modül kavramı",
+  "admin.conceptQuality.cls.example": "örnek"
 }

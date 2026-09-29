@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "Schreibvarianten und Namen, die bereits als anderer Name bei einem Begriff stehen, führt LEAP automatisch zusammen. Synonyme, Abkürzungen, Übersetzungen und Varianten (wie „95-%-Konfidenzintervall“ und „Konfidenzintervall“) legt LEAP dir zuerst vor. Ein Modulkonzept, das auch als Kurskonzept existiert, siehst du oben.",
   "admin.conceptQuality.none": "Keine Duplikate gefunden.",
   "admin.conceptQuality.suggestion": "{others} scheint dasselbe zu bedeuten wie {keep}.",
-  "admin.conceptQuality.mergeButton": "Zusammenführen",
   "admin.conceptQuality.dismissButton": "Kein Duplikat",
   "admin.conceptQuality.err.suggest": "Vorschläge konnten nicht abgerufen werden.",
   "admin.conceptQuality.err.merge": "Zusammenführen fehlgeschlagen.",
   "help.concepts.coverage.title": "Begriffe pro Dokument",
   "help.concepts.coverage.body": "Wie viele Begriffe LEAP aus jedem Lernmaterial-Dokument extrahiert. Liefert ein Dokument 0, wird es orange markiert: Prüfe, ob es richtig eingelesen wurde. Studierende erhalten nur Erklärungen und Quizfragen zu Begriffen, die hier stehen.",
   "help.concepts.merge.title": "Duplikate zusammenführen",
-  "help.concepts.merge.body": "Jeder Begriff gehört nur einmal in die Liste. Eindeutige Dubletten führt LEAP selbst zusammen; Zweifelsfälle (Synonym, Abkürzung, Variante) legt LEAP dir vor. Ist ein Modulbegriff auch als Kursbegriff vorhanden, bleibt nach dem Zusammenführen nur der Kursbegriff übrig. Der andere Name bleibt erhalten; Erklärung und Quiz-Verknüpfungen werden übernommen.",
+  "help.concepts.merge.body": "Jeder Begriff gehört nur einmal in die Liste. Eindeutige Duplikate führt LEAP selbst zusammen; Zweifelsfälle (Synonym, Abkürzung, Variante) legt LEAP dir vor. Du entscheidest, welcher Name bleibt; die anderen Namen bleiben erhalten. Ist ein Begriff auch ein Kurskonzept, erscheint er danach unter Kurskonzepten. Erklärungen und Quiz-Verknüpfungen werden übernommen.",
   "admin.conceptJob.reading": "Kurs wird gelesen: Teil {done} von {total}…",
   "admin.conceptJob.merging": "Dubletten werden zusammengeführt…",
   "admin.conceptJob.verifying": "Abgleich mit dem Kursmaterial: {done} von {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "ShareStats-Fragen importieren",
   "tasks.sharestats.progress": "Fragen importieren: {done}%",
   "admin.conceptQuality.autoMerged": "{n} eindeutige Dublette(n) sofort zusammengeführt.",
-  "admin.conceptQuality.suggestionCrossClass": "Modulkonzept {others} existiert auch als Kurskonzept {keep}. Beim Zusammenführen bleibt nur das Kurskonzept übrig."
+  "admin.conceptQuality.suggestionCrossClass": "Modulkonzept {others} ist auch als Kurskonzept {keep} vorhanden. Nach dem Zusammenführen steht der Begriff einmal in der Liste, unter Kurskonzepten.",
+  "admin.conceptQuality.keepNameLabel": "Name, der bleibt:",
+  "admin.conceptQuality.mergeAs": "Als {name} zusammenführen",
+  "admin.conceptQuality.cls.course": "Kurskonzept",
+  "admin.conceptQuality.cls.module": "Modulkonzept",
+  "admin.conceptQuality.cls.example": "Beispiel"
 }

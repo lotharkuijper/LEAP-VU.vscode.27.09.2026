@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP junta automaticamente variantes ortográficas e nomes que já estão registados como outro nome de um conceito. Sinónimos, abreviaturas, traduções e variantes (como “intervalo de confiança de 95%” e “intervalo de confiança”) são-te apresentados primeiro pelo LEAP. Um conceito de módulo que também existe como conceito de curso aparece no topo.",
   "admin.conceptQuality.none": "Nenhum duplicado encontrado.",
   "admin.conceptQuality.suggestion": "{others} parece significar o mesmo que {keep}.",
-  "admin.conceptQuality.mergeButton": "Juntar",
   "admin.conceptQuality.dismissButton": "Não é duplicado",
   "admin.conceptQuality.err.suggest": "Não foi possível obter sugestões.",
   "admin.conceptQuality.err.merge": "Não foi possível juntar.",
   "help.concepts.coverage.title": "Conceitos por documento",
   "help.concepts.coverage.body": "Quantos conceitos o LEAP extrai de cada documento de material didático. Se um documento gerar 0, aparece a laranja: verifica se foi lido corretamente. Os estudantes só recebem explicações e perguntas de quiz sobre os conceitos que aparecem aqui.",
   "help.concepts.merge.title": "Juntar duplicados",
-  "help.concepts.merge.body": "Cada conceito deve aparecer uma única vez na lista. Duplicados evidentes são combinados automaticamente pelo LEAP; em casos duvidosos (sinónimo, abreviatura, variante), o LEAP pede-te para decidires. Se um conceito de módulo também existir como conceito de curso, após a combinação fica apenas o conceito de curso. O outro nome é preservado; a explicação e as ligações aos quizzes são mantidas.",
+  "help.concepts.merge.body": "Cada conceito deve aparecer uma vez na lista. Duplicados certos o LEAP junta automaticamente; casos duvidosos (sinónimo, abreviatura, variante) o LEAP apresenta-te. Tu escolhes qual nome fica; os outros nomes são preservados. Se um conceito também existir como conceito de curso, então passa depois para Conceitos de curso. Explicações e ligações a quizzes acompanham-no.",
   "admin.conceptJob.reading": "A ler o curso: parte {done} de {total}…",
   "admin.conceptJob.merging": "A juntar duplicados…",
   "admin.conceptJob.verifying": "A verificar com o material do curso: {done} de {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Importar perguntas do ShareStats",
   "tasks.sharestats.progress": "A importar perguntas: {done}%",
   "admin.conceptQuality.autoMerged": "{n} duplicado(s) seguro(s) juntado(s) imediatamente.",
-  "admin.conceptQuality.suggestionCrossClass": "O conceito de módulo {others} também existe como conceito de curso {keep}. A fusão mantém apenas o conceito de curso."
+  "admin.conceptQuality.suggestionCrossClass": "O conceito de módulo {others} também existe como conceito de curso {keep}. Após a junção, o conceito aparece uma vez na lista, em Conceitos de curso.",
+  "admin.conceptQuality.keepNameLabel": "Nome que fica:",
+  "admin.conceptQuality.mergeAs": "Juntar como {name}",
+  "admin.conceptQuality.cls.course": "conceito de curso",
+  "admin.conceptQuality.cls.module": "conceito de módulo",
+  "admin.conceptQuality.cls.example": "exemplo"
 }

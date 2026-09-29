@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP fusionne automatiquement les variantes orthographiques et les noms qui figurent déjà comme autre nom d’un concept. Les synonymes, abréviations, traductions et variantes (comme « intervalle de confiance à 95 % » et « intervalle de confiance ») te sont d’abord proposés par LEAP. Un concept de module qui existe aussi comme concept de cours apparaît en haut.",
   "admin.conceptQuality.none": "Aucun doublon trouvé.",
   "admin.conceptQuality.suggestion": "{others} semble signifier la même chose que {keep}.",
-  "admin.conceptQuality.mergeButton": "Fusionner",
   "admin.conceptQuality.dismissButton": "Pas un doublon",
   "admin.conceptQuality.err.suggest": "Impossible de récupérer les suggestions.",
   "admin.conceptQuality.err.merge": "Échec de la fusion.",
   "help.concepts.coverage.title": "Notions par document",
   "help.concepts.coverage.body": "Le nombre de notions que LEAP extrait de chaque document de cours. Si un document en produit 0, il apparaît en orange : vérifie qu’il a bien été lu. Les étudiants reçoivent uniquement des explications et des questions de quiz sur les notions affichées ici.",
   "help.concepts.merge.title": "Fusionner les doublons",
-  "help.concepts.merge.body": "Chaque concept ne doit apparaître qu’une seule fois dans la liste. LEAP fusionne automatiquement les doublons certains ; en cas de doute (synonyme, abréviation, variante), LEAP te les soumet. Si un concept de module existe aussi comme concept de cours, seul le concept de cours reste après la fusion. L’autre nom est conservé ; les explications et les liens avec les quiz sont également repris.",
+  "help.concepts.merge.body": "Chaque concept ne doit apparaître qu’une seule fois dans la liste. LEAP fusionne automatiquement les doublons certains ; pour les cas douteux (synonyme, abréviation, variante), LEAP te les soumet. Tu choisis quel nom conserver ; les autres noms restent enregistrés. Si un concept existe aussi comme concept de cours, il apparaîtra ensuite sous Concepts de cours. Les explications et les liens de quiz sont conservés.",
   "admin.conceptJob.reading": "Lecture du cours : partie {done} sur {total}…",
   "admin.conceptJob.merging": "Fusion des doublons…",
   "admin.conceptJob.verifying": "Vérification par rapport au matériel du cours : {done} sur {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Importer les questions ShareStats",
   "tasks.sharestats.progress": "Importation des questions : {done}%",
   "admin.conceptQuality.autoMerged": "{n} doublon(s) certain(s) fusionné(s) immédiatement.",
-  "admin.conceptQuality.suggestionCrossClass": "Le concept de module {others} existe aussi comme concept de cours {keep}. La fusion ne conserve que le concept de cours."
+  "admin.conceptQuality.suggestionCrossClass": "Le concept de module {others} existe aussi comme concept de cours {keep}. Après la fusion, le concept apparaît une seule fois dans la liste, sous Concepts de cours.",
+  "admin.conceptQuality.keepNameLabel": "Nom à conserver :",
+  "admin.conceptQuality.mergeAs": "Fusionner sous le nom {name}",
+  "admin.conceptQuality.cls.course": "concept de cours",
+  "admin.conceptQuality.cls.module": "concept de module",
+  "admin.conceptQuality.cls.example": "exemple"
 }

@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "يجمع LEAP تلقائيًا اختلافات الإملاء والأسماء الموجودة مسبقًا كاسم آخر لمفهوم. أما المرادفات والاختصارات والترجمات والاختلافات (مثل “فاصل الثقة 95%” و“فاصل الثقة”) فيعرضها LEAP عليك أولًا. يظهر مفهوم الوحدة الذي يوجد أيضًا كمفهوم مقرر في الأعلى.",
   "admin.conceptQuality.none": "لم يتم العثور على تكرارات.",
   "admin.conceptQuality.suggestion": "يبدو أن {others} تعني الشيء نفسه مثل {keep}.",
-  "admin.conceptQuality.mergeButton": "دمج",
   "admin.conceptQuality.dismissButton": "ليست تكرارًا",
   "admin.conceptQuality.err.suggest": "تعذّر جلب الاقتراحات.",
   "admin.conceptQuality.err.merge": "فشل الدمج.",
   "help.concepts.coverage.title": "المفاهيم لكل مستند",
   "help.concepts.coverage.body": "عدد المفاهيم التي يستخرجها LEAP من كل مستند مادة تعليمية. إذا نتج عن مستند 0 مفهوم، فسيظهر باللون البرتقالي: تحقّق من أنه تمت قراءته جيدًا. سيحصل الطلاب فقط على شروحات وأسئلة اختبار حول المفاهيم الموجودة هنا.",
   "help.concepts.merge.title": "دمج التكرارات",
-  "help.concepts.merge.body": "ينبغي أن يظهر كل مفهوم مرة واحدة فقط في القائمة. يدمج LEAP التكرارات المؤكدة تلقائيًا؛ أما الحالات غير الواضحة (مرادف، اختصار، صيغة مختلفة) فيعرضها LEAP عليك. إذا كان مفهوم من الوحدة موجودًا أيضًا كمفهوم في المقرر، فبعد الدمج يبقى مفهوم المقرر فقط. يبقى الاسم الآخر محفوظًا؛ وتنتقل معه الشروحات وروابط الاختبارات.",
+  "help.concepts.merge.body": "ينبغي أن يظهر كل مفهوم مرة واحدة في القائمة. يدمج LEAP التكرارات المؤكدة تلقائيًا؛ أما الحالات غير الواضحة (مرادف، اختصار، صيغة مختلفة) فيعرضها LEAP عليك. أنت تختار الاسم الذي سيبقى؛ وتظل الأسماء الأخرى محفوظة. إذا كان المفهوم موجودًا أيضًا كمفهوم مقرر، فسيظهر بعد ذلك ضمن مفاهيم المقرر. تنتقل معه الشروحات وروابط الاختبارات.",
   "admin.conceptJob.reading": "جارٍ قراءة المقرر: الجزء {done} من {total}…",
   "admin.conceptJob.merging": "جارٍ دمج التكرارات…",
   "admin.conceptJob.verifying": "جارٍ التحقق مقابل مواد المقرر: {done} من {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "استيراد أسئلة ShareStats",
   "tasks.sharestats.progress": "استيراد الأسئلة: {done}%",
   "admin.conceptQuality.autoMerged": "تم دمج {n} تكرار(ات) مؤكدة فورًا.",
-  "admin.conceptQuality.suggestionCrossClass": "مفهوم الوحدة {others} موجود أيضًا كمفهوم مقرر {keep}. الدمج يُبقي مفهوم المقرر فقط."
+  "admin.conceptQuality.suggestionCrossClass": "مفهوم الوحدة {others} موجود أيضًا كمفهوم مقرر {keep}. بعد الدمج سيظهر المفهوم مرة واحدة في القائمة، ضمن مفاهيم المقرر.",
+  "admin.conceptQuality.keepNameLabel": "الاسم الذي سيبقى:",
+  "admin.conceptQuality.mergeAs": "دمج باسم {name}",
+  "admin.conceptQuality.cls.course": "مفهوم مقرر",
+  "admin.conceptQuality.cls.module": "مفهوم وحدة",
+  "admin.conceptQuality.cls.example": "مثال"
 }

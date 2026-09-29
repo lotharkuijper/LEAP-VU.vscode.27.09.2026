@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP unisce automaticamente le varianti ortografiche e i nomi già indicati come altro nome per un concetto. Sinonimi, abbreviazioni, traduzioni e varianti (come “intervallo di confidenza al 95%” e “intervallo di confidenza”) vengono prima sottoposti alla tua verifica da LEAP. Un concetto di modulo che esiste anche come concetto di corso appare in alto.",
   "admin.conceptQuality.none": "Nessun duplicato trovato.",
   "admin.conceptQuality.suggestion": "{others} sembra avere lo stesso significato di {keep}.",
-  "admin.conceptQuality.mergeButton": "Unisci",
   "admin.conceptQuality.dismissButton": "Non è un duplicato",
   "admin.conceptQuality.err.suggest": "Impossibile recuperare i suggerimenti.",
   "admin.conceptQuality.err.merge": "Unione non riuscita.",
   "help.concepts.coverage.title": "Concetti per documento",
   "help.concepts.coverage.body": "Quanti concetti LEAP estrae da ciascun documento di materiale didattico. Se un documento ne produce 0, viene mostrato in arancione: controlla se è stato letto correttamente. Gli studenti ricevono spiegazioni e domande del quiz solo sui concetti elencati qui.",
   "help.concepts.merge.title": "Unire i duplicati",
-  "help.concepts.merge.body": "Ogni concetto deve comparire una sola volta nell'elenco. LEAP unisce automaticamente i duplicati certi; nei casi dubbi (sinonimo, abbreviazione, variante) LEAP te li sottopone. Se un concetto di modulo compare anche come concetto di corso, dopo l'unione rimane solo il concetto di corso. L'altro nome resta salvato; spiegazioni e collegamenti ai quiz vengono trasferiti.",
+  "help.concepts.merge.body": "Ogni concetto deve comparire una sola volta nell'elenco. LEAP unisce automaticamente i duplicati certi; per i casi dubbi (sinonimo, abbreviazione, variante) LEAP ti chiede conferma. Tu scegli quale nome mantenere; gli altri nomi restano conservati. Se un concetto è anche un concetto del corso, dopo l'unione comparirà sotto Concetti del corso. Spiegazioni e collegamenti ai quiz vengono mantenuti.",
   "admin.conceptJob.reading": "Lettura del corso: parte {done} di {total}…",
   "admin.conceptJob.merging": "Unione dei duplicati…",
   "admin.conceptJob.verifying": "Verifica rispetto al materiale del corso: {done} di {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "Importa domande ShareStats",
   "tasks.sharestats.progress": "Importazione domande: {done}%",
   "admin.conceptQuality.autoMerged": "{n} duplicato/i certo/i unito/i subito.",
-  "admin.conceptQuality.suggestionCrossClass": "Il concetto di modulo {others} esiste anche come concetto di corso {keep}. L'unione mantiene solo il concetto di corso."
+  "admin.conceptQuality.suggestionCrossClass": "Il concetto di modulo {others} è presente anche come concetto del corso {keep}. Dopo l'unione, il concetto comparirà una sola volta nell'elenco, sotto Concetti del corso.",
+  "admin.conceptQuality.keepNameLabel": "Nome da mantenere:",
+  "admin.conceptQuality.mergeAs": "Unisci come {name}",
+  "admin.conceptQuality.cls.course": "concetto del corso",
+  "admin.conceptQuality.cls.module": "concetto di modulo",
+  "admin.conceptQuality.cls.example": "esempio"
 }

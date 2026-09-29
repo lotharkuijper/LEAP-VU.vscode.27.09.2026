@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "वर्तनी के रूपांतरों और उन नामों को जो किसी अवधारणा में पहले से दूसरे नाम के रूप में हैं, LEAP खुद जोड़ देता है। पर्यायवाची, संक्षेप, अनुवाद और रूपांतर (जैसे “95% betrouwbaarheidsinterval” और “betrouwbaarheidsinterval”) LEAP पहले तुम्हें दिखाता है। कोई मॉड्यूल अवधारणा जो कोर्स अवधारणा के रूप में भी मौजूद है, तुम्हें सबसे ऊपर दिखेगी।",
   "admin.conceptQuality.none": "कोई डुप्लिकेट नहीं मिला।",
   "admin.conceptQuality.suggestion": "{others} का मतलब {keep} जैसा ही लगता है।",
-  "admin.conceptQuality.mergeButton": "मर्ज करो",
   "admin.conceptQuality.dismissButton": "डुप्लिकेट नहीं",
   "admin.conceptQuality.err.suggest": "सुझाव नहीं लाए जा सके।",
   "admin.conceptQuality.err.merge": "मर्ज करना विफल रहा।",
   "help.concepts.coverage.title": "प्रति दस्तावेज़ अवधारणाएँ",
   "help.concepts.coverage.body": "LEAP हर अध्ययन-सामग्री दस्तावेज़ से कितनी अवधारणाएँ निकालता है। अगर किसी दस्तावेज़ से 0 मिलती हैं, तो वह नारंगी रंग में दिखता है: जाँचो कि वह ठीक से पढ़ा गया है या नहीं। छात्रों को केवल यहाँ दी गई अवधारणाओं पर ही व्याख्या और क्विज़ प्रश्न मिलते हैं।",
   "help.concepts.merge.title": "डुप्लिकेट मर्ज करो",
-  "help.concepts.merge.body": "हर अवधारणा सूची में सिर्फ़ एक बार होनी चाहिए। निश्चित डुप्लीकेट LEAP खुद मिला देता है; संदेह वाले मामले (पर्यायवाची, संक्षेप, वैरिएंट) LEAP तुम्हें दिखाता है। अगर कोई मॉड्यूल अवधारणा कोर्स अवधारणा के रूप में भी है, तो मिलाने के बाद सिर्फ़ कोर्स अवधारणा बचती है। दूसरा नाम सुरक्षित रहता है; व्याख्या और क्विज़ लिंक साथ चले जाते हैं।",
+  "help.concepts.merge.body": "हर अवधारणा सूची में एक बार होनी चाहिए। निश्चित डुप्लिकेट LEAP खुद जोड़ देता है; संदेह वाले मामले (पर्यायवाची, संक्षेप, रूपांतर) LEAP तुम्हें दिखाता है। तुम चुनते हो कि कौन-सा नाम रहेगा; बाकी नाम सहेजे रहते हैं। अगर कोई अवधारणा कोर्स अवधारणा के रूप में भी है, तो वह उसके बाद कोर्स अवधारणाओं के अंतर्गत आएगी। व्याख्या और क्विज़ लिंक साथ रहेंगे।",
   "admin.conceptJob.reading": "पाठ्यक्रम पढ़ा जा रहा है: {total} में से {done} भाग…",
   "admin.conceptJob.merging": "डुप्लिकेट्स मर्ज किए जा रहे हैं…",
   "admin.conceptJob.verifying": "पाठ्यक्रम सामग्री से जाँच की जा रही है: {total} में से {done}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "ShareStats प्रश्न आयात करें",
   "tasks.sharestats.progress": "प्रश्न आयात हो रहे हैं: {done}%",
   "admin.conceptQuality.autoMerged": "{n} निश्चित डुप्लिकेट तुरंत जोड़ दिए गए।",
-  "admin.conceptQuality.suggestionCrossClass": "मॉड्यूल अवधारणा {others} कोर्स अवधारणा {keep} के रूप में भी मौजूद है। जोड़ने पर केवल कोर्स अवधारणा बचेगी।"
+  "admin.conceptQuality.suggestionCrossClass": "मॉड्यूल अवधारणा {others} कोर्स अवधारणा {keep} के रूप में भी है। मिलाने के बाद अवधारणा सूची में एक बार, कोर्स अवधारणाओं के अंतर्गत रहेगी।",
+  "admin.conceptQuality.keepNameLabel": "जो नाम रहेगा:",
+  "admin.conceptQuality.mergeAs": "{name} के रूप में मिलाएँ",
+  "admin.conceptQuality.cls.course": "कोर्स अवधारणा",
+  "admin.conceptQuality.cls.module": "मॉड्यूल अवधारणा",
+  "admin.conceptQuality.cls.example": "उदाहरण"
 }

@@ -2651,14 +2651,13 @@
   "admin.conceptQuality.intro": "LEAP 會自動合併串法變體，以及已經作為某個概念其他名稱嘅名稱。至於同義詞、縮寫、翻譯同變體（例如「95% 置信區間」同「置信區間」），LEAP 會先交畀你確認。同時作為課程概念存在嘅單元概念會顯示喺最上面。",
   "admin.conceptQuality.none": "未搵到重複項目。",
   "admin.conceptQuality.suggestion": "{others} 睇落同 {keep} 意思相同。",
-  "admin.conceptQuality.mergeButton": "合併",
   "admin.conceptQuality.dismissButton": "唔係重複項目",
   "admin.conceptQuality.err.suggest": "無法取得建議。",
   "admin.conceptQuality.err.merge": "合併失敗。",
   "help.concepts.coverage.title": "每份文件嘅概念",
   "help.concepts.coverage.body": "LEAP 從每份教材文件提取到幾多個概念。如果某份文件係 0，就會以橙色顯示：請檢查文件有冇正確讀取。學生只會收到關於呢度列出嘅概念嘅解釋同測驗題。",
   "help.concepts.merge.title": "合併重複項目",
-  "help.concepts.merge.body": "每個概念喺清單入面只應出現一次。明顯重複嘅項目 LEAP 會自動合併；有疑問嘅情況（同義詞、縮寫、變體）LEAP 會交畀你決定。如果某個單元概念同時亦係課程概念，合併後只會保留課程概念。另一個名稱會保留；說明同測驗連結亦會一併帶過去。",
+  "help.concepts.merge.body": "每個概念喺清單入面只應該出現一次。明顯重複嘅項目 LEAP 會自動合併；有疑問嘅情況（同義詞、縮寫、變體）LEAP 會交畀你決定。你揀邊個名稱保留；其他名稱會繼續保存。如果某個概念亦係課程概念，之後會歸入課程概念之下。說明同測驗連結都會一併保留。",
   "admin.conceptJob.reading": "讀取課程：第 {done} 部分，共 {total} 部分…",
   "admin.conceptJob.merging": "正在合併重複項目…",
   "admin.conceptJob.verifying": "對照課程材料檢查：{done} / {total}…",
@@ -2680,5 +2679,10 @@
   "tasks.sharestats.title": "匯入 ShareStats 問題",
   "tasks.sharestats.progress": "正在匯入問題：{done}%",
   "admin.conceptQuality.autoMerged": "{n} 個明確重複項目已即時合併。",
-  "admin.conceptQuality.suggestionCrossClass": "單元概念 {others} 亦都係課程概念 {keep}。合併後只會保留課程概念。"
+  "admin.conceptQuality.suggestionCrossClass": "模組概念 {others} 亦係課程概念 {keep}。合併之後，呢個概念會喺清單入面只出現一次，歸入課程概念之下。",
+  "admin.conceptQuality.keepNameLabel": "保留嘅名稱：",
+  "admin.conceptQuality.mergeAs": "合併為 {name}",
+  "admin.conceptQuality.cls.course": "課程概念",
+  "admin.conceptQuality.cls.module": "模組概念",
+  "admin.conceptQuality.cls.example": "例子"
 }

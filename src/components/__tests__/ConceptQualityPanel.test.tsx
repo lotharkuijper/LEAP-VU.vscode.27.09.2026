@@ -48,4 +48,25 @@ describe('ConceptQualityPanel — dubbelingen', () => {
     const mergeCall = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/api/admin/concepts/merge'));
     expect(JSON.parse(String(mergeCall?.[1]?.body))).toEqual({ courseId: 'c1', keepId: 'bi', dupIds: ['bi95'] });
   });
+
+  it('de docent kiest welke naam blijft', async () => {
+    const { fetchMock } = setup({
+      autoMerged: 0,
+      suggestions: [{
+        kind: 'crossClass',
+        keep: { id: 'tzo', name: 'tweezijdige overschrijdingskans', reviewStatus: 'approved', cls: 'course' },
+        others: [{ id: 'pw', name: 'p-waarde', reviewStatus: 'approved', cls: 'module' }],
+      }],
+    });
+    fireEvent.click(screen.getByTestId('button-find-merge-suggestions'));
+    const button = await screen.findByTestId('button-merge-tzo');
+    expect(button).toHaveTextContent('Samenvoegen als “tweezijdige overschrijdingskans”');
+    expect(screen.getByTestId('radio-keep-tzo-tzo')).toBeChecked();
+    fireEvent.click(screen.getByTestId('radio-keep-tzo-pw'));
+    expect(button).toHaveTextContent('Samenvoegen als “p-waarde”');
+    fireEvent.click(button);
+    await waitFor(() => expect(fetchMock.mock.calls.some(([u]) => String(u).endsWith('/api/admin/concepts/merge'))).toBe(true));
+    const mergeCall = fetchMock.mock.calls.find(([u]) => String(u).endsWith('/api/admin/concepts/merge'));
+    expect(JSON.parse(String(mergeCall?.[1]?.body))).toEqual({ courseId: 'c1', keepId: 'pw', dupIds: ['tzo'] });
+  });
 });
