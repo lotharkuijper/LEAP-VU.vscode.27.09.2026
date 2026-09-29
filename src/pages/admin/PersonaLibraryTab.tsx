@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
@@ -10,7 +11,8 @@ import { supabase } from '../../lib/supabase';
 import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
 import type { AvatarConfig } from '../../lib/personaAvatar';
-import { Bot, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2 } from 'lucide-react';
+import { PersonaRoleFields, roleFieldsPayload, type ConductRules } from '../../components/PersonaRoleFields';
+import { Bot, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2, Drama } from 'lucide-react';
 
 /** Per sjabloon: de titels van de projecten die er een kopie van hebben. */
 export function usageBySource(
@@ -40,6 +42,12 @@ interface CoursePersona {
   rag_folder_ids: string[];
   is_default: boolean;
   persona_type?: string | null;
+  reputation_enabled?: boolean | null;
+  conduct_rules?: ConductRules | null;
+  start_level?: number | null;
+  deliverable_label?: string | null;
+  max_reviews?: number | null;
+  badge_award_mode?: string | null;
 }
 
 interface ProjectOption {
@@ -54,6 +62,12 @@ const EMPTY_FORM = {
   system_prompt: '',
   rag_enabled: true,
   persona_type: 'conversational' as string,
+  reputation_enabled: false as boolean,
+  conduct_rules: null as ConductRules | null,
+  start_level: 0 as number,
+  deliverable_label: null as string | null,
+  max_reviews: null as number | null,
+  badge_award_mode: 'individual' as string,
 };
 
 export function PersonaLibraryTab({ onOpenProjects }: {
@@ -145,6 +159,12 @@ export function PersonaLibraryTab({ onOpenProjects }: {
       system_prompt: p.system_prompt,
       rag_enabled: p.rag_enabled,
       persona_type: p.persona_type || 'conversational',
+      reputation_enabled: !!p.reputation_enabled,
+      conduct_rules: p.conduct_rules ?? null,
+      start_level: p.start_level ?? 0,
+      deliverable_label: p.deliverable_label ?? null,
+      max_reviews: p.max_reviews ?? null,
+      badge_award_mode: p.badge_award_mode || 'individual',
     });
     setEditingId(p.id);
     setFaceOpen(false);
@@ -167,7 +187,8 @@ export function PersonaLibraryTab({ onOpenProjects }: {
     try {
       const isNew = editingId === 'new';
       const url = isNew ? '/api/admin/course-personas' : `/api/admin/course-personas/${editingId}`;
-      const body = isNew ? { course_id: activeCourseId, ...form } : form;
+      const payload = { ...form, ...roleFieldsPayload(form) };
+      const body = isNew ? { course_id: activeCourseId, ...payload } : payload;
       const res = await fetch(url, {
         method: isNew ? 'POST' : 'PATCH',
         headers: { 'Content-Type': 'application/json', ...authHeader() },
@@ -293,6 +314,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   badges={
                     <>
                       {p.persona_type === 'evaluator' && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.evaluator')}</span>}
+                      {p.persona_type === 'roleplayer' && <span className="text-[10px] bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded inline-flex items-center gap-1"><Drama className="w-3 h-3" />{t('admin.personaRole.roleplayer.title')}{p.reputation_enabled ? ` · ${t('admin.personaRole.roleplayer.badgeReputation')}` : ''}</span>}
                       {p.is_default && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.default')}</span>}
                       {!p.rag_enabled && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.ragOff')}</span>}
                     </>
@@ -321,7 +343,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
         )}
       </div>
 
-      {editingId && (
+      {editingId && createPortal(
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
@@ -380,18 +402,14 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   </div>
                 )}
               </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.personaLib.fieldType')}</label>
-                <select
-                  value={form.persona_type}
-                  onChange={e => setForm({ ...form, persona_type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                  data-testid="select-cp-type"
-                >
-                  <option value="conversational">{t('admin.personaLib.typeConversational')}</option>
-                  <option value="evaluator">{t('admin.personaLib.typeEvaluator')}</option>
-                </select>
-              </div>
+              <PersonaRoleFields
+                idPrefix="cp"
+                value={form}
+                onChange={v => setForm({ ...form, ...v } as typeof form)}
+                personaName={form.name}
+                courseId={activeCourseId ?? null}
+                token={session?.access_token ?? null}
+              />
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.personaLib.fieldPrompt')}</label>
                 <textarea
@@ -427,7 +445,8 @@ export function PersonaLibraryTab({ onOpenProjects }: {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {fetchTarget && (

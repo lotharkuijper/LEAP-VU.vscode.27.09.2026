@@ -86,3 +86,16 @@ export function canRequestDocumentReview({ isStaff, isGroupMember }) {
     error: 'Je moet lid zijn van deze groep of staff van de cursus om een oordeel aan te vragen',
   };
 }
+
+// Feedbackrondes van een groep bij een beoordelaar. maxReviews null = onbeperkt.
+// Een ronde telt pas als er echt een oordeel is (mislukt = niet verbruikt).
+export function feedbackRoundsState(maxReviews, used) {
+  const max = Number.isFinite(Number(maxReviews)) && Number(maxReviews) > 0 ? Math.floor(Number(maxReviews)) : null;
+  const u = Math.max(0, Math.floor(Number(used) || 0));
+  return {
+    maxReviews: max,
+    used: u,
+    remaining: max === null ? null : Math.max(0, max - u),
+    canSubmit: max === null || u < max,
+  };
+}

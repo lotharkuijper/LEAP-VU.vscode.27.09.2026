@@ -68,7 +68,7 @@ import {
   checkLastTeacherProtection,
   parseForceFlag,
 } from './memberRoleAuth.js';
-import { validateReviewResponse, canRequestDocumentReview, badgeForGrade, normalizeBadgeAwardMode } from './documentReview.js';
+import { validateReviewResponse, canRequestDocumentReview, badgeForGrade, normalizeBadgeAwardMode, feedbackRoundsState } from './documentReview.js';
 import { authorizeAvailabilityChange, parseStudentVisible, memberCanAccessCourse, canAccessCourseContent } from './courseAvailability.js';
 import { collectMemberUserIds, mergeCourseMembers } from './courseMembers.js';
 import { pickReusableRagFolder } from './ragFolder.js';
@@ -146,16 +146,17 @@ import {
 import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceKey, renditionSourceType, resolveSofficeBin } from './documentRender.js';
 import { planConceptReplace, planConceptWrites, classifyConceptRole, normalizeConceptRole, classifyConceptDifficulty, normalizeDifficulty, isMetaCommentaryName, capByBestMatch, mergeNearDuplicateConcepts } from './conceptExtraction.js';
 import {
-  scoreToLabel as relScoreToLabel,
-  scoreToBucket as relScoreToBucket,
-  isBlocked as relIsBlocked,
-  blockedMessage as relBlockedMessage,
-  buildRelationshipPromptBlock as relBuildPromptBlock,
-  validateCueResponse as relValidateCueResponse,
-  buildCueInstructionBlock as relCueInstructionBlock,
-  cueJsonInstruction as relCueJsonInstruction,
-  hasCueTable as relHasCueTable,
+  levelKey as relLevelKey,
+  levelLabel as relLevelLabel,
+  isBroken as relIsBroken,
+  clampLevel as relClampLevel,
+  nextLevel as relNextLevel,
+  lastReason as relLastReason,
+  buildReputationPromptBlock as relBuildPromptBlock,
+  buildConductJudgeMessages as relBuildJudgeMessages,
+  validateConductJudgement as relValidateJudgement,
 } from './personaRelationship.js';
+import { normalizePersonaType, reputationActive, roleFieldsFrom, copyRoleFields, clampStartLevel } from './personaRoles.js';
 import {
   computeEffectiveLimit as conComputeEffectiveLimit,
   computeRemaining as conComputeRemaining,
@@ -166,7 +167,7 @@ import {
   isThreadStale as conIsThreadStale,
   consultationLimitMessage as conLimitMessage,
 } from './consultationLimit.js';
-import { applyRelationshipDeltaImpl } from './threadClose.js';
+import { setRelationshipLevelImpl, applyConversationJudgement } from './threadClose.js';
 import { randomUUID } from 'node:crypto';
 import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, buildDuplicateSuggestionPrompt, buildMergeSuggestions, mapLimit } from './conceptConsolidation.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
@@ -8609,8 +8610,7 @@ Antwoord ALTIJD met geldig JSON, zonder extra tekst eromheen, volgens dit schema
   "verdict": "accepted" | "conditional" | "rejected",
   "grade": getal tussen 0 en 10 (één decimaal toegestaan, bijv. 7.5),
   "reasoning": "2-4 zinnen feedback in het Nederlands, in tweede persoon: wat is er goed en wat schiet tekort",
-  "feed_forward": "1-3 concrete vervolgstappen in het Nederlands, in tweede persoon: wat moeten jullie hierna doen om beter te scoren",
-  "relationship_delta": geheel getal tussen -5 en +5
+  "feed_forward": "1-3 concrete vervolgstappen in het Nederlands, in tweede persoon: wat moeten jullie hierna doen om beter te scoren"
 }
 
 Betekenis verdict:
@@ -8622,9 +8622,6 @@ Betekenis grade: een cijfer van 0 t/m 10 voor de kwaliteit van het document, geb
 
 Betekenis reasoning (feedback): waar staan jullie nu — benoem zowel sterke punten als tekortkomingen.
 Betekenis feed_forward (feed-forward): wat is de volgende stap — concrete, uitvoerbare verbeteracties.
-
-Betekenis relationship_delta: hoeveel verschuift jouw verstandhouding met deze groep door dit document?
-+5 = sterk positief, 0 = neutraal, -5 = sterk negatief. Wees terughoudend; gebruik extremen alleen bij duidelijke aanleiding.
 
 Geef GEEN markdown, GEEN code fences, alléén het JSON-object.`;
 
@@ -10538,7 +10535,8 @@ async function ensureProjectPersonaFromCourse(projectId, coursePersonaId) {
       rag_folder_ids: cp.rag_folder_ids,
       visible_from_phase: cp.visible_from_phase,
       sort_order: sortOrder,
-      persona_type: cp.persona_type || 'conversational',
+      ...copyRoleFields(cp),
+      cue_emission_enabled: false,
     })
     .select('*').single();
   if (error) {
@@ -10986,27 +10984,25 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       return res.status(403).json({ error: 'Deze persona is een beoordelaar en kan niet worden aangesproken via de chat.' });
     }
 
-    // Task #167: relatie-staat ophalen vóór alles wat schrijft of LLM-calls
-    // doet. Bij score ≤ -8 blokkeren we nieuwe chat-turns met een vaste
-    // melding en slaan we niets op (geen thread-creatie, geen user-bericht).
-    let relationship = { score: 0, history: [] };
-    if (persona.id !== '__default__') {
+    // Verstandhouding: alleen bij een rolspeler die er een bijhoudt. Staat het
+    // contact op het dieptepunt (verbroken), dan antwoordt de rolspeler niet
+    // meer: er wordt niets opgeslagen en er gaat niets naar het taalmodel. De
+    // groep rondt het project zonder hem af (de docent kan nog herstellen).
+    let relationship = null;
+    if (persona.id !== '__default__' && reputationActive(persona)) {
       try {
-        relationship = await loadRelationship(project.id, groupId, persona.id);
+        relationship = await loadRelationship(project.id, groupId, persona.id, persona.start_level);
       } catch (e) {
-        console.warn('[persona-chat] relatie laden mislukte:', e.message);
+        console.warn('[persona-chat] verstandhouding laden mislukte:', e.message);
+        relationship = { score: clampStartLevel(persona.start_level), history: [] };
       }
-      if (relIsBlocked(relationship.score)) {
+      if (relIsBroken(relationship.score)) {
         return res.json({
-          reply: relBlockedMessage(lang),
+          reply: '',
           ragSources: [],
           threadId: null,
-          relationshipBlocked: true,
-          relationship: {
-            score: relationship.score,
-            bucket: relScoreToBucket(relationship.score),
-            label: relScoreToLabel(relationship.score, lang),
-          },
+          relationshipBroken: true,
+          relationship: { level: relationship.score, key: relLevelKey(relationship.score), label: relLevelLabel(relationship.score, lang) },
         });
       }
     }
@@ -11192,11 +11188,10 @@ app.post('/api/projects/persona-chat', async (req, res) => {
     const docBlock = uploadedContext ? `\n\nGeüploade documenten van de groep:\n${uploadedContext}` : '';
     const projectDocBlock = projectDocContext ? `\n\nProjectmateriaal van de docent:\n${projectDocContext}` : '';
     const langSuffix = buildLanguageInstruction(lang);
-    // Task #167: relatie-blok altijd injecteren voor echte persona's, ook bij
-    // score 0 — zo blijft de instructie consistent en weet de persona dat de
-    // verstandhouding gewogen wordt.
-    const relationshipBlock = persona.id !== '__default__'
-      ? relBuildPromptBlock(relationship.score, relationship.history, lang, 3)
+    // Verstandhouding (alleen rolspelers die er een bijhouden): niveau + gedrag
+    // op dat niveau. De gedragsregels zelf gaan hier bewust niet mee.
+    const relationshipBlock = relationship
+      ? relBuildPromptBlock(relationship.score, persona.conduct_rules, lang, relationship.history)
       : '';
     // Task #296: leerniveau-blok vóór de taal-instructie (laatste blok blijft taal).
     const levelBlock = buildLevelInstructionBlock(learningLevel, lang);
@@ -11375,12 +11370,10 @@ app.post('/api/projects/groups/:groupId/threads/:threadId/close-preview', async 
 // Genereert server-side de AI-samenvatting en markeert de thread als afgesloten.
 // Accepteert GEEN topics/agreements van de client — de server is de enige bron.
 //
-// Task #171 / Fase 3 — Cue-emissie: bij afsluiten vraagt de server in
-// hetzelfde JSON-antwoord ook één `relationship_delta` (-2..+2) +
-// `relationship_reason` op basis van de docent-cue-tabel in de
-// system_prompt van de persona. Stil voor studenten (niet in response),
-// zichtbaar voor staff in het Verstandhoudingen-paneel. Persona's met
-// `cue_emission_enabled=false` (alle evaluators standaard) leveren altijd 0.
+// Bij een rolspeler met verstandhouding beoordeelt de server daarna het gesprek
+// aan de hand van de gedragsregels van de docent (zie server/threadClose.js):
+// het niveau gaat een stap omhoog, blijft gelijk of gaat een stap omlaag. De
+// groep ziet het nieuwe niveau en de reden.
 
 // --- Task #252: raadpleeglimiet-helpers (DB-toegang; pure logica zit in
 // server/consultationLimit.js). ---
@@ -11415,13 +11408,13 @@ async function loadConsultationGrant(projectId, groupId, personaId) {
 // agreements), DB-update en — indien van toepassing — cue-emissie op de
 // relatie. Wordt gedeeld door het /close-endpoint én de lazy auto-close.
 async function performThreadClose({ thread, groupId, lang, closedBy }) {
-  // Persona + project ophalen voor cue-context en relatie-update.
+  // Persona + project ophalen voor de samenvatting en de verstandhouding.
   let persona = null;
   let projectIdForRel = null;
   if (thread.persona_id) {
     const { data: p } = await supabaseAdmin
       .from('project_personas')
-      .select('id, name, project_id, system_prompt, cue_emission_enabled, persona_type')
+      .select('id, name, project_id, system_prompt, persona_type, reputation_enabled, conduct_rules, start_level')
       .eq('id', thread.persona_id).maybeSingle();
     persona = p || null;
     projectIdForRel = persona?.project_id || null;
@@ -11430,45 +11423,6 @@ async function performThreadClose({ thread, groupId, lang, closedBy }) {
     const { data: g } = await supabaseAdmin
       .from('project_groups').select('project_id').eq('id', groupId).maybeSingle();
     projectIdForRel = g?.project_id || null;
-  }
-  // Task #173 — per-cursus cue-bereik ophalen. Defensief: ontbrekende
-  // kolom (oude DB) of geen cursus → val terug op de default (2).
-  let courseCueDeltaMax = 2;
-  if (projectIdForRel) {
-    try {
-      const { data: proj } = await supabaseAdmin
-        .from('projects').select('course_id').eq('id', projectIdForRel).maybeSingle();
-      const courseId = proj?.course_id || null;
-      if (courseId) {
-        const { data: course, error: cErr } = await supabaseAdmin
-          .from('courses').select('cue_delta_max').eq('id', courseId).maybeSingle();
-        if (cErr && cErr.code !== '42703' && !/cue_delta_max/i.test(cErr.message || '')) {
-          console.warn('[threads/close] courses.cue_delta_max read warn:', cErr.message);
-        }
-        if (course && Number.isFinite(Number(course.cue_delta_max))) {
-          courseCueDeltaMax = Number(course.cue_delta_max);
-        }
-      }
-    } catch (e) {
-      console.warn('[threads/close] cue_delta_max lookup faalde, default 2 wordt gebruikt:', e.message);
-    }
-  }
-  // Cue-emissie alleen voor conversational persona's die expliciet aan
-  // staan ÉN waarvan de system_prompt een herkenbare cue-tabel bevat.
-  // Zonder cue-tabel ontbreekt de docent-rubric en zou het LLM op losse
-  // gronden kunnen oordelen — dat forceren we hier hard naar delta=0
-  // (architect-review eis: "geen cue-tabel ⇒ altijd 0"). Defensief:
-  // ontbrekende kolom (oude DB) telt als 'true'.
-  const cueTablePresent = relHasCueTable(persona?.system_prompt || '');
-  const emissionEnabled = !!persona
-    && (persona.persona_type || 'conversational') === 'conversational'
-    && (persona.cue_emission_enabled !== false)
-    && cueTablePresent;
-  if (persona
-      && (persona.persona_type || 'conversational') === 'conversational'
-      && persona.cue_emission_enabled !== false
-      && !cueTablePresent) {
-    console.warn(`[threads/close] cue-emissie uit voor persona ${persona.id}: geen cue-tabel in system_prompt → delta geforceerd op 0`);
   }
 
   // --- Server-side samenvatting genereren (zelfde logica als /close-preview) ---
@@ -11480,7 +11434,6 @@ async function performThreadClose({ thread, groupId, lang, closedBy }) {
   const allMsgs = msgs || [];
   let topics = [];
   let agreements = [];
-  let cue = { delta: 0, reason: '' };
 
   if (AZURE_CHAT_READY) {
     const conversationText = allMsgs
@@ -11493,27 +11446,13 @@ async function performThreadClose({ thread, groupId, lang, closedBy }) {
     const langInstruction = lang === 'nl'
       ? 'Schrijf in het Nederlands.'
       : `Write everything in ${languageEnglishName(lang)}. Keep every JSON property name exactly as written in the structure above (do not translate the keys); only the string values may be in ${languageEnglishName(lang)}.`;
-
-    const cueJson = emissionEnabled ? `\n${relCueJsonInstruction(lang, courseCueDeltaMax)}` : '';
-    const cueSchemaSnippet = emissionEnabled
-      ? ',\n  "relationship_delta": 0,\n  "relationship_reason": ""'
-      : '';
     const prompt = lang !== 'nl'
-      ? `You are a minute-taker. Analyse the following conversation between a student and an AI persona.\n\nRespond ONLY with valid JSON in this structure:\n{\n  "topics": [...],\n  "agreements": [...]${cueSchemaSnippet}\n}\n\n- "topics": array of ${topicsInstruction}. Each item is one discussed topic (concise, max 1 sentence).\n- "agreements": array of 0 or more strings. Only concrete agreements or commitments. Leave empty if none.${cueJson}\n\n${langInstruction} No markdown outside the JSON, no explanation.\n\nConversation:\n${conversationText}`
-      : `Je bent een notulist. Analyseer het volgende gesprek tussen een student en een AI-persona.\n\nGeef je antwoord UITSLUITEND als geldige JSON met deze structuur:\n{\n  "topics": [...],\n  "agreements": [...]${cueSchemaSnippet}\n}\n\n- "topics": array van ${topicsInstruction}. Elk item is één besproken onderwerp (bondig, maximaal 1 zin).\n- "agreements": array van 0 of meer strings. Alleen concrete afspraken of toezeggingen. Laat leeg als er geen zijn.${cueJson}\n\n${langInstruction} Geen markdown buiten de JSON, geen uitleg.\n\nGesprek:\n${conversationText}`;
-
-    // Bouw de system-prompt: docent-cue-tabel (persona.system_prompt) + meta-blok.
-    const systemContent = emissionEnabled
-      ? `${persona.system_prompt || ''}${relCueInstructionBlock(lang, courseCueDeltaMax)}`
-      : (persona?.system_prompt || '');
-
+      ? `You are a minute-taker. Analyse the following conversation between a student and an AI persona.\n\nRespond ONLY with valid JSON in this structure:\n{\n  "topics": [...],\n  "agreements": [...]\n}\n\n- "topics": array of ${topicsInstruction}. Each item is one discussed topic (concise, max 1 sentence).\n- "agreements": array of 0 or more strings. Only concrete agreements or commitments. Leave empty if none.\n\n${langInstruction} No markdown outside the JSON, no explanation.\n\nConversation:\n${conversationText}`
+      : `Je bent een notulist. Analyseer het volgende gesprek tussen een student en een AI-persona.\n\nGeef je antwoord UITSLUITEND als geldige JSON met deze structuur:\n{\n  "topics": [...],\n  "agreements": [...]\n}\n\n- "topics": array van ${topicsInstruction}. Elk item is één besproken onderwerp (bondig, maximaal 1 zin).\n- "agreements": array van 0 of meer strings. Alleen concrete afspraken of toezeggingen. Laat leeg als er geen zijn.\n\n${langInstruction} Geen markdown buiten de JSON, geen uitleg.\n\nGesprek:\n${conversationText}`;
     try {
-      const messages = systemContent
-        ? [{ role: 'system', content: systemContent }, { role: 'user', content: prompt }]
-        : [{ role: 'user', content: prompt }];
       const chatResp = await openaiChatCompletion({
         model: OPENAI_MODEL,
-        messages,
+        messages: [{ role: 'user', content: prompt }],
         ...chatModelParams({ temperature: 0.2, maxTokens: 700 }),
         response_format: { type: 'json_object' },
       });
@@ -11523,7 +11462,6 @@ async function performThreadClose({ thread, groupId, lang, closedBy }) {
         try { parsed = JSON.parse(raw); } catch { parsed = {}; }
         topics = Array.isArray(parsed.topics) ? parsed.topics.filter(t => typeof t === 'string' && t.trim()) : [];
         agreements = Array.isArray(parsed.agreements) ? parsed.agreements.filter(a => typeof a === 'string' && a.trim()) : [];
-        cue = relValidateCueResponse(parsed, { emissionEnabled, maxDelta: courseCueDeltaMax });
       }
     } catch (e) {
       console.error('[threads/close] LLM/parse fout:', e.message);
@@ -11548,28 +11486,33 @@ async function performThreadClose({ thread, groupId, lang, closedBy }) {
     .eq('id', thread.id);
   if (updErr) throw new Error(updErr.message);
 
-  // Cue-emissie toepassen op de relatie. Idempotent via thread_close-refId.
-  // Stil voor studenten — niet in response.
-  if (emissionEnabled && cue.delta !== 0 && projectIdForRel) {
+  // Verstandhouding (alleen een rolspeler die er een bijhoudt): een aparte
+  // beoordeling met de gedragsregels van de docent. Idempotent per gesprek.
+  let reputation = null;
+  if (persona && AZURE_CHAT_READY && reputationActive(persona)) {
     try {
-      await applyRelationshipDelta({
-        projectId: projectIdForRel,
-        groupId,
-        personaId: thread.persona_id,
-        delta: cue.delta,
-        event: {
-          source: 'persona_chat_close',
-          refId: `thread_close:${thread.id}`,
-          delta: cue.delta,
-          note: cue.reason,
+      reputation = await applyConversationJudgement({
+        supabaseAdmin,
+        chat: async (messages) => {
+          const r = await openaiChatCompletion({
+            model: OPENAI_MODEL,
+            messages,
+            ...chatModelParams({ temperature: 0, maxTokens: 300 }),
+            response_format: { type: 'json_object' },
+          });
+          if (!r.ok) throw new Error(`Taalmodel-fout (${r.status})`);
+          return (await r.json()).choices?.[0]?.message?.content || '';
         },
+      }, {
+        persona, projectId: projectIdForRel, groupId, threadId: thread.id, allMsgs,
+        lang, languageName: languageEnglishName(lang),
       });
     } catch (relErr) {
-      console.warn('[threads/close] relationship-update mislukte:', relErr.message);
+      console.warn('[threads/close] verstandhouding bijwerken mislukte:', relErr.message);
     }
   }
 
-  return { topics, agreements, cue, emissionEnabled, personaName: persona?.name || null };
+  return { topics, agreements, reputation, personaName: persona?.name || null };
 }
 
 // Lazy auto-close: rond stille open threads van (groep, persona) automatisch af
@@ -11624,26 +11567,21 @@ app.post('/api/projects/groups/:groupId/threads/:threadId/close', async (req, re
       .eq('id', threadId).eq('group_id', groupId).is('closed_at', null).maybeSingle();
     if (!thread) return res.status(404).json({ error: 'Thread niet gevonden of al afgesloten' });
 
-    const { topics, agreements, cue, emissionEnabled, personaName } = await performThreadClose({
+    const { topics, agreements, reputation, personaName } = await performThreadClose({
       thread, groupId, lang, closedBy: auth.user.id,
     });
 
-    // Task #172: cue-uitslag retourneren aan staff zodat ze direct feedback
-    // krijgen. Studenten zien dit veld NIET.
-    const { data: profForStaff } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const { data: grpRowForStaff } = await supabaseAdmin
-      .from('project_groups').select('projects(course_id)').eq('id', groupId).maybeSingle();
-    const courseIdForStaff = grpRowForStaff?.projects?.course_id || null;
-    const isStaffRequester = await isStaffForCourse(auth.user, profForStaff, courseIdForStaff);
-
     const response = { ok: true, threadId, topics, agreements };
-    if (isStaffRequester) {
-      response.cue = {
-        delta: cue.delta,
-        reason: cue.reason,
-        emissionEnabled,
+    // De groep ziet wat het gesprek met de verstandhouding deed.
+    if (reputation) {
+      response.reputation = {
         personaName,
+        step: reputation.step,
+        reason: reputation.reason,
+        level: reputation.to,
+        key: relLevelKey(reputation.to),
+        label: relLevelLabel(reputation.to, lang),
+        broken: relIsBroken(reputation.to),
       };
     }
     return res.json(response);
@@ -11684,11 +11622,11 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
       .from('project_personas').select('id, name, avatar_emoji, avatar').in('id', personaIds);
     const personaMap = Object.fromEntries((personas || []).map(p => [p.id, p]));
 
-    // Task #172: voor staff koppelen we per thread de cue (delta + reden)
-    // uit project_persona_relationships.history (source=persona_chat_close,
-    // refId=thread_close:<threadId>). Studenten krijgen dit veld NIET.
+    // Per gesprek: wat het met de verstandhouding deed (stap + reden), uit
+    // project_persona_relationships.history (source=persona_chat_close,
+    // refId=thread_close:<threadId>). De groep ziet dit ook.
     let cueByThread = new Map();
-    if (isStaffUser) {
+    {
       const projectIdForRel = grpRow?.project_id || null;
       if (projectIdForRel) {
         const { data: rels } = await supabaseAdmin
@@ -11703,8 +11641,9 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
                 && ev.refId.startsWith('thread_close:')) {
               const tid = ev.refId.slice('thread_close:'.length);
               cueByThread.set(tid, {
-                delta: typeof ev.delta === 'number' ? ev.delta : 0,
+                step: Number(ev.step ?? ev.delta) || 0,
                 reason: typeof ev.note === 'string' ? ev.note : '',
+                to: Number.isFinite(Number(ev.to)) ? Number(ev.to) : null,
               });
             }
           }
@@ -11724,8 +11663,8 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
         topics: t.topics || [],
         agreements: t.agreements || [],
       };
-      if (isStaffUser && cueByThread.has(t.id)) {
-        out.cue = cueByThread.get(t.id);
+      if (cueByThread.has(t.id)) {
+        out.reputation = cueByThread.get(t.id);
       }
       return out;
     });
@@ -12351,8 +12290,9 @@ app.post('/api/projects/copy-personas-from-library', async (req, res) => {
       rag_folder_ids: p.rag_folder_ids,
       visible_from_phase: p.visible_from_phase,
       sort_order: i,
-      persona_type: p.persona_type === 'evaluator' ? 'evaluator' : 'conversational',
-      cue_emission_enabled: p.persona_type === 'evaluator' ? false : true,
+      // Rol + verstandhouding/gedragsregels/feedbackrondes uit het sjabloon.
+      ...copyRoleFields(p),
+      cue_emission_enabled: false,
       // Task #252: raadpleeglimiet + auto-close meekopiëren uit de bibliotheek.
       max_consultations: conNormalizeMax(p.max_consultations),
       auto_close_hours: conNormalizeAutoCloseHours(p.auto_close_hours),
@@ -12462,8 +12402,6 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
 
     const { coursePersonaId, name, system_prompt, avatar_emoji,
       rag_enabled, rag_folder_ids } = req.body || {};
-    // Task #171: cue-emissie aan/uit. Evaluators staan altijd uit.
-    const cueEmissionInput = req.body?.cue_emission_enabled;
     // Task #252: raadpleeglimiet + auto-close (null = onbeperkt / uit).
     const maxConsultInput = conNormalizeMax(req.body?.max_consultations);
     const autoCloseInput = conNormalizeAutoCloseHours(req.body?.auto_close_hours);
@@ -12488,9 +12426,8 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
         system_prompt: cp.system_prompt, rag_enabled: cp.rag_enabled,
         rag_folder_ids: cp.rag_folder_ids, visible_from_phase: cp.visible_from_phase,
         sort_order: nextOrder,
-        persona_type: cp.persona_type || 'conversational',
-        // Task #171: evaluators emitteren nooit cues, conversational default aan.
-        cue_emission_enabled: (cp.persona_type === 'evaluator') ? false : true,
+        ...copyRoleFields(cp),
+        cue_emission_enabled: false,
         // Task #252: raadpleeglimiet + auto-close uit de bibliotheek.
         max_consultations: conNormalizeMax(cp.max_consultations),
         auto_close_hours: conNormalizeAutoCloseHours(cp.auto_close_hours),
@@ -12499,10 +12436,6 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
       };
     } else {
       if (!name || !String(name).trim()) return res.status(400).json({ error: 'Naam is vereist' });
-      const personaType = req.body?.persona_type === 'evaluator' ? 'evaluator' : 'conversational';
-      const cueEmission = personaType === 'evaluator'
-        ? false
-        : (cueEmissionInput === false ? false : true);
       row = {
         project_id: projectId, source_persona_id: null,
         name: String(name).trim(),
@@ -12512,8 +12445,9 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
         rag_enabled: rag_enabled !== false,
         rag_folder_ids: Array.isArray(rag_folder_ids) ? rag_folder_ids : [],
         sort_order: nextOrder,
-        persona_type: personaType,
-        cue_emission_enabled: cueEmission,
+        // Rol + wat daarbij hoort (verstandhouding alleen bij een rolspeler).
+        ...roleFieldsFrom(req.body),
+        cue_emission_enabled: false,
         // Task #252: raadpleeglimiet + auto-close (null = onbeperkt / uit).
         max_consultations: maxConsultInput,
         auto_close_hours: autoCloseInput,
@@ -12585,9 +12519,8 @@ app.post('/api/projects/:projectId/personas/from-library/:coursePersonaId', asyn
       rag_folder_ids: cp.rag_folder_ids,
       visible_from_phase: cp.visible_from_phase,
       sort_order: nextOrder,
-      persona_type: cp.persona_type || 'conversational',
-      // Task #171: evaluators emitteren nooit cues.
-      cue_emission_enabled: (cp.persona_type === 'evaluator') ? false : true,
+      ...copyRoleFields(cp),
+      cue_emission_enabled: false,
       // Task #252: raadpleeglimiet + auto-close uit de bibliotheek.
       max_consultations: conNormalizeMax(cp.max_consultations),
       auto_close_hours: conNormalizeAutoCloseHours(cp.auto_close_hours),
@@ -12630,21 +12563,21 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
 
-    const allowed = ['name', 'avatar_emoji', 'system_prompt', 'rag_enabled', 'rag_folder_ids', 'sort_order', 'persona_type', 'cue_emission_enabled', 'max_consultations', 'auto_close_hours', 'badge_award_mode'];
+    const allowed = ['name', 'avatar_emoji', 'system_prompt', 'rag_enabled', 'rag_folder_ids', 'sort_order', 'max_consultations', 'auto_close_hours', 'badge_award_mode'];
     const patch = {};
     for (const k of allowed) if (k in (req.body || {})) patch[k] = req.body[k];
+    if (req.body && 'persona_type' in req.body && !['conversational', 'evaluator', 'roleplayer'].includes(req.body.persona_type)) {
+      return res.status(400).json({ error: "persona_type moet 'conversational', 'evaluator' of 'roleplayer' zijn" });
+    }
+    // Rol + verstandhouding/gedragsregels/feedbackrondes (alleen meegestuurde velden).
+    Object.assign(patch, roleFieldsFrom(req.body, { partial: true }));
+    if ('persona_type' in patch) patch.cue_emission_enabled = false;
     // Cartoon-gezicht: alleen een opgeschoonde configuratie (null = standaard-robotje).
     if (req.body && 'avatar' in req.body) {
       const avatar = sanitizeAvatar(req.body.avatar);
       if (avatar === undefined) return res.status(400).json({ error: 'Ongeldige avatar' });
       patch.avatar = avatar;
     }
-    if (patch.persona_type && !['conversational', 'evaluator'].includes(patch.persona_type)) {
-      return res.status(400).json({ error: "persona_type moet 'conversational' of 'evaluator' zijn" });
-    }
-    // Evaluator-persona's emitteren nooit cues.
-    if (patch.persona_type === 'evaluator') patch.cue_emission_enabled = false;
-    if ('cue_emission_enabled' in patch) patch.cue_emission_enabled = !!patch.cue_emission_enabled;
     // Task #252: normaliseer raadpleeglimiet + auto-close (null = onbeperkt / uit).
     if ('max_consultations' in patch) patch.max_consultations = conNormalizeMax(patch.max_consultations);
     if ('auto_close_hours' in patch) patch.auto_close_hours = conNormalizeAutoCloseHours(patch.auto_close_hours);
@@ -13755,6 +13688,333 @@ app.get('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =>
   }
 });
 
+// Eén oordeel van een beoordelaar-persona over een tekst: rubric + LLM (JSON),
+// opslaan, badges toekennen en in het leerdagboek van de groepsleden zetten.
+// Gedeeld door het oordeel over een projectdocument en door "Inleveren voor
+// feedback" (ingeleverd werk van de groep, `productId`). Fouten gooien we als
+// { status, body } zodat de route ze één-op-één kan teruggeven.
+async function runEvaluatorReview({ project, group, persona, title, text, lang, requesterId, documentId = null, productId = null }) {
+  const projectId = project.id;
+  const groupId = group.id;
+  // Verborgen rubrics van deze beoordelaar (alleen verborgen — voorkomt
+  // prompt-injection via door studenten geüploade rubric-bestanden).
+  const { data: rubricDocs } = await supabaseAdmin
+    .from('project_persona_documents').select('filename, content_text')
+    .eq('project_id', projectId).eq('persona_id', persona.id)
+    .eq('is_hidden_rubric', true);
+  const rubricBlock = (rubricDocs || []).map(d =>
+    `[Rubric: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`
+  ).join('\n\n').slice(0, 20000);
+
+  // Actieve document_review-prompt uit chatbot_prompts (sectie 'project').
+  const { data: drPromptRow } = await supabaseAdmin
+    .from('chatbot_prompts')
+    .select('content')
+    .eq('section', 'project').eq('name', 'document_review')
+    .maybeSingle();
+  const systemTemplate = (drPromptRow?.content || DEFAULT_DOCUMENT_REVIEW_PROMPT).trim();
+
+  const personaIntro = (persona.system_prompt || '').trim();
+  const productLine = persona.deliverable_label ? `\nProduct waarover je feedback geeft: ${persona.deliverable_label}` : '';
+  const userBlock = `Persona-achtergrond:
+${personaIntro || '(geen extra persona-instructies)'}
+
+Project: ${project.title || '(naamloos)'}
+Beoogd projectresultaat: ${project.research_question || '(geen)'}
+Leerdoelen: ${project.goals || '(geen)'}${productLine}
+
+Verborgen rubric/criteria (alleen voor jou):
+${rubricBlock || '(geen rubric-bestand gekoppeld; gebruik dan de leerdoelen hierboven)'}
+
+Groep: ${group.name}
+
+Studentdocument "${title}":
+${String(text).slice(0, 20000)}
+
+Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
+
+  if (!AZURE_CHAT_READY) throw { status: 503, body: { error: LLM_NOT_CONFIGURED_MSG } };
+
+  // JSON-mode; bij een ongeldig antwoord één retry met een striktere herinnering.
+  async function callModel(extraReminder) {
+    const messages = [
+      { role: 'system', content: systemTemplate + buildLanguageInstruction(lang, { json: true }) },
+      { role: 'user', content: userBlock + (extraReminder ? `\n\n${extraReminder}` : '') },
+    ];
+    const r = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages,
+      response_format: { type: 'json_object' },
+      ...chatModelParams({ temperature: 0.2, maxTokens: 800 }),
+    });
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(`Taalmodel-fout (${r.status}): ${txt.slice(0, 200)}`);
+    }
+    const j = await r.json();
+    return (j.choices?.[0]?.message?.content || '').trim();
+  }
+
+  let rawResponse;
+  let validation;
+  try {
+    rawResponse = await callModel(null);
+    validation = validateReviewResponse(rawResponse);
+    if (!validation.ok) {
+      rawResponse = await callModel(`Je vorige antwoord was ongeldig: ${validation.error}. Antwoord nu uitsluitend met het JSON-object volgens het schema.`);
+      validation = validateReviewResponse(rawResponse);
+    }
+  } catch (modelErr) {
+    throw { status: 502, body: { error: modelErr.message } };
+  }
+  if (!validation.ok) {
+    throw { status: 502, body: { error: `Persona gaf geen geldig JSON-oordeel: ${validation.error}`, raw: rawResponse?.slice(0, 500) } };
+  }
+
+  // Task #253: badge deterministisch uit het cijfer.
+  const grade = validation.value.grade;
+  const feedForward = validation.value.feed_forward || '';
+  const badge = badgeForGrade(grade);
+  const awardMode = normalizeBadgeAwardMode(persona.badge_award_mode);
+
+  // Beoordelaars hebben geen verstandhouding: relationship_delta blijft 0.
+  const reviewRow = {
+    document_id: documentId,
+    product_id: productId,
+    persona_id: persona.id,
+    group_id: groupId,
+    verdict: validation.value.verdict,
+    grade,
+    reasoning: validation.value.reasoning,
+    feed_forward: feedForward,
+    relationship_delta: 0,
+    requested_by: requesterId,
+    raw_llm_response: { content: rawResponse },
+  };
+  const { data: inserted, error: insErr } = await supabaseAdmin
+    .from('project_document_reviews').insert(reviewRow)
+    .select('id, document_id, product_id, persona_id, group_id, verdict, grade, reasoning, feed_forward, requested_by, created_at').single();
+  if (insErr) throw { status: 500, body: { error: insErr.message } };
+
+  const { data: groupMembers } = await supabaseAdmin
+    .from('project_group_members').select('user_id').eq('group_id', groupId);
+  const docReviewCourseId = await courseIdForProject(projectId);
+
+  // Task #253: badges. group → elk groepslid; individual → alleen de indiener
+  // (mits groepslid). Idempotent via unique(review_id,user_id).
+  let badgeRecipients = [];
+  if (badge) {
+    const memberIds = (groupMembers || []).map(m => m.user_id);
+    if (awardMode === 'group') badgeRecipients = memberIds;
+    else if (memberIds.includes(requesterId)) badgeRecipients = [requesterId];
+    if (badgeRecipients.length > 0) {
+      const badgeRows = badgeRecipients.map(uid => ({
+        review_id: inserted.id, persona_id: persona.id, group_id: groupId,
+        user_id: uid, grade, badge, award_mode: awardMode,
+      }));
+      const { error: bErr } = await supabaseAdmin.from('project_review_badges').insert(badgeRows);
+      if (bErr && bErr.code !== '23505' && bErr.code !== '42P01') {
+        console.warn('[document_review] badge-toekenning mislukte:', bErr.message);
+      }
+    }
+  }
+
+  // In het leerdagboek van elk groepslid (idempotent op source_ref).
+  const sourceRef = `document_review:${documentId || productId}:${persona.id}:${inserted.id}`;
+  const verdictLabel = VERDICT_LABELS_NL[validation.value.verdict] || validation.value.verdict;
+  const gradeStr = Number.isFinite(Number(grade)) ? Number(grade).toFixed(1).replace('.', ',') : null;
+  const badgeLabelNl = badge ? (BADGE_LABELS_NL[badge] || badge) : null;
+  const titleBase = gradeStr
+    ? `${persona.avatar_emoji || '🧑‍⚖️'} Cijfer ${gradeStr} (${verdictLabel}) — ${persona.name} over "${title}"`
+    : `${persona.avatar_emoji || '🧑‍⚖️'} Oordeel ${verdictLabel} — ${persona.name} over "${title}"`;
+  const contentParts = [];
+  if (gradeStr) contentParts.push(`Cijfer: ${gradeStr}`);
+  contentParts.push(`Feedback: ${validation.value.reasoning}`);
+  if (feedForward) contentParts.push(`Feed-forward: ${feedForward}`);
+  const journalContentBase = contentParts.join('\n\n');
+  const badgeRecipientSet = new Set(badgeRecipients);
+  const rows = (groupMembers || []).map(m => {
+    const hasBadge = badge && badgeRecipientSet.has(m.user_id);
+    return {
+      user_id: m.user_id,
+      title: hasBadge ? `${BADGE_EMOJI[badge] || '🏅'} ${titleBase}` : titleBase,
+      content: hasBadge
+        ? `${journalContentBase}\n\nBadge: ${BADGE_EMOJI[badge] || '🏅'} ${badgeLabelNl}`
+        : journalContentBase,
+      activity_type: 'project_reflection',
+      source_ref: sourceRef,
+      course_id: docReviewCourseId,
+      sections: {
+        summary: '', went_well: [], to_improve: [],
+        feedback: validation.value.reasoning,
+        next_steps: feedForward ? [feedForward] : [],
+      },
+    };
+  });
+  if (rows.length > 0) {
+    const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert(rows);
+    if (jErr && jErr.code !== '23505') {
+      console.warn('[document_review] journal-spiegeling mislukte:', jErr.message);
+    }
+  }
+
+  return { inserted, badge, awardMode, badgeRecipients };
+}
+
+// Aantal gebruikte feedbackrondes van een groep bij een beoordelaar (ingeleverd werk).
+async function countFeedbackRounds(groupId, personaId) {
+  const { count, error } = await supabaseAdmin
+    .from('project_document_reviews')
+    .select('id', { count: 'exact', head: true })
+    .eq('group_id', groupId).eq('persona_id', personaId)
+    .not('product_id', 'is', null);
+  if (error) throw error;
+  return count || 0;
+}
+
+// Gedeelde checks voor de feedback-routes: project, groep, persona (beoordelaar)
+// en rechten (groepslid of docent van de cursus).
+async function loadFeedbackContext(req, res, { requirePersona = true } = {}) {
+  const auth = await authUser(req);
+  if (auth.error) { res.status(auth.error.status).json(auth.error.body); return null; }
+  const { projectId, groupId, personaId } = req.params;
+  const { data: project } = await supabaseAdmin
+    .from('projects').select('id, course_id, title, research_question, goals, status').eq('id', projectId).maybeSingle();
+  if (!project) { res.status(404).json({ error: 'Project niet gevonden' }); return null; }
+  const { data: group } = await supabaseAdmin
+    .from('project_groups').select('id, project_id, name, status').eq('id', groupId).maybeSingle();
+  if (!group || group.project_id !== projectId) { res.status(404).json({ error: 'Groep niet gevonden in dit project' }); return null; }
+  const { data: profile } = await supabaseAdmin
+    .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+  const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
+  const memberOfGroup = await isGroupMember(groupId, auth.user.id);
+  if (!isStaff && !memberOfGroup) { res.status(403).json({ error: 'Geen toegang tot deze groep' }); return null; }
+  let persona = null;
+  if (requirePersona) {
+    const { data: p } = await supabaseAdmin
+      .from('project_personas').select('*').eq('id', personaId).eq('project_id', projectId).maybeSingle();
+    if (!p) { res.status(404).json({ error: 'Persona niet gevonden in dit project' }); return null; }
+    if (p.persona_type !== 'evaluator') { res.status(400).json({ error: 'Alleen evaluator-persona\'s kunnen oordelen afgeven' }); return null; }
+    persona = p;
+  }
+  return { auth, project, group, persona, isStaff, memberOfGroup };
+}
+
+// GET /api/projects/:projectId/groups/:groupId/feedback — per beoordelaar het
+// product, de rondes (gebruikt / maximum) en de eerdere feedback van de groep.
+app.get('/api/projects/:projectId/groups/:groupId/feedback', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  try {
+    const ctx = await loadFeedbackContext(req, res, { requirePersona: false });
+    if (!ctx) return;
+    const { project, group, auth, isStaff } = ctx;
+    const { data: evaluators } = await supabaseAdmin
+      .from('project_personas')
+      .select('id, name, avatar_emoji, avatar, deliverable_label, max_reviews, sort_order')
+      .eq('project_id', project.id).eq('persona_type', 'evaluator').order('sort_order');
+    const evIds = (evaluators || []).map(e => e.id);
+    if (evIds.length === 0) return res.json({ evaluators: [] });
+    const { data: products } = await supabaseAdmin
+      .from('project_group_products')
+      .select('id, persona_id, filename, byte_size, uploaded_by, created_at')
+      .eq('group_id', group.id).in('persona_id', evIds)
+      .order('created_at', { ascending: false });
+    const productIds = (products || []).map(p => p.id);
+    let reviews = [];
+    if (productIds.length) {
+      const { data } = await supabaseAdmin
+        .from('project_document_reviews')
+        .select('id, product_id, persona_id, verdict, grade, reasoning, feed_forward, created_at')
+        .in('product_id', productIds);
+      reviews = data || [];
+    }
+    let badges = [];
+    if (reviews.length) {
+      let bq = supabaseAdmin.from('project_review_badges').select('review_id, user_id, badge').in('review_id', reviews.map(r => r.id));
+      if (!isStaff) bq = bq.eq('user_id', auth.user.id);
+      const { data } = await bq;
+      badges = data || [];
+    }
+    const reviewByProduct = new Map(reviews.map(r => [r.product_id, r]));
+    const out = (evaluators || []).map(ev => {
+      const items = (products || []).filter(p => p.persona_id === ev.id).map(p => {
+        const review = reviewByProduct.get(p.id) || null;
+        const badge = review ? (badges.find(b => b.review_id === review.id)?.badge || null) : null;
+        return { productId: p.id, filename: p.filename, createdAt: p.created_at, review, badge };
+      });
+      const rounds = feedbackRoundsState(ev.max_reviews, items.filter(i => i.review).length);
+      return {
+        personaId: ev.id, name: ev.name, avatarEmoji: ev.avatar_emoji, avatar: ev.avatar ?? null,
+        deliverableLabel: ev.deliverable_label || null,
+        maxReviews: rounds.maxReviews, used: rounds.used, remaining: rounds.remaining, canSubmit: rounds.canSubmit,
+        items,
+      };
+    });
+    return res.json({ evaluators: out });
+  } catch (err) {
+    console.error('[feedback list]', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/projects/:projectId/groups/:groupId/personas/:personaId/feedback
+// (multipart "file") — de groep levert werk in bij een beoordelaar en krijgt
+// meteen feedback. Telt als één feedbackronde; bij het maximum is het op.
+app.post('/api/projects/:projectId/groups/:groupId/personas/:personaId/feedback', docUpload.single('file'), async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  try {
+    const ctx = await loadFeedbackContext(req, res);
+    if (!ctx) return;
+    const { auth, project, group, persona, memberOfGroup, isStaff } = ctx;
+    if (!memberOfGroup && !isStaff) return res.status(403).json({ error: 'Je bent geen lid van deze groep' });
+    if (project.status && project.status !== 'active') return res.status(403).json({ error: 'Project is niet meer actief' });
+    if (group.status === 'archived') return res.status(403).json({ error: 'Groep is gearchiveerd' });
+    if (!req.file) return res.status(400).json({ error: 'Geen bestand ontvangen (veld "file")' });
+    const used = await countFeedbackRounds(group.id, persona.id);
+    if (!feedbackRoundsState(persona.max_reviews, used).canSubmit) {
+      return res.status(403).json({ error: 'Alle feedbackrondes bij deze beoordelaar zijn gebruikt.' });
+    }
+    let text;
+    try {
+      text = await extractTextFromUpload(req.file);
+    } catch (e) {
+      return res.status(400).json({ error: e.message || 'Kon tekst niet uit bestand halen' });
+    }
+    if (!text || !text.trim()) return res.status(400).json({ error: 'Geen leesbare tekst gevonden in dit bestand' });
+    if (text.length > MAX_DOC_CHARS) text = text.slice(0, MAX_DOC_CHARS);
+    const filename = String(req.file.originalname || 'upload').slice(0, 200);
+    const { data: product, error: pErr } = await supabaseAdmin
+      .from('project_group_products')
+      .insert({ project_id: project.id, group_id: group.id, persona_id: persona.id, filename, content_text: text, byte_size: req.file.size || null, uploaded_by: auth.user.id })
+      .select('id, filename, created_at').single();
+    if (pErr) return res.status(500).json({ error: pErr.message });
+    let result;
+    try {
+      result = await runEvaluatorReview({
+        project, group, persona, title: filename, text,
+        lang: normalizeLang(req.body?.lang), requesterId: auth.user.id, productId: product.id,
+      });
+    } catch (e) {
+      // Geen oordeel = geen ronde verbruikt: het ingeleverde bestand gaat weer weg.
+      await supabaseAdmin.from('project_group_products').delete().eq('id', product.id);
+      if (e && e.status) return res.status(e.status).json(e.body);
+      throw e;
+    }
+    const after = feedbackRoundsState(persona.max_reviews, used + 1);
+    return res.json({
+      product,
+      review: result.inserted,
+      badge: result.badge || null,
+      used: after.used,
+      remaining: after.remaining,
+    });
+  } catch (err) {
+    console.error('[feedback POST]', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+
 app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
@@ -13822,229 +14082,18 @@ app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =
       return res.status(403).json({ error: 'Dit document is niet zichtbaar voor studenten' });
     }
 
-    // Hidden rubrics van deze evaluator (alleen verborgen — voorkomt
-    // prompt-injection via door studenten geüploade rubric-bestanden).
-    const { data: rubricDocs } = await supabaseAdmin
-      .from('project_persona_documents').select('filename, content_text')
-      .eq('project_id', projectId).eq('persona_id', persona.id)
-      .eq('is_hidden_rubric', true);
-    const rubricBlock = (rubricDocs || []).map(d =>
-      `[Rubric: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`
-    ).join('\n\n').slice(0, 20000);
-
-    // Actieve document_review-prompt uit chatbot_prompts (sectie 'project').
-    const { data: drPromptRow } = await supabaseAdmin
-      .from('chatbot_prompts')
-      .select('content')
-      .eq('section', 'project').eq('name', 'document_review')
-      .maybeSingle();
-    const systemTemplate = (drPromptRow?.content || DEFAULT_DOCUMENT_REVIEW_PROMPT).trim();
-
-    const documentText = doc.content_text.slice(0, 20000);
-    const personaIntro = (persona.system_prompt || '').trim();
-
-    const userBlock = `Persona-achtergrond:
-${personaIntro || '(geen extra persona-instructies)'}
-
-Project: ${project.title || '(naamloos)'}
-Beoogd projectresultaat: ${project.research_question || '(geen)'}
-Leerdoelen: ${project.goals || '(geen)'}
-
-Verborgen rubric/criteria (alleen voor jou):
-${rubricBlock || '(geen rubric-bestand gekoppeld; gebruik dan de leerdoelen hierboven)'}
-
-Groep: ${group.name}
-
-Studentdocument "${doc.filename}":
-${documentText}
-
-Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
-
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
-
-    // Roep de LLM aan in JSON-mode. Bij ongeldig JSON-antwoord doen we één
-    // retry met een striktere herinnering; daarna geven we netjes op.
-    async function callModel(extraReminder) {
-      const messages = [
-        { role: 'system', content: systemTemplate + buildLanguageInstruction(reviewLang, { json: true }) },
-        { role: 'user', content: userBlock + (extraReminder ? `\n\n${extraReminder}` : '') },
-      ];
-      const r = await openaiChatCompletion({
-        model: OPENAI_MODEL,
-        messages,
-        response_format: { type: 'json_object' },
-        ...chatModelParams({ temperature: 0.2, maxTokens: 800 }),
-      });
-      if (!r.ok) {
-        const txt = await r.text();
-        throw new Error(`Taalmodel-fout (${r.status}): ${txt.slice(0, 200)}`);
-      }
-      const j = await r.json();
-      return (j.choices?.[0]?.message?.content || '').trim();
-    }
-
-    let rawResponse;
-    let validation;
     try {
-      rawResponse = await callModel(null);
-      validation = validateReviewResponse(rawResponse);
-      if (!validation.ok) {
-        rawResponse = await callModel(`Je vorige antwoord was ongeldig: ${validation.error}. Antwoord nu uitsluitend met het JSON-object volgens het schema.`);
-        validation = validateReviewResponse(rawResponse);
-      }
-    } catch (modelErr) {
-      return res.status(502).json({ error: modelErr.message });
-    }
-    if (!validation.ok) {
-      return res.status(502).json({
-        error: `Persona gaf geen geldig JSON-oordeel: ${validation.error}`,
-        raw: rawResponse?.slice(0, 500),
+      const { inserted, badge, awardMode, badgeRecipients } = await runEvaluatorReview({
+        project, group, persona, title: doc.filename, text: doc.content_text,
+        lang: reviewLang, requesterId: auth.user.id, documentId: docId,
       });
-    }
-
-    // Task #253: bepaal de badge deterministisch uit het cijfer.
-    const grade = validation.value.grade;
-    const feedForward = validation.value.feed_forward || '';
-    const badge = badgeForGrade(grade);
-    const awardMode = normalizeBadgeAwardMode(persona.badge_award_mode);
-
-    // Persisteer review. Cijfer + feed-forward worden meegeschreven; bij een
-    // oude DB zonder die kolommen valt de insert terug op het oude schema.
-    const reviewRow = {
-      document_id: docId,
-      persona_id: persona.id,
-      group_id: groupId,
-      verdict: validation.value.verdict,
-      grade,
-      reasoning: validation.value.reasoning,
-      feed_forward: feedForward,
-      relationship_delta: validation.value.relationship_delta,
-      requested_by: auth.user.id,
-      raw_llm_response: { content: rawResponse },
-    };
-    const reviewCols = 'id, document_id, persona_id, group_id, verdict, grade, reasoning, feed_forward, relationship_delta, requested_by, created_at';
-    let { data: inserted, error: insErr } = await supabaseAdmin
-      .from('project_document_reviews').insert(reviewRow).select(reviewCols).single();
-    if (insErr && (insErr.code === '42703' || /grade|feed_forward/i.test(insErr.message || ''))) {
-      const { grade: _g, feed_forward: _f, ...rowNoGrade } = reviewRow;
-      ({ data: inserted, error: insErr } = await supabaseAdmin
-        .from('project_document_reviews').insert(rowNoGrade)
-        .select('id, document_id, persona_id, group_id, verdict, reasoning, relationship_delta, requested_by, created_at').single());
-    }
-    if (insErr) {
-      if (insErr.code === '42P01') {
-        return res.status(503).json({
-          error: 'Migratie 20260528100000_project_document_reviews.sql is nog niet toegepast in Supabase.',
-        });
-      }
-      return res.status(500).json({ error: insErr.message });
-    }
-
-    const { data: groupMembers } = await supabaseAdmin
-      .from('project_group_members').select('user_id').eq('group_id', groupId);
-    const docReviewCourseId = await courseIdForProject(projectId);
-
-    // Task #253: ken badge-rijen toe. group → elk groepslid; individual → alleen
-    // de indienende student (mits groepslid). Idempotent via unique(review_id,user_id).
-    let badgeRecipients = [];
-    if (badge) {
-      const memberIds = (groupMembers || []).map(m => m.user_id);
-      if (awardMode === 'group') {
-        badgeRecipients = memberIds;
-      } else if (memberIds.includes(auth.user.id)) {
-        badgeRecipients = [auth.user.id];
-      }
-      if (badgeRecipients.length > 0) {
-        const badgeRows = badgeRecipients.map(uid => ({
-          review_id: inserted.id,
-          persona_id: persona.id,
-          group_id: groupId,
-          user_id: uid,
-          grade,
-          badge,
-          award_mode: awardMode,
-        }));
-        const { error: bErr } = await supabaseAdmin.from('project_review_badges').insert(badgeRows);
-        if (bErr && bErr.code !== '23505' && bErr.code !== '42P01') {
-          console.warn('[document_review] badge-toekenning mislukte:', bErr.message);
-        }
-      }
-    }
-
-    // Spiegel in journal per groepslid (idempotent op source_ref). Het cijfer,
-    // de feedback én feed-forward gaan mee; de badge alleen voor de ontvangers.
-    const sourceRef = `document_review:${docId}:${persona.id}:${inserted.id}`;
-    const verdictLabel = VERDICT_LABELS_NL[validation.value.verdict] || validation.value.verdict;
-    const gradeStr = Number.isFinite(Number(grade)) ? Number(grade).toFixed(1).replace('.', ',') : null;
-    const badgeLabelNl = badge ? (BADGE_LABELS_NL[badge] || badge) : null;
-    const titleBase = gradeStr
-      ? `${persona.avatar_emoji || '🧑‍⚖️'} Cijfer ${gradeStr} (${verdictLabel}) — ${persona.name} over "${doc.filename}"`
-      : `${persona.avatar_emoji || '🧑‍⚖️'} Oordeel ${verdictLabel} — ${persona.name} over "${doc.filename}"`;
-    const contentParts = [];
-    if (gradeStr) contentParts.push(`Cijfer: ${gradeStr}`);
-    contentParts.push(`Feedback: ${validation.value.reasoning}`);
-    if (feedForward) contentParts.push(`Feed-forward: ${feedForward}`);
-    const journalContentBase = contentParts.join('\n\n');
-    const badgeRecipientSet = new Set(badgeRecipients);
-    const rows = (groupMembers || []).map(m => {
-      const hasBadge = badge && badgeRecipientSet.has(m.user_id);
-      return {
-        user_id: m.user_id,
-        title: hasBadge ? `${BADGE_EMOJI[badge] || '🏅'} ${titleBase}` : titleBase,
-        content: hasBadge
-          ? `${journalContentBase}\n\nBadge: ${BADGE_EMOJI[badge] || '🏅'} ${badgeLabelNl}`
-          : journalContentBase,
-        activity_type: 'project_reflection',
-        source_ref: sourceRef,
-        course_id: docReviewCourseId,
-        sections: {
-          summary: '', went_well: [], to_improve: [],
-          feedback: validation.value.reasoning,
-          next_steps: feedForward ? [feedForward] : [],
-        },
-      };
-    });
-    if (rows.length > 0) {
-      const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert(rows);
-      if (jErr) {
-        // Defensief: source_ref-kolom kan ontbreken in oudere DBs, en unique
-        // violation duidt op idempotentie (dubbele post).
-        if (jErr.code === '42703' || /source_ref|sections/i.test(jErr.message || '')) {
-          await supabaseAdmin.from('learning_journal_entries').insert(
-            rows.map(({ source_ref: _ignored, sections: _s, ...rest }) => rest)
-          );
-        } else if (jErr.code !== '23505') {
-          console.warn('[document_review] journal-spiegeling mislukte:', jErr.message);
-        }
-      }
-    }
-
-    // ────────────────────────────────────────────────────────────────────
-    // Task #167: persoonlijke relatie-score bijwerken op basis van de
-    // relationship_delta. Idempotent op review-id (refId). Best-effort:
-    // valt stil terug als de tabel nog niet bestaat (migratie ontbreekt).
-    // ────────────────────────────────────────────────────────────────────
-    try {
-      await applyRelationshipDelta({
-        projectId,
-        groupId,
-        personaId: persona.id,
-        delta: validation.value.relationship_delta,
-        event: {
-          source: 'document_review',
-          refId: inserted.id,
-          delta: validation.value.relationship_delta,
-          note: validation.value.verdict,
-        },
+      return res.json({
+        review: { ...inserted, badge: badge || null, award_mode: awardMode, badge_recipients: badgeRecipients },
       });
-    } catch (relErr) {
-      console.warn('[document_review] relationship-update mislukte:', relErr.message);
+    } catch (e) {
+      if (e && e.status) return res.status(e.status).json(e.body);
+      throw e;
     }
-
-    return res.json({
-      review: { ...inserted, badge: badge || null, award_mode: awardMode, badge_recipients: badgeRecipients },
-    });
   } catch (err) {
     console.error('[document_review]', err);
     return res.status(500).json({ error: err.message });
@@ -14052,48 +14101,41 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
 });
 
 // =============================================================================
-// Task #167 — Persona-relaties (Fase 2). Eén rij per (project, groep, persona)
-// met score (-10..+10) + history-events. Deltas komen uit Fase 1 of uit een
-// handmatige staff-correctie. De huidige staat wordt geïnjecteerd in de
-// systeemprompt van elke persona-chat en gate't nieuwe turns bij score ≤ -8.
+// Verstandhouding tussen een rolspeler en een groep (herzien 2026-09-29).
+// Eén rij per (project, groep, persona); score = niveau (-2 koud … +2 warm,
+// -3 = contact verbroken). Alleen voor rolspelers met "Verstandhouding
+// bijhouden" (reputationActive). Wijzigt na een afgerond gesprek (oordeel op
+// basis van de gedragsregels) of door een correctie van de docent.
 // =============================================================================
 
-// Pas een delta toe op de relatie en append history. Idempotent: als
-// event.refId al in history zit (zelfde source+refId), wordt niets bijgewerkt.
-// Race-safe (Task #171, Fase 2-fix uit architect-review): gebruikt pgPool
-// voor een atomic INSERT … ON CONFLICT DO UPDATE met arithmetic op score en
-// `jsonb` history-concat — zo gaan twee parallelle deltas (bv. close + review
-// op hetzelfde moment) niet verloren. Retourneert de bijgewerkte rij of null
-// als de tabel nog niet bestaat. Bij conflict-loss op de WHERE-clausule
-// (idempotente hit) wordt 1× herlezen.
-async function applyRelationshipDelta(args) {
-  return applyRelationshipDeltaImpl({ supabaseAdmin, pgPool }, args);
+// Zet het niveau (compute(huidig) → nieuw); idempotent op event.refId.
+async function setRelationshipLevel(args) {
+  return setRelationshipLevelImpl({ supabaseAdmin }, args);
 }
 
-// Lees de huidige relatie-rij of geef een neutrale defaults-rij terug.
-async function loadRelationship(projectId, groupId, personaId) {
-  if (!supabaseAdmin) return { score: 0, history: [] };
+// Lees de huidige rij; zonder rij begint de groep op het startniveau van de persona.
+async function loadRelationship(projectId, groupId, personaId, startLevel = 0) {
+  const fallback = { score: clampStartLevel(startLevel), history: [] };
+  if (!supabaseAdmin) return fallback;
   const { data, error } = await supabaseAdmin
     .from('project_persona_relationships')
     .select('score, history')
     .eq('project_id', projectId).eq('group_id', groupId).eq('persona_id', personaId)
     .maybeSingle();
   if (error) {
-    if (error.code === '42P01' || /project_persona_relationships/i.test(error.message || '')) {
-      return { score: 0, history: [] };
-    }
+    if (error.code === '42P01' || /project_persona_relationships/i.test(error.message || '')) return fallback;
     throw error;
   }
+  if (!data) return fallback;
   return {
-    score: data?.score ?? 0,
-    history: Array.isArray(data?.history) ? data.history : [],
+    score: relClampLevel(data.score),
+    history: Array.isArray(data.history) ? data.history : [],
   };
 }
 
-// GET /api/projects/:projectId/groups/:groupId/relationships — overzicht per
-// project-persona. Staff krijgt score + laatste 5 history-events; studenten
-// krijgen alleen score+label (geen exact getal in UI; getal blijft hier
-// voor consistentie maar de student-UI toont enkel het label).
+// GET /api/projects/:projectId/groups/:groupId/relationships — de verstandhouding
+// per rolspeler die er een bijhoudt (andere persona's staan er niet in). De
+// groep ziet het niveau en de laatste aanleiding; de docent ook de geschiedenis.
 app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
@@ -14118,10 +14160,11 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
     }
     const { data: personas } = await supabaseAdmin
       .from('project_personas')
-      .select('id, name, avatar_emoji, avatar, persona_type, sort_order')
+      .select('id, name, avatar_emoji, avatar, persona_type, reputation_enabled, start_level, sort_order')
       .eq('project_id', projectId)
       .order('sort_order');
-    const personaList = personas || [];
+    const personaList = (personas || []).filter(reputationActive);
+    if (personaList.length === 0) return res.json({ relationships: [], isStaff });
     const { data: rels, error: relErr } = await supabaseAdmin
       .from('project_persona_relationships')
       .select('persona_id, score, history, updated_at')
@@ -14132,24 +14175,21 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
     const byPersona = new Map((rels || []).map(r => [r.persona_id, r]));
     const out = personaList.map(p => {
       const r = byPersona.get(p.id);
-      const score = r?.score ?? 0;
+      const level = r ? relClampLevel(r.score) : clampStartLevel(p.start_level);
       const history = Array.isArray(r?.history) ? r.history : [];
-      const recent = history.slice(-5).reverse();
+      const last = relLastReason(history);
       return {
         personaId: p.id,
         personaName: p.name,
         avatarEmoji: p.avatar_emoji,
         avatar: p.avatar ?? null,
-        personaType: p.persona_type || 'conversational',
-        score: isStaff ? score : null,
-        bucket: relScoreToBucket(score),
-        label: relScoreToLabel(score, lang),
-        blocked: relIsBlocked(score),
+        level,
+        key: relLevelKey(level),
+        label: relLevelLabel(level, lang),
+        broken: relIsBroken(level),
+        lastReason: last ? { note: last.note, ts: last.ts, step: last.step } : null,
         updatedAt: r?.updated_at || null,
-        history: isStaff ? recent : recent.map(e => ({
-          ts: e?.ts || null,
-          source: e?.source || null,
-        })),
+        history: isStaff ? history.slice(-8).reverse() : undefined,
       };
     });
     return res.json({ relationships: out, isStaff });
@@ -14160,15 +14200,15 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
 });
 
 // POST /api/projects/:projectId/groups/:groupId/personas/:personaId/relationship-adjust
-// — staff-only handmatige correctie van de relatie. Route + autorisatie zijn
-// geëxtraheerd naar server/relationshipAdjust.js (Task #178) zodat de wiring
-// naar applyRelationshipDelta en de staff-check geïntegreerd testbaar zijn.
+// — correctie door de docent (niveau kiezen, ook "contact herstellen"). Route +
+// autorisatie staan in server/relationshipAdjust.js zodat ze testbaar zijn.
 registerRelationshipAdjustRoute(app, {
   supabaseAdmin,
   authUser,
   isStaffForCourse,
-  applyRelationshipDelta,
-  scoreToBucket: relScoreToBucket,
+  setRelationshipLevel,
+  levelKey: relLevelKey,
+  reputationActive,
 });
 
 // POST /api/projects/:projectId/groups/:groupId/personas/:personaId/consultations-grant
@@ -14947,7 +14987,9 @@ app.post('/api/projects/:projectId/personas/:personaId/copy-to-library', async (
       rag_folder_ids: pp.rag_folder_ids,
       visible_from_phase: pp.visible_from_phase,
       is_default: false,
-      persona_type: pp.persona_type || 'conversational',
+      ...copyRoleFields(pp),
+      max_consultations: pp.max_consultations ?? null,
+      auto_close_hours: pp.auto_close_hours ?? null,
       // Task #253: badge-toekenningsmodus mee terug naar de bibliotheek.
       badge_award_mode: normalizeBadgeAwardMode(pp.badge_award_mode),
       created_by: auth.user.id,
@@ -14989,6 +15031,50 @@ async function loadCoursePersonaForStaff(personaId, user, profile) {
   return { persona };
 }
 
+// POST /api/admin/personas/conduct-test — "Proefgesprek" voor de docent: wat
+// zou LEAP met de verstandhouding doen na dit (voorbeeld)gesprek? Werkt ook met
+// nog niet opgeslagen gedragsregels; er wordt niets opgeslagen.
+// Body: { courseId, personaName, conduct_rules, level (-2..2), transcript, lang }.
+app.post('/api/admin/personas/conduct-test', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  const { courseId, personaName, conduct_rules: conductRules, level, transcript } = req.body || {};
+  const lang = normalizeLang(req.body?.lang);
+  if (!courseId) return res.status(400).json({ error: 'courseId is vereist' });
+  const text = typeof transcript === 'string' ? transcript.trim() : '';
+  if (!text) return res.status(400).json({ error: 'Schrijf eerst een voorbeeldgesprek.' });
+  try {
+    const { data: profile } = await supabaseAdmin
+      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    if (!(await isStaffForCourse(auth.user, profile, courseId))) {
+      return res.status(403).json({ error: 'Alleen docenten van deze cursus' });
+    }
+    if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
+    const from = clampStartLevel(level);
+    const r = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages: relBuildJudgeMessages({
+        personaName: String(personaName || 'Persona').slice(0, 120),
+        conductRules: roleFieldsFrom({ conduct_rules: conductRules }, { partial: true }).conduct_rules,
+        level: from,
+        transcript: text.slice(0, 12000),
+        lang,
+        languageName: languageEnglishName(lang),
+      }),
+      ...chatModelParams({ temperature: 0, maxTokens: 300 }),
+      response_format: { type: 'json_object' },
+    });
+    if (!r.ok) return res.status(502).json({ error: 'Het taalmodel kon het gesprek niet beoordelen.' });
+    const judged = relValidateJudgement((await r.json()).choices?.[0]?.message?.content || '');
+    const to = relNextLevel(from, judged.step);
+    return res.json({ step: judged.step, reason: judged.reason, from, to, key: relLevelKey(to), label: relLevelLabel(to, lang) });
+  } catch (err) {
+    console.error('[conduct-test]', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/admin/course-personas', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
@@ -14996,7 +15082,7 @@ app.post('/api/admin/course-personas', async (req, res) => {
   try {
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const { course_id, name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, persona_type, badge_award_mode } = req.body || {};
+    const { course_id, name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, badge_award_mode } = req.body || {};
     if (!course_id || !name?.trim()) return res.status(400).json({ error: 'course_id en name zijn verplicht' });
     if (!(await isStaffForCourse(auth.user, profile, course_id))) {
       return res.status(403).json({ error: 'Alleen docenten van deze cursus kunnen persona-sjablonen aanmaken' });
@@ -15010,7 +15096,9 @@ app.post('/api/admin/course-personas', async (req, res) => {
       rag_enabled: rag_enabled !== false,
       rag_folder_ids: Array.isArray(rag_folder_ids) ? rag_folder_ids : [],
       is_default: false,
-      persona_type: persona_type === 'evaluator' ? 'evaluator' : 'conversational',
+      ...roleFieldsFrom(req.body),
+      max_consultations: conNormalizeMax(req.body?.max_consultations),
+      auto_close_hours: conNormalizeAutoCloseHours(req.body?.auto_close_hours),
       // Task #253: badge-toekenningsmodus (individual | group).
       badge_award_mode: normalizeBadgeAwardMode(badge_award_mode),
       created_by: auth.user.id,
@@ -15039,7 +15127,7 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
     const found = await loadCoursePersonaForStaff(personaId, auth.user, profile);
     if (found.error) return res.status(found.status).json({ error: found.error });
-    const { name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, persona_type, badge_award_mode } = req.body || {};
+    const { name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, badge_award_mode } = req.body || {};
     const patch = {};
     if (name !== undefined) patch.name = String(name).trim();
     if (avatar_emoji !== undefined) patch.avatar_emoji = avatar_emoji;
@@ -15051,7 +15139,9 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
     if (system_prompt !== undefined) patch.system_prompt = system_prompt;
     if (rag_enabled !== undefined) patch.rag_enabled = rag_enabled;
     if (rag_folder_ids !== undefined) patch.rag_folder_ids = Array.isArray(rag_folder_ids) ? rag_folder_ids : [];
-    if (persona_type !== undefined) patch.persona_type = persona_type === 'evaluator' ? 'evaluator' : 'conversational';
+    Object.assign(patch, roleFieldsFrom(req.body, { partial: true }));
+    if (req.body && 'max_consultations' in req.body) patch.max_consultations = conNormalizeMax(req.body.max_consultations);
+    if (req.body && 'auto_close_hours' in req.body) patch.auto_close_hours = conNormalizeAutoCloseHours(req.body.auto_close_hours);
     if (badge_award_mode !== undefined) patch.badge_award_mode = normalizeBadgeAwardMode(badge_award_mode);
     let { data: updated, error: uErr } = await supabaseAdmin
       .from('course_personas').update(patch).eq('id', personaId).select('*').maybeSingle();

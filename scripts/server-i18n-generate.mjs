@@ -93,7 +93,8 @@ async function main() {
     const left = sources.length - Object.keys(ordered).length;
     remainingTotal += left;
     console.log(`[server-i18n] ${code}: ${Object.keys(ordered).length}/${sources.length}${left ? ` (${left} resterend)` : ' klaar'}`);
-    if (Date.now() - START >= TIME_BUDGET_MS) break;
+    // Tijd op: de volgende talen worden niet meer vertaald, maar wél meegeteld
+    // (anders meldt het script ten onrechte "alle talen compleet").
   }
   console.log(`[server-i18n] RESTEREND totaal: ${remainingTotal}${remainingTotal ? ' — draai opnieuw' : ' (alle talen compleet)'}`);
 }

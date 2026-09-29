@@ -150,7 +150,7 @@
     <li><strong>De begrippen</strong> waarover studenten uitleggen en quizzen — LEAP haalt ze uit je leerstof, jij beoordeelt ze.</li>
     <li><strong>De quiz</strong>: uit welke bronnen de vragen komen (je materiaal, een vraagbank, of vrij door de AI).</li>
     <li><strong>De toon en aanpak</strong> van de chat, en hoe streng LEAP bij je materiaal blijft.</li>
-    <li><strong>De projecten</strong>: opdrachten, persona's met een eigen gezicht, beoordelaars met een verborgen rubric.</li>
+    <li><strong>De projecten</strong>: opdrachten en persona's in drie rollen — begeleider, beoordelaar (met rubric en feedbackrondes) en rolspeler (voor simulaties, desgewenst met een verstandhouding).</li>
   </ul>
 </section>
 
@@ -209,8 +209,8 @@
     <div class="icon" style="background:var(--projects)">6</div>
     <div>
       <h3>Samen leren aan authentieke opdrachten</h3>
-      <p>In projecten werken studenten in groepen aan realistische vraagstukken. Ze voeren gesprekken met <strong>persona's</strong> — een opdrachtgever, een epidemioloog, een beleidsmaker — die reageren vanuit hun rol en de stof van de cursus. Hoe de groep zich opstelt, beïnvloedt de verstandhouding met een persona, zoals in de praktijk. Een <strong>beoordelaar</strong>-persona geeft formatieve feedback op ingeleverd werk met jouw rubric.</p>
-      <div class="seen"><b>In LEAP:</b> projectruimte per groep; persona's met een eigen gezicht; verstandhouding en een maximum aantal gesprekken; beoordelaars met een verborgen rubric; het studiecafé voor vragen aan elkaar.</div>
+      <p>In projecten werken studenten in groepen aan realistische vraagstukken. Een <strong>begeleider</strong> helpt de groep door de stappen van het project. Een <strong>beoordelaar</strong> geeft formatieve feedback op tussen- en eindproducten, met jouw rubric en een vast aantal rondes. Richt je het project in als <strong>simulatie</strong>, dan spreken studenten met <strong>rolspelers</strong> — een wethouder, een patiënt, een opdrachtgever — die reageren vanuit hun rol. Zet je bij een rolspeler de verstandhouding aan, dan merkt de groep dat zijn opstelling telt, zoals in de praktijk: wie een burgemeester uitscheldt, wordt niet meer ontvangen.</p>
+      <div class="seen"><b>In LEAP:</b> projectruimte per groep; persona's met een eigen gezicht; beoordelaars met een verborgen rubric en feedbackrondes; rolspelers met een zichtbare verstandhouding volgens jouw gedragsregels; het studiecafé voor vragen aan elkaar.</div>
     </div>
   </div>
 
@@ -260,7 +260,7 @@
   </figure>
 
   <h2 style="color:var(--projects)">Projecten — samen aan een opdracht</h2>
-  <p>In de projectruimte werkt een groep aan een opdracht. De groep kiest een persona om mee te praten; elke persona heeft een eigen gezicht, rol en toon, en verwijst naar de stof. Hoe vaak een groep een persona mag raadplegen, stel jij in. De groep levert zijn product in; een beoordelaar-persona geeft daar formatieve feedback op, eventueel met een medaille. Na afronding komen samenvattingen van de gesprekken in het leerdagboek van alle groepsleden.</p>
+  <p>In de projectruimte werkt een groep aan een opdracht. De groep kiest een persona om mee te praten; elke persona heeft een eigen gezicht, rol en toon, en verwijst naar de stof. Hoe vaak een groep een persona mag raadplegen, stel jij in. Onder <i>Feedback op jullie werk</i> levert de groep een tussen- of eindproduct in bij een beoordelaar en krijgt meteen feedback en een volgende stap, eventueel met een medaille; de groep ziet hoeveel rondes er nog over zijn. Houdt een rolspeler een verstandhouding bij, dan ziet de groep het niveau (van koud tot warm) en de laatste aanleiding. Na afronding komen samenvattingen van de gesprekken in het leerdagboek van alle groepsleden.</p>
 
   <h2 style="color:var(--cafe)">Studiecafé — van en met elkaar leren</h2>
   <p>Een forum per cursus, met de categorieën <i>vraag</i>, <i>discussie</i>, <i>samenwerken</i> en <i>check-llm</i>. Studenten reageren op elkaar, geven kudos en kunnen een stukje uit de chat of een quiz meesturen. Jij kunt aankondigingen plaatsen en berichten vastzetten of sluiten. Studenten krijgen desgewenst een e-mail bij reacties.</p>
@@ -351,12 +351,25 @@
   <ol class="steps">
     <li><b>Persona-sjablonen</b> — maak een persona één keer als sjabloon voor je cursus en voeg hem toe aan elk project waar je hem nodig hebt. Elk project krijgt een eigen kopie die je daar vrij kunt aanpassen.</li>
     <li><b>Een gezicht</b> — elke persona krijgt vanzelf een robotje. Met <i>Gezicht aanpassen</i> kies je een stijl (robot, cartoon, lijntekening, schets, handgetekend), blader je per onderdeel of klik je op <i>Verras me</i>. Het gezicht verschijnt overal waar de persona voorkomt.</li>
-    <li><b>Gesprekspartner of beoordelaar</b> — een gesprekspartner (zoals een opdrachtgever) praat met de groepen. Een <i>beoordelaar</i> is verborgen: hij geeft feedback op ingeleverd werk met jouw rubric, die studenten niet zien.</li>
-    <li><b>Aantal gesprekken en verstandhouding</b> — beperk hoe vaak een groep een persona mag raadplegen, en laat de houding van een persona meebewegen met hoe de groep zich opstelt.</li>
+    <li><b>Kies de rol</b> — elke persona heeft één van drie rollen; alleen de instellingen die bij die rol horen verschijnen.</li>
   </ol>
-  <figure>
-    <img src="img/persona-gezicht.png" alt="">
-    <figcaption><b>Een persona-sjabloon bewerken</b>, met de editor voor het gezicht open.</figcaption>
+  <table>
+    <tr><th style="width:22%">Rol</th><th>Waarvoor</th><th style="width:34%">Wat je instelt</th></tr>
+    <tr><td><b>Begeleider</b></td><td>Een companion die de groep door de stappen van het project helpt. Geen verstandhouding.</td><td>Instructie, eventueel een maximum aantal gesprekken.</td></tr>
+    <tr><td><b>Beoordelaar</b></td><td>Formatieve feedback op een tussen- of eindproduct dat de groep inlevert. Studenten chatten er niet mee.</td><td>Over welk product hij gaat, het aantal feedbackrondes per groep, en een verborgen rubric.</td></tr>
+    <tr><td><b>Rolspeler</b></td><td>Een personage in een simulatie, zoals een wethouder, patiënt of opdrachtgever.</td><td>Instructie, en desgewenst <i>Verstandhouding met de groep bijhouden</i>.</td></tr>
+  </table>
+  <h3>Verstandhouding bij een rolspeler</h3>
+  <p>Zet je de verstandhouding aan, dan vul je de <b>gedragsregels</b> in: <i>wat maakt deze persona positiever</i> en <i>wat maakt hem negatiever</i>, in gewone taal. Desgewenst beschrijf je ook hoe hij zich gedraagt op elk niveau (koud, gespannen, neutraal, welwillend, warm), en je kiest het startniveau.</p>
+  <ul>
+    <li>Na elk afgerond gesprek toetst LEAP het gedrag van de groep aan jouw regels: de verstandhouding gaat een stap omhoog, blijft gelijk of gaat een stap omlaag. De groep ziet het niveau en de reden.</li>
+    <li>De persona zelf krijgt de gedragsregels niet te zien, dus hij kan ze ook niet verklappen; hij merkt alleen zijn huidige niveau en gedraagt zich daarnaar.</li>
+    <li>Verloopt een gesprek opnieuw slecht terwijl de verstandhouding al op <i>koud</i> staat, dan <b>verbreekt de rolspeler het contact</b>. De groep rondt het project dan af zonder hem. Alleen jij kunt het contact herstellen, met <i>Corrigeer</i> in de projectruimte.</li>
+    <li>Met het <b>proefgesprek</b> in de editor probeer je je regels uit op een verzonnen gesprek, zonder dat er iets wordt opgeslagen.</li>
+  </ul>
+  <figure style="max-width:105mm;margin-left:auto;margin-right:auto">
+    <img src="img/persona-rolspeler.png" alt="">
+    <figcaption><b>Een rolspeler met verstandhouding.</b> Na de rolkeuze verschijnen het startniveau en de gedragsregels; daaronder het gedrag per niveau en het proefgesprek.</figcaption>
   </figure>
 
   <h2>Stap 8 — Cursus-info en leerniveaus</h2>
@@ -424,6 +437,9 @@
 
     <h3>Kan ik het niveau van een student aanpassen?</h3>
     <p>Nee, bewust niet. De student kiest zelf; jij kunt het bekijken bij Leerniveaus. Een student die wil weten of hij verder kan, vraagt dat in de chat via “Klaar voor een hoger niveau?”.</p>
+
+    <h3>Een rolspeler wil niet meer met een groep praten.</h3>
+    <p>Dan is het contact verbroken: de groep kwam op het dieptepunt van de verstandhouding. In een simulatie is dat een bewuste consequentie. Wil je de groep toch een nieuwe kans geven, open dan de projectruimte van die groep en kies bij <i>Verstandhoudingen per persona</i> op <i>Corrigeer</i> een ander niveau, met een korte motivatie.</p>
 
     <h3>Ik wil de toon van de chat voor mijn vak aanpassen.</h3>
     <p>Geef je cursus eigen chat-instructies (Beheer → Chat-instructies). Test de wijziging direct zelf in de chat, want hij geldt meteen voor al je studenten.</p>

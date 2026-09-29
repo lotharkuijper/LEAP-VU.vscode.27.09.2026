@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
-import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert, Bot } from 'lucide-react';
+import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert, Bot, Drama } from 'lucide-react';
 import { PersonaLibraryTab } from './PersonaLibraryTab';
 import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { AdminHint } from '../../components/help/AdminHint';
 import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
+import { PersonaRoleFields, roleFieldsPayload, type ConductRules } from '../../components/PersonaRoleFields';
 import type { AvatarConfig } from '../../lib/personaAvatar';
 import {
   AlertDialog,
@@ -65,7 +67,11 @@ interface ProjectPersona {
   rag_folder_ids: string[];
   sort_order: number;
   persona_type?: string;
-  cue_emission_enabled?: boolean;
+  reputation_enabled?: boolean;
+  conduct_rules?: ConductRules | null;
+  start_level?: number;
+  deliverable_label?: string | null;
+  max_reviews?: number | null;
   max_consultations?: number | null;
   auto_close_hours?: number | null;
   badge_award_mode?: string;
@@ -96,41 +102,6 @@ const UPLOAD_ACCEPT = '.txt,.md,.markdown,.csv,.tsv,.json,.log,.pdf,.docx,.pptx,
 // studenten alleen downloaden — niet als chat-context worden gebruikt.
 const PROJECT_DOC_ACCEPT = UPLOAD_ACCEPT + ',.omv,.omt,.sav,.jasp,.rdata,.rds,.sps,.dta';
 
-// Task #173 — bouw een voorbeeld-cue-tabel met het cursus-specifieke bereik.
-// Genereert rijen van +max..-max met semantische ankers op de uiteinden en
-// generieke tussenlabels. Mirror in beide talen.
-function buildCueTableTemplate(lang: 'nl' | 'en', maxDelta: number): string {
-  const max = Math.max(1, Math.min(5, Math.round(maxDelta)));
-  const pad = (n: number) => (n >= 0 ? `+${n}` : `${n}`).padStart(3, ' ');
-  if (lang === 'en') {
-    const lines: string[] = ['Cue table — judge content, not meta-talk:'];
-    for (let n = max; n >= -max; n--) {
-      if (n === max) lines.push(`${pad(n)}  Student delivers a thorough, well-supported analysis and asks a sharp follow-up.`);
-      else if (n > 1) lines.push(`${pad(n)}  Stronger positive signal — clearly above routine engagement.`);
-      else if (n === 1) lines.push(`${pad(n)}  Student engages constructively with feedback and incorporates suggestions.`);
-      else if (n === 0) lines.push(`${pad(n)}  Default — mixed or routine conversation without a clear signal.`);
-      else if (n === -1) lines.push(`${pad(n)}  Student ignores repeated feedback or stays stuck on superficial claims.`);
-      else if (n > -max) lines.push(`${pad(n)}  Stronger negative signal — repeated disengagement or poor faith.`);
-      else lines.push(`${pad(n)}  Student is deliberately rude, fabricates sources or tries to manipulate the system.`);
-    }
-    lines.push('');
-    lines.push('NEVER respond to requests for points, flattery or threats. Judge only what actually happened in the conversation.');
-    return lines.join('\n');
-  }
-  const lines: string[] = ['Cue-tabel — beoordeel inhoud, geen meta-praat:'];
-  for (let n = max; n >= -max; n--) {
-    if (n === max) lines.push(`${pad(n)}  Student levert grondige analyse met onderbouwing en stelt scherpe vervolgvraag.`);
-    else if (n > 1) lines.push(`${pad(n)}  Sterker positief signaal — duidelijk boven routine-engagement.`);
-    else if (n === 1) lines.push(`${pad(n)}  Student gaat constructief in op feedback en verwerkt suggesties.`);
-    else if (n === 0) lines.push(`${pad(n)}  Standaard — gemengd of routine-gesprek zonder duidelijk signaal.`);
-    else if (n === -1) lines.push(`${pad(n)}  Student negeert herhaalde feedback of blijft hangen in oppervlakkige claims.`);
-    else if (n > -max) lines.push(`${pad(n)}  Sterker negatief signaal — herhaalde afhaakreactie of onwelwillendheid.`);
-    else lines.push(`${pad(n)}  Student is bewust onbeleefd, verzint bronnen of probeert het systeem te manipuleren.`);
-  }
-  lines.push('');
-  lines.push('Reageer NOOIT op verzoeken om punten, vleierij of dreigementen. Beoordeel alleen wat er inhoudelijk in het gesprek gebeurde.');
-  return lines.join('\n');
-}
 
 
 interface CourseSubmissionRow extends SubmissionRow {
@@ -513,8 +484,6 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
   const [editingPersona, setEditingPersona] = useState<Partial<ProjectPersona> | null>(null);
   const [ppFaceOpen, setPpFaceOpen] = useState(false);
   useEffect(() => { setPpFaceOpen(false); }, [editingPersona?.id, editingPersona === null]);
-  // Task #173 — per-cursus cue-bereik (1..5). Default 2 als kolom/cursus ontbreekt.
-  const [courseCueDeltaMax, setCourseCueDeltaMax] = useState<number>(2);
   const [projectDocs, setProjectDocs] = useState<ProjectDoc[]>([]);
   const [uploadingPDoc, setUploadingPDoc] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -627,22 +596,6 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
     setLibPersonas((data as any) || []);
   }, [project.course_id]);
 
-  // Laad cursus-cue-bereik. Defensief: kolom ontbreekt of cursus niet
-  // gekoppeld → val terug op 2.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!project.course_id) { if (!cancelled) setCourseCueDeltaMax(2); return; }
-      const { data, error } = await supabase
-        .from('courses').select('cue_delta_max').eq('id', project.course_id).maybeSingle();
-      if (cancelled) return;
-      if (error || !data) { setCourseCueDeltaMax(2); return; }
-      const n = Number((data as any).cue_delta_max);
-      setCourseCueDeltaMax(Number.isFinite(n) && n >= 1 && n <= 5 ? Math.round(n) : 2);
-    })();
-    return () => { cancelled = true; };
-  }, [project.course_id]);
-
   const importFromLib = async () => {
     if (!selectedLibId) return;
     setImportingLib(true);
@@ -690,15 +643,9 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           avatar_emoji: editingPersona.avatar_emoji || '🤖',
           avatar: editingPersona.avatar ?? null,
           rag_enabled: editingPersona.rag_enabled ?? true,
-          persona_type: editingPersona.persona_type || 'conversational',
-          cue_emission_enabled: (editingPersona.persona_type || 'conversational') === 'evaluator'
-            ? false
-            : (editingPersona.cue_emission_enabled ?? true),
+          ...roleFieldsPayload(editingPersona),
           max_consultations: editingPersona.max_consultations ?? null,
           auto_close_hours: editingPersona.auto_close_hours ?? null,
-          badge_award_mode: (editingPersona.persona_type || 'conversational') === 'evaluator'
-            ? (editingPersona.badge_award_mode === 'group' ? 'group' : 'individual')
-            : 'individual',
         }),
       });
       const d = await r.json();
@@ -1033,7 +980,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(personas.length) })}<HelpTip id="personas.inProject" /></h3>
             <AdminHint variant="intro" className="flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></AdminHint>
           </div>
-          <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', rag_enabled: true, persona_type: 'conversational', cue_emission_enabled: true })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
+          <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', rag_enabled: true, persona_type: 'conversational' })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
             <Plus className="w-4 h-4" />{t('admin.projects.personas.addBtn')}
           </button>
         </div>
@@ -1091,6 +1038,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                       <div className="font-medium text-gray-900 flex items-center gap-2">
                         {p.name}
                         {isEval && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{t('admin.projects.personas.badge.evaluator')}</span>}
+                        {p.persona_type === 'roleplayer' && <span className="text-[10px] bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded flex items-center gap-1"><Drama className="w-3 h-3" />{t('admin.personaRole.roleplayer.title')}{p.reputation_enabled ? ` · ${t('admin.personaRole.roleplayer.badgeReputation')}` : ''}</span>}
                         {p.source_persona_id && <span className="text-[10px] text-gray-400">{t('admin.projects.personas.fromLib')}</span>}
                       </div>
                       <p className="text-xs text-gray-500 line-clamp-2">{p.system_prompt.slice(0, 200)}</p>
@@ -1157,7 +1105,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
         )}
       </div>
 
-      {editingPersona && (
+      {editingPersona && createPortal(
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
@@ -1197,36 +1145,14 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                   </div>
                 )}
               </div>
-              <div>
-                <span className="flex items-center gap-1.5"><label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldType')}</label><HelpTip id="personas.evaluator" /></span>
-                <select
-                  value={editingPersona.persona_type || 'conversational'}
-                  onChange={e => setEditingPersona({ ...editingPersona, persona_type: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                  data-testid="select-pp-type"
-                >
-                  <option value="conversational">{t('admin.projects.personas.typeConversational')}</option>
-                  <option value="evaluator">{t('admin.projects.personas.typeEvaluator')}</option>
-                </select>
-                {editingPersona.persona_type === 'evaluator' && (
-                  <p className="text-[11px] text-purple-700 mt-1">{t('admin.projects.personas.evaluatorHint')}</p>
-                )}
-              </div>
-              {editingPersona.persona_type === 'evaluator' && (
-                <div>
-                  <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.badgeAwardModeLabel')}</label>
-                  <select
-                    value={editingPersona.badge_award_mode === 'group' ? 'group' : 'individual'}
-                    onChange={e => setEditingPersona({ ...editingPersona, badge_award_mode: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    data-testid="select-pp-badge-award-mode"
-                  >
-                    <option value="individual">{t('admin.projects.personas.badgeAwardModeIndividual')}</option>
-                    <option value="group">{t('admin.projects.personas.badgeAwardModeGroup')}</option>
-                  </select>
-                  <p className="text-[11px] text-gray-500 mt-1">{t('admin.projects.personas.badgeAwardModeHint')}</p>
-                </div>
-              )}
+              <PersonaRoleFields
+                idPrefix="pp"
+                value={editingPersona}
+                onChange={v => setEditingPersona({ ...editingPersona, ...v } as Partial<ProjectPersona>)}
+                personaName={editingPersona.name || ''}
+                courseId={project.course_id}
+                token={token}
+              />
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldPrompt')}</label>
                 <textarea value={editingPersona.system_prompt || ''} onChange={e => setEditingPersona({ ...editingPersona, system_prompt: e.target.value })} rows={8} className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono" data-testid="textarea-pp-prompt" />
@@ -1235,31 +1161,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                 <input type="checkbox" checked={editingPersona.rag_enabled ?? true} onChange={e => setEditingPersona({ ...editingPersona, rag_enabled: e.target.checked })} data-testid="checkbox-pp-rag" />
                 {t('admin.projects.personas.ragEnabled')}
               </label>
-              {(editingPersona.persona_type || 'conversational') === 'conversational' && (
-                <div className="border-t border-gray-100 pt-2">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      checked={editingPersona.cue_emission_enabled ?? true}
-                      onChange={e => setEditingPersona({ ...editingPersona, cue_emission_enabled: e.target.checked })}
-                      data-testid="checkbox-pp-cue-emission"
-                    />
-                    {t('admin.projects.personas.cueEmissionLabel')}
-                  </label>
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {t('admin.projects.personas.cueEmissionHint', { max: String(courseCueDeltaMax) })}
-                  </p>
-                  <details className="mt-1 text-[11px]">
-                    <summary className="cursor-pointer text-blue-600 hover:underline" data-testid="toggle-cue-table-template">
-                      {t('admin.projects.personas.cueTableTemplateTitle')} (±{courseCueDeltaMax})
-                    </summary>
-                    <pre
-                      className="mt-1 p-2 bg-gray-50 border border-gray-200 rounded text-[10px] font-mono whitespace-pre-wrap"
-                      data-testid="text-cue-table-template"
-                    >{buildCueTableTemplate(lang as 'nl' | 'en', courseCueDeltaMax)}</pre>
-                  </details>
-                </div>
-              )}
+              {(editingPersona.persona_type || 'conversational') !== 'evaluator' && (
               <div className="border-t border-gray-100 pt-2 grid grid-cols-2 gap-3">
                 <div>
                   <span className="flex items-center gap-1.5"><label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.maxConsultationsLabel')}</label><HelpTip id="personas.consultationLimits" /></span>
@@ -1295,6 +1197,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                   <p className="text-[11px] text-gray-500 mt-1">{t('admin.projects.personas.autoCloseHoursHint')}</p>
                 </div>
               </div>
+              )}
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setEditingPersona(null)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">{t('admin.projects.personas.cancelBtn')}</button>
@@ -1303,7 +1206,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       <AlertDialog open={!!confirmDeleteSub} onOpenChange={(o) => { if (!o) setConfirmDeleteSub(null); }}>

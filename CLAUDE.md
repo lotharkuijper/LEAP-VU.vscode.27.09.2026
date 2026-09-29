@@ -64,6 +64,22 @@
 - Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input, and the topic must be an approved course concept.
 - Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Future kinds (quiz, project badges, learning goals) reuse this table.
 
+## Project bots (personas)
+- Three roles in `persona_type`:
+  - `conversational` = Begeleider (guide);
+  - `evaluator` = Beoordelaar (feedback on submitted work with a hidden rubric, `max_reviews` rounds per group, `deliverable_label`);
+  - `roleplayer` = Rolspeler (character in a simulation).
+
+  Field rules live in `server/personaRoles.js` (`roleFieldsFrom`, `copyRoleFields`). Every create/copy/patch route for templates and project copies goes through them. The admin UI uses `PersonaRoleFields` for both editors.
+- A relationship ("verstandhouding") exists ONLY for a role player with `reputation_enabled` (`reputationActive`). Guides and evaluators never get one, and the room shows no label for them.
+- Levels are stored in `project_persona_relationships.score`: −2 cold … +2 warm, and −3 = contact broken.
+  - After each closed conversation, a separate LLM judgement with the teacher's `conduct_rules` moves the level by at most one step (`server/threadClose.js`).
+  - A negative step from cold breaks contact. The role player then no longer answers, and only a teacher correction (`relationship-adjust`, `{ level, note }`) restores it.
+  - The conduct rules are never put in the persona's chat prompt; it only gets its level and the matching behaviour.
+  - Students see the level and the latest reason.
+- Groups submit work to an evaluator via `POST …/groups/:groupId/personas/:personaId/feedback` (stored in `project_group_products`, reviewed by `runEvaluatorReview`). A round only counts when a review was produced (`feedbackRoundsState`). Evaluator reviews do not change any relationship.
+- Admin modals that can grow taller than the screen are rendered with `createPortal(…, document.body)`. The sticky top bar is z-50, and a modal inside the page content would fall behind it.
+
 ## Background tasks
 - Admin actions that take longer than a few seconds run as a background task via `startTask` (`src/lib/backgroundTasks.ts`), not only inside the component. Examples: extracting concepts, uploading files, importing or updating websites, and ShareStats imports.
 - A task keeps running when the user moves to another part of the app. The task tray (`TaskTray`, bottom right) shows progress and a "… is done — View result" notice with a link back.

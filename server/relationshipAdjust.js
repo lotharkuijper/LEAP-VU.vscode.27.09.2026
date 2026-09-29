@@ -1,15 +1,13 @@
 // ───────────────────────────────────────────────────────────────────────────
-// Staff-correctie op de persona-verstandhouding (Task #167 / #178).
+// Correctie door de docent op de verstandhouding van een rolspeler met een groep.
 //
 // `POST /api/projects/:projectId/groups/:groupId/personas/:personaId/relationship-adjust`
-// is een staff-only handmatige correctie van de relatie-score. De route en
-// haar afhankelijkheden zijn hierheen verplaatst uit server/index.js zodat de
-// autorisatie (alleen staff van de cursus) én de wiring naar
-// applyRelationshipDelta geautomatiseerd getest kunnen worden via
-// dependency-injectie. `registerRelationshipAdjustRoute(app, deps)` mount de
-// endpoint op een Express-app; alle externe afhankelijkheden (Supabase,
-// auth-helper, staff-check, delta-applier, score→bucket) komen via `deps`
-// binnen.
+// { level: -3..2, note } — de docent kiest het niveau (−3 = contact verbroken,
+// −2 koud … +2 warm) en legt kort uit waarom. Dit is ook de enige manier om
+// een verbroken contact te herstellen. Alleen docenten van de cursus, en alleen
+// bij een persona die een verstandhouding bijhoudt.
+// Afhankelijkheden komen via `deps` binnen zodat de autorisatie en de wiring
+// geautomatiseerd getest kunnen worden (server/__tests__/staffAdjust.integration.test.js).
 // ───────────────────────────────────────────────────────────────────────────
 
 export function registerRelationshipAdjustRoute(app, deps) {
@@ -17,25 +15,20 @@ export function registerRelationshipAdjustRoute(app, deps) {
     supabaseAdmin,
     authUser,
     isStaffForCourse,
-    applyRelationshipDelta,
-    scoreToBucket,
+    setRelationshipLevel,
+    levelKey,
+    reputationActive,
   } = deps;
 
-  // POST /api/projects/:projectId/groups/:groupId/personas/:personaId/relationship-adjust
-  // — staff-only handmatige correctie van de relatie. `delta` in -10..+10
-  // (wordt na clamp toegepast); `note` is een verplichte korte motivatie.
   app.post('/api/projects/:projectId/groups/:groupId/personas/:personaId/relationship-adjust', async (req, res) => {
     if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
     const auth = await authUser(req);
     if (auth.error) return res.status(auth.error.status).json(auth.error.body);
     const { projectId, groupId, personaId } = req.params;
-    const { delta, note } = req.body || {};
-    const deltaNum = Math.round(Number(delta));
-    if (!Number.isFinite(deltaNum) || deltaNum === 0) {
-      return res.status(400).json({ error: 'delta moet een geheel getal ≠ 0 zijn' });
-    }
-    if (deltaNum > 10 || deltaNum < -10) {
-      return res.status(400).json({ error: 'delta moet tussen -10 en +10 liggen' });
+    const { level, note } = req.body || {};
+    const levelNum = Math.round(Number(level));
+    if (!Number.isFinite(levelNum) || levelNum < -3 || levelNum > 2) {
+      return res.status(400).json({ error: 'level moet een geheel getal tussen -3 en 2 zijn' });
     }
     const noteStr = typeof note === 'string' ? note.trim() : '';
     if (noteStr.length === 0) {
@@ -55,28 +48,21 @@ export function registerRelationshipAdjustRoute(app, deps) {
       if (!groupCheck || groupCheck.project_id !== projectId) {
         return res.status(404).json({ error: 'Groep niet gevonden in dit project' });
       }
-      const { data: personaCheck } = await supabaseAdmin
-        .from('project_personas').select('id, project_id').eq('id', personaId).maybeSingle();
-      if (!personaCheck || personaCheck.project_id !== projectId) {
+      const { data: persona } = await supabaseAdmin
+        .from('project_personas').select('id, project_id, persona_type, reputation_enabled, start_level').eq('id', personaId).maybeSingle();
+      if (!persona || persona.project_id !== projectId) {
         return res.status(404).json({ error: 'Persona niet gevonden in dit project' });
       }
-
-      const refId = `staff_adjust:${auth.user.id}:${Date.now()}`;
-      let updated;
-      try {
-        updated = await applyRelationshipDelta({
-          projectId, groupId, personaId,
-          delta: deltaNum,
-          event: { source: 'staff_adjust', refId, by: auth.user.id, delta: deltaNum, note: noteStr },
-        });
-      } catch (e) {
-        if (e.code === '42P01') {
-          return res.status(503).json({
-            error: 'Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.',
-          });
-        }
-        throw e;
+      if (!reputationActive(persona)) {
+        return res.status(400).json({ error: 'Deze persona houdt geen verstandhouding bij' });
       }
+
+      const updated = await setRelationshipLevel({
+        projectId, groupId, personaId,
+        startLevel: persona.start_level,
+        compute: () => levelNum,
+        event: { source: 'staff_adjust', refId: `staff_adjust:${auth.user.id}:${Date.now()}`, by: auth.user.id, note: noteStr },
+      });
       if (!updated) {
         return res.status(503).json({
           error: 'Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.',
@@ -84,8 +70,8 @@ export function registerRelationshipAdjustRoute(app, deps) {
       }
       return res.json({
         relationship: {
-          score: updated.score,
-          bucket: scoreToBucket(updated.score),
+          level: updated.score,
+          key: levelKey(updated.score),
           history: updated.history,
           updated_at: updated.updated_at,
         },

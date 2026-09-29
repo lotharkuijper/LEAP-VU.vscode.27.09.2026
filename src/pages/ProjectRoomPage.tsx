@@ -10,13 +10,15 @@ import { LearningLevelSelector } from '../components/LearningLevelSelector';
 import { PersonaMessageBody, personaSourcesFrom } from '../components/PersonaMessageBody';
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { PersonaAvatar } from '../components/PersonaAvatar';
+import { ProductFeedbackPanel } from '../components/ProductFeedbackPanel';
+import { RELATIONSHIP_BADGE, RELATIONSHIP_LEVELS, type RelationshipKey } from '../lib/relationshipLevels';
 // De viewer (met pdf.js) pas laden als een student een bron opent.
 const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m => ({ default: m.DocumentViewer })));
 import {
   ArrowLeft, Send, Users, MessageCircle, Bot, CheckCircle2,
   Flag, Clipboard, Copy, Loader2, BookOpen, Paperclip, Trash2, FileText, ShieldAlert, Download, Database, EyeOff,
   LogOut, ScrollText, ChevronDown, ChevronRight, UploadCloud,
-  Gavel, XCircle, AlertTriangle, TrendingUp,
+  TrendingUp,
 } from 'lucide-react';
 
 interface Persona {
@@ -131,34 +133,13 @@ interface EvaluatorPersona {
   avatar?: unknown;
   rubrics?: EvaluatorRubric[];
 }
-type ReviewVerdict = 'accepted' | 'conditional' | 'rejected';
-type BadgeTier = 'platina' | 'goud' | 'zilver' | 'brons';
-interface DocumentReview {
-  id: string;
-  document_id: string;
-  persona_id: string;
-  group_id: string;
-  verdict: ReviewVerdict;
-  grade?: number | null;
-  reasoning: string;
-  feed_forward?: string | null;
-  relationship_delta: number;
-  requested_by: string | null;
-  created_at: string;
-  badge?: BadgeTier | null;
-}
-interface ReviewBadge {
-  review_id: string;
-  user_id: string;
-  grade: number | null;
-  badge: BadgeTier;
-  award_mode: string;
-}
-type RelationshipBucket = 'cold' | 'strained' | 'neutral' | 'positive' | 'warm';
+// Verstandhouding met een rolspeler (alleen als de docent die bijhoudt).
 interface RelationshipHistoryEvent {
   ts: string | null;
   source: string | null;
-  delta?: number;
+  step?: number;
+  from?: number;
+  to?: number;
   note?: string;
   by?: string;
   refId?: string;
@@ -168,13 +149,13 @@ interface RelationshipInfo {
   personaName: string;
   avatarEmoji: string | null;
   avatar?: unknown;
-  personaType: 'conversational' | 'evaluator';
-  score: number | null;
-  bucket: RelationshipBucket;
+  level: number;
+  key: RelationshipKey;
   label: string;
-  blocked: boolean;
+  broken: boolean;
+  lastReason: { note: string; ts: string | null; step: number } | null;
   updatedAt: string | null;
-  history: RelationshipHistoryEvent[];
+  history?: RelationshipHistoryEvent[];
 }
 // Task #252 — raadpleeglimiet per project-persona (per groep).
 interface ConsultationInfo {
@@ -212,7 +193,7 @@ interface ClosedConversation {
   closedAt: string;
   topics: string[];
   agreements: string[];
-  cue?: { delta: number; reason: string };
+  reputation?: { step: number; reason: string; to: number | null };
 }
 
 const QUICK_REACTIONS = ['👍', '❤️', '🤔', '✅'];
@@ -258,14 +239,10 @@ export function ProjectRoomPage() {
   const [bestandenOpen, setBestandenOpen] = useState(false);
   const [hasEvaluator, setHasEvaluator] = useState(false);
   const [evaluators, setEvaluators] = useState<EvaluatorPersona[]>([]);
-  const [reviewsByDoc, setReviewsByDoc] = useState<Record<string, DocumentReview[]>>({});
-  const [badgesByDoc, setBadgesByDoc] = useState<Record<string, ReviewBadge[]>>({});
-  const [reviewingKey, setReviewingKey] = useState<string | null>(null);
-  const [expandedReviewId, setExpandedReviewId] = useState<string | null>(null);
   // Task #167 — Persona-relaties
   const [relationships, setRelationships] = useState<RelationshipInfo[]>([]);
   const [adjustingPersona, setAdjustingPersona] = useState<RelationshipInfo | null>(null);
-  const [adjustDelta, setAdjustDelta] = useState<number>(1);
+  const [adjustLevel, setAdjustLevel] = useState<number>(0);
   const [adjustNote, setAdjustNote] = useState<string>('');
   const [adjustSaving, setAdjustSaving] = useState(false);
   const [adjustError, setAdjustError] = useState<string | null>(null);
@@ -576,95 +553,18 @@ export function ProjectRoomPage() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ delta: adjustDelta, note: adjustNote.trim() }),
+          body: JSON.stringify({ level: adjustLevel, note: adjustNote.trim() }),
         },
       );
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || t('room.relationship.adjustFailed'));
       setAdjustingPersona(null);
       setAdjustNote('');
-      setAdjustDelta(1);
       await loadRelationships();
     } catch (e: any) {
       setAdjustError(e.message);
     } finally {
       setAdjustSaving(false);
-    }
-  };
-
-  const loadReviewsForDoc = useCallback(async (docId: string) => {
-    if (!projectId || !groupId || !token) return;
-    try {
-      const r = await fetch(`/api/projects/${projectId}/documents/${docId}/reviews?groupId=${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await r.json().catch(() => ({}));
-      if (r.ok) {
-        setReviewsByDoc(prev => ({ ...prev, [docId]: data.reviews || [] }));
-        setBadgesByDoc(prev => ({ ...prev, [docId]: data.badges || [] }));
-      } else if (r.status !== 503) {
-        // 503 = migratie nog niet toegepast: stil leeg laten, geen fout-pop-up.
-        console.warn('[reviews load]', data.error);
-      }
-    } catch (e) {
-      console.warn('[reviews load]', e);
-    }
-  }, [projectId, groupId, token]);
-
-  // Laad reviews voor elk zichtbaar document zodra de materialenlijst en
-  // groep beschikbaar zijn. Binaire bestanden slaan we over — daar kan geen
-  // tekstueel oordeel op gegeven worden.
-  useEffect(() => {
-    if (!projectMaterials.length) return;
-    for (const d of projectMaterials) {
-      if (/\.(omv|omt|sav|jasp|rdata|rds|sps|do|dta)$/i.test(d.filename || '')) continue;
-      loadReviewsForDoc(d.id);
-    }
-  }, [projectMaterials, loadReviewsForDoc]);
-
-  const requestDocumentReview = async (docId: string, persona: EvaluatorPersona) => {
-    if (!projectId || !groupId || !token) return;
-    const key = `${docId}:${persona.id}`;
-    setReviewingKey(key);
-    setError(null);
-    try {
-      const r = await fetch(`/api/projects/${projectId}/documents/${docId}/reviews`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ personaId: persona.id, groupId, lang }),
-      });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(data.error || t('room.review.failed'));
-      if (data.review) {
-        setReviewsByDoc(prev => ({
-          ...prev,
-          [docId]: [data.review, ...(prev[docId] || []).filter((x: DocumentReview) => x.id !== data.review.id)],
-        }));
-        // Task #253: badge-rijen voor de huidige student meteen lokaal bijwerken.
-        const recipients: string[] = data.review.badge_recipients || [];
-        if (data.review.badge && profile?.id && recipients.includes(profile.id)) {
-          const newBadge: ReviewBadge = {
-            review_id: data.review.id,
-            user_id: profile.id,
-            grade: data.review.grade ?? null,
-            badge: data.review.badge,
-            award_mode: data.review.award_mode || 'individual',
-          };
-          setBadgesByDoc(prev => ({
-            ...prev,
-            [docId]: [newBadge, ...(prev[docId] || []).filter(b => b.review_id !== data.review.id || b.user_id !== profile.id)],
-          }));
-        }
-        setExpandedReviewId(data.review.id);
-      }
-      setInfo(t('room.review.success', { name: persona.name }));
-      setTimeout(() => setInfo(null), 5000);
-      // Task #167: relatie kan verschoven zijn — herlaad zodat label/banner kloppen.
-      loadRelationships();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setReviewingKey(null);
     }
   };
 
@@ -754,13 +654,12 @@ export function ProjectRoomPage() {
       if (data.threadId) setActiveThreadId(data.threadId);
       setPersonaMessages(prev => [...prev, {
         id: `reply-${Date.now()}`, role: 'assistant',
-        content: data.relationshipBlocked ? t('room.relationship.blockedBanner') : data.reply,
+        content: data.relationshipBroken ? t('room.relationship.brokenBanner', { name: activePersona ? personaName(activePersona) : '' }) : data.reply,
         created_at: new Date().toISOString(), user_id: null,
-        rag_sources: data.relationshipBlocked ? [] : data.ragSources,
+        rag_sources: data.relationshipBroken ? [] : data.ragSources,
       }]);
-      // Task #167: server kan een blokkade signaleren — herlaad relaties zodat
-      // de banner + dropdown-label direct synchroniseren.
-      if (data.relationshipBlocked) loadRelationships();
+      // De server meldt een verbroken contact — herlaad zodat banner + label kloppen.
+      if (data.relationshipBroken) loadRelationships();
       // Task #252: verbruik bijwerken (nieuwe raadpleging gestart of limiet
       // bereikt) zodat teller/banner/badge direct synchroniseren.
       if (data.consultation || data.consultationLimitReached) loadRoom();
@@ -1025,21 +924,17 @@ export function ProjectRoomPage() {
       // hasOpenThread/used/remaining vers zijn vóór een eventueel nieuw gesprek
       // (anders zou de bevestiging bij een nieuwe raadpleging overgeslagen worden).
       loadRoom();
-      // Task #172: staff krijgt direct de cue-uitslag te zien; studenten
-      // krijgen alleen de bestaande "afgesloten"-melding.
-      if (isStaff && d.cue && d.cue.emissionEnabled) {
-        const sign = d.cue.delta > 0 ? '+' : '';
-        const name = d.cue.personaName || t('room.cue.unknownPersona');
-        if (d.cue.delta !== 0) {
-          setInfo(t('room.cue.staffToast', {
-            name,
-            delta: `${sign}${d.cue.delta}`,
-            reason: d.cue.reason || t('room.cue.noReason'),
+      // Verstandhouding: de groep ziet meteen wat het gesprek ermee deed.
+      if (d.reputation && d.reputation.step !== 0) {
+        setInfo(d.reputation.broken
+          ? t('room.relationship.brokenToast', { name: d.reputation.personaName || '' })
+          : t('room.relationship.changedToast', {
+            name: d.reputation.personaName || '',
+            label: t(`room.relationship.label.${d.reputation.key as RelationshipKey}`),
+            reason: d.reputation.reason || '',
           }));
-        } else {
-          setInfo(t('room.cue.staffToastNeutral', { name }));
-        }
-        setTimeout(() => setInfo(null), 8000);
+        setTimeout(() => setInfo(null), 9000);
+        loadRelationships();
       } else {
         setInfo(t('room.conversationClosed'));
         setTimeout(() => setInfo(null), 5000);
@@ -1192,7 +1087,7 @@ export function ProjectRoomPage() {
                 {personas.length === 0 && <option value="">{t('room.noPersonas')}</option>}
                 {personas.map(p => {
                   const rel = relationships.find(r => r.personaId === p.id);
-                  const labelSuffix = rel ? ` • ${t(`room.relationship.label.${rel.bucket}`)}${rel.blocked ? ' ⛔' : ''}` : '';
+                  const labelSuffix = rel ? ` • ${t(`room.relationship.label.${rel.key}`)}${rel.broken ? ' ⛔' : ''}` : '';
                   return (
                     <option key={p.id} value={p.id} data-testid={`option-persona-${p.id}`}>
                       {(p.avatar_emoji || '🤖')} {personaName(p)}{labelSuffix}
@@ -1203,31 +1098,15 @@ export function ProjectRoomPage() {
               {(() => {
                 const rel = relationships.find(r => r.personaId === activePersonaId);
                 if (!rel) return null;
-                const bucketCls: Record<RelationshipBucket, string> = {
-                  cold:     'bg-blue-50 text-blue-700 border-blue-200',
-                  strained: 'bg-amber-50 text-amber-700 border-amber-200',
-                  neutral:  'bg-gray-50 text-gray-600 border-gray-200',
-                  positive: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                  warm:     'bg-rose-50 text-rose-700 border-rose-200',
-                };
-                const bucketDot: Record<RelationshipBucket, string> = {
-                  cold: 'bg-blue-500', strained: 'bg-amber-500', neutral: 'bg-gray-400',
-                  positive: 'bg-emerald-500', warm: 'bg-rose-500',
-                };
+                const style = RELATIONSHIP_BADGE[rel.key];
                 return (
                   <span
-                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[10px] font-medium shrink-0 ${bucketCls[rel.bucket]}`}
-                    title={isStaff && rel.score !== null ? `score ${rel.score}` : t(`room.relationship.label.${rel.bucket}`)}
+                    className={`inline-flex items-center gap-1 px-2 py-1 rounded-full border text-[10px] font-medium shrink-0 ${style.chip}`}
+                    title={t('room.relationship.badgeTitle', { name: rel.personaName })}
                     data-testid={`badge-relationship-${rel.personaId}`}
                   >
-                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${bucketDot[rel.bucket]}`} />
-                    {t(`room.relationship.label.${rel.bucket}`)}
-                    {isStaff && rel.score !== null && (
-                      <span className="text-gray-500 ml-1">({rel.score >= 0 ? '+' : ''}{rel.score})</span>
-                    )}
-                    {rel.blocked && (
-                      <span className="ml-1 px-1 rounded bg-red-100 text-red-700 border border-red-200">{t('room.relationship.blockedBadge')}</span>
-                    )}
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                    {t(`room.relationship.label.${rel.key}`)}
                   </span>
                 );
               })()}
@@ -1326,14 +1205,22 @@ export function ProjectRoomPage() {
           <div className="border-t border-gray-200 p-3">
             {(() => {
               const rel = relationships.find(r => r.personaId === activePersonaId);
-              if (!rel || !rel.blocked) return null;
+              if (!rel) return null;
+              if (rel.broken) {
+                return (
+                  <div
+                    className="mb-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-xs text-red-700 flex items-start gap-2"
+                    data-testid="banner-relationship-broken"
+                  >
+                    <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
+                    <span>{t('room.relationship.brokenBanner', { name: rel.personaName })}</span>
+                  </div>
+                );
+              }
               return (
-                <div
-                  className="mb-2 px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-xs text-red-700 flex items-start gap-2"
-                  data-testid="banner-relationship-blocked"
-                >
-                  <ShieldAlert className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>{t('room.relationship.blockedBanner')}</span>
+                <div className={`mb-2 px-3 py-1.5 rounded-lg border text-[11px] flex flex-wrap items-center gap-x-1.5 ${RELATIONSHIP_BADGE[rel.key].chip}`} data-testid="text-relationship-status">
+                  <span className="font-medium">{t('room.relationship.status', { name: rel.personaName, label: t(`room.relationship.label.${rel.key}`) })}</span>
+                  {rel.lastReason && <span className="opacity-80">— {rel.lastReason.note}</span>}
                 </div>
               );
             })()}
@@ -1363,7 +1250,7 @@ export function ProjectRoomPage() {
                 onClick={() => requestSendPersona(t('learningLevel.readinessPrompt'))}
                 disabled={
                   !activePersona || personaLoading || isFinalized
-                  || !!relationships.find(r => r.personaId === activePersonaId && r.blocked)
+                  || !!relationships.find(r => r.personaId === activePersonaId && r.broken)
                   || !!consultations.find(c => c.personaId === activePersonaId && c.blocked)
                 }
                 title={t('learningLevel.readinessHint')}
@@ -1388,7 +1275,7 @@ export function ProjectRoomPage() {
                 placeholder={activePersona ? t('room.chatPlaceholderWith', { name: activePersonaName }) : t('room.chatPlaceholderNoPersona')}
                 disabled={
                   !activePersona || personaLoading || isFinalized
-                  || !!relationships.find(r => r.personaId === activePersonaId && r.blocked)
+                  || !!relationships.find(r => r.personaId === activePersonaId && r.broken)
                   || !!consultations.find(c => c.personaId === activePersonaId && c.blocked)
                 }
                 rows={6}
@@ -1400,7 +1287,7 @@ export function ProjectRoomPage() {
                   onClick={sendPersona}
                   disabled={
                     !personaInput.trim() || personaLoading || isFinalized
-                    || !!relationships.find(r => r.personaId === activePersonaId && r.blocked)
+                    || !!relationships.find(r => r.personaId === activePersonaId && r.broken)
                     || !!consultations.find(c => c.personaId === activePersonaId && c.blocked)
                   }
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-40"
@@ -1574,7 +1461,7 @@ export function ProjectRoomPage() {
                                 itemOpen ? next.delete(conv.threadId) : next.add(conv.threadId);
                                 return next;
                               });
-                              const showCue = isStaff && conv.cue;
+                              const showCue = !!conv.reputation && conv.reputation.step !== 0;
                               const hasContent = conv.topics.length > 0 || conv.agreements.length > 0 || showCue;
                               return (
                                 <div key={conv.threadId} className="border border-gray-100 rounded-lg overflow-hidden" data-testid={`logboek-entry-${conv.threadId}`}>
@@ -1600,18 +1487,12 @@ export function ProjectRoomPage() {
 
                                   {itemOpen && hasContent && (
                                     <div className="px-3 pb-3 pt-1 border-t border-gray-100">
-                                      {showCue && conv.cue && (
-                                        <div className="mb-2 px-2 py-1.5 rounded bg-amber-50 border border-amber-200" data-testid={`logboek-cue-${conv.threadId}`}>
-                                          <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide mb-0.5">
-                                            {t('room.cue.staffLabel')}
-                                          </p>
-                                          <p className="text-xs text-amber-900">
-                                            <span className="font-semibold">
-                                              {conv.cue.delta > 0 ? '+' : ''}{conv.cue.delta}
-                                            </span>
-                                            {conv.cue.reason && (
-                                              <span className="text-amber-800"> — {conv.cue.reason}</span>
-                                            )}
+                                      {showCue && conv.reputation && (
+                                        <div className={`mb-2 px-2 py-1.5 rounded border ${conv.reputation.step > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`} data-testid={`logboek-reputation-${conv.threadId}`}>
+                                          <p className="text-[10px] font-semibold uppercase tracking-wide mb-0.5">{t('room.relationship.logLabel')}</p>
+                                          <p className="text-xs">
+                                            {conv.reputation.step > 0 ? t('room.relationship.logUp') : t('room.relationship.logDown')}
+                                            {conv.reputation.reason && <span> — {conv.reputation.reason}</span>}
                                           </p>
                                         </div>
                                       )}
@@ -1723,138 +1604,6 @@ export function ProjectRoomPage() {
                               <EyeOff className="w-2.5 h-2.5" /> {t('room.hidden')}
                             </span>
                           )}
-                          {(() => {
-                            const isBinary = /\.(omv|omt|sav|jasp|rdata|rds|sps|do|dta)$/i.test(d.filename || '');
-                            if (isBinary || evaluators.length === 0) return null;
-                            const docReviews = reviewsByDoc[d.id] || [];
-                            const docBadges = badgesByDoc[d.id] || [];
-                            const verdictMeta: Record<ReviewVerdict, { Icon: any; cls: string; label: string }> = {
-                              accepted:    { Icon: CheckCircle2, cls: 'bg-green-50 text-green-700 border-green-200',  label: t('room.review.verdictAccepted') },
-                              conditional: { Icon: AlertTriangle, cls: 'bg-amber-50 text-amber-700 border-amber-200', label: t('room.review.verdictConditional') },
-                              rejected:    { Icon: XCircle,       cls: 'bg-red-50 text-red-700 border-red-200',       label: t('room.review.verdictRejected') },
-                            };
-                            const badgeMeta: Record<BadgeTier, { emoji: string; cls: string; label: string }> = {
-                              platina: { emoji: '💎', cls: 'bg-cyan-50 text-cyan-700 border-cyan-200',     label: t('room.review.badge.platina') },
-                              goud:    { emoji: '🥇', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200', label: t('room.review.badge.goud') },
-                              zilver:  { emoji: '🥈', cls: 'bg-gray-50 text-gray-600 border-gray-200',      label: t('room.review.badge.zilver') },
-                              brons:   { emoji: '🥉', cls: 'bg-orange-50 text-orange-700 border-orange-200', label: t('room.review.badge.brons') },
-                            };
-                            const fmtGrade = (g: number | null | undefined) =>
-                              (g === null || g === undefined || !Number.isFinite(Number(g)))
-                                ? null
-                                : Number(g).toFixed(1).replace('.', t('common.locale') === 'nl-NL' ? ',' : '.');
-                            return (
-                              <div className="basis-full mt-1 pl-4" data-testid={`reviews-${d.id}`}>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  <span className="text-[10px] text-gray-500 inline-flex items-center gap-1">
-                                    <Gavel className="w-2.5 h-2.5" /> {t('room.review.title')}:
-                                  </span>
-                                  {docReviews.length === 0 && (
-                                    <span className="text-[10px] text-gray-400 italic" data-testid={`reviews-empty-${d.id}`}>
-                                      {t('room.review.empty')}
-                                    </span>
-                                  )}
-                                  {evaluators.map(ev => {
-                                    const review = docReviews.find(r => r.persona_id === ev.id) || null;
-                                    const meta = review ? verdictMeta[review.verdict] : null;
-                                    const reviewBadge = review
-                                      ? (docBadges.find(b => b.review_id === review.id) || (review.badge ? { badge: review.badge } as ReviewBadge : null))
-                                      : null;
-                                    const gradeStr = review ? fmtGrade(review.grade) : null;
-                                    const isReviewing = reviewingKey === `${d.id}:${ev.id}`;
-                                    // Zowel staff als groepsleden mogen een oordeel aanvragen
-                                    // (server doet de definitieve autz-check via canRequestDocumentReview).
-                                    const showButton = true;
-                                    return (
-                                      <div key={ev.id} className="inline-flex items-center gap-1">
-                                        {review && meta ? (
-                                          <button
-                                            type="button"
-                                            onClick={() => setExpandedReviewId(prev => prev === review.id ? null : review.id)}
-                                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] hover:opacity-80 ${meta.cls}`}
-                                            title={`${ev.avatar_emoji || '🤖'} ${ev.name} — ${meta.label}${gradeStr ? ` — ${gradeStr}` : ''}`}
-                                            data-testid={`badge-review-${d.id}-${ev.id}`}
-                                          >
-                                            <PersonaAvatar avatar={ev.avatar} name={ev.name} size={14} />
-                                            <meta.Icon className="w-2.5 h-2.5" />
-                                            <span className="hidden sm:inline">{ev.name}</span>
-                                            {gradeStr && (
-                                              <span className="font-semibold tabular-nums" data-testid={`grade-${d.id}-${ev.id}`}>{gradeStr}</span>
-                                            )}
-                                            {reviewBadge?.badge && (
-                                              <span title={badgeMeta[reviewBadge.badge].label} data-testid={`badge-tier-${d.id}-${ev.id}`}>{badgeMeta[reviewBadge.badge].emoji}</span>
-                                            )}
-                                          </button>
-                                        ) : (
-                                          <span
-                                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-dashed border-gray-200 text-[10px] text-gray-400"
-                                            title={`${ev.avatar_emoji || '🤖'} ${ev.name} — ${t('room.review.empty')}`}
-                                            data-testid={`badge-review-pending-${d.id}-${ev.id}`}
-                                          >
-                                            <PersonaAvatar avatar={ev.avatar} name={ev.name} size={14} />
-                                            <span className="hidden sm:inline">{ev.name}</span>
-                                          </span>
-                                        )}
-                                        {showButton && !isFinalized && (
-                                          <button
-                                            type="button"
-                                            onClick={() => requestDocumentReview(d.id, ev)}
-                                            disabled={isReviewing}
-                                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 disabled:opacity-50"
-                                            title={t('room.review.requestTitle', { name: ev.name })}
-                                            data-testid={`button-request-review-${d.id}-${ev.id}`}
-                                          >
-                                            {isReviewing
-                                              ? <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                                              : (review ? t('room.review.requestAgain') : t('room.review.requestShort'))}
-                                          </button>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                                {docReviews.map(review => expandedReviewId === review.id && (() => {
-                                  const detailGrade = fmtGrade(review.grade);
-                                  const detailBadge = docBadges.find(b => b.review_id === review.id) || (review.badge ? { badge: review.badge } as ReviewBadge : null);
-                                  return (
-                                  <div
-                                    key={review.id}
-                                    className="mt-1 ml-1 p-2 bg-white border border-gray-200 rounded text-[11px] text-gray-700"
-                                    data-testid={`review-detail-${review.id}`}
-                                  >
-                                    <div className="text-[10px] text-gray-400 mb-1">
-                                      {new Date(review.created_at).toLocaleString(t('common.locale'), {
-                                        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-                                      })}
-                                    </div>
-                                    {(detailGrade || detailBadge?.badge) && (
-                                      <div className="flex items-center gap-2 mb-1.5">
-                                        {detailGrade && (
-                                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 font-semibold text-[11px]" data-testid={`review-detail-grade-${review.id}`}>
-                                            {t('room.review.gradeLabel')}: {detailGrade}
-                                          </span>
-                                        )}
-                                        {detailBadge?.badge && (
-                                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[11px] ${badgeMeta[detailBadge.badge].cls}`} data-testid={`review-detail-badge-${review.id}`}>
-                                            {badgeMeta[detailBadge.badge].emoji} {badgeMeta[detailBadge.badge].label}
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
-                                    <div className="font-medium text-gray-600 mb-0.5">{t('room.review.feedbackLabel')}</div>
-                                    <div className="whitespace-pre-wrap">{review.reasoning}</div>
-                                    {review.feed_forward && (
-                                      <>
-                                        <div className="font-medium text-gray-600 mt-1.5 mb-0.5">{t('room.review.feedForwardLabel')}</div>
-                                        <div className="whitespace-pre-wrap" data-testid={`review-detail-feedforward-${review.id}`}>{review.feed_forward}</div>
-                                      </>
-                                    )}
-                                  </div>
-                                  );
-                                })())}
-                              </div>
-                            );
-                          })()}
                         </li>
                       ))}
                     </ul>
@@ -1901,7 +1650,16 @@ export function ProjectRoomPage() {
                 </ul>
               </div>
             )}
-            {isStaff && (
+            {projectId && groupId && token && (
+              <ProductFeedbackPanel
+                projectId={projectId}
+                groupId={groupId}
+                token={token}
+                disabled={isFinalized}
+                onInfo={(m) => { setInfo(m); setTimeout(() => setInfo(null), 5000); }}
+              />
+            )}
+            {isStaff && relationships.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100" data-testid="panel-relationships">
                 <div className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
                   <ShieldAlert className="w-3 h-3" /> {t('room.relationship.panelTitle')}
@@ -1915,7 +1673,6 @@ export function ProjectRoomPage() {
                       <thead className="text-gray-500">
                         <tr>
                           <th className="text-left py-1 pr-2">Persona</th>
-                          <th className="text-left py-1 pr-2">{t('room.relationship.colScore')}</th>
                           <th className="text-left py-1 pr-2">{t('room.relationship.colLabel')}</th>
                           <th className="text-left py-1 pr-2">{t('room.relationship.colHistory')}</th>
                           <th className="text-right py-1">{t('room.relationship.colActions')}</th>
@@ -1923,43 +1680,33 @@ export function ProjectRoomPage() {
                       </thead>
                       <tbody>
                         {relationships.map(rel => {
-                          const bucketCls: Record<RelationshipBucket, string> = {
-                            cold:     'text-blue-700',
-                            strained: 'text-amber-700',
-                            neutral:  'text-gray-600',
-                            positive: 'text-emerald-700',
-                            warm:     'text-rose-700',
-                          };
                           return (
                             <tr key={rel.personaId} className="border-t border-gray-100 align-top" data-testid={`row-relationship-${rel.personaId}`}>
                               <td className="py-1 pr-2">
                                 <PersonaAvatar avatar={rel.avatar} name={rel.personaName} size={16} className="mr-1" />
                                 <span className="text-gray-800">{rel.personaName}</span>
-                                {rel.personaType === 'evaluator' && (
-                                  <span className="ml-1 text-[9px] text-purple-600 uppercase">eval</span>
-                                )}
                               </td>
-                              <td className="py-1 pr-2 font-mono" data-testid={`text-relationship-score-${rel.personaId}`}>
-                                {rel.score === null ? '—' : (rel.score >= 0 ? `+${rel.score}` : rel.score)}
-                              </td>
-                              <td className={`py-1 pr-2 ${bucketCls[rel.bucket]}`}>
-                                {t(`room.relationship.label.${rel.bucket}`)}{rel.blocked && <span className="ml-1 text-red-600">⛔</span>}
+                              <td className={`py-1 pr-2 ${RELATIONSHIP_BADGE[rel.key].text}`} data-testid={`text-relationship-level-${rel.personaId}`}>
+                                {t(`room.relationship.label.${rel.key}`)}{rel.broken && <span className="ml-1">⛔</span>}
                               </td>
                               <td className="py-1 pr-2">
-                                {rel.history.length === 0 ? (
+                                {!rel.history || rel.history.length === 0 ? (
                                   <span className="text-gray-400 italic">{t('room.relationship.noHistory')}</span>
                                 ) : (
                                   <ul className="space-y-0.5">
                                     {rel.history.slice(0, 5).map((ev, i) => {
-                                      const d = Number(ev.delta);
-                                      const deltaStr = Number.isFinite(d) ? (d >= 0 ? `+${d}` : `${d}`) : '0';
-                                      const sourceKey = ev.source === 'document_review' || ev.source === 'staff_adjust' || ev.source === 'persona_chat_close'
+                                      const sourceKey = ev.source === 'staff_adjust' || ev.source === 'persona_chat_close'
                                         ? `room.relationship.eventSource.${ev.source}` : null;
-                                      const sourceLabel = sourceKey ? t(sourceKey) : (ev.source || '');
+                                      const lvl = (n?: number) => {
+                                        const hit = RELATIONSHIP_LEVELS.find(x => x.level === n);
+                                        return hit ? t(`room.relationship.label.${hit.key}`) : '';
+                                      };
                                       return (
                                         <li key={i} className="text-gray-600">
-                                          <span className="font-mono mr-1">{deltaStr}</span>
-                                          <span className="text-gray-500">{sourceLabel}</span>
+                                          {ev.from !== undefined && ev.to !== undefined && (
+                                            <span className="mr-1">{lvl(ev.from)} → {lvl(ev.to)}</span>
+                                          )}
+                                          <span className="text-gray-500">{sourceKey ? t(sourceKey) : (ev.source || '')}</span>
                                           {ev.note && <span className="text-gray-400"> — {ev.note}</span>}
                                           {ev.ts && (
                                             <span className="text-gray-300 ml-1">
@@ -1977,7 +1724,7 @@ export function ProjectRoomPage() {
                                   type="button"
                                   onClick={() => {
                                     setAdjustingPersona(rel);
-                                    setAdjustDelta(1);
+                                    setAdjustLevel(rel.level);
                                     setAdjustNote('');
                                     setAdjustError(null);
                                   }}
@@ -2099,19 +1846,20 @@ export function ProjectRoomPage() {
             <p className="text-sm text-gray-600 mb-4">{t('room.relationship.adjustSub')}</p>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  {t('room.relationship.deltaLabel')}
+                <label htmlFor="select-adjust-level" className="block text-xs font-medium text-gray-600 mb-1">
+                  {t('room.relationship.levelLabel')}
                 </label>
-                <input
-                  type="number"
-                  min={-10}
-                  max={10}
-                  step={1}
-                  value={adjustDelta}
-                  onChange={e => setAdjustDelta(parseInt(e.target.value || '0', 10))}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono"
-                  data-testid="input-adjust-delta"
-                />
+                <select
+                  id="select-adjust-level"
+                  value={adjustLevel}
+                  onChange={e => setAdjustLevel(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
+                  data-testid="select-adjust-level"
+                >
+                  {RELATIONSHIP_LEVELS.map(l => (
+                    <option key={l.level} value={l.level}>{t(`room.relationship.label.${l.key}`)}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -2143,7 +1891,7 @@ export function ProjectRoomPage() {
               </button>
               <button
                 onClick={submitAdjust}
-                disabled={adjustSaving || !adjustNote.trim() || adjustDelta === 0}
+                disabled={adjustSaving || !adjustNote.trim() || adjustLevel === adjustingPersona.level}
                 className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
                 data-testid="button-confirm-adjust"
               >

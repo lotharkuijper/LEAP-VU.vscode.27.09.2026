@@ -18,7 +18,6 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLanguage } from '../i18n';
 import { Tooltip } from './help/Tooltip';
 import { AdminHint } from './help/AdminHint';
-import { HelpTip } from './help/HelpTip';
 import { ListRow, StatusBadge } from './ui/ListRow';
 
 interface CourseRow {
@@ -62,9 +61,6 @@ export default function CoursesAdmin() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editDesc, setEditDesc] = useState('');
-  // Task #173 — per-cursus cue-bereik (1..5). Houden we als string in de UI
-  // zodat tussentijds lege invoer mogelijk is; we parsen pas bij opslaan.
-  const [editCueMax, setEditCueMax] = useState('2');
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
@@ -400,7 +396,6 @@ export default function CoursesAdmin() {
     setEditingId(c.id);
     setEditName(c.name);
     setEditDesc(c.description ?? '');
-    setEditCueMax(String(c.cue_delta_max ?? 2));
     setEditError(null);
   }
 
@@ -408,7 +403,6 @@ export default function CoursesAdmin() {
     setEditingId(null);
     setEditName('');
     setEditDesc('');
-    setEditCueMax('2');
     setEditError(null);
   }
 
@@ -614,11 +608,6 @@ export default function CoursesAdmin() {
       setEditError(t('coursesAdmin.errors.nameEmpty'));
       return;
     }
-    const cueMaxNum = parseInt(editCueMax, 10);
-    if (!Number.isInteger(cueMaxNum) || cueMaxNum < 1 || cueMaxNum > 5) {
-      setEditError(t('coursesAdmin.errors.cueRange'));
-      return;
-    }
     const token = session?.access_token;
     if (!token) {
       setEditError(t('admin.users.notLoggedIn'));
@@ -632,7 +621,7 @@ export default function CoursesAdmin() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: trimmedName, description: trimmedDesc, cue_delta_max: cueMaxNum }),
+        body: JSON.stringify({ name: trimmedName, description: trimmedDesc }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -781,32 +770,6 @@ export default function CoursesAdmin() {
                           data-testid={`input-edit-description-${c.id}`}
                         />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <label
-                            htmlFor={`input-edit-cue-max-${c.id}`}
-                            className="text-xs font-medium text-gray-700"
-                          >
-                            {t('coursesAdmin.edit.cueMaxLabel')}
-                          </label>
-                          <HelpTip id="courses.cueRange" />
-                        </div>
-                        <input
-                          id={`input-edit-cue-max-${c.id}`}
-                          type="number"
-                          min={1}
-                          max={5}
-                          step={1}
-                          value={editCueMax}
-                          onChange={(e) => setEditCueMax(e.target.value)}
-                          className="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          disabled={editSaving}
-                          data-testid={`input-edit-cue-max-${c.id}`}
-                        />
-                        <p className="text-[11px] text-gray-500 mt-1">
-                          {t('coursesAdmin.edit.cueMaxHelp')}
-                        </p>
-                      </div>
                       {editError && (
                         <div
                           className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2"
@@ -866,9 +829,6 @@ export default function CoursesAdmin() {
                         meta={
                           <>
                             {c.description && <div>{c.description}</div>}
-                            <div className="text-[11px]" data-testid={`text-cue-max-${c.id}`}>
-                              {t('coursesAdmin.row.cueRange', { value: String(c.cue_delta_max ?? 2) })}
-                            </div>
                           </>
                         }
                         actions={[

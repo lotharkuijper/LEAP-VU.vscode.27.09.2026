@@ -1,190 +1,129 @@
-// Task #174 — Extractie van de close-flow zodat we de integratie van
-// LLM-response → cue-validatie → relationship-update kunnen testen zonder
-// de hele Express-app op te tuigen. Deze module bevat puur (of bijna pure)
-// orkestratie-bouwstenen die door `server/index.js` worden hergebruikt én
-// door `server/__tests__/close.integration.test.js` rechtstreeks worden
-// aangeroepen.
+// Verstandhouding bij het afronden van een gesprek (herzien 2026-09-29).
+// Los van Express zodat de keten "gesprek → oordeel → nieuw niveau" in
+// server/__tests__/close.integration.test.js getest kan worden. De samenvatting
+// (onderwerpen/afspraken) blijft in server/index.js (performThreadClose).
+//
+// Alleen voor een rolspeler met verstandhouding (reputationActive). Het oordeel
+// is een APARTE aanroep met de gedragsregels van de docent: de persona krijgt
+// die regels in het gesprek nooit te zien.
 
 import {
-  applyDelta as applyRelDelta,
-  appendHistory as relAppendHistory,
-  hasHistoryRef as relHasHistoryRef,
-  validateCueResponse,
-  buildCueInstructionBlock,
-  cueJsonInstruction,
-  hasCueTable,
+  appendHistory,
+  hasHistoryRef,
+  clampLevel,
+  nextLevel,
+  buildConductJudgeMessages,
+  validateConductJudgement,
 } from './personaRelationship.js';
+import { reputationActive, clampStartLevel } from './personaRoles.js';
 
-// Gate-logica voor cue-emissie. Spiegelt de checks in de close-handler:
-// alleen `conversational` persona's, met `cue_emission_enabled !== false`
-// (ontbrekend = true) én met een herkenbare cue-tabel in de system_prompt.
-export function computeEmissionEnabled(persona) {
-  if (!persona) return false;
-  const conversational = (persona.persona_type || 'conversational') === 'conversational';
-  const flagEnabled = persona.cue_emission_enabled !== false;
-  return conversational && flagEnabled && hasCueTable(persona.system_prompt || '');
+/** Gesprek als tekst voor de beoordeling ("Student: …" / "<naam>: …"). */
+export function transcriptOf(allMsgs, personaName = 'Persona') {
+  return (Array.isArray(allMsgs) ? allMsgs : [])
+    .map(m => `${m.role === 'user' ? 'Student' : personaName}: ${String(m.content || '').slice(0, 2000)}`)
+    .join('\n')
+    .slice(0, 12000);
 }
 
-// Bouwt de exacte messages-array die we naar OpenAI sturen. Gespiegeld
-// uit de oorspronkelijke handler zodat zowel productie als test 1 bron
-// hebben. `lang` ∈ {'nl','en'}.
-export function buildCloseMessages({ persona, allMsgs, lang, emissionEnabled }) {
-  const conversationText = (allMsgs || [])
-    .map(m => `${m.role === 'user' ? 'Student' : 'Persona'}: ${(m.content || '').slice(0, 2000)}`)
-    .join('\n').slice(0, 12000);
-  const msgCount = (allMsgs || []).filter(m => m.role === 'user').length;
-  const topicsInstruction = lang === 'en'
-    ? (msgCount <= 3 ? '2-3 short topics' : msgCount <= 8 ? '3-5 topics' : '5-8 topics')
-    : (msgCount <= 3 ? '2-3 korte onderwerpen' : msgCount <= 8 ? '3-5 onderwerpen' : '5-8 onderwerpen');
-  const langInstruction = lang === 'en' ? 'Write in English.' : 'Schrijf in het Nederlands.';
-  const cueJson = emissionEnabled ? `\n${cueJsonInstruction(lang)}` : '';
-  const cueSchemaSnippet = emissionEnabled
-    ? ',\n  "relationship_delta": 0,\n  "relationship_reason": ""'
-    : '';
-  const userPrompt = lang === 'en'
-    ? `You are a minute-taker. Analyse the following conversation between a student and an AI persona.\n\nRespond ONLY with valid JSON in this structure:\n{\n  "topics": [...],\n  "agreements": [...]${cueSchemaSnippet}\n}\n\n- "topics": array of ${topicsInstruction}. Each item is one discussed topic (concise, max 1 sentence).\n- "agreements": array of 0 or more strings. Only concrete agreements or commitments. Leave empty if none.${cueJson}\n\n${langInstruction} No markdown outside the JSON, no explanation.\n\nConversation:\n${conversationText}`
-    : `Je bent een notulist. Analyseer het volgende gesprek tussen een student en een AI-persona.\n\nGeef je antwoord UITSLUITEND als geldige JSON met deze structuur:\n{\n  "topics": [...],\n  "agreements": [...]${cueSchemaSnippet}\n}\n\n- "topics": array van ${topicsInstruction}. Elk item is één besproken onderwerp (bondig, maximaal 1 zin).\n- "agreements": array van 0 of meer strings. Alleen concrete afspraken of toezeggingen. Laat leeg als er geen zijn.${cueJson}\n\n${langInstruction} Geen markdown buiten de JSON, geen uitleg.\n\nGesprek:\n${conversationText}`;
-  const systemContent = emissionEnabled
-    ? `${persona?.system_prompt || ''}${buildCueInstructionBlock(lang)}`
-    : (persona?.system_prompt || '');
-  const messages = systemContent
-    ? [{ role: 'system', content: systemContent }, { role: 'user', content: userPrompt }]
-    : [{ role: 'user', content: userPrompt }];
-  return { messages, userPrompt, systemContent };
-}
-
-// Parseert het ruwe LLM-antwoord (string of object) tot {topics, agreements, cue}.
-// Defensief: bij ongeldige JSON of ontbrekende velden valt alles terug op
-// veilige defaults. Cue-validatie loopt door `validateCueResponse` zodat de
-// emissie-gate (en de -2..+2 clamp) afdwingbaar blijft.
-export function parseCloseLLMOutput(raw, { emissionEnabled }) {
-  const text = typeof raw === 'string' ? raw : JSON.stringify(raw ?? {});
-  let parsed;
-  try { parsed = JSON.parse((text || '{}').trim()); } catch { parsed = {}; }
-  const topics = Array.isArray(parsed.topics)
-    ? parsed.topics.filter(t => typeof t === 'string' && t.trim())
-    : [];
-  const agreements = Array.isArray(parsed.agreements)
-    ? parsed.agreements.filter(a => typeof a === 'string' && a.trim())
-    : [];
-  const cue = validateCueResponse(parsed, { emissionEnabled });
-  return { topics, agreements, cue };
-}
-
-// Volledige roep-de-LLM-en-parse-stap, met injecteerbare `fetchFn` zodat
-// tests zonder netwerktoegang draaien.
-export async function callCloseLLM({
-  fetchFn,
-  apiKey,
-  url,
-  model,
-  maxTokensParam = 'max_tokens',
-  persona,
-  allMsgs,
-  lang,
-  emissionEnabled,
-}) {
-  const { messages } = buildCloseMessages({ persona, allMsgs, lang, emissionEnabled });
-  const resp = await fetchFn(url, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.2,
-      [maxTokensParam]: 700,
-      response_format: { type: 'json_object' },
-    }),
-  });
-  if (!resp || !resp.ok) {
-    return { topics: [], agreements: [], cue: { delta: 0, reason: '' } };
+/**
+ * Beoordeel een afgerond gesprek. `chat(messages)` is de (injecteerbare)
+ * taalmodel-aanroep en levert de ruwe tekst. Een gesprek zonder inbreng van
+ * de studenten verandert niets. Retour: { step, reason }.
+ */
+export async function judgeConversation({ chat, persona, level, allMsgs, lang, languageName }) {
+  if (!reputationActive(persona)) return { step: 0, reason: '' };
+  const studentTurns = (allMsgs || []).filter(m => m.role === 'user' && String(m.content || '').trim()).length;
+  if (studentTurns === 0) return { step: 0, reason: '' };
+  try {
+    const raw = await chat(buildConductJudgeMessages({
+      personaName: persona.name || 'Persona',
+      conductRules: persona.conduct_rules,
+      level,
+      transcript: transcriptOf(allMsgs, persona.name || 'Persona'),
+      lang,
+      languageName,
+    }));
+    return validateConductJudgement(raw);
+  } catch (e) {
+    console.warn('[reputation] beoordeling mislukt, niveau blijft gelijk:', e.message);
+    return { step: 0, reason: '' };
   }
-  const body = await resp.json();
-  const raw = body?.choices?.[0]?.message?.content || '{}';
-  return parseCloseLLMOutput(raw, { emissionEnabled });
 }
 
-// Pas een delta toe op de relatie en append history. Idempotent: als
-// event.refId al in history zit (zelfde source+refId), wordt niets
-// bijgewerkt. Race-safe wanneer `pgPool` aanwezig is via een atomic
-// INSERT ... ON CONFLICT DO UPDATE met WHERE-clausule. Zonder pgPool
-// (test/CI) valt het terug op de oudere select+update/insert-flow met
-// best-effort idempotentie. Retourneert de bijgewerkte rij of null als
-// de tabel nog niet bestaat.
-export async function applyRelationshipDeltaImpl(
-  { supabaseAdmin, pgPool },
-  { projectId, groupId, personaId, delta, event },
+/** Huidige rij (score + history) of null; tabel ontbreekt → { missing: true }. */
+async function readRelationship(supabaseAdmin, { projectId, groupId, personaId }) {
+  const { data, error } = await supabaseAdmin
+    .from('project_persona_relationships')
+    .select('id, score, history, updated_at')
+    .eq('project_id', projectId).eq('group_id', groupId).eq('persona_id', personaId)
+    .maybeSingle();
+  if (error) {
+    if (error.code === '42P01' || /project_persona_relationships/i.test(error.message || '')) return { missing: true };
+    throw error;
+  }
+  return { row: data || null };
+}
+
+/**
+ * Zet het niveau van de verstandhouding. `compute(current)` levert het nieuwe
+ * niveau; zonder rij begint de groep op `startLevel`. Idempotent op
+ * (event.source, event.refId): dezelfde gebeurtenis telt maar één keer.
+ * Retour: de bijgewerkte rij, of null als de tabel nog niet bestaat.
+ */
+export async function setRelationshipLevelImpl(
+  { supabaseAdmin },
+  { projectId, groupId, personaId, startLevel = 0, compute, event },
 ) {
   if (!supabaseAdmin) return null;
-  const evt = { ts: new Date().toISOString(), ...(event || {}) };
-  const deltaInt = Number.isFinite(Number(delta)) ? Math.round(Number(delta)) : 0;
+  const read = await readRelationship(supabaseAdmin, { projectId, groupId, personaId });
+  if (read.missing) return null;
+  const existing = read.row;
+  const history = Array.isArray(existing?.history) ? existing.history : [];
   const source = event?.source || '';
   const refId = event?.refId || '';
-
-  if (!pgPool) {
-    const { data: existing, error: selErr } = await supabaseAdmin
+  if (refId && hasHistoryRef(history, source, refId)) return existing;
+  const current = existing ? clampLevel(existing.score) : clampStartLevel(startLevel);
+  const level = clampLevel(compute(current));
+  const newHistory = appendHistory(history, { ...(event || {}), from: current, to: level });
+  if (existing) {
+    const { data, error } = await supabaseAdmin
       .from('project_persona_relationships')
-      .select('id, score, history')
-      .eq('project_id', projectId).eq('group_id', groupId).eq('persona_id', personaId)
-      .maybeSingle();
-    if (selErr) {
-      if (selErr.code === '42P01' || /project_persona_relationships/i.test(selErr.message || '')) return null;
-      throw selErr;
-    }
-    const curScore = existing?.score ?? 0;
-    const curHistory = Array.isArray(existing?.history) ? existing.history : [];
-    if (refId && relHasHistoryRef(curHistory, source, refId)) return existing || null;
-    const newScore = applyRelDelta(curScore, deltaInt);
-    const newHistory = relAppendHistory(curHistory, evt);
-    if (existing) {
-      const { data: updated, error: upErr } = await supabaseAdmin
-        .from('project_persona_relationships')
-        .update({ score: newScore, history: newHistory, updated_at: new Date().toISOString() })
-        .eq('id', existing.id).select('id, score, history, updated_at').single();
-      if (upErr) throw upErr;
-      return updated;
-    }
-    const { data: inserted, error: insErr } = await supabaseAdmin
-      .from('project_persona_relationships')
-      .insert({ project_id: projectId, group_id: groupId, persona_id: personaId, score: newScore, history: newHistory })
-      .select('id, score, history, updated_at').single();
-    if (insErr) throw insErr;
-    return inserted;
+      .update({ score: level, history: newHistory, updated_at: new Date().toISOString() })
+      .eq('id', existing.id).select('id, score, history, updated_at').single();
+    if (error) throw error;
+    return data;
   }
+  const { data, error } = await supabaseAdmin
+    .from('project_persona_relationships')
+    .insert({ project_id: projectId, group_id: groupId, persona_id: personaId, score: level, history: newHistory })
+    .select('id, score, history, updated_at').single();
+  if (error) {
+    // Race: een parallelle afronding maakte de rij net aan → één keer opnieuw.
+    if (error.code === '23505') {
+      return setRelationshipLevelImpl({ supabaseAdmin }, { projectId, groupId, personaId, startLevel, compute, event });
+    }
+    throw error;
+  }
+  return data;
+}
 
-  try {
-    const sql = `
-      INSERT INTO project_persona_relationships
-        (project_id, group_id, persona_id, score, history, updated_at)
-      VALUES (
-        $1, $2, $3,
-        GREATEST(LEAST($4::int, 10), -10),
-        jsonb_build_array($5::jsonb),
-        now()
-      )
-      ON CONFLICT (project_id, group_id, persona_id) DO UPDATE
-      SET score = GREATEST(LEAST(project_persona_relationships.score + $4::int, 10), -10),
-          history = project_persona_relationships.history || jsonb_build_array($5::jsonb),
-          updated_at = now()
-      WHERE COALESCE($7::text, '') = ''
-         OR NOT (project_persona_relationships.history @> jsonb_build_array(
-              jsonb_build_object('source', $6::text, 'refId', $7::text)
-            ))
-      RETURNING id, score, history, updated_at`;
-    const res = await pgPool.query(sql, [
-      projectId, groupId, personaId,
-      deltaInt, JSON.stringify(evt),
-      source, refId,
-    ]);
-    if (res.rowCount > 0) return res.rows[0];
-    const reread = await pgPool.query(
-      `SELECT id, score, history, updated_at FROM project_persona_relationships
-       WHERE project_id=$1 AND group_id=$2 AND persona_id=$3`,
-      [projectId, groupId, personaId],
-    );
-    return reread.rows[0] || null;
-  } catch (e) {
-    if (e.code === '42P01' || /project_persona_relationships/i.test(e.message || '')) return null;
-    throw e;
-  }
+/**
+ * Hele stap na het afronden van een gesprek: oordeel vragen en — bij een
+ * verandering — het nieuwe niveau opslaan. Retour: null (geen verstandhouding)
+ * of { step, reason, from, to }.
+ */
+export async function applyConversationJudgement(deps, { persona, projectId, groupId, threadId, allMsgs, lang, languageName }) {
+  if (!reputationActive(persona) || !projectId) return null;
+  const read = await readRelationship(deps.supabaseAdmin, { projectId, groupId, personaId: persona.id });
+  if (read.missing) return null;
+  const from = read.row ? clampLevel(read.row.score) : clampStartLevel(persona.start_level);
+  const { step, reason } = await judgeConversation({ chat: deps.chat, persona, level: from, allMsgs, lang, languageName });
+  if (step === 0) return { step: 0, reason: '', from, to: from };
+  const row = await setRelationshipLevelImpl(deps, {
+    projectId, groupId, personaId: persona.id,
+    startLevel: persona.start_level,
+    compute: (cur) => nextLevel(cur, step),
+    event: { source: 'persona_chat_close', refId: `thread_close:${threadId}`, step, note: reason },
+  });
+  return { step, reason, from, to: row ? clampLevel(row.score) : nextLevel(from, step) };
 }

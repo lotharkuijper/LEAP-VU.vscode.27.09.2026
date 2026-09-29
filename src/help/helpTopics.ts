@@ -36,7 +36,10 @@ export const HELP_TOPICS = [
   'personas.inProject',
   'personas.fromTemplate',
   'personas.saveAsTemplate',
-  'personas.evaluator',
+  'personas.role',
+  'personas.reputation',
+  'personas.conductRules',
+  'personas.feedbackRounds',
   'personas.avatar',
   // Quizbronnen, zoekgevoeligheid, leerniveaus, chat-instructies
   'quizSources.overview',
@@ -57,7 +60,6 @@ export const HELP_TOPICS = [
   'projects.docs',
   'personas.consultationLimits',
   'personas.hiddenRubric',
-  'courses.cueRange',
 ] as const;
 
 export type HelpId = (typeof HELP_TOPICS)[number];
