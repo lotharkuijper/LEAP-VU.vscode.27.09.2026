@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} 份文件暫時未產生任何概念。係咪正常，定係文件未正確讀取？請重新產生概念清單，或者去「處理」查看。",
   "admin.conceptQuality.mergeTitle": "可能重複項目",
   "admin.conceptQuality.findButton": "搜尋重複項目",
-  "admin.conceptQuality.intro": "串法變體 LEAP 會自動合併。同義詞、縮寫同翻譯，LEAP 會先交畀你確認。",
+  "admin.conceptQuality.intro": "LEAP 會自動合併串法變體，以及已經作為某個概念其他名稱嘅名稱。至於同義詞、縮寫、翻譯同變體（例如「95% 置信區間」同「置信區間」），LEAP 會先交畀你確認。同時作為課程概念存在嘅單元概念會顯示喺最上面。",
   "admin.conceptQuality.none": "未搵到重複項目。",
   "admin.conceptQuality.suggestion": "{others} 睇落同 {keep} 意思相同。",
   "admin.conceptQuality.mergeButton": "合併",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "每份文件嘅概念",
   "help.concepts.coverage.body": "LEAP 從每份教材文件提取到幾多個概念。如果某份文件係 0，就會以橙色顯示：請檢查文件有冇正確讀取。學生只會收到關於呢度列出嘅概念嘅解釋同測驗題。",
   "help.concepts.merge.title": "合併重複項目",
-  "help.concepts.merge.body": "LEAP 會搜尋意思相同嘅概念（同義詞、縮寫、翻譯）。合併後只保留一個概念；另一個名稱會保存，令學生可以用兩個名稱搵到。解釋同測驗連結都會一併保留。",
+  "help.concepts.merge.body": "每個概念喺清單入面只應出現一次。明顯重複嘅項目 LEAP 會自動合併；有疑問嘅情況（同義詞、縮寫、變體）LEAP 會交畀你決定。如果某個單元概念同時亦係課程概念，合併後只會保留課程概念。另一個名稱會保留；說明同測驗連結亦會一併帶過去。",
   "admin.conceptJob.reading": "讀取課程：第 {done} 部分，共 {total} 部分…",
   "admin.conceptJob.merging": "正在合併重複項目…",
   "admin.conceptJob.verifying": "對照課程材料檢查：{done} / {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "更新網站（{site}）",
   "tasks.web.progress": "頁面 {done} / {total}…",
   "tasks.sharestats.title": "匯入 ShareStats 問題",
-  "tasks.sharestats.progress": "正在匯入問題：{done}%"
+  "tasks.sharestats.progress": "正在匯入問題：{done}%",
+  "admin.conceptQuality.autoMerged": "{n} 個明確重複項目已即時合併。",
+  "admin.conceptQuality.suggestionCrossClass": "單元概念 {others} 亦都係課程概念 {keep}。合併後只會保留課程概念。"
 }

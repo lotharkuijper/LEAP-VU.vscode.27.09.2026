@@ -145,7 +145,8 @@ ${lines}`;
 
 /** Pure: antwoord van de samenvoegstap → [{ preferred, others[] }] met alleen namen uit `allowedNames`. */
 export function parseSynonymGroups(raw, allowedNames) {
-  const allowed = new Map((allowedNames || []).map((n) => [String(n).toLowerCase().trim(), n]));
+  const norm = (s) => String(s || '').replace(/^\s*\[[CME]\]\s*/, '').toLowerCase().trim();
+  const allowed = new Map((allowedNames || []).map((n) => [norm(n), n]));
   let parsed = [];
   try {
     const m = String(raw || '').match(/\[[\s\S]*\]/);
@@ -154,10 +155,10 @@ export function parseSynonymGroups(raw, allowedNames) {
   const used = new Set();
   const out = [];
   for (const g of Array.isArray(parsed) ? parsed : []) {
-    const pref = allowed.get(String(g?.preferred || '').toLowerCase().trim());
+    const pref = allowed.get(norm(g?.preferred));
     if (!pref || used.has(pref)) continue;
     const others = [...new Set((Array.isArray(g?.others) ? g.others : [])
-      .map((o) => allowed.get(String(o || '').toLowerCase().trim()))
+      .map((o) => allowed.get(norm(o)))
       .filter((o) => o && o !== pref && !used.has(o)))];
     if (!others.length) continue;
     used.add(pref); others.forEach((o) => used.add(o));
@@ -272,29 +273,120 @@ export function capFairly(results, max) {
 
 const STATUS_RANK = { approved: 3, needs_review: 2, rejected: 1 };
 
+const docCountOf = (r) => (Number.isFinite(r?.docCount) ? r.docCount : (r?.source_document_ids || []).length);
+
 /**
- * Pure: ZEKERE samenvoegingen in de bestaande lijst (zelfde conceptKey).
- * Het begrip dat blijft: goedgekeurd > te beoordelen > afgewezen, dan de
- * langste definitie. Retour: [{ keepId, keepName, dupIds, dupNames }].
+ * Pure: ZEKERE samenvoegingen in de bestaande lijst. Zeker is:
+ * - dezelfde conceptKey (spellingvariant), of
+ * - de naam van het ene begrip staat als alias bij het andere ("z-verdeling"
+ *   los én als alias van "standaardnormale verdeling"): LEAP heeft ze dan al
+ *   eerder gelijkgesteld.
+ * Het begrip dat blijft: goedgekeurd > te beoordelen > afgewezen, dan het
+ * begrip dat de ander als alias heeft, dan het meeste documenten
+ * (`docCount` of `source_document_ids`), dan de langste definitie.
+ * Retour: [{ keepId, keepName, dupIds, dupNames }].
  */
 export function planSureMerges(rows) {
+  const list = (Array.isArray(rows) ? rows : []).filter((r) => conceptKey(r?.name));
+  // Union-find over de begrippen.
+  const parent = list.map((_, i) => i);
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const union = (a, b) => { const ra = find(a); const rb = find(b); if (ra !== rb) parent[rb] = ra; };
+  const byNameKey = new Map();
+  list.forEach((r, i) => {
+    const k = conceptKey(r.name);
+    if (byNameKey.has(k)) union(byNameKey.get(k), i); else byNameKey.set(k, i);
+  });
+  const owners = new Set(); // index van begrippen die een ander begrip als alias hebben
+  list.forEach((r, i) => {
+    for (const a of r.aliases || []) {
+      const j = byNameKey.get(conceptKey(a));
+      if (j === undefined || find(j) === find(i)) continue;
+      union(i, j);
+      owners.add(i);
+    }
+  });
   const groups = new Map();
-  for (const r of Array.isArray(rows) ? rows : []) {
-    const k = conceptKey(r?.name);
-    if (!k) continue;
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(r);
-  }
+  list.forEach((r, i) => {
+    const root = find(i);
+    if (!groups.has(root)) groups.set(root, []);
+    groups.get(root).push(i);
+  });
   const plans = [];
   for (const members of groups.values()) {
     if (members.length < 2) continue;
     const sorted = [...members].sort((a, b) =>
-      (STATUS_RANK[b.review_status] || 0) - (STATUS_RANK[a.review_status] || 0)
-      || (b.definition || '').length - (a.definition || '').length);
-    const [keep, ...dups] = sorted;
+      (STATUS_RANK[list[b].review_status] || 0) - (STATUS_RANK[list[a].review_status] || 0)
+      || (owners.has(b) ? 1 : 0) - (owners.has(a) ? 1 : 0)
+      || docCountOf(list[b]) - docCountOf(list[a])
+      || (list[b].definition || '').length - (list[a].definition || '').length);
+    const [keep, ...dups] = sorted.map((i) => list[i]);
     plans.push({ keepId: keep.id, keepName: keep.name, dupIds: dups.map((d) => d.id), dupNames: dups.map((d) => d.name) });
   }
   return plans;
+}
+
+const CLASS_TAG = { course: 'C', module: 'M', example: 'E' };
+const CLASS_RANK = { course: 3, module: 2, example: 1 };
+
+/**
+ * Prompt voor "Zoek dubbelingen" (voorstellen aan de docent, nooit automatisch).
+ * Bewust RUIMER dan buildSynonymPrompt: ook varianten met een toevoeging
+ * tellen mee ("95% betrouwbaarheidsinterval" ↔ "betrouwbaarheidsinterval"),
+ * want de docent beslist per paar. Elk begrip draagt zijn klasse
+ * ([C] cursusconcept, [M] moduleconcept, [E] voorbeeld), zodat het model
+ * gericht kan zoeken naar moduleconcepten die al als cursusconcept bestaan.
+ */
+export function buildDuplicateSuggestionPrompt(items) {
+  const lines = items.map((it, i) => `${i + 1}. [${CLASS_TAG[it.cls] || 'M'}] ${it.name}${it.definition ? ` — ${String(it.definition).replace(/\s+/g, ' ').slice(0, 160)}` : ''}`).join('\n');
+  return `Below is the concept list of one university course, as a teacher sees it. Each term is tagged:
+[C] = course concept (appears in several modules), [M] = module concept (one module), [E] = example.
+The list should contain every concept only ONCE. Find terms that a teacher would consider the same concept, so that they should be merged into one entry:
+- synonyms, abbreviations and their full form, translations, spelling or inflection variants;
+- the same concept with a qualifier, specification or wording variant (e.g. "95% betrouwbaarheidsinterval" and "betrouwbaarheidsinterval", "gemiddelde van de waarnemingen" and "gemiddelde", "prospectief cohort" and "prospectief cohortonderzoek", "ongestratificeerd effect" and "ruw effect").
+Check EVERY [M] term against the [C] terms in particular: a module concept that is also listed as a course concept is a duplicate.
+Do NOT group:
+- opposites or negations (e.g. "parametrische maten" vs "non-parametrische maten", "eenzijdig toetsen" vs "tweezijdig toetsen");
+- related but clearly different concepts (e.g. "gemiddelde" vs "mediaan", "populatie" vs "steekproef", "sensitiviteit" vs "specificiteit");
+- a thing and a different thing that shares a word (e.g. "cohort" as a group of people vs "cohortonderzoek" as a study design, "likelihood" vs "log-likelihood").
+
+Return ONLY JSON, no explanation: an array of groups. "preferred" is the name to keep: the [C] term if the group has one, otherwise the most common term. Copy all names exactly from the list, without the tag. Only include groups with at least two members.
+[{"preferred": "betrouwbaarheidsinterval", "others": ["95% betrouwbaarheidsinterval"]}]
+
+TERMS:
+${lines}`;
+}
+
+/**
+ * Pure: groepen uit het taalmodel → voorstellen voor de docent.
+ * rows: [{ id, name, review_status, cls: 'course'|'module'|'example' }].
+ * Het begrip dat blijft: goedgekeurd > te beoordelen > afgewezen, dan een
+ * cursusconcept boven een moduleconcept (een begrip hoort maar één keer in
+ * de lijst, en dan onder Cursusconcepten), dan de voorkeursnaam van het model.
+ * kind 'crossClass' = moduleconcept(en) die al als cursusconcept bestaan.
+ * dismissed: Set met handtekeningen (gesorteerde id's, '|') van weggeklikte voorstellen.
+ */
+export function buildMergeSuggestions(groups, rows, dismissed = new Set()) {
+  const byName = new Map((rows || []).map((r) => [r.name, r]));
+  const out = [];
+  for (const g of groups || []) {
+    const members = [...new Set([g.preferred, ...g.others])].map((n) => byName.get(n)).filter(Boolean);
+    if (members.length < 2) continue;
+    if (dismissed.has(members.map((m) => m.id).sort().join('|'))) continue;
+    const keep = [...members].sort((a, b) =>
+      (STATUS_RANK[b.review_status] || 0) - (STATUS_RANK[a.review_status] || 0)
+      || (CLASS_RANK[b.cls] || 0) - (CLASS_RANK[a.cls] || 0)
+      || (b.name === g.preferred ? 1 : 0) - (a.name === g.preferred ? 1 : 0))[0];
+    const others = members.filter((m) => m.id !== keep.id);
+    const crossClass = keep.cls === 'course' && others.some((m) => m.cls !== 'course');
+    out.push({
+      kind: crossClass ? 'crossClass' : 'same',
+      keep: { id: keep.id, name: keep.name, reviewStatus: keep.review_status, cls: keep.cls },
+      others: others.map((m) => ({ id: m.id, name: m.name, reviewStatus: m.review_status, cls: m.cls })),
+    });
+  }
+  // Moduleconcepten die al als cursusconcept bestaan eerst: daar ging het om.
+  return out.sort((a, b) => (a.kind === 'crossClass' ? 0 : 1) - (b.kind === 'crossClass' ? 0 : 1));
 }
 
 /** Kleine hulp: async map met beperkte gelijktijdigheid (volgorde blijft). */

@@ -168,7 +168,7 @@ import {
 } from './consultationLimit.js';
 import { applyRelationshipDeltaImpl } from './threadClose.js';
 import { randomUUID } from 'node:crypto';
-import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, mapLimit } from './conceptConsolidation.js';
+import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, buildDuplicateSuggestionPrompt, buildMergeSuggestions, mapLimit } from './conceptConsolidation.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
 import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
 import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countPriorStudentMessages, levelName, topicKey } from './readiness.js';
@@ -5402,39 +5402,59 @@ app.get('/api/admin/concepts/merge-suggestions', async (req, res) => {
   if (!(await requireConceptStaff(req, res, courseId))) return;
   if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
   try {
-    const { data: rows } = await supabaseAdmin.from('concepts')
-      .select('id, name, definition, review_status').eq('course_id', courseId).order('name');
-    const list = rows || [];
-    if (list.length < 2) return res.json({ suggestions: [] });
+    const loadRows = async () => {
+      const { data } = await supabaseAdmin.from('concepts')
+        .select('id, name, definition, review_status, concept_role, aliases, source_document_ids').eq('course_id', courseId).order('name');
+      return data || [];
+    };
+    // Aantal documenten per begrip, precies zoals de Begrippen-tab het indeelt
+    // (concept_evidence; zie /api/concepts/evidence-summary): >1 = cursusconcept.
+    const loadDocCounts = async () => {
+      const { data } = await supabaseAdmin.from('concept_evidence').select('concept_id, document_id').eq('course_id', courseId);
+      const sets = new Map();
+      for (const r of data || []) {
+        if (!r.document_id) continue;
+        if (!sets.has(r.concept_id)) sets.set(r.concept_id, new Set());
+        sets.get(r.concept_id).add(r.document_id);
+      }
+      return new Map([...sets].map(([id, s]) => [id, s.size]));
+    };
+
+    // 1. Zekere dubbelingen (spellingvariant, of naam = alias van een ander
+    //    begrip) meteen samenvoegen; die hoeft de docent niet te beoordelen.
+    let docCounts = await loadDocCounts();
+    let list = await loadRows();
+    let autoMerged = 0;
+    for (const plan of planSureMerges(list.map((r) => ({ ...r, docCount: docCounts.get(r.id) || 0 })))) {
+      const { data: n, error: mErr } = await supabaseAdmin.rpc('merge_concepts', { keep_id: plan.keepId, dup_ids: plan.dupIds });
+      if (mErr) console.warn('[merge-suggestions] zeker samenvoegen mislukt:', mErr.message);
+      else autoMerged += Number(n) || 0;
+    }
+    if (autoMerged) {
+      console.log(`[merge-suggestions] ${autoMerged} zekere dubbeling(en) samengevoegd voor cursus ${courseId}`);
+      [docCounts, list] = await Promise.all([loadDocCounts(), loadRows()]);
+    }
+    if (list.length < 2) return res.json({ suggestions: [], autoMerged });
+
+    // 2. Twijfelgevallen: ruim zoeken (de docent beslist), met de klasse erbij
+    //    zodat moduleconcepten die al als cursusconcept bestaan opvallen.
+    const classified = list.map((r) => ({
+      ...r,
+      cls: r.concept_role === 'example_instance' ? 'example' : ((docCounts.get(r.id) || 0) > 1 ? 'course' : 'module'),
+    }));
     const resp = await openaiChatCompletion({
       model: OPENAI_MODEL,
-      messages: [{ role: 'user', content: buildSynonymPrompt(list) }],
-      ...chatModelParams({ temperature: 0, maxTokens: 4000 }),
+      messages: [{ role: 'user', content: buildDuplicateSuggestionPrompt(classified) }],
+      ...chatModelParams({ temperature: 0, maxTokens: 6000 }),
     });
-    if (!resp.ok) return res.status(502).json({ error: 'Het taalmodel kon geen voorstellen maken.' });
+    if (!resp.ok) return res.status(502).json({ error: 'Het taalmodel kon geen voorstellen maken.', autoMerged });
     const data = await resp.json();
-    const groups = parseSynonymGroups(data.choices?.[0]?.message?.content || '', list.map((r) => r.name));
-    const byName = new Map(list.map((r) => [r.name, r]));
+    const groups = parseSynonymGroups(data.choices?.[0]?.message?.content || '', classified.map((r) => r.name));
     const { data: dismissedRow } = await supabaseAdmin.from('chatbot_prompts').select('content').eq('name', mergeDismissKey(courseId)).maybeSingle();
     let dismissed = [];
     try { dismissed = JSON.parse(dismissedRow?.content || '[]'); } catch { dismissed = []; }
-    const dismissedSet = new Set(dismissed);
-    const rank = { approved: 3, needs_review: 2, rejected: 1 };
-    const suggestions = [];
-    for (const g of groups) {
-      const members = [g.preferred, ...g.others].map((n) => byName.get(n)).filter(Boolean);
-      if (members.length < 2) continue;
-      if (dismissedSet.has(groupSignature(members.map((m) => m.id)))) continue;
-      // Voorkeur: de voorgestelde naam; bij een goedgekeurd begrip in de groep dat goedgekeurde.
-      const preferred = byName.get(g.preferred);
-      const best = [...members].sort((a, b) => (rank[b.review_status] || 0) - (rank[a.review_status] || 0))[0];
-      const keep = (rank[preferred?.review_status] || 0) >= (rank[best.review_status] || 0) ? preferred : best;
-      suggestions.push({
-        keep: { id: keep.id, name: keep.name, reviewStatus: keep.review_status },
-        others: members.filter((m) => m.id !== keep.id).map((m) => ({ id: m.id, name: m.name, reviewStatus: m.review_status })),
-      });
-    }
-    return res.json({ suggestions });
+    const suggestions = buildMergeSuggestions(groups, classified, new Set(dismissed));
+    return res.json({ suggestions, autoMerged });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -5892,9 +5912,18 @@ ${combinedText}`;
     candidateConcepts = mergeByKey(candidateConcepts);
     // Kandidaat = spellingvariant van een bestaand begrip → alias van dat begrip.
     // (Precies dezelfde naam blijft in de lijst: die ververst rol/bewijs zoals voorheen.)
+    // Kandidaat = alias van een bestaand begrip ("z-verdeling" bij "standaardnormale
+    // verdeling") → ook geen nieuw begrip, anders staat het er twee keer in.
+    const existingByAliasKey = new Map();
+    for (const c of existingList) {
+      for (const a of c.aliases || []) {
+        const k = conceptKey(a);
+        if (k && !existingByKey.has(k) && !existingByAliasKey.has(k)) existingByAliasKey.set(k, c);
+      }
+    }
     const sureExisting = [];
     candidateConcepts = candidateConcepts.filter((c) => {
-      const ex = existingByKey.get(conceptKey(c.name));
+      const ex = existingByKey.get(conceptKey(c.name)) || existingByAliasKey.get(conceptKey(c.name));
       if (!ex) return true;
       addToExisting(ex, [c.name, ...(c.aliases || [])], c.documentIds);
       if (ex.name.toLowerCase().trim() === c.name.toLowerCase().trim()) return true;
@@ -6356,7 +6385,7 @@ ${combinedText}`;
     let sureMerged = 0;
     try {
       const { data: allRows } = await supabaseAdmin.from('concepts')
-        .select('id, name, review_status, definition').eq('course_id', courseId);
+        .select('id, name, review_status, definition, aliases, source_document_ids').eq('course_id', courseId);
       for (const plan of planSureMerges(allRows || [])) {
         const { data: n, error: mErr } = await supabaseAdmin.rpc('merge_concepts', { keep_id: plan.keepId, dup_ids: plan.dupIds });
         if (mErr) console.warn('[extract-concepts] samenvoegen mislukt:', mErr.message);

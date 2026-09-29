@@ -2054,7 +2054,7 @@ const tabGroups = [
               conceptId={conceptDrawerId}
               courseId={activeCourseId}
               onClose={() => setConceptDrawerId(null)}
-              onChanged={() => { loadConcepts(); }}
+              onChanged={() => { loadConcepts(); loadConceptModuleCounts(); }}
               onGoToQuizSources={() => { setConceptDrawerId(null); setActiveTab('quiz_sources'); }}
             />
           )}
@@ -2133,7 +2133,7 @@ const tabGroups = [
                   courseId={activeCourseId}
                   token={session.access_token}
                   refreshKey={courseConcepts.length}
-                  onChanged={() => { void loadConcepts(); void loadConceptsMeta(); }}
+                  onChanged={() => { void loadConcepts(); void loadConceptsMeta(); void loadConceptModuleCounts(); }}
                 />
               )}
 

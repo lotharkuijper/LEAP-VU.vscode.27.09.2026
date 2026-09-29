@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} document(en) leveren nog geen begrippen op. Klopt dat, of is het document niet goed ingelezen? Hergenereer de begrippenlijst of kijk bij Verwerking.",
   "admin.conceptQuality.mergeTitle": "Mogelijke dubbelingen",
   "admin.conceptQuality.findButton": "Zoek dubbelingen",
-  "admin.conceptQuality.intro": "Spellingvarianten voegt LEAP zelf samen. Synoniemen, afkortingen en vertalingen legt LEAP je eerst voor.",
+  "admin.conceptQuality.intro": "Spellingvarianten, en namen die al als andere naam bij een begrip staan, voegt LEAP zelf samen. Synoniemen, afkortingen, vertalingen en varianten (zoals “95% betrouwbaarheidsinterval” en “betrouwbaarheidsinterval”) legt LEAP je eerst voor. Een moduleconcept dat ook als cursusconcept bestaat, zie je bovenaan.",
   "admin.conceptQuality.none": "Geen dubbelingen gevonden.",
   "admin.conceptQuality.suggestion": "{others} lijkt hetzelfde te betekenen als {keep}.",
   "admin.conceptQuality.mergeButton": "Samenvoegen",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Begrippen per document",
   "help.concepts.coverage.body": "Hoeveel begrippen LEAP uit elk leerstofdocument haalt. Levert een document er 0 op, dan staat het in oranje: controleer of het goed is ingelezen. Studenten krijgen alleen uitleg en quizvragen over begrippen die hier staan.",
   "help.concepts.merge.title": "Dubbelingen samenvoegen",
-  "help.concepts.merge.body": "LEAP zoekt begrippen die hetzelfde betekenen (synoniem, afkorting, vertaling). Samenvoegen houdt één begrip over; de andere naam blijft bewaard, zodat studenten het onder beide namen vinden. Uitleg en quizkoppelingen gaan mee.",
+  "help.concepts.merge.body": "Elk begrip hoort één keer in de lijst. Zekere dubbelingen voegt LEAP zelf samen; twijfelgevallen (synoniem, afkorting, variant) legt LEAP je voor. Staat een moduleconcept ook als cursusconcept, dan blijft na samenvoegen alleen het cursusconcept over. De andere naam blijft bewaard; uitleg en quizkoppelingen gaan mee.",
   "admin.conceptJob.reading": "Cursus lezen: deel {done} van {total}…",
   "admin.conceptJob.merging": "Dubbelingen samenvoegen…",
   "admin.conceptJob.verifying": "Controleren tegen het cursusmateriaal: {done} van {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Website bijwerken ({site})",
   "tasks.web.progress": "Pagina {done} van {total}…",
   "tasks.sharestats.title": "ShareStats-vragen importeren",
-  "tasks.sharestats.progress": "Vragen importeren: {done}%"
+  "tasks.sharestats.progress": "Vragen importeren: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} zekere dubbeling(en) meteen samengevoegd.",
+  "admin.conceptQuality.suggestionCrossClass": "Moduleconcept {others} staat ook als cursusconcept {keep}. Samenvoegen houdt alleen het cursusconcept over."
 }

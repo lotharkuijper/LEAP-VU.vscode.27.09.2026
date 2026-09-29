@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} dokument(y) nie generują jeszcze żadnych pojęć. Czy to prawidłowe, czy dokument nie został poprawnie wczytany? Wygeneruj ponownie listę pojęć albo sprawdź w sekcji Przetwarzanie.",
   "admin.conceptQuality.mergeTitle": "Możliwe duplikaty",
   "admin.conceptQuality.findButton": "Znajdź duplikaty",
-  "admin.conceptQuality.intro": "Warianty pisowni LEAP scala automatycznie. Synonimy, skróty i tłumaczenia LEAP najpierw pokaże ci do zatwierdzenia.",
+  "admin.conceptQuality.intro": "Warianty pisowni oraz nazwy, które już występują jako inna nazwa pojęcia, LEAP scala automatycznie. Synonimy, skróty, tłumaczenia i warianty (takie jak „95% przedział ufności” i „przedział ufności”) LEAP najpierw przedstawi ci do decyzji. Pojęcie modułu, które istnieje też jako pojęcie kursu, zobaczysz na górze.",
   "admin.conceptQuality.none": "Nie znaleziono duplikatów.",
   "admin.conceptQuality.suggestion": "{others} wydaje się znaczyć to samo co {keep}.",
   "admin.conceptQuality.mergeButton": "Scal",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Pojęcia według dokumentu",
   "help.concepts.coverage.body": "Ile pojęć LEAP wydobywa z każdego dokumentu z materiałami do nauki. Jeśli dokument daje 0, jest oznaczony na pomarańczowo: sprawdź, czy został poprawnie wczytany. Studenci otrzymują wyjaśnienia i pytania quizowe tylko dotyczące pojęć widocznych tutaj.",
   "help.concepts.merge.title": "Scalanie duplikatów",
-  "help.concepts.merge.body": "LEAP szuka pojęć, które znaczą to samo (synonim, skrót, tłumaczenie). Scalanie pozostawia jedno pojęcie; druga nazwa zostaje zachowana, dzięki czemu studenci znajdą je pod obiema nazwami. Wyjaśnienia i powiązania z quizami zostają przeniesione.",
+  "help.concepts.merge.body": "Każde pojęcie powinno występować na liście tylko raz. Oczywiste duplikaty LEAP łączy automatycznie; przypadki wątpliwe (synonim, skrót, wariant) LEAP przedstawi ci do decyzji. Jeśli pojęcie z modułu występuje też jako pojęcie kursu, po scaleniu pozostanie tylko pojęcie kursu. Inna nazwa zostanie zachowana; wyjaśnienie i powiązania z quizami zostaną przeniesione.",
   "admin.conceptJob.reading": "Odczytywanie kursu: część {done} z {total}…",
   "admin.conceptJob.merging": "Scalanie duplikatów…",
   "admin.conceptJob.verifying": "Sprawdzanie względem materiałów kursu: {done} z {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Aktualizowanie strony ({site})",
   "tasks.web.progress": "Strona {done} z {total}…",
   "tasks.sharestats.title": "Importowanie pytań ShareStats",
-  "tasks.sharestats.progress": "Importowanie pytań: {done}%"
+  "tasks.sharestats.progress": "Importowanie pytań: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} pewnych duplikatów scalono od razu.",
+  "admin.conceptQuality.suggestionCrossClass": "Pojęcie modułu {others} istnieje też jako pojęcie kursu {keep}. Scalenie pozostawi tylko pojęcie kursu."
 }

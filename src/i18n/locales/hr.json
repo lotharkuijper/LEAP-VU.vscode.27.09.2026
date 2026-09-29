@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} dokument(a) još ne daje pojmove. Je li to točno ili dokument nije dobro učitan? Ponovno generiraj popis pojmova ili provjeri pod Obrada.",
   "admin.conceptQuality.mergeTitle": "Mogući duplikati",
   "admin.conceptQuality.findButton": "Potraži duplikate",
-  "admin.conceptQuality.intro": "LEAP sam spaja pravopisne varijante. Sinonime, kratice i prijevode LEAP ti prvo prikazuje na potvrdu.",
+  "admin.conceptQuality.intro": "LEAP sam objedinjuje pravopisne varijante i nazive koji su već navedeni kao drugi naziv za pojam. Sinonime, kratice, prijevode i varijante (kao što su “95% interval pouzdanosti” i “interval pouzdanosti”) LEAP ti prvo predlaže. Koncept modula koji postoji i kao koncept kolegija vidiš na vrhu.",
   "admin.conceptQuality.none": "Nisu pronađeni duplikati.",
   "admin.conceptQuality.suggestion": "{others} izgleda kao da znači isto što i {keep}.",
   "admin.conceptQuality.mergeButton": "Spoji",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Pojmovi po dokumentu",
   "help.concepts.coverage.body": "Koliko pojmova LEAP izvlači iz svakog dokumenta s nastavnim materijalom. Ako dokument daje 0 pojmova, prikazan je narančasto: provjeri je li dobro učitan. Studenti dobivaju objašnjenja i pitanja u kvizu samo o pojmovima koji su ovdje navedeni.",
   "help.concepts.merge.title": "Spajanje duplikata",
-  "help.concepts.merge.body": "LEAP traži pojmove koji znače isto (sinonim, kratica, prijevod). Spajanjem ostaje jedan pojam; drugi naziv ostaje sačuvan, tako da ga studenti mogu pronaći pod oba naziva. Objašnjenja i poveznice s kvizovima prenose se zajedno.",
+  "help.concepts.merge.body": "Svaki pojam pripada popisu samo jednom. Sigurne duplikate LEAP sam spaja; sumnjive slučajeve (sinonim, kratica, varijanta) LEAP ti prikazuje na provjeru. Ako se koncept modula pojavljuje i kao koncept kolegija, nakon spajanja ostaje samo koncept kolegija. Drugi naziv ostaje sačuvan; objašnjenje i poveznice na kviz prenose se zajedno.",
   "admin.conceptJob.reading": "Čitanje kolegija: dio {done} od {total}…",
   "admin.conceptJob.merging": "Spajanje duplikata…",
   "admin.conceptJob.verifying": "Provjera prema nastavnom materijalu: {done} od {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Ažuriranje web-mjesta ({site})",
   "tasks.web.progress": "Stranica {done} od {total}…",
   "tasks.sharestats.title": "Uvoz ShareStats pitanja",
-  "tasks.sharestats.progress": "Uvoz pitanja: {done}%"
+  "tasks.sharestats.progress": "Uvoz pitanja: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} sigurnih duplikata odmah objedinjeno.",
+  "admin.conceptQuality.suggestionCrossClass": "Koncept modula {others} postoji i kao koncept kolegija {keep}. Objedinjavanjem ostaje samo koncept kolegija."
 }

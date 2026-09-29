@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} document(s) do not yield any concepts yet. Is that right, or was the document not read correctly? Regenerate the concept list or check Processing.",
   "admin.conceptQuality.mergeTitle": "Possible duplicates",
   "admin.conceptQuality.findButton": "Find duplicates",
-  "admin.conceptQuality.intro": "LEAP merges spelling variants by itself. Synonyms, abbreviations and translations are shown to you first.",
+  "admin.conceptQuality.intro": "LEAP merges spelling variants, and names already stored as another name of a concept, by itself. Synonyms, abbreviations, translations and variants (such as “95% confidence interval” and “confidence interval”) are shown to you first. A module concept that also exists as a course concept appears at the top.",
   "admin.conceptQuality.none": "No duplicates found.",
   "admin.conceptQuality.suggestion": "{others} seems to mean the same as {keep}.",
   "admin.conceptQuality.mergeButton": "Merge",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Concepts per document",
   "help.concepts.coverage.body": "How many concepts LEAP takes from each course material document. A document with 0 is shown in orange: check whether it was read correctly. Students only get explanations and quiz questions about concepts listed here.",
   "help.concepts.merge.title": "Merging duplicates",
-  "help.concepts.merge.body": "LEAP looks for concepts that mean the same (synonym, abbreviation, translation). Merging keeps one concept; the other name is kept, so students find it under both names. Explanations and quiz links move along.",
+  "help.concepts.merge.body": "Every concept belongs in the list once. LEAP merges certain duplicates by itself; doubtful cases (synonym, abbreviation, variant) are shown to you. If a module concept also exists as a course concept, only the course concept remains after merging. The other name is kept; explanations and quiz links move along.",
   "admin.conceptJob.reading": "Reading the course: part {done} of {total}…",
   "admin.conceptJob.merging": "Merging duplicates…",
   "admin.conceptJob.verifying": "Checking against the course material: {done} of {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Updating website ({site})",
   "tasks.web.progress": "Page {done} of {total}…",
   "tasks.sharestats.title": "Importing ShareStats questions",
-  "tasks.sharestats.progress": "Importing questions: {done}%"
+  "tasks.sharestats.progress": "Importing questions: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} certain duplicate(s) merged right away.",
+  "admin.conceptQuality.suggestionCrossClass": "Module concept {others} also exists as course concept {keep}. Merging keeps only the course concept."
 }

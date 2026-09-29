@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} documento(s) aún no generan conceptos. ¿Es correcto, o el documento no se ha leído bien? Regenera la lista de conceptos o consulta Procesamiento.",
   "admin.conceptQuality.mergeTitle": "Posibles duplicados",
   "admin.conceptQuality.findButton": "Buscar duplicados",
-  "admin.conceptQuality.intro": "LEAP agrupa automáticamente las variantes ortográficas. Los sinónimos, abreviaturas y traducciones te los muestra primero.",
+  "admin.conceptQuality.intro": "LEAP fusiona automáticamente las variantes ortográficas y los nombres que ya figuran como otro nombre de un concepto. Los sinónimos, abreviaturas, traducciones y variantes (como “intervalo de confianza del 95%” e “intervalo de confianza”) te los muestra primero. Un concepto de módulo que también existe como concepto de curso aparece arriba.",
   "admin.conceptQuality.none": "No se han encontrado duplicados.",
   "admin.conceptQuality.suggestion": "{others} parece significar lo mismo que {keep}.",
   "admin.conceptQuality.mergeButton": "Combinar",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Conceptos por documento",
   "help.concepts.coverage.body": "Cuántos conceptos extrae LEAP de cada documento de material de estudio. Si un documento genera 0, aparece en naranja: comprueba que se haya leído correctamente. Los estudiantes solo reciben explicaciones y preguntas de quiz sobre los conceptos que aparecen aquí.",
   "help.concepts.merge.title": "Combinar duplicados",
-  "help.concepts.merge.body": "LEAP busca conceptos que significan lo mismo (sinónimo, abreviatura, traducción). Al combinarlos queda un solo concepto; el otro nombre se conserva, para que los estudiantes lo encuentren con ambos nombres. Las explicaciones y los enlaces a quizzes se mantienen.",
+  "help.concepts.merge.body": "Cada concepto debe aparecer una sola vez en la lista. LEAP fusiona automáticamente los duplicados claros; en los casos dudosos (sinónimo, abreviatura, variante), LEAP te pedirá que decidas. Si un concepto de módulo también aparece como concepto de curso, tras la fusión solo quedará el concepto de curso. El otro nombre se conservará; la explicación y los vínculos con cuestionarios se trasladarán.",
   "admin.conceptJob.reading": "Leyendo el curso: parte {done} de {total}…",
   "admin.conceptJob.merging": "Fusionando duplicados…",
   "admin.conceptJob.verifying": "Comprobando con el material del curso: {done} de {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Actualizar sitio web ({site})",
   "tasks.web.progress": "Página {done} de {total}…",
   "tasks.sharestats.title": "Importar preguntas de ShareStats",
-  "tasks.sharestats.progress": "Importando preguntas: {done}%"
+  "tasks.sharestats.progress": "Importando preguntas: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} duplicado(s) seguro(s) fusionado(s) de inmediato.",
+  "admin.conceptQuality.suggestionCrossClass": "El concepto de módulo {others} también existe como concepto de curso {keep}. Al fusionarlos, solo queda el concepto de curso."
 }

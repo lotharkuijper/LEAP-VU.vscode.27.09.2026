@@ -5,9 +5,12 @@ import { HelpTip } from './help/HelpTip';
 import { AdminHint } from './help/AdminHint';
 
 interface Coverage { documentId: string; title: string; concepts: number }
+type ConceptClass = 'course' | 'module' | 'example';
 interface MergeSuggestion {
-  keep: { id: string; name: string; reviewStatus: string | null };
-  others: Array<{ id: string; name: string; reviewStatus: string | null }>;
+  /** crossClass = moduleconcept(en) die al als cursusconcept bestaan. */
+  kind?: 'crossClass' | 'same';
+  keep: { id: string; name: string; reviewStatus: string | null; cls?: ConceptClass };
+  others: Array<{ id: string; name: string; reviewStatus: string | null; cls?: ConceptClass }>;
 }
 
 /**
@@ -26,6 +29,7 @@ export function ConceptQualityPanel({ courseId, token, onChanged, refreshKey = 0
   const { t } = useLanguage();
   const [coverage, setCoverage] = useState<Coverage[] | null>(null);
   const [suggestions, setSuggestions] = useState<MergeSuggestion[] | null>(null);
+  const [autoMerged, setAutoMerged] = useState(0);
   const [searching, setSearching] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +46,13 @@ export function ConceptQualityPanel({ courseId, token, onChanged, refreshKey = 0
   useEffect(() => { void loadCoverage(); }, [loadCoverage, refreshKey]);
 
   const findSuggestions = async () => {
-    setSearching(true); setError(null);
+    setSearching(true); setError(null); setAutoMerged(0);
     try {
       const r = await fetch(`/api/admin/concepts/merge-suggestions?courseId=${encodeURIComponent(courseId)}`, { headers: { Authorization: `Bearer ${token}` } });
       const d = await r.json();
+      // Zekere dubbelingen zijn dan al samengevoegd, ook als de voorstellen daarna mislukken.
+      const n = Number(d.autoMerged) || 0;
+      if (n > 0) { setAutoMerged(n); onChanged(); void loadCoverage(); }
       if (!r.ok) throw new Error(d.error || t('admin.conceptQuality.err.suggest'));
       setSuggestions(d.suggestions || []);
     } catch (e) {
@@ -120,6 +127,9 @@ export function ConceptQualityPanel({ courseId, token, onChanged, refreshKey = 0
             {t('admin.conceptQuality.findButton')}
           </button>
         </div>
+        {autoMerged > 0 && (
+          <p className="mb-2 text-xs text-green-700" data-testid="text-auto-merged">{t('admin.conceptQuality.autoMerged', { n: String(autoMerged) })}</p>
+        )}
         {error && <p className="mb-2 flex items-start gap-1.5 text-xs text-red-700"><AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />{error}</p>}
         {suggestions === null ? (
           <p className="text-xs text-gray-500">{t('admin.conceptQuality.intro')}</p>
@@ -129,8 +139,8 @@ export function ConceptQualityPanel({ courseId, token, onChanged, refreshKey = 0
           <ul className="space-y-2" data-testid="list-merge-suggestions">
             {suggestions.map(s => (
               <li key={s.keep.id} className="rounded-lg bg-gray-50 p-2.5 text-xs ring-1 ring-gray-200">
-                <p className="text-gray-700">
-                  {t('admin.conceptQuality.suggestion', { others: s.others.map(o => `“${o.name}”`).join(', '), keep: `“${s.keep.name}”` })}
+                <p className="text-gray-700" data-testid={`text-merge-suggestion-${s.keep.id}`}>
+                  {t(s.kind === 'crossClass' ? 'admin.conceptQuality.suggestionCrossClass' : 'admin.conceptQuality.suggestion', { others: s.others.map(o => `“${o.name}”`).join(', '), keep: `“${s.keep.name}”` })}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <button

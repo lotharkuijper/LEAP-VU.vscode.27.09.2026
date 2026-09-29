@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} belge henüz kavram üretmiyor. Bu doğru mu, yoksa belge düzgün okunmamış mı? Kavram listesini yeniden oluştur veya İşleme bölümüne bak.",
   "admin.conceptQuality.mergeTitle": "Olası yinelenenler",
   "admin.conceptQuality.findButton": "Yinelenenleri ara",
-  "admin.conceptQuality.intro": "Yazım varyantlarını LEAP kendisi birleştirir. Eş anlamlıları, kısaltmaları ve çevirileri ise LEAP önce sana sunar.",
+  "admin.conceptQuality.intro": "Yazım varyantlarını ve zaten bir kavramın diğer adı olarak yer alan adları LEAP otomatik olarak birleştirir. Eş anlamlıları, kısaltmaları, çevirileri ve varyantları (ör. “%95 güven aralığı” ve “güven aralığı”) LEAP önce sana sunar. Kurs kavramı olarak da bulunan bir modül kavramını en üstte görürsün.",
   "admin.conceptQuality.none": "Yinelenen bulunamadı.",
   "admin.conceptQuality.suggestion": "{others}, {keep} ile aynı anlama geliyor gibi görünüyor.",
   "admin.conceptQuality.mergeButton": "Birleştir",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Belge başına kavramlar",
   "help.concepts.coverage.body": "LEAP'in her öğrenim materyali belgesinden kaç kavram çıkardığı. Bir belge 0 kavram üretirse turuncu gösterilir: düzgün okunup okunmadığını kontrol et. Öğrenciler yalnızca burada yer alan kavramlar hakkında açıklama ve quiz soruları alır.",
   "help.concepts.merge.title": "Yinelenenleri birleştir",
-  "help.concepts.merge.body": "LEAP aynı anlama gelen kavramları arar (eş anlamlı, kısaltma, çeviri). Birleştirme tek bir kavram bırakır; diğer ad korunur, böylece öğrenciler onu iki adla da bulabilir. Açıklamalar ve quiz bağlantıları da taşınır.",
+  "help.concepts.merge.body": "Her kavram listede bir kez yer alır. Kesin tekrarları LEAP kendisi birleştirir; şüpheli durumları (eş anlamlı, kısaltma, varyant) LEAP sana sunar. Bir modül kavramı aynı zamanda ders kavramı olarak da varsa, birleştirmeden sonra yalnızca ders kavramı kalır. Diğer ad korunur; açıklama ve quiz bağlantıları da aktarılır.",
   "admin.conceptJob.reading": "Ders okunuyor: {done}/{total}…",
   "admin.conceptJob.merging": "Yinelenenler birleştiriliyor…",
   "admin.conceptJob.verifying": "Ders materyaliyle karşılaştırılarak kontrol ediliyor: {done}/{total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Web sitesi güncelleniyor ({site})",
   "tasks.web.progress": "Sayfa {done}/{total}…",
   "tasks.sharestats.title": "ShareStats sorularını içe aktar",
-  "tasks.sharestats.progress": "Sorular içe aktarılıyor: {done}%"
+  "tasks.sharestats.progress": "Sorular içe aktarılıyor: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} kesin yineleme hemen birleştirildi.",
+  "admin.conceptQuality.suggestionCrossClass": "Modül kavramı {others}, kurs kavramı {keep} olarak da mevcut. Birleştirme yalnızca kurs kavramını tutar."
 }

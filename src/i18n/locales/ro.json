@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} document(e) nu generează încă niciun concept. Este corect sau documentul nu a fost citit corect? Regenerează lista de concepte sau verifică la Procesare.",
   "admin.conceptQuality.mergeTitle": "Posibile dubluri",
   "admin.conceptQuality.findButton": "Caută dubluri",
-  "admin.conceptQuality.intro": "LEAP îmbină automat variantele de ortografie. Pentru sinonime, abrevieri și traduceri, LEAP ți le prezintă mai întâi.",
+  "admin.conceptQuality.intro": "LEAP îmbină automat variantele de ortografie și numele care apar deja ca alt nume pentru un concept. Sinonimele, abrevierile, traducerile și variantele (precum „interval de încredere de 95%” și „interval de încredere”) îți sunt prezentate mai întâi de LEAP. Un concept de modul care există și ca concept de curs apare în partea de sus.",
   "admin.conceptQuality.none": "Nu s-au găsit dubluri.",
   "admin.conceptQuality.suggestion": "{others} pare să însemne același lucru ca {keep}.",
   "admin.conceptQuality.mergeButton": "Îmbină",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Concepte per document",
   "help.concepts.coverage.body": "Câte concepte extrage LEAP din fiecare document cu material de învățare. Dacă un document produce 0, apare cu portocaliu: verifică dacă a fost citit corect. Studenții primesc explicații și întrebări de quiz doar despre conceptele afișate aici.",
   "help.concepts.merge.title": "Îmbinarea dublurilor",
-  "help.concepts.merge.body": "LEAP caută concepte care înseamnă același lucru (sinonim, abreviere, traducere). Îmbinarea păstrează un singur concept; celălalt nume rămâne salvat, astfel încât studenții să îl găsească sub ambele denumiri. Explicațiile și legăturile cu quizurile sunt transferate.",
+  "help.concepts.merge.body": "Fiecare concept trebuie să apară o singură dată în listă. LEAP unește automat duplicatele certe; cazurile incerte (sinonim, abreviere, variantă) ți le prezintă LEAP. Dacă un concept de modul apare și ca concept de curs, după unire rămâne doar conceptul de curs. Cealaltă denumire se păstrează; explicațiile și asocierile cu quizurile sunt preluate.",
   "admin.conceptJob.reading": "Se citește cursul: partea {done} din {total}…",
   "admin.conceptJob.merging": "Se îmbină duplicatele…",
   "admin.conceptJob.verifying": "Se verifică în raport cu materialul cursului: {done} din {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Actualizare website ({site})",
   "tasks.web.progress": "Pagina {done} din {total}…",
   "tasks.sharestats.title": "Importare întrebări ShareStats",
-  "tasks.sharestats.progress": "Se importă întrebările: {done}%"
+  "tasks.sharestats.progress": "Se importă întrebările: {done}%",
+  "admin.conceptQuality.autoMerged": "{n} dublură/dubluri sigură/sigure îmbinată/îmbinate imediat.",
+  "admin.conceptQuality.suggestionCrossClass": "Conceptul de modul {others} există și ca concept de curs {keep}. Îmbinarea păstrează doar conceptul de curs."
 }

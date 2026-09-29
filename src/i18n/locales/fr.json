@@ -2648,7 +2648,7 @@
   "admin.conceptQuality.emptyWarning": "{n} document(s) ne produisent encore aucune notion. Est-ce normal, ou le document n’a-t-il pas été correctement lu ? Regénère la liste des notions ou consulte Traitement.",
   "admin.conceptQuality.mergeTitle": "Doublons possibles",
   "admin.conceptQuality.findButton": "Chercher des doublons",
-  "admin.conceptQuality.intro": "LEAP fusionne automatiquement les variantes orthographiques. Pour les synonymes, abréviations et traductions, LEAP te les propose d’abord.",
+  "admin.conceptQuality.intro": "LEAP fusionne automatiquement les variantes orthographiques et les noms qui figurent déjà comme autre nom d’un concept. Les synonymes, abréviations, traductions et variantes (comme « intervalle de confiance à 95 % » et « intervalle de confiance ») te sont d’abord proposés par LEAP. Un concept de module qui existe aussi comme concept de cours apparaît en haut.",
   "admin.conceptQuality.none": "Aucun doublon trouvé.",
   "admin.conceptQuality.suggestion": "{others} semble signifier la même chose que {keep}.",
   "admin.conceptQuality.mergeButton": "Fusionner",
@@ -2658,7 +2658,7 @@
   "help.concepts.coverage.title": "Notions par document",
   "help.concepts.coverage.body": "Le nombre de notions que LEAP extrait de chaque document de cours. Si un document en produit 0, il apparaît en orange : vérifie qu’il a bien été lu. Les étudiants reçoivent uniquement des explications et des questions de quiz sur les notions affichées ici.",
   "help.concepts.merge.title": "Fusionner les doublons",
-  "help.concepts.merge.body": "LEAP recherche les notions qui signifient la même chose (synonyme, abréviation, traduction). La fusion conserve une seule notion ; l’autre nom reste enregistré, afin que les étudiants la trouvent sous les deux noms. Les explications et les liens avec les quiz sont aussi conservés.",
+  "help.concepts.merge.body": "Chaque concept ne doit apparaître qu’une seule fois dans la liste. LEAP fusionne automatiquement les doublons certains ; en cas de doute (synonyme, abréviation, variante), LEAP te les soumet. Si un concept de module existe aussi comme concept de cours, seul le concept de cours reste après la fusion. L’autre nom est conservé ; les explications et les liens avec les quiz sont également repris.",
   "admin.conceptJob.reading": "Lecture du cours : partie {done} sur {total}…",
   "admin.conceptJob.merging": "Fusion des doublons…",
   "admin.conceptJob.verifying": "Vérification par rapport au matériel du cours : {done} sur {total}…",
@@ -2678,5 +2678,7 @@
   "tasks.webSync.title": "Mettre à jour le site web ({site})",
   "tasks.web.progress": "Page {done} sur {total}…",
   "tasks.sharestats.title": "Importer les questions ShareStats",
-  "tasks.sharestats.progress": "Importation des questions : {done}%"
+  "tasks.sharestats.progress": "Importation des questions : {done}%",
+  "admin.conceptQuality.autoMerged": "{n} doublon(s) certain(s) fusionné(s) immédiatement.",
+  "admin.conceptQuality.suggestionCrossClass": "Le concept de module {others} existe aussi comme concept de cours {keep}. La fusion ne conserve que le concept de cours."
 }

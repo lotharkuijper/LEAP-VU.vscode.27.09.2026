@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildDocumentWindows, conceptKey, mergeByKey, parseSynonymGroups, applySynonymGroups,
   capFairly, planSureMerges, mapLimit, WINDOW_CHARS, isUsableConceptName,
+  buildMergeSuggestions, buildDuplicateSuggestionPrompt,
 } from '../conceptConsolidation.js';
 
 describe('buildDocumentWindows — de hele cursus wordt gelezen (regressie E&B1: 5% gezien)', () => {
@@ -123,6 +124,80 @@ describe('planSureMerges — opruimen van de bestaande lijst', () => {
     expect(planSureMerges(rows)).toEqual([
       { keepId: '2', keepName: 'Geneste Patiënt Controleonderzoek', dupIds: ['1'], dupNames: ['genest patiënt controleonderzoek'] },
     ]);
+  });
+
+  // Regressie (E&B1, 2026-09-29): deze drie stonden als alias bij het ene
+  // begrip én als los begrip in de lijst — de docent zag ze dubbel.
+  it('naam = alias van een ander begrip → zeker samenvoegen; het begrip met de alias blijft', () => {
+    const rows = [
+      { id: 'snv', name: 'standaardnormale verdeling', aliases: ['z-verdeling'], review_status: 'approved', docCount: 2, definition: 'kort' },
+      { id: 'z', name: 'z-verdeling', aliases: [], review_status: 'approved', docCount: 3, definition: 'veel langere definitie' },
+      { id: 'eo', name: 'Experimenteel onderzoek', aliases: ['experiment', 'Experimentele studie'], review_status: 'approved', docCount: 3 },
+      { id: 'ex', name: 'experiment', aliases: [], review_status: 'approved', docCount: 4 },
+      { id: 'gem', name: 'gemiddelde', aliases: ['Gemiddelde van de waarnemingen'], review_status: 'approved', docCount: 3 },
+      { id: 'gw', name: 'gemiddelde van de waarnemingen', aliases: [], review_status: 'approved', docCount: 2 },
+      { id: 'med', name: 'mediaan', aliases: [], review_status: 'approved', docCount: 3 },
+    ];
+    const plans = planSureMerges(rows);
+    expect(plans.map((p) => [p.keepId, p.dupIds])).toEqual([['snv', ['z']], ['eo', ['ex']], ['gem', ['gw']]]);
+  });
+
+  it('goedkeuring gaat vóór het hebben van de alias', () => {
+    const rows = [
+      { id: 'a', name: 'standaardnormale verdeling', aliases: ['z-verdeling'], review_status: 'rejected' },
+      { id: 'b', name: 'z-verdeling', aliases: [], review_status: 'approved' },
+    ];
+    expect(planSureMerges(rows)).toEqual([{ keepId: 'b', keepName: 'z-verdeling', dupIds: ['a'], dupNames: ['standaardnormale verdeling'] }]);
+  });
+
+  it('een alias zonder los begrip, of een gedeelde alias, is geen zekere dubbeling', () => {
+    const rows = [
+      { id: 'a', name: 'p-waarde', aliases: ['overschrijdingskans'] },
+      { id: 'b', name: 'tweezijdige overschrijdingskans', aliases: ['overschrijdingskans'] },
+    ];
+    expect(planSureMerges(rows)).toEqual([]);
+  });
+});
+
+describe('buildMergeSuggestions — twijfelgevallen voor de docent', () => {
+  const rows = [
+    { id: 'bi', name: 'betrouwbaarheidsinterval', review_status: 'approved', cls: 'course' },
+    { id: 'bi95', name: '95% betrouwbaarheidsinterval', review_status: 'approved', cls: 'module' },
+    { id: 'pc', name: 'Prospectief cohort', review_status: 'approved', cls: 'module' },
+    { id: 'pco', name: 'Prospectief cohortonderzoek', review_status: 'approved', cls: 'module' },
+    { id: 'ruw', name: 'ruwe effect', review_status: 'approved', cls: 'course' },
+    { id: 'ong', name: 'Ongestratificeerde effect', review_status: 'needs_review', cls: 'module' },
+  ];
+
+  it('moduleconcept dat al als cursusconcept bestaat: het cursusconcept blijft, en staat bovenaan', () => {
+    const groups = [
+      { preferred: 'Prospectief cohortonderzoek', others: ['Prospectief cohort'] },
+      // het model kiest hier de modulenaam als voorkeur; het cursusconcept moet toch blijven
+      { preferred: '95% betrouwbaarheidsinterval', others: ['betrouwbaarheidsinterval'] },
+    ];
+    const s = buildMergeSuggestions(groups, rows);
+    expect(s.map((x) => [x.kind, x.keep.id, x.others.map((o) => o.id)])).toEqual([
+      ['crossClass', 'bi', ['bi95']],
+      ['same', 'pco', ['pc']],
+    ]);
+  });
+
+  it('goedkeuring gaat vóór klasse; weggeklikte voorstellen komen niet terug', () => {
+    const s = buildMergeSuggestions([{ preferred: 'Ongestratificeerde effect', others: ['ruwe effect'] }], rows);
+    expect(s[0].keep.id).toBe('ruw');
+    expect(buildMergeSuggestions([{ preferred: 'ruwe effect', others: ['Ongestratificeerde effect'] }], rows, new Set(['ong|ruw']))).toEqual([]);
+  });
+
+  it('de prompt draagt de klasse per begrip en vraagt om varianten met een toevoeging', () => {
+    const p = buildDuplicateSuggestionPrompt(rows.slice(0, 2).map((r) => ({ ...r, definition: 'x' })));
+    expect(p).toContain('1. [C] betrouwbaarheidsinterval — x');
+    expect(p).toContain('2. [M] 95% betrouwbaarheidsinterval');
+    expect(p).toMatch(/qualifier/);
+  });
+
+  it('parser accepteert namen waar het model de klasse-tag voor laat staan', () => {
+    const g = parseSynonymGroups('[{"preferred":"[C] betrouwbaarheidsinterval","others":["[M] 95% betrouwbaarheidsinterval"]}]', rows.map((r) => r.name));
+    expect(g).toEqual([{ preferred: 'betrouwbaarheidsinterval', others: ['95% betrouwbaarheidsinterval'] }]);
   });
 });
 
