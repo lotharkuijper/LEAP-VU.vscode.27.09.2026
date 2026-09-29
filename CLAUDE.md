@@ -20,9 +20,9 @@
 ## RAG and ingestion rules
 - Concept extraction reads the WHOLE course: all chunks per document, in windows of ~12k characters (`server/conceptConsolidation.js`), one LLM call per window, and every candidate keeps its `source_document_ids`. Never go back to a single sample of chunks (it used to cover 5% of E&B1).
 - Duplicates are handled in three ways:
-  - Sure spelling variants (`conceptKey`) are merged automatically.
-  - Synonyms, abbreviations and translations go through the LLM synonym step; the other names are stored as `aliases`.
-  - Doubtful cases are shown to the teacher as suggestions (`/api/admin/concepts/merge-suggestions`).
+  - Sure cases are merged automatically (`planSureMerges`): spelling variants (`conceptKey`), and a concept whose name is stored as an alias of another concept. An extraction candidate that matches an existing alias is never inserted as a new concept.
+  - Synonyms, abbreviations and translations go through the LLM synonym step (narrow, automatic); the other names are stored as `aliases`.
+  - Doubtful cases are shown to the teacher as suggestions (`/api/admin/concepts/merge-suggestions`, broad prompt `buildDuplicateSuggestionPrompt`, including variants with a qualifier). Every concept should appear only once: a module concept that also exists as a course concept is listed first (`kind: 'crossClass'`), and the course concept is kept.
 - Merging always goes through the DB function `merge_concepts`, which moves all references along.
 - The frontend runs extraction as a background job (`runConceptExtraction`), because a request of several minutes gets cut off by proxies.
 - Verify chunking before concept extraction.
