@@ -114,6 +114,10 @@ docker run -p 3001:3001 --env-file .env leap-vu
 - **Bestaande bronnen** die op een server zonder LibreOffice zijn ingelezen, bereid je eenmalig voor met `node scripts/prepare-office-sources.mjs` (maakt de weergaveversies en vult paginanummers aan zonder opnieuw in te lezen; `--dry-run` om eerst te tellen).
 - Later kan de omzetting via Microsoft 365 (Graph) lopen; de plek daarvoor is `convertOfficeToPdf` in `server/documentRender.js`.
 
+### Op Azure (VU)
+
+De opzet voor Azure staat in [`azure/README.md`](azure/README.md): LEAP en de Supabase-onderdelen (inloggen, database-API, bestandsopslag) draaien dan in eigen beheer in resourcegroep `vu-leap-rg`. Een push naar `main` rolt de app uit via `.github/workflows/azure-deploy.yml`; nieuwe migraties in `supabase/migrations/` voert de app bij het starten zelf uit (`scripts/migrate.mjs`). E-mails gaan daar via Microsoft Graph (`MAIL_UAMI_CLIENT_ID`, `MAIL_SENDER`) in plaats van Resend, en live-updates lopen zonder Supabase Realtime (`VITE_PUBLIC_REALTIME=off`).
+
 ## Rollen
 
 - **Student** — standaardrol bij registratie. Toegang tot chat, uitleg, quiz, Studiecafé en projecten van zichtbare cursussen.

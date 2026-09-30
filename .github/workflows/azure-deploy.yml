@@ -1,0 +1,76 @@
+name: Uitrollen naar Azure
+
+# Bouwt LEAP en zet de nieuwe versie live op Azure bij elke push naar main.
+# Doet niets zolang de repo-variabele AZURE_CLIENT_ID niet is gezet (Settings ->
+# Secrets and variables -> Actions -> Variables); zie azure/README.md.
+# Er staan geen geheimen in deze repo of in GitHub: GitHub meldt zich bij Azure
+# aan als de identiteit id-leap-deploy (OIDC) en de app leest zijn geheimen uit
+# Key Vault.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', 'azure/**']
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+env:
+  AZURE_TENANT_ID: 462a9c9c-2da6-4bfb-b318-0f83043fe49b # VU
+  AZURE_SUBSCRIPTION_ID: d9de8af9-cb28-4ae5-b8ae-67d88e3169d5 # VU - BETA AI Hub Pilot
+  RG: vu-leap-rg
+  ACR: vuleapacr
+  KV: kv-vu-leap
+  APP: vu-leap-app
+  SUPABASE_APP: vu-leap-supabase
+
+jobs:
+  deploy:
+    if: vars.AZURE_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Image bouwen
+        run: |
+          # De twee VITE_-waarden komen in de frontendbundel; het zijn het publieke
+          # adres en de publieke sleutel, geen geheimen.
+          SUPABASE_URL="https://$(az containerapp show -g "$RG" -n "$SUPABASE_APP" --query properties.configuration.ingress.fqdn -o tsv)"
+          ANON_KEY=$(az keyvault secret show --vault-name "$KV" -n anon-key --query value -o tsv)
+          az acr build -r "$ACR" -t "leap-app:${GITHUB_SHA::7}" . --no-logs \
+            --build-arg VITE_PUBLIC_SUPABASE_URL="$SUPABASE_URL" \
+            --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
+            --build-arg VITE_PUBLIC_REALTIME=off
+
+      - name: Uitrollen
+        run: az containerapp update -g "$RG" -n "$APP" --image "$ACR.azurecr.io/leap-app:${GITHUB_SHA::7}" -o none
+
+      - name: Controleren of de nieuwe versie draait
+        run: |
+          # De nieuwe versie voert eerst nieuwe databasemigraties uit en start dan.
+          # Lukt dat niet, dan blijft de vorige versie draaien en faalt deze stap.
+          REVISION=$(az containerapp show -g "$RG" -n "$APP" --query properties.latestRevisionName -o tsv)
+          for i in $(seq 1 40); do
+            STATE=$(az containerapp revision show -g "$RG" -n "$APP" --revision "$REVISION" \
+              --query "[properties.healthState, properties.runningState]" -o tsv | paste -sd' ' -)
+            echo "$REVISION: $STATE"
+            case "$STATE" in
+              "Healthy Running"*) exit 0 ;;
+              *Failed*|*Degraded*) break ;;
+            esac
+            sleep 15
+          done
+          echo "::error::De nieuwe versie is niet gestart; de vorige versie blijft draaien. Laatste regels uit het logboek:"
+          az containerapp logs show -g "$RG" -n "$APP" --revision "$REVISION" --tail 80 || true
+          exit 1

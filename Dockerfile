@@ -23,8 +23,11 @@ RUN npm ci
 COPY . .
 ARG VITE_PUBLIC_SUPABASE_URL
 ARG VITE_PUBLIC_SUPABASE_ANON_KEY
+# "off" waar Supabase Realtime niet draait (Azure): de app ververst dan periodiek.
+ARG VITE_PUBLIC_REALTIME
 ENV VITE_PUBLIC_SUPABASE_URL=$VITE_PUBLIC_SUPABASE_URL \
-    VITE_PUBLIC_SUPABASE_ANON_KEY=$VITE_PUBLIC_SUPABASE_ANON_KEY
+    VITE_PUBLIC_SUPABASE_ANON_KEY=$VITE_PUBLIC_SUPABASE_ANON_KEY \
+    VITE_PUBLIC_REALTIME=$VITE_PUBLIC_REALTIME
 RUN npm run build
 
 # ── 2. Runtime: Node + LibreOffice (zonder grafische schil) ──────────────────
@@ -46,8 +49,12 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY server ./server
 COPY scripts ./scripts
+# Migraties: scripts/migrate.mjs voert nieuwe uit bij het starten (MIGRATE_ON_START).
+COPY supabase/migrations ./supabase/migrations
+# De server leest de vertalingen voor e-mails uit de frontend-bestanden.
+COPY src/i18n/locales ./src/i18n/locales
 COPY --from=build /app/dist ./dist
 # Niet als root draaien.
 USER node
 EXPOSE 3001
-CMD ["node", "server/index.js"]
+CMD ["sh", "-c", "node scripts/migrate.mjs --on-start && exec node server/index.js"]

@@ -1,0 +1,44 @@
+# Vervangt de gateway van Supabase in de cloud: één adres, dezelfde paden.
+#   /auth/v1/*    -> Supabase Auth (GoTrue)   in dezelfde app, localhost:9999
+#   /rest/v1/*    -> PostgREST                in dezelfde app, localhost:3000
+#   /storage/v1/* -> Supabase Storage         aparte, interne app
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	# CORS, zoals de gateway van Supabase dat doet
+	@preflight method OPTIONS
+	handle @preflight {
+		header Access-Control-Allow-Origin "*"
+		header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD"
+		header Access-Control-Allow-Headers "{http.request.header.Access-Control-Request-Headers}"
+		header Access-Control-Max-Age "3600"
+		respond 204
+	}
+	header ?Access-Control-Allow-Origin "*"
+	header ?Access-Control-Expose-Headers "Content-Range, Range-Unit, X-Total-Count, X-Supabase-Api-Version, Content-Profile, Content-Location"
+
+	handle_path /auth/v1/* {
+		reverse_proxy localhost:9999
+	}
+
+	handle_path /rest/v1/* {
+		reverse_proxy localhost:3000
+	}
+
+	handle_path /storage/v1/* {
+		reverse_proxy {$STORAGE_UPSTREAM:http://vu-leap-storage} {
+			header_up Host {upstream_hostport}
+		}
+	}
+
+	handle /health {
+		respond "ok" 200
+	}
+
+	handle {
+		respond "not found" 404
+	}
+}
