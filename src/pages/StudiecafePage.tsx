@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLanguage } from '../i18n';
 import { supabase } from '../lib/supabase';
+import { liveUpdates } from '../lib/liveUpdates';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { MarkdownMessage } from '../components/MarkdownMessage';
@@ -419,12 +420,11 @@ export function StudiecafePage() {
 
   useEffect(() => {
     if (!courseId) return;
-    const channel = supabase
+    return liveUpdates(() => supabase
       .channel(`studiecafe-${courseId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'studiecafe_threads', filter: `course_id=eq.${courseId}` }, () => scheduleRef.current())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'studiecafe_replies', filter: `course_id=eq.${courseId}` }, () => scheduleRef.current())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+      .subscribe(), () => scheduleRef.current(), 8000);
   }, [courseId]);
 
   // ── Vertaling (Task #288): één Record over alle zichtbare titels/bodies ───

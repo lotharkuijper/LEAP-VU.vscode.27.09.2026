@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { liveUpdates } from '../lib/liveUpdates';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
 import { useLearningLevel } from '../hooks/useLearningLevel';
@@ -483,17 +484,23 @@ export function ProjectRoomPage() {
   useEffect(() => {
     if (!groupId) return;
     let cancelled = false;
-    (async () => {
+    const loadChat = async () => {
       const { data } = await supabase
         .from('group_chat_messages')
         .select('id, group_id, user_id, body, reactions, created_at, profiles(full_name, email)')
         .eq('group_id', groupId)
         .order('created_at', { ascending: true })
         .limit(200);
-      if (!cancelled) setChatMessages((data as any) || []);
-    })();
+      if (cancelled) return;
+      const next = (data as any) || [];
+      // Ongewijzigd → dezelfde lijst laten staan, zodat periodiek verversen
+      // (zonder Realtime) de chat niet telkens naar beneden laat scrollen.
+      const key = (list: any[]) => JSON.stringify(list.map(m => [m.id, m.body, m.reactions]));
+      setChatMessages(prev => (key(prev) === key(next) ? prev : next));
+    };
+    loadChat();
 
-    const channel = supabase
+    const stopLive = liveUpdates(() => supabase
       .channel(`group-chat-${groupId}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'group_chat_messages',
@@ -516,9 +523,9 @@ export function ProjectRoomPage() {
         const m = payload.new as any;
         setChatMessages(prev => prev.map(x => x.id === m.id ? { ...x, reactions: m.reactions, body: m.body } : x));
       })
-      .subscribe();
+      .subscribe(), loadChat, 4000);
 
-    return () => { cancelled = true; supabase.removeChannel(channel); };
+    return () => { cancelled = true; stopLive(); };
   }, [groupId]);
 
   useEffect(() => {

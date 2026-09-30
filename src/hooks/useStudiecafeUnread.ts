@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { liveUpdates } from '../lib/liveUpdates';
 import { useAuth } from '../contexts/AuthContext';
 
 // Task #307: ongelezen-indicator voor het Studiecafé in de navigatie. Pollt de
@@ -61,18 +62,19 @@ export function useStudiecafeUnread(courseId: string | null | undefined): Studie
     const onReadRefresh = () => refresh();
     window.addEventListener('studiecafe-unread-refresh', onReadRefresh);
 
-    // Realtime: nieuwe/aangepaste threads of replies → direct herladen.
-    const channel = supabase
+    // Realtime: nieuwe/aangepaste threads of replies → direct herladen. Zonder
+    // Realtime volstaat de interval hierboven.
+    const stopLive = liveUpdates(() => supabase
       .channel(`studiecafe-unread-${courseId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'studiecafe_threads', filter: `course_id=eq.${courseId}` }, () => refresh())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'studiecafe_replies', filter: `course_id=eq.${courseId}` }, () => refresh())
-      .subscribe();
+      .subscribe(), refresh, 0);
 
     return () => {
       clearInterval(interval);
       window.removeEventListener('focus', onFocus);
       window.removeEventListener('studiecafe-unread-refresh', onReadRefresh);
-      supabase.removeChannel(channel);
+      stopLive();
     };
   }, [courseId, refresh]);
 

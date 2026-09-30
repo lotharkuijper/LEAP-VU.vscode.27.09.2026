@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { liveUpdates } from '../lib/liveUpdates';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 
 export interface RAGStatus {
@@ -45,7 +46,7 @@ export function useRAGStatus(): RAGStatus {
 
     checkStatusIfMounted();
 
-    const channel = supabase
+    const stopLive = liveUpdates(() => supabase
       .channel('rag-status-changes')
       .on(
         'postgres_changes',
@@ -57,12 +58,12 @@ export function useRAGStatus(): RAGStatus {
         { event: '*', schema: 'public', table: 'document_chunks' },
         debouncedCheck
       )
-      .subscribe();
+      .subscribe(), debouncedCheck, 20000);
 
     return () => {
       mounted = false;
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      supabase.removeChannel(channel);
+      stopLive();
     };
   }, [activeCourseId, activeCourseRagFolderIds.join(','), courseLoading]);
 
