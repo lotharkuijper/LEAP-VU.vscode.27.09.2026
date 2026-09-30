@@ -17,8 +17,9 @@ Alles staat in resourcegroep **`vu-leap-rg`** (abonnement *VU - BETA AI Hub Pilo
 | Replit (server + frontend) | Container App, altijd één kopie | `vu-leap-app` |
 | Supabase Auth, database-API en gateway | Container App met drie onderdelen: `gateway` (Caddy), `auth` (GoTrue), `rest` (PostgREST) | `vu-leap-supabase` |
 | Supabase Storage | Container App, alleen intern; bestanden in Azure Blob Storage | `vu-leap-storage`, opslagaccount `vuleapstorage` |
-| Supabase Postgres + pgvector | Azure Database for PostgreSQL 17 | `vu-leap-db` |
+| Supabase Postgres + pgvector | Azure Database for PostgreSQL, de bestaande server; database `leap` | `leap-db-dev` |
 | Geheimen in Replit | Key Vault; de apps lezen ze met hun eigen identiteit | `kv-vu-leap`, identiteit `id-leap-apps` |
+| E-mail van Supabase en Resend | Azure Communication Services, afzender `leap@vu-edulab.nl` | `vu-leap-acs` |
 | — | Register voor de images | `vuleapacr` |
 | — | Logboek | `vu-leap-logs` |
 | Taalmodellen | Ongewijzigd: de VU-resource `leap-openai-vu` (staat in `vu-education-lab-rg`) | |
@@ -34,7 +35,7 @@ De namen staan in `scripts/config.sh`.
 | Het logboek bekijken | Portal → `vu-leap-app` → *Log stream*, of `az containerapp logs show -g vu-leap-rg -n vu-leap-app --follow` |
 | Terug naar de vorige versie | Portal → `vu-leap-app` → *Revisions and replicas* → de vorige revisie activeren |
 | Een instelling wijzigen | Portal → `vu-leap-app` → *Containers* → *Environment variables*. Geheimen: Key Vault `kv-vu-leap` → *Secrets*, daarna de app herstarten |
-| In de database kijken | Een Postgres-programma (bv. de VS Code-extensie "PostgreSQL") op `vu-leap-db.postgres.database.azure.com`, gebruiker `leapadmin`, wachtwoord uit Key Vault (`pg-admin-password`). Zet eerst je eigen IP-adres erbij onder *Networking* |
+| In de database kijken | Een Postgres-programma (bv. de VS Code-extensie "PostgreSQL") op `leap-db-dev.postgres.database.azure.com` (database `leap`), gebruiker `leapadmin`, wachtwoord uit Key Vault (`pg-admin-password`). Zet eerst je eigen IP-adres erbij onder *Networking* |
 | Accounts beheren | Het beheer in LEAP zelf, of de tabel `auth.users` |
 | Geüploade bestanden bekijken | Portal → opslagaccount `vuleapstorage` → *Containers* → `supabase-storage` |
 | De kosten volgen | Portal → `vu-leap-rg` → *Cost analysis*. Bij 80% van het maandbudget komt er een e-mail |
@@ -46,9 +47,10 @@ De namen staan in `scripts/config.sh`.
   `VITE_PUBLIC_REALTIME=off`). Een nieuw bericht verschijnt dus na hooguit enkele seconden in
   plaats van direct.
 - **E-mail.** Alle e-mails (account bevestigen, uitnodiging, wachtwoord vergeten, Studiecafé-meldingen)
-  gaan via Microsoft Graph uit naam van `onderwijswerkplaats@vu.nl`, met de gedeelde identiteit
-  `mi-mailsend-onderwijswerkplaats`. Er geldt een limiet van 100 e-mails per uur; nodig dus
-  niet meer dan zo'n 80 studenten per uur tegelijk uit.
+  komen van `leap@vu-edulab.nl`, via Azure Communication Services. Het domein `vu-edulab.nl` is van
+  de Onderwijswerkplaats en ontvangt zelf geen e-mail; een antwoord op een LEAP-mail gaat naar het
+  adres in `MAIL_REPLY_TO` (`scripts/config.sh`). Er geldt een limiet van 30 e-mails per minuut en
+  100 per uur; nodig dus niet meer dan zo'n 80 studenten per uur uit.
 - **Edge Functions** (`supabase/functions/`) draaien niet op Azure. De app roept ze niet aan.
 - **Eén kopie van de app.** Lopende taken (begrippen extraheren) en de tijdklok voor de
   Studiecafé-mails leven in het geheugen van de server. Daarom draait er precies één kopie,
@@ -64,9 +66,12 @@ De namen staan in `scripts/config.sh`.
 Nodig: `az` (aangemeld bij de VU-tenant), Postgres 17-clienttools (`brew install libpq@18`),
 Node en Python 3. Draai de scripts vanuit deze map.
 
-1. `scripts/provision.sh` — maakt de Azure-onderdelen aan.
+1. `scripts/provision.sh` — maakt de Azure-onderdelen aan. De database is de bestaande server
+   `leap-db-dev`; het script stopt de eerste keer met de vraag om het beheerderswachtwoord in
+   Key Vault te zetten (het toont hoe) en gaat daarna bij opnieuw draaien verder.
 2. `scripts/generate-secrets.sh` — sleutels en wachtwoorden in Key Vault.
-3. `scripts/setup-db.sh` — de rollen en schema's die Supabase verwacht.
+3. `scripts/setup-db.sh` — de rollen en schema's die Supabase verwacht. Staat er al iets in de
+   database, dan toont het script wat en stopt het; ga dan eerst na van wie dat is.
 4. `scripts/deploy.sh storage supabase` — de Supabase-onderdelen.
 5. `SUPABASE_DB_URL=… scripts/migrate-data.sh` — database en accounts overzetten. De waarde is
    dezelfde `SUPABASE_DB_URL` als in de `.env` van de huidige omgeving.
@@ -108,7 +113,7 @@ Zet daarna bovenaan `scripts/config.sh` de regel `APP_URL=https://leap.vu-edulab
 
 | Script | Wat het doet |
 |---|---|
-| `provision.sh` | Eenmalig: de Azure-onderdelen, de aanmelding voor GitHub en de kostenmelding |
+| `provision.sh` | Eenmalig: de Azure-onderdelen, de e-mailafzender, de aanmelding voor GitHub en de kostenmelding |
 | `generate-secrets.sh` | Eenmalig: sleutels en wachtwoorden → Key Vault |
 | `setup-db.sh` | Supabase-rollen en -schema's op Azure Postgres; verbindingsgegevens → Key Vault |
 | `deploy.sh [apps…]` | Images bouwen en de Container Apps aanmaken of bijwerken (`storage`, `supabase`, `app`) |

@@ -12,7 +12,27 @@ AUTHENTICATOR_PW=$(secret pg-authenticator-password)
 AUTH_PW=$(secret pg-auth-admin-password)
 STORAGE_PW=$(secret pg-storage-admin-password)
 
-"$PGBIN/psql" "host=$PG_HOST port=5432 dbname=postgres user=$PG_ADMIN sslmode=require" -X -q \
+ADMIN="host=$PG_HOST port=5432 dbname=$PG_DB user=$PG_ADMIN sslmode=require"
+
+# Eerst kijken wat er al staat. Een database waarin al tabellen of Supabase-rollen
+# staan die niet van deze opzet komen, raken we niet ongezien aan.
+if [[ "$("$PGBIN/psql" "$ADMIN" -X -At -c "select to_regnamespace('extensions') is not null")" != t ]]; then
+  found=$("$PGBIN/psql" "$ADMIN" -X -At -c "
+    select 'tabel ' || schemaname || '.' || tablename from pg_tables
+      where schemaname not in ('pg_catalog', 'information_schema') and schemaname not like 'pg_%' and schemaname not like 'cron%'
+    union all
+    select 'rol ' || rolname from pg_roles
+      where rolname in ('anon', 'authenticated', 'service_role', 'authenticator', 'supabase_auth_admin', 'supabase_storage_admin')")
+  if [[ -n "$found" && "${BESTAANDE_INHOUD_OK:-}" != ja ]]; then
+    echo "De database \"$PG_DB\" op $PG_SERVER is niet leeg:" >&2
+    echo "$found" | sed 's/^/  /' >&2
+    echo "Ga na van wie dit is. Mag deze opzet ernaast komen (bestaande rollen krijgen een nieuw wachtwoord)," >&2
+    echo "draai dan opnieuw met BESTAANDE_INHOUD_OK=ja" >&2
+    exit 1
+  fi
+fi
+
+"$PGBIN/psql" "$ADMIN" -X -q -v dbname="$PG_DB" \
   -v authenticator_password="$AUTHENTICATOR_PW" \
   -v auth_admin_password="$AUTH_PW" \
   -v storage_admin_password="$STORAGE_PW" \
@@ -20,7 +40,7 @@ STORAGE_PW=$(secret pg-storage-admin-password)
 
 url() {
   local pw; pw=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1], safe=""))' "$2")
-  printf 'postgres://%s:%s@%s:5432/postgres?sslmode=require' "$1" "$pw" "$PG_HOST"
+  printf 'postgres://%s:%s@%s:5432/%s?sslmode=require' "$1" "$pw" "$PG_HOST" "$PG_DB"
 }
 az keyvault secret set --vault-name "$KV" -n auth-db-url --value "$(url supabase_auth_admin "$AUTH_PW")" -o none
 az keyvault secret set --vault-name "$KV" -n rest-db-url --value "$(url authenticator "$AUTHENTICATOR_PW")" -o none

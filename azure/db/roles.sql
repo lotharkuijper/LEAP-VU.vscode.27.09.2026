@@ -1,7 +1,7 @@
 -- De rollen en schema's die Supabase verwacht, op Azure Postgres. Komt overeen
 -- met wat de database van Supabase zelf meebrengt. Opnieuw draaien kan.
 -- Draait als serverbeheerder via scripts/setup-db.sh, dat de wachtwoorden meegeeft:
---   -v authenticator_password=... -v auth_admin_password=... -v storage_admin_password=...
+--   -v dbname=... -v authenticator_password=... -v auth_admin_password=... -v storage_admin_password=...
 
 \set ON_ERROR_STOP on
 
@@ -36,18 +36,18 @@ grant usage on schema extensions to postgres, anon, authenticated, service_role;
 create extension if not exists pgcrypto schema extensions;
 create extension if not exists "uuid-ossp" schema extensions;
 create extension if not exists pg_stat_statements schema extensions;
-alter database postgres set search_path = "$user", public, extensions;
+alter database :"dbname" set search_path = "$user", public, extensions;
 
 -- Supabase Auth beheert het schema auth en voert daarin zijn eigen migraties uit
 create schema if not exists auth authorization supabase_auth_admin;
 grant usage on schema auth to postgres, anon, authenticated, service_role;
-grant create on database postgres to supabase_auth_admin;
+grant create on database :"dbname" to supabase_auth_admin;
 alter role supabase_auth_admin set search_path = auth;
 
 -- Supabase Storage beheert het schema storage en voert daarin zijn eigen migraties uit
 create schema if not exists storage authorization supabase_storage_admin;
 grant usage on schema storage to postgres, anon, authenticated, service_role;
-grant create on database postgres to supabase_storage_admin;
+grant create on database :"dbname" to supabase_storage_admin;
 alter role supabase_storage_admin set search_path = storage;
 
 -- standaardtoegang van de API tot het schema public, zoals bij Supabase

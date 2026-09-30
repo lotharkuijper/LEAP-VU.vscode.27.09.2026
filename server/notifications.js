@@ -13,6 +13,7 @@
 // (Resend) staat onderaan en faalt zacht als er geen sleutel is geconfigureerd.
 // ───────────────────────────────────────────────────────────────────────────
 
+import crypto from 'node:crypto';
 import { getDigestStrings } from './notificationI18n.js';
 
 export const NOTIFICATION_KINDS = ['reply', 'announcement'];
@@ -191,10 +192,11 @@ export function buildDigestEmail(rows, { userName = '', lang = 'nl', baseUrl = '
 
 // ── E-mail-transport ────────────────────────────────────────────────────────
 // Twee routes; getEmailConfig() kiest welke actief is:
-//  1. Microsoft Graph met een managed identity (hosting op Azure). Verstuurt
-//     als MAIL_SENDER (de gedeelde mailbox van de Onderwijswerkplaats). Er is
-//     geen sleutel: de app haalt een token op bij het identiteits-eindpunt van
-//     Azure. Actief zodra MAIL_UAMI_CLIENT_ID en MAIL_SENDER zijn gezet.
+//  1. Azure Communication Services (hosting op Azure). Verstuurt vanaf een
+//     adres op het domein van de Onderwijswerkplaats (ACS_SENDER, bv.
+//     leap@vu-edulab.nl). Dat domein ontvangt geen e-mail; antwoorden gaan
+//     naar MAIL_REPLY_TO. Actief zodra ACS_CONNECTION_STRING en ACS_SENDER
+//     zijn gezet.
 //  2. Resend (Replit). Haalt de API-sleutel op via de Replit-Resend-connector
 //     (indien gekoppeld) en valt terug op de RESEND_API_KEY-secret. Afzender
 //     via NOTIFICATION_FROM_EMAIL (Resend vereist een geverifieerd domein;
@@ -228,8 +230,13 @@ async function resolveResendKeyFromConnector() {
 
 // Geeft { provider, from, … } of null als e-mail niet is geconfigureerd.
 export async function getEmailConfig(env = process.env) {
-  if (env.MAIL_UAMI_CLIENT_ID && env.MAIL_SENDER && env.IDENTITY_ENDPOINT && env.IDENTITY_HEADER) {
-    return { provider: 'graph', from: env.MAIL_SENDER };
+  if (env.ACS_CONNECTION_STRING && env.ACS_SENDER) {
+    return {
+      provider: 'acs',
+      connectionString: env.ACS_CONNECTION_STRING,
+      from: env.ACS_SENDER,
+      replyTo: env.MAIL_REPLY_TO || null,
+    };
   }
   const apiKey = env.RESEND_API_KEY || (await resolveResendKeyFromConnector());
   if (!apiKey) return null;
@@ -238,8 +245,14 @@ export async function getEmailConfig(env = process.env) {
 }
 
 // Verstuur één e-mail via de route uit getEmailConfig(). Geeft { ok, status, error }.
-export async function sendEmail(cfg, { to, subject, html, text }) {
-  if (cfg && cfg.provider === 'graph') return sendEmailViaGraph({ from: cfg.from, to, subject, html, text });
+// `wait: false` wacht bij ACS niet op de afhandeling (zie sendEmailViaAcs).
+export async function sendEmail(cfg, { to, subject, html, text }, { wait = true } = {}) {
+  if (cfg && cfg.provider === 'acs') {
+    return sendEmailViaAcs(
+      { connectionString: cfg.connectionString, from: cfg.from, replyTo: cfg.replyTo, to, subject, html, text },
+      { wait },
+    );
+  }
   return sendEmailViaResend({ apiKey: cfg.apiKey, from: cfg.from, to, subject, html, text });
 }
 
@@ -261,58 +274,90 @@ export async function sendEmailViaResend({ apiKey, from, to, subject, html, text
   }
 }
 
-// ── Microsoft Graph (managed identity) ──────────────────────────────────────
-const GRAPH = 'https://graph.microsoft.com';
-let graphToken = null; // { token, expiresAt }
+// ── Azure Communication Services (e-mail) ───────────────────────────────────
+const ACS_API_VERSION = '2023-03-31';
 
-// Token voor Graph via het identiteits-eindpunt dat Azure in de container zet.
-// MAIL_UAMI_CLIENT_ID is de client-id (niet de object-id) van de identiteit.
-export async function getGraphToken({ env = process.env, fetchImpl = fetch, now = Date.now() } = {}) {
-  if (graphToken && graphToken.expiresAt - 5 * 60 * 1000 > now) return graphToken.token;
-  const url =
-    `${env.IDENTITY_ENDPOINT}?resource=${encodeURIComponent(GRAPH)}` +
-    `&api-version=2019-08-01&client_id=${encodeURIComponent(env.MAIL_UAMI_CLIENT_ID)}`;
-  const resp = await fetchImpl(url, { headers: { 'X-IDENTITY-HEADER': env.IDENTITY_HEADER } });
-  if (!resp.ok) {
-    // Alleen voor het logboek, geen melding aan gebruikers.
-    const reason = 'Graph-token ophalen mislukt (HTTP ' + resp.status + ')';
-    throw new Error(reason);
-  }
-  const data = await resp.json();
-  const expiresAt = Number(data.expires_on) * 1000 || now + 60 * 60 * 1000;
-  graphToken = { token: data.access_token, expiresAt };
-  return graphToken.token;
+// "endpoint=https://<naam>.europe.communication.azure.com/;accesskey=<base64>"
+export function parseAcsConnectionString(conn) {
+  const parts = Object.fromEntries(
+    String(conn || '')
+      .split(';')
+      .map((kv) => kv.trim())
+      .filter(Boolean)
+      .map((kv) => [kv.slice(0, kv.indexOf('=')).toLowerCase(), kv.slice(kv.indexOf('=') + 1)]),
+  );
+  if (!parts.endpoint || !parts.accesskey) return null;
+  return { endpoint: parts.endpoint.replace(/\/+$/, ''), accessKey: parts.accesskey };
 }
 
-// Verstuur één e-mail als `from` via Graph. Geeft { ok, status, error }.
-// saveToSentItems staat uit: de gedeelde mailbox mag niet vollopen.
-export async function sendEmailViaGraph({ from, to, subject, html, text }, { env = process.env, fetchImpl = fetch } = {}) {
+// ACS ondertekent elk verzoek met de toegangssleutel (HMAC-SHA256 over
+// methode, pad, datum, host en de hash van de body).
+export function acsSignedHeaders({ method, url, body, accessKey, date = new Date() }) {
+  const u = new URL(url);
+  const dateStr = date.toUTCString();
+  const contentHash = crypto.createHash('sha256').update(body || '').digest('base64');
+  const toSign = `${method}\n${u.pathname}${u.search}\n${dateStr};${u.host};${contentHash}`;
+  const signature = crypto.createHmac('sha256', Buffer.from(accessKey, 'base64')).update(toSign).digest('base64');
+  return {
+    'x-ms-date': dateStr,
+    'x-ms-content-sha256': contentHash,
+    Authorization: `HMAC-SHA256 SignedHeaders=x-ms-date;host;x-ms-content-sha256&Signature=${signature}`,
+  };
+}
+
+// Verstuur één e-mail via ACS. Geeft { ok, status, error }.
+// ACS neemt een e-mail eerst alleen aan (202) en handelt hem daarna af. Met
+// `wait` (standaard) volgt de functie de afhandeling tot die is gelukt of
+// mislukt, zodat een geweigerde e-mail niet als verzonden telt. Zonder `wait`
+// telt aannemen als gelukt: voor aanroepers die binnen enkele seconden moeten
+// antwoorden.
+export async function sendEmailViaAcs(
+  { connectionString, from, replyTo, to, subject, html, text },
+  { wait = true, fetchImpl = fetch, pollMs = 1000, maxPolls = 20 } = {},
+) {
   try {
-    const token = await getGraphToken({ env, fetchImpl });
-    const resp = await fetchImpl(`${GRAPH}/v1.0/users/${encodeURIComponent(from)}/sendMail`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: {
-          subject,
-          body: html ? { contentType: 'HTML', content: html } : { contentType: 'Text', content: text || '' },
-          toRecipients: [{ emailAddress: { address: to } }],
-        },
-        saveToSentItems: false,
-      }),
-    });
+    const conn = parseAcsConnectionString(connectionString);
+    if (!conn) {
+      // Alleen voor het logboek, geen melding aan gebruikers.
+      const reason = 'ACS_CONNECTION_STRING ' + 'is ongeldig';
+      return { ok: false, status: 0, error: reason };
+    }
+    const request = async (method, path, body) => {
+      const url = `${conn.endpoint}${path}${path.includes('?') ? '&' : '?'}api-version=${ACS_API_VERSION}`;
+      return fetchImpl(url, {
+        method,
+        headers: { 'Content-Type': 'application/json', ...acsSignedHeaders({ method, url, body, accessKey: conn.accessKey }) },
+        body,
+      });
+    };
+
+    const message = {
+      senderAddress: from,
+      content: { subject, plainText: text || '', ...(html ? { html } : {}) },
+      recipients: { to: [{ address: to }] },
+      ...(replyTo ? { replyTo: [{ address: replyTo }] } : {}),
+    };
+    const resp = await request('POST', '/emails:send', JSON.stringify(message));
     if (resp.status !== 202) {
-      if (resp.status === 401) graphToken = null;
       const body = await resp.text().catch(() => '');
       return { ok: false, status: resp.status, error: body || `HTTP ${resp.status}` };
     }
-    return { ok: true, status: resp.status };
+    if (!wait) return { ok: true, status: 202 };
+
+    const { id } = await resp.json();
+    for (let i = 0; i < maxPolls; i += 1) {
+      await new Promise((r) => setTimeout(r, pollMs));
+      const poll = await request('GET', `/emails/operations/${encodeURIComponent(id)}`);
+      const state = await poll.json().catch(() => ({}));
+      if (state.status === 'Succeeded') return { ok: true, status: 202 };
+      if (state.status === 'Failed' || state.status === 'Canceled') {
+        const reason = (state.error && state.error.message) || state.status;
+        return { ok: false, status: 502, error: reason };
+      }
+    }
+    // Nog bezig na de wachttijd: ACS heeft de e-mail aangenomen en levert zelf af.
+    return { ok: true, status: 202 };
   } catch (err) {
     return { ok: false, status: 0, error: err && err.message ? err.message : String(err) };
   }
-}
-
-// Alleen voor tests: vergeet het bewaarde token.
-export function resetGraphTokenForTests() {
-  graphToken = null;
 }

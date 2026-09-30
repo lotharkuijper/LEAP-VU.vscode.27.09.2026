@@ -21,9 +21,9 @@ WORK=$(mktemp -d)
 ADMIN_PW=$(secret pg-admin-password)
 AUTH_PW=$(secret pg-auth-admin-password)
 STORAGE_PW=$(secret pg-storage-admin-password)
-ADMIN="host=$PG_HOST port=5432 dbname=postgres user=$PG_ADMIN sslmode=require"
-AUTH_ADMIN="host=$PG_HOST port=5432 dbname=postgres user=supabase_auth_admin sslmode=require"
-STORAGE_ADMIN="host=$PG_HOST port=5432 dbname=postgres user=supabase_storage_admin sslmode=require"
+ADMIN="host=$PG_HOST port=5432 dbname=$PG_DB user=$PG_ADMIN sslmode=require"
+AUTH_ADMIN="host=$PG_HOST port=5432 dbname=$PG_DB user=supabase_auth_admin sslmode=require"
+STORAGE_ADMIN="host=$PG_HOST port=5432 dbname=$PG_DB user=supabase_storage_admin sslmode=require"
 admin() { PGPASSWORD=$ADMIN_PW "$@"; }
 auth_admin() { PGPASSWORD=$AUTH_PW "$@"; }
 storage_admin() { PGPASSWORD=$STORAGE_PW "$@"; }
@@ -34,6 +34,14 @@ restore() { # restore <sectie>; toont echte fouten maar gaat door, zoals pg_rest
 }
 
 echo "1/7 Controleren of de versies bij elkaar passen"
+# Een kopie uit een nieuwere Postgres past niet altijd in een oudere.
+src_pg=$(source_sql "select current_setting('server_version_num')::int / 10000")
+dst_pg=$(admin "$PGBIN/psql" "$ADMIN" -X -At -c "select current_setting('server_version_num')::int / 10000")
+if (( src_pg > dst_pg )); then
+  echo "Supabase draait Postgres $src_pg, $PG_SERVER draait $dst_pg. Werk de server eerst bij:" >&2
+  echo "  az postgres flexible-server upgrade -g $RG -n $PG_SERVER --version $src_pg" >&2
+  exit 1
+fi
 # De accounts worden kolom voor kolom gekopieerd; de inlogdienst op Azure mag dus
 # niet ouder zijn dan die van het Supabase-project.
 src_auth=$(source_sql "select max(version) from auth.schema_migrations")

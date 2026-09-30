@@ -116,7 +116,7 @@ docker run -p 3001:3001 --env-file .env leap-vu
 
 ### Op Azure (VU)
 
-De opzet voor Azure staat in [`azure/README.md`](azure/README.md): LEAP en de Supabase-onderdelen (inloggen, database-API, bestandsopslag) draaien dan in eigen beheer in resourcegroep `vu-leap-rg`. Een push naar `main` rolt de app uit via `.github/workflows/azure-deploy.yml`; nieuwe migraties in `supabase/migrations/` voert de app bij het starten zelf uit (`scripts/migrate.mjs`). E-mails gaan daar via Microsoft Graph (`MAIL_UAMI_CLIENT_ID`, `MAIL_SENDER`) in plaats van Resend, en live-updates lopen zonder Supabase Realtime (`VITE_PUBLIC_REALTIME=off`).
+De opzet voor Azure staat in [`azure/README.md`](azure/README.md): LEAP en de Supabase-onderdelen (inloggen, database-API, bestandsopslag) draaien dan in eigen beheer in resourcegroep `vu-leap-rg`. Een push naar `main` rolt de app uit via `.github/workflows/azure-deploy.yml`; nieuwe migraties in `supabase/migrations/` voert de app bij het starten zelf uit (`scripts/migrate.mjs`). E-mails gaan daar via Azure Communication Services (`ACS_CONNECTION_STRING`, `ACS_SENDER`, `MAIL_REPLY_TO`) in plaats van Resend, en live-updates lopen zonder Supabase Realtime (`VITE_PUBLIC_REALTIME=off`).
 
 ## Rollen
 

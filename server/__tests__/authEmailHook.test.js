@@ -114,7 +114,7 @@ describe('POST /api/auth/email-hook', () => {
       supabaseUrl: 'https://supabase.example',
       appUrl: () => 'https://leap.example',
       getLang: async () => 'nl',
-      getEmailConfig: async () => ({ provider: 'graph', from: 'afzender@vu.nl' }),
+      getEmailConfig: async () => ({ provider: 'acs', connectionString: 'x', from: 'leap@vu-edulab.nl' }),
       sendEmail: async () => ({ ok: true, status: 202 }),
       ...deps,
     });
@@ -135,8 +135,9 @@ describe('POST /api/auth/email-hook', () => {
       const resp = await post(url, body, sign(body));
       expect(resp.status).toBe(200);
       expect(sendEmail).toHaveBeenCalledTimes(1);
-      const [cfg, msg] = sendEmail.mock.calls[0];
-      expect(cfg.provider).toBe('graph');
+      const [cfg, msg, opts] = sendEmail.mock.calls[0];
+      expect(opts).toEqual({ wait: false });
+      expect(cfg.provider).toBe('acs');
       expect(msg.to).toBe('student@student.vu.nl');
       expect(msg.subject).toBe('Je bent uitgenodigd voor LEAP');
       expect(msg.text).toContain('type=invite');

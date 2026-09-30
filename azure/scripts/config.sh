@@ -11,9 +11,12 @@ STORAGE=vuleapstorage
 BLOB_CONTAINER=supabase-storage
 IDENTITY=id-leap-apps
 DEPLOY_IDENTITY=id-leap-deploy
-PG_SERVER=vu-leap-db
+# De bestaande Postgres-server van LEAP; alles komt in de database "leap".
+# Het beheerderswachtwoord staat in Key Vault als pg-admin-password.
+PG_SERVER=leap-db-dev
 PG_HOST=$PG_SERVER.postgres.database.azure.com
 PG_ADMIN=leapadmin
+PG_DB=leap
 TAGS="project=leap env=prod owner=l.d.j.kuijper@vu.nl"
 
 # GitHub rolt uit vanaf deze repo en branch; kosten-meldingen gaan naar dit adres.
@@ -34,9 +37,16 @@ AOAI_DEPLOYMENT=gpt-5.5
 AOAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 AOAI_API_VERSION=2024-10-21
 
-# E-mail: gedeelde identiteit van de Onderwijswerkplaats, verstuurt via Microsoft Graph.
-MAIL_IDENTITY_ID=/subscriptions/d9de8af9-cb28-4ae5-b8ae-67d88e3169d5/resourceGroups/vu-education-lab-rg/providers/Microsoft.ManagedIdentity/userAssignedIdentities/mi-mailsend-onderwijswerkplaats
-MAIL_SENDER=onderwijswerkplaats@vu.nl
+# E-mail via Azure Communication Services, vanaf het domein van de
+# Onderwijswerkplaats. Dat domein (vu-edulab.nl) staat in vu-education-lab-rg en
+# ontvangt zelf geen e-mail: antwoorden gaan naar MAIL_REPLY_TO.
+ACS=vu-leap-acs
+MAIL_DOMAIN_RG=vu-education-lab-rg
+MAIL_EMAIL_SERVICE=vu-referentietoets-email
+MAIL_DOMAIN=vu-edulab.nl
+MAIL_SENDER_NAME=leap
+MAIL_SENDER=$MAIL_SENDER_NAME@$MAIL_DOMAIN
+MAIL_REPLY_TO=onderwijswerkplaats@vu.nl
 
 # Adressen. Het standaarddomein hoort bij de Container Apps-omgeving; APP_URL
 # wordt het eigen adres zodra leap.vu-edulab.nl is gekoppeld.

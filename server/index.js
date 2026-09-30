@@ -15272,7 +15272,7 @@ async function runStudiecafeDigestOnce() {
     const emailCfg = await getEmailConfig();
     if (!emailCfg) {
       console.warn(
-        `[studiecafe-digest] ${pending.length} melding(en) wachten, maar e-mail is niet geconfigureerd (Graph-identiteit of RESEND_API_KEY / Resend-connector). Wachtrij blijft staan.`,
+        `[studiecafe-digest] ${pending.length} melding(en) wachten, maar e-mail is niet geconfigureerd (ACS_CONNECTION_STRING of RESEND_API_KEY / Resend-connector). Wachtrij blijft staan.`,
       );
       return;
     }

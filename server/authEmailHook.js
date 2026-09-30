@@ -138,7 +138,9 @@ export function registerAuthEmailHook(app, express, deps) {
         appUrl: deps.appUrl(),
         userName: String(fullName).split(' ')[0] || '',
       });
-      const result = await deps.sendEmail(cfg, { to: user.email, ...mail });
+      // Niet wachten op de afhandeling: de inlogdienst verwacht binnen enkele
+      // seconden antwoord en probeert het anders opnieuw (dubbele e-mail).
+      const result = await deps.sendEmail(cfg, { to: user.email, ...mail }, { wait: false });
       if (!result.ok) {
         console.warn(`[auth-email] verzenden mislukt (${emailData.email_action_type}): ${result.error}`);
         // 429 doorgeven: de inlogdienst meldt dan "te veel e-mails" aan de gebruiker.

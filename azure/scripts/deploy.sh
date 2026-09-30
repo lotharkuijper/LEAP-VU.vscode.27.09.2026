@@ -35,15 +35,13 @@ build() {
 
 # header <extern: true|false> <poort> <geheimen uit Key Vault...>
 header() {
-  local external=$1 port=$2 extra=""; shift 2
-  [[ -n "${EXTRA_IDENTITY:-}" ]] && extra="\"$EXTRA_IDENTITY\": {}"
+  local external=$1 port=$2; shift 2
   cat <<YAML
 location: $LOCATION
 identity:
   type: UserAssigned
   userAssignedIdentities:
     "$IDENTITY_ID": {}
-    $extra
 tags: {project: leap, env: prod, owner: "l.d.j.kuijper@vu.nl"}
 properties:
   environmentId: $ENV_ID
@@ -197,8 +195,7 @@ deploy_app() {
     --build-arg VITE_PUBLIC_SUPABASE_URL="$SUPABASE_PUBLIC_URL" \
     --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY="$(secret anon-key)" \
     --build-arg VITE_PUBLIC_REALTIME=off)
-  local mail_client; mail_client=$(az identity show --ids "$MAIL_IDENTITY_ID" --query clientId -o tsv)
-  { EXTRA_IDENTITY=$MAIL_IDENTITY_ID header true 3001 anon-key service-role-key app-db-url azure-openai-api-key auth-hook-secret
+  { header true 3001 anon-key service-role-key app-db-url azure-openai-api-key auth-hook-secret acs-connection-string
     cat <<YAML
   template:
     containers:
@@ -221,8 +218,9 @@ deploy_app() {
           - {name: APP_BASE_URL, value: "$APP_URL"}
           - {name: APP_PUBLIC_URL, value: "$APP_URL"}
           - {name: AUTH_EMAIL_HOOK_SECRET, secretRef: auth-hook-secret}
-          - {name: MAIL_UAMI_CLIENT_ID, value: "$mail_client"}
-          - {name: MAIL_SENDER, value: "$MAIL_SENDER"}
+          - {name: ACS_CONNECTION_STRING, secretRef: acs-connection-string}
+          - {name: ACS_SENDER, value: "$MAIL_SENDER"}
+          - {name: MAIL_REPLY_TO, value: "$MAIL_REPLY_TO"}
         probes:
           - type: Startup
             httpGet: {path: /api/health, port: 3001}
