@@ -93,10 +93,11 @@ SQL
   -c "create extension if not exists vector schema $vector_schema"
 auth_admin "$PGBIN/psql" "$AUTH_ADMIN" -X -q -v ON_ERROR_STOP=1 <<SQL
 truncate auth.users cascade;
--- de tabellen en RLS-regels van de app verwijzen naar auth.users en auth.uid()
-grant usage on schema auth to $PG_ADMIN;
+-- de tabellen en RLS-regels van de app en van de bestandsopslag verwijzen naar
+-- auth.users en auth.uid()
+grant usage on schema auth to $PG_ADMIN, supabase_storage_admin;
 grant select, references on auth.users to $PG_ADMIN;
-grant execute on all functions in schema auth to $PG_ADMIN, postgres, anon, authenticated, service_role;
+grant execute on all functions in schema auth to $PG_ADMIN, supabase_storage_admin, postgres, anon, authenticated, service_role;
 SQL
 
 echo "4/7 Tabellen en functies van de app aanmaken"
