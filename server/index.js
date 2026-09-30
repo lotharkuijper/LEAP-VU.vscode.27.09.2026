@@ -141,8 +141,9 @@ import {
   normalizeNotificationPrefs,
   buildDigestEmail,
   getEmailConfig,
-  sendEmailViaResend,
+  sendEmail,
 } from './notifications.js';
+import { registerAuthEmailHook } from './authEmailHook.js';
 import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceKey, renditionSourceType, resolveSofficeBin } from './documentRender.js';
 import { planConceptReplace, planConceptWrites, classifyConceptRole, normalizeConceptRole, classifyConceptDifficulty, normalizeDifficulty, isMetaCommentaryName, capByBestMatch, mergeNearDuplicateConcepts } from './conceptExtraction.js';
 import {
@@ -228,6 +229,20 @@ const app = express();
 const PORT = process.env.PORT || process.env.API_PORT || 3001;
 
 app.use(cors());
+// Account-e-mails bij hosting op Azure (zie server/authEmailHook.js). Staat
+// vóór express.json(): de handtekening gaat over de onbewerkte body.
+registerAuthEmailHook(app, express, {
+  secret: process.env.AUTH_EMAIL_HOOK_SECRET,
+  supabaseUrl: process.env.VITE_PUBLIC_SUPABASE_URL,
+  appUrl: () => resolveAppBaseUrl(),
+  getLang: async (userId) => {
+    if (!supabaseAdmin) return null;
+    const { data } = await supabaseAdmin.from('profiles').select('preferred_lang').eq('id', userId).maybeSingle();
+    return data && data.preferred_lang ? normalizeLang(data.preferred_lang) : null;
+  },
+  getEmailConfig,
+  sendEmail,
+});
 // 50mb i.p.v. 10mb: RAG-bronnen én de Documenten-tab uploaden bestanden als
 // base64 in de JSON-body naar de service-role upload-endpoints. base64 zwelt ~33%
 // op, dus 10mb kapte bestanden >~7,5MB af (bv. beeldrijke college-PPTX/PDF die
@@ -15257,7 +15272,7 @@ async function runStudiecafeDigestOnce() {
     const emailCfg = await getEmailConfig();
     if (!emailCfg) {
       console.warn(
-        `[studiecafe-digest] ${pending.length} melding(en) wachten, maar e-mail is niet geconfigureerd (RESEND_API_KEY / Resend-connector). Wachtrij blijft staan.`,
+        `[studiecafe-digest] ${pending.length} melding(en) wachten, maar e-mail is niet geconfigureerd (Graph-identiteit of RESEND_API_KEY / Resend-connector). Wachtrij blijft staan.`,
       );
       return;
     }
@@ -15316,9 +15331,7 @@ async function runStudiecafeDigestOnce() {
         await markNotificationsSent(allowed.map((r) => r.id));
         continue;
       }
-      const result = await sendEmailViaResend({
-        apiKey: emailCfg.apiKey,
-        from: emailCfg.from,
+      const result = await sendEmail(emailCfg, {
         to: email,
         subject: mail.subject,
         html: mail.html,

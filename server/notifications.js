@@ -189,12 +189,18 @@ export function buildDigestEmail(rows, { userName = '', lang = 'nl', baseUrl = '
   return { subject, html, text };
 }
 
-// ── E-mail-transport (Resend) ───────────────────────────────────────────────
-// Haalt de API-sleutel op via de Replit-Resend-connector (indien gekoppeld) en
-// valt terug op de RESEND_API_KEY-secret. Faalt ZACHT: zonder sleutel geeft
-// getEmailConfig() null terug en blijft de wachtrij staan tot e-mail is
-// geconfigureerd. Afzender via NOTIFICATION_FROM_EMAIL (Resend vereist een
-// geverifieerd domein; 'onboarding@resend.dev' werkt out-of-the-box voor tests).
+// ── E-mail-transport ────────────────────────────────────────────────────────
+// Twee routes; getEmailConfig() kiest welke actief is:
+//  1. Microsoft Graph met een managed identity (hosting op Azure). Verstuurt
+//     als MAIL_SENDER (de gedeelde mailbox van de Onderwijswerkplaats). Er is
+//     geen sleutel: de app haalt een token op bij het identiteits-eindpunt van
+//     Azure. Actief zodra MAIL_UAMI_CLIENT_ID en MAIL_SENDER zijn gezet.
+//  2. Resend (Replit). Haalt de API-sleutel op via de Replit-Resend-connector
+//     (indien gekoppeld) en valt terug op de RESEND_API_KEY-secret. Afzender
+//     via NOTIFICATION_FROM_EMAIL (Resend vereist een geverifieerd domein;
+//     'onboarding@resend.dev' werkt out-of-the-box voor tests).
+// Faalt ZACHT: zonder configuratie geeft getEmailConfig() null terug en blijft
+// de wachtrij staan tot e-mail is geconfigureerd.
 
 async function resolveResendKeyFromConnector() {
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
@@ -220,12 +226,21 @@ async function resolveResendKeyFromConnector() {
   }
 }
 
-// Geeft { apiKey, from } of null als e-mail niet is geconfigureerd.
-export async function getEmailConfig() {
-  const apiKey = process.env.RESEND_API_KEY || (await resolveResendKeyFromConnector());
+// Geeft { provider, from, … } of null als e-mail niet is geconfigureerd.
+export async function getEmailConfig(env = process.env) {
+  if (env.MAIL_UAMI_CLIENT_ID && env.MAIL_SENDER && env.IDENTITY_ENDPOINT && env.IDENTITY_HEADER) {
+    return { provider: 'graph', from: env.MAIL_SENDER };
+  }
+  const apiKey = env.RESEND_API_KEY || (await resolveResendKeyFromConnector());
   if (!apiKey) return null;
-  const from = process.env.NOTIFICATION_FROM_EMAIL || 'Studiecafé <onboarding@resend.dev>';
-  return { apiKey, from };
+  const from = env.NOTIFICATION_FROM_EMAIL || 'Studiecafé <onboarding@resend.dev>';
+  return { provider: 'resend', apiKey, from };
+}
+
+// Verstuur één e-mail via de route uit getEmailConfig(). Geeft { ok, status, error }.
+export async function sendEmail(cfg, { to, subject, html, text }) {
+  if (cfg && cfg.provider === 'graph') return sendEmailViaGraph({ from: cfg.from, to, subject, html, text });
+  return sendEmailViaResend({ apiKey: cfg.apiKey, from: cfg.from, to, subject, html, text });
 }
 
 // Verstuur één e-mail via de Resend-REST-API. Geeft { ok, status, error }.
@@ -244,4 +259,60 @@ export async function sendEmailViaResend({ apiKey, from, to, subject, html, text
   } catch (err) {
     return { ok: false, status: 0, error: err && err.message ? err.message : String(err) };
   }
+}
+
+// ── Microsoft Graph (managed identity) ──────────────────────────────────────
+const GRAPH = 'https://graph.microsoft.com';
+let graphToken = null; // { token, expiresAt }
+
+// Token voor Graph via het identiteits-eindpunt dat Azure in de container zet.
+// MAIL_UAMI_CLIENT_ID is de client-id (niet de object-id) van de identiteit.
+export async function getGraphToken({ env = process.env, fetchImpl = fetch, now = Date.now() } = {}) {
+  if (graphToken && graphToken.expiresAt - 5 * 60 * 1000 > now) return graphToken.token;
+  const url =
+    `${env.IDENTITY_ENDPOINT}?resource=${encodeURIComponent(GRAPH)}` +
+    `&api-version=2019-08-01&client_id=${encodeURIComponent(env.MAIL_UAMI_CLIENT_ID)}`;
+  const resp = await fetchImpl(url, { headers: { 'X-IDENTITY-HEADER': env.IDENTITY_HEADER } });
+  if (!resp.ok) {
+    // Alleen voor het logboek, geen melding aan gebruikers.
+    const reason = 'Graph-token ophalen mislukt (HTTP ' + resp.status + ')';
+    throw new Error(reason);
+  }
+  const data = await resp.json();
+  const expiresAt = Number(data.expires_on) * 1000 || now + 60 * 60 * 1000;
+  graphToken = { token: data.access_token, expiresAt };
+  return graphToken.token;
+}
+
+// Verstuur één e-mail als `from` via Graph. Geeft { ok, status, error }.
+// saveToSentItems staat uit: de gedeelde mailbox mag niet vollopen.
+export async function sendEmailViaGraph({ from, to, subject, html, text }, { env = process.env, fetchImpl = fetch } = {}) {
+  try {
+    const token = await getGraphToken({ env, fetchImpl });
+    const resp = await fetchImpl(`${GRAPH}/v1.0/users/${encodeURIComponent(from)}/sendMail`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: {
+          subject,
+          body: html ? { contentType: 'HTML', content: html } : { contentType: 'Text', content: text || '' },
+          toRecipients: [{ emailAddress: { address: to } }],
+        },
+        saveToSentItems: false,
+      }),
+    });
+    if (resp.status !== 202) {
+      if (resp.status === 401) graphToken = null;
+      const body = await resp.text().catch(() => '');
+      return { ok: false, status: resp.status, error: body || `HTTP ${resp.status}` };
+    }
+    return { ok: true, status: resp.status };
+  } catch (err) {
+    return { ok: false, status: 0, error: err && err.message ? err.message : String(err) };
+  }
+}
+
+// Alleen voor tests: vergeet het bewaarde token.
+export function resetGraphTokenForTests() {
+  graphToken = null;
 }
