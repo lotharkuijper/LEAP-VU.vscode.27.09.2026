@@ -29,7 +29,7 @@ build() {
   local dir=$1 image=$2 tag; shift 2
   tag=$(git -C "$REPO" rev-parse --short HEAD)
   git -C "$REPO" diff --quiet HEAD || tag="$tag-dirty"
-  az acr build -r "$ACR" -t "$image:$tag" "$@" "$dir" --no-logs -o none >&2
+  az acr build -r "$ACR" -t "$image:$tag" "$@" "$dir" --no-logs -o none >&2 || return 1
   echo "$ACR.azurecr.io/$image:$tag"
 }
 
@@ -131,7 +131,7 @@ YAML
 # e-mail. De e-mails zelf verstuurt de LEAP-server (server/authEmailHook.js).
 deploy_supabase() {
   mirror "$GOTRUE_IMAGE"; mirror "$POSTGREST_IMAGE"
-  local gateway; gateway=$(build "$REPO/azure/gateway" leap-gateway)
+  local gateway; gateway=$(build "$REPO/azure/gateway" leap-gateway) || exit 1
   { header true 8080 jwt-secret auth-db-url rest-db-url auth-hook-secret
     cat <<YAML
   template:
@@ -194,7 +194,7 @@ deploy_app() {
   local image; image=$(build "$REPO" leap-app \
     --build-arg VITE_PUBLIC_SUPABASE_URL="$SUPABASE_PUBLIC_URL" \
     --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY="$(secret anon-key)" \
-    --build-arg VITE_PUBLIC_REALTIME=off)
+    --build-arg VITE_PUBLIC_REALTIME=off) || exit 1
   { header true 3001 anon-key service-role-key app-db-url azure-openai-api-key auth-hook-secret acs-connection-string
     cat <<YAML
   template:

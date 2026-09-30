@@ -19,7 +19,9 @@
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# npm 11, zoals bij het ontwikkelen: npm 10 (standaard bij Node 22) keurt de
+# package-lock af op een optionele afhankelijkheid van vitest.
+RUN npm install -g npm@11 && npm ci
 COPY . .
 ARG VITE_PUBLIC_SUPABASE_URL
 ARG VITE_PUBLIC_SUPABASE_ANON_KEY
@@ -46,7 +48,7 @@ ENV NODE_ENV=production \
     HOME=/tmp
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+RUN npm install -g npm@11 && npm ci --omit=dev
 COPY server ./server
 COPY scripts ./scripts
 # Migraties: scripts/migrate.mjs voert nieuwe uit bij het starten (MIGRATE_ON_START).
