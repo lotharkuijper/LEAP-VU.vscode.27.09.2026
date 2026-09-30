@@ -33,9 +33,13 @@ build() {
   echo "$ACR.azurecr.io/$image:$tag"
 }
 
-# header <extern: true|false> <poort> <geheimen uit Key Vault...>
+# header <app> <extern: true|false> <poort> <geheimen uit Key Vault...>
 header() {
-  local external=$1 port=$2; shift 2
+  local app=$1 external=$2 port=$3 domains; shift 3
+  # Een gekoppeld eigen adres (leap.vu-edulab.nl) moet in de definitie blijven
+  # staan, anders haalt het bijwerken het weg.
+  domains=$(az containerapp show -g "$RG" -n "$app" --query properties.configuration.ingress.customDomains -o json 2>/dev/null \
+    | python3 -c 'import json, sys; print(json.dumps(json.load(sys.stdin)))' 2>/dev/null || true)
   cat <<YAML
 location: $LOCATION
 identity:
@@ -52,6 +56,7 @@ properties:
       targetPort: $port
       transport: auto
       allowInsecure: false
+      customDomains: ${domains:-null}
     registries:
       - server: $ACR.azurecr.io
         username: $ACR
@@ -82,7 +87,7 @@ apply() {
 # luistert alleen binnen deze app.
 deploy_storage() {
   mirror "$STORAGE_IMAGE"; mirror "$S3PROXY_IMAGE"
-  { header false 5000 jwt-secret anon-key service-role-key storage-db-url storage-account-key
+  { header "$STORAGE_APP" false 5000 jwt-secret anon-key service-role-key storage-db-url storage-account-key
     cat <<YAML
   template:
     containers:
@@ -132,7 +137,7 @@ YAML
 deploy_supabase() {
   mirror "$GOTRUE_IMAGE"; mirror "$POSTGREST_IMAGE"
   local gateway; gateway=$(build "$REPO/azure/gateway" leap-gateway) || exit 1
-  { header true 8080 jwt-secret auth-db-url rest-db-url auth-hook-secret
+  { header "$SUPABASE_APP" true 8080 jwt-secret auth-db-url rest-db-url auth-hook-secret
     cat <<YAML
   template:
     containers:
@@ -195,7 +200,7 @@ deploy_app() {
     --build-arg VITE_PUBLIC_SUPABASE_URL="$SUPABASE_PUBLIC_URL" \
     --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY="$(secret anon-key)" \
     --build-arg VITE_PUBLIC_REALTIME=off) || exit 1
-  { header true 3001 anon-key service-role-key app-db-url azure-openai-api-key auth-hook-secret acs-connection-string
+  { header "$APP" true 3001 anon-key service-role-key app-db-url azure-openai-api-key auth-hook-secret acs-connection-string
     cat <<YAML
   template:
     containers:

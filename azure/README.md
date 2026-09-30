@@ -93,7 +93,12 @@ vervangen de kopie op Azure en kunnen dus vaker.
 
 ## Eigen adres (leap.vu-edulab.nl)
 
-Het domein `vu-edulab.nl` is van de Onderwijswerkplaats; de DNS-zone staat in `vu-education-lab-rg`.
+LEAP staat op `https://leap.vu-edulab.nl`. Het domein `vu-edulab.nl` is van de Onderwijswerkplaats;
+de DNS-zone staat in `vu-education-lab-rg` en bevat voor LEAP de records `leap` (CNAME naar
+`vu-leap-app`) en `asuid.leap` (TXT, de verificatie). Het certificaat beheert Azure zelf. Het adres
+staat als `APP_URL` in `scripts/config.sh`; de links in e-mails gebruiken het.
+
+Zo is het gekoppeld (alleen nodig bij een nieuwe omgeving of een ander adres):
 
 ```bash
 source scripts/config.sh
@@ -103,9 +108,6 @@ az network dns record-set txt add-record -g vu-education-lab-rg -z vu-edulab.nl 
 az containerapp hostname add -g $RG -n $APP --hostname leap.vu-edulab.nl
 az containerapp hostname bind -g $RG -n $APP --hostname leap.vu-edulab.nl --environment $ENV_NAME --validation-method CNAME
 ```
-
-Zet daarna bovenaan `scripts/config.sh` de regel `APP_URL=https://leap.vu-edulab.nl` en draai
-`scripts/deploy.sh supabase app`, zodat de links in e-mails naar het nieuwe adres wijzen.
 
 ## Scripts
 

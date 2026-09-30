@@ -49,11 +49,11 @@ MAIL_SENDER_NAME=leap
 MAIL_SENDER=$MAIL_SENDER_NAME@$MAIL_DOMAIN
 MAIL_REPLY_TO=onderwijswerkplaats@vu.nl
 
-# Adressen. Het standaarddomein hoort bij de Container Apps-omgeving; APP_URL
-# wordt het eigen adres zodra leap.vu-edulab.nl is gekoppeld.
+# Adressen. LEAP zelf staat op het eigen adres leap.vu-edulab.nl; de
+# Supabase-onderdelen op het standaarddomein van de Container Apps-omgeving.
 DOMAIN=$(az containerapp env show -g "$RG" -n "$ENV_NAME" --query properties.defaultDomain -o tsv 2>/dev/null || true)
 SUPABASE_PUBLIC_URL="https://$SUPABASE_APP.$DOMAIN"
-APP_URL=${APP_URL:-"https://$APP.$DOMAIN"}
+APP_URL=https://leap.vu-edulab.nl
 
 # Supabase-onderdelen, vastgepind. Zelfde versies als de referentie-opzet van
 # Supabase (docker-compose) van september 2026.
