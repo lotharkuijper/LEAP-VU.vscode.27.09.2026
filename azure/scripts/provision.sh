@@ -3,7 +3,7 @@
 # onderdelen blijven staan, dus opnieuw draaien kan geen kwaad.
 #   logboek, Container Apps-omgeving, register voor images, opslagaccount,
 #   Key Vault, twee identiteiten (apps + GitHub-uitrol) en de e-mailresource.
-# De database is de bestaande server leap-db-dev; die wordt alleen ingesteld.
+# en de Postgres-server.
 set -euo pipefail
 source "$(dirname "$0")/config.sh"
 ME=$(az ad signed-in-user show --query id -o tsv)
@@ -42,19 +42,20 @@ for id in "$IDENTITY" "$DEPLOY_IDENTITY"; do
     --secret-permissions get -o none
 done
 
-# De bestaande Postgres-server: extensies toestaan die Supabase nodig heeft en
-# Azure-diensten (de Container Apps) toelaten. Het beheerderswachtwoord moet al
-# in Key Vault staan; dit script kent of wijzigt het niet.
-if ! az keyvault secret show --vault-name "$KV" -n pg-admin-password -o none 2>/dev/null; then
-  echo "Zet eerst het wachtwoord van $PG_ADMIN op $PG_SERVER in Key Vault (in je eigen terminal, niet in een chat):" >&2
-  echo "  read -s PW && az keyvault secret set --vault-name $KV -n pg-admin-password --value \"\$PW\" -o none" >&2
-  exit 1
+# Postgres 17 met pgvector (zelfde hoofdversie als het Supabase-project). Alleen
+# Azure-diensten worden toegelaten; het wachtwoord wordt hier gemaakt en staat
+# alleen in Key Vault.
+if ! have "$PG_SERVER"; then
+  az keyvault secret show --vault-name "$KV" -n pg-admin-password -o none 2>/dev/null || \
+    az keyvault secret set --vault-name "$KV" -n pg-admin-password -o none \
+      --value "$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"
+  az postgres flexible-server create -g "$RG" -n "$PG_SERVER" -l "$LOCATION" --version 17 \
+    --tier Burstable --sku-name Standard_B1ms --storage-size 32 --backup-retention 7 \
+    --admin-user "$PG_ADMIN" --admin-password "$(secret pg-admin-password)" \
+    --public-access 0.0.0.0 --tags $TAGS --yes -o none
+  az postgres flexible-server parameter set -g "$RG" -s "$PG_SERVER" -n azure.extensions \
+    --value VECTOR,PGCRYPTO,UUID-OSSP,PG_STAT_STATEMENTS -o none
 fi
-az postgres flexible-server parameter set -g "$RG" -s "$PG_SERVER" -n azure.extensions \
-  --value VECTOR,PGCRYPTO,UUID-OSSP,PG_STAT_STATEMENTS -o none
-az rest --method put -o none \
-  --url "https://management.azure.com$(az postgres flexible-server show -g "$RG" -n "$PG_SERVER" --query id -o tsv)/firewallRules/AllowAllAzureServicesAndResourcesWithinAzureIps?api-version=2024-08-01" \
-  --body '{"properties":{"startIpAddress":"0.0.0.0","endIpAddress":"0.0.0.0"}}'
 
 # E-mail: een eigen Communication Services-resource, gekoppeld aan het gedeelde
 # domein, en een afzender <naam>@vu-edulab.nl op dat domein.

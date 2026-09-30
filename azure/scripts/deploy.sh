@@ -213,6 +213,7 @@ deploy_app() {
           - {name: AZURE_OPENAI_ENDPOINT, value: "$AOAI_ENDPOINT"}
           - {name: AZURE_OPENAI_API_KEY, secretRef: azure-openai-api-key}
           - {name: AZURE_OPENAI_DEPLOYMENT, value: "$AOAI_DEPLOYMENT"}
+          - {name: OPENAI_MODEL, value: "$AOAI_MODEL_HINT"}
           - {name: AZURE_OPENAI_EMBEDDING_DEPLOYMENT, value: "$AOAI_EMBEDDING_DEPLOYMENT"}
           - {name: AZURE_OPENAI_API_VERSION, value: "$AOAI_API_VERSION"}
           - {name: APP_BASE_URL, value: "$APP_URL"}

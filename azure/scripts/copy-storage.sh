@@ -8,6 +8,10 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 source config.sh
+# Ontbreken ze, dan worden de geheimen source-supabase-url en
+# source-supabase-service-key uit Key Vault gebruikt.
+SOURCE_URL=${SOURCE_URL:-$(secret source-supabase-url 2>/dev/null || true)}
+SOURCE_KEY=${SOURCE_KEY:-$(secret source-supabase-service-key 2>/dev/null || true)}
 : "${SOURCE_URL:?Zet SOURCE_URL op het adres van het Supabase-project}"
 : "${SOURCE_KEY:?Zet SOURCE_KEY op de service_role-sleutel van het Supabase-project}"
 

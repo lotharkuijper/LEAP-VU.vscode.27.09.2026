@@ -7,12 +7,14 @@
 #
 # Nodig:
 #   SUPABASE_DB_URL  van het Supabase-project: dashboard -> Connect -> "Session pooler"
-#                    (dezelfde waarde als in de .env van de huidige LEAP-omgeving)
+#                    (dezelfde waarde als in de .env van de huidige LEAP-omgeving). Ontbreekt
+#                    hij, dan wordt het geheim source-supabase-db-url uit Key Vault gebruikt.
 #   setup-db.sh is gedraaid en vu-leap-supabase en vu-leap-storage hebben één keer
 #   gedraaid (Auth en Storage maken dan hun eigen tabellen aan)
 set -euo pipefail
 cd "$(dirname "$0")"
 source config.sh
+SUPABASE_DB_URL=${SUPABASE_DB_URL:-$(secret source-supabase-db-url 2>/dev/null || true)}
 : "${SUPABASE_DB_URL:?Zet SUPABASE_DB_URL op de session-pooler-verbinding van het Supabase-project}"
 SOURCE=$SUPABASE_DB_URL
 open_firewall; trap 'close_firewall; rm -rf "$WORK"' EXIT

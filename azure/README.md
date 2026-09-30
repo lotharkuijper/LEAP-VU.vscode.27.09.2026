@@ -17,7 +17,7 @@ Alles staat in resourcegroep **`vu-leap-rg`** (abonnement *VU - BETA AI Hub Pilo
 | Replit (server + frontend) | Container App, altijd één kopie | `vu-leap-app` |
 | Supabase Auth, database-API en gateway | Container App met drie onderdelen: `gateway` (Caddy), `auth` (GoTrue), `rest` (PostgREST) | `vu-leap-supabase` |
 | Supabase Storage | Container App, alleen intern; bestanden in Azure Blob Storage | `vu-leap-storage`, opslagaccount `vuleapstorage` |
-| Supabase Postgres + pgvector | Azure Database for PostgreSQL, de bestaande server; database `leap` | `leap-db-dev` |
+| Supabase Postgres + pgvector | Azure Database for PostgreSQL 17 | `vu-leap-db` |
 | Geheimen in Replit | Key Vault; de apps lezen ze met hun eigen identiteit | `kv-vu-leap`, identiteit `id-leap-apps` |
 | E-mail van Supabase en Resend | Azure Communication Services, afzender `leap@vu-edulab.nl` | `vu-leap-acs` |
 | — | Register voor de images | `vuleapacr` |
@@ -35,7 +35,7 @@ De namen staan in `scripts/config.sh`.
 | Het logboek bekijken | Portal → `vu-leap-app` → *Log stream*, of `az containerapp logs show -g vu-leap-rg -n vu-leap-app --follow` |
 | Terug naar de vorige versie | Portal → `vu-leap-app` → *Revisions and replicas* → de vorige revisie activeren |
 | Een instelling wijzigen | Portal → `vu-leap-app` → *Containers* → *Environment variables*. Geheimen: Key Vault `kv-vu-leap` → *Secrets*, daarna de app herstarten |
-| In de database kijken | Een Postgres-programma (bv. de VS Code-extensie "PostgreSQL") op `leap-db-dev.postgres.database.azure.com` (database `leap`), gebruiker `leapadmin`, wachtwoord uit Key Vault (`pg-admin-password`). Zet eerst je eigen IP-adres erbij onder *Networking* |
+| In de database kijken | Een Postgres-programma (bv. de VS Code-extensie "PostgreSQL") op `vu-leap-db.postgres.database.azure.com`, gebruiker `leapadmin`, wachtwoord uit Key Vault (`pg-admin-password`). Zet eerst je eigen IP-adres erbij onder *Networking* |
 | Accounts beheren | Het beheer in LEAP zelf, of de tabel `auth.users` |
 | Geüploade bestanden bekijken | Portal → opslagaccount `vuleapstorage` → *Containers* → `supabase-storage` |
 | De kosten volgen | Portal → `vu-leap-rg` → *Cost analysis*. Bij 80% van het maandbudget komt er een e-mail |
@@ -66,9 +66,7 @@ De namen staan in `scripts/config.sh`.
 Nodig: `az` (aangemeld bij de VU-tenant), Postgres 17-clienttools (`brew install libpq@18`),
 Node en Python 3. Draai de scripts vanuit deze map.
 
-1. `scripts/provision.sh` — maakt de Azure-onderdelen aan. De database is de bestaande server
-   `leap-db-dev`; het script stopt de eerste keer met de vraag om het beheerderswachtwoord in
-   Key Vault te zetten (het toont hoe) en gaat daarna bij opnieuw draaien verder.
+1. `scripts/provision.sh` — maakt de Azure-onderdelen aan.
 2. `scripts/generate-secrets.sh` — sleutels en wachtwoorden in Key Vault.
 3. `scripts/setup-db.sh` — de rollen en schema's die Supabase verwacht. Staat er al iets in de
    database, dan toont het script wat en stopt het; ga dan eerst na van wie dat is.

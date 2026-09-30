@@ -11,12 +11,12 @@ STORAGE=vuleapstorage
 BLOB_CONTAINER=supabase-storage
 IDENTITY=id-leap-apps
 DEPLOY_IDENTITY=id-leap-deploy
-# De bestaande Postgres-server van LEAP; alles komt in de database "leap".
+# Een eigen Postgres-server voor LEAP (de oudere leap-db-dev blijft ongemoeid).
 # Het beheerderswachtwoord staat in Key Vault als pg-admin-password.
-PG_SERVER=leap-db-dev
+PG_SERVER=vu-leap-db
 PG_HOST=$PG_SERVER.postgres.database.azure.com
 PG_ADMIN=leapadmin
-PG_DB=leap
+PG_DB=postgres
 TAGS="project=leap env=prod owner=l.d.j.kuijper@vu.nl"
 
 # GitHub rolt uit vanaf deze repo en branch; kosten-meldingen gaan naar dit adres.
@@ -34,6 +34,7 @@ AOAI_NAME=leap-openai-vu
 AOAI_RG=vu-education-lab-rg
 AOAI_ENDPOINT=https://leap-openai-vu.openai.azure.com
 AOAI_DEPLOYMENT=gpt-5.5
+AOAI_MODEL_HINT=gpt-5.2   # OPENAI_MODEL: modelnaam voor de parameterkeuze, zoals op Replit
 AOAI_EMBEDDING_DEPLOYMENT=text-embedding-3-small
 AOAI_API_VERSION=2024-10-21
 
