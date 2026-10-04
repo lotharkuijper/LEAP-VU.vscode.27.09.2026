@@ -38,6 +38,7 @@ De namen staan in `scripts/config.sh`.
 | In de database kijken | Een Postgres-programma (bv. de VS Code-extensie "PostgreSQL") op `vu-leap-db.postgres.database.azure.com`, gebruiker `leapadmin`, wachtwoord uit Key Vault (`pg-admin-password`). Zet eerst je eigen IP-adres erbij onder *Networking* |
 | Accounts beheren | Het beheer in LEAP zelf, of de tabel `auth.users` |
 | Geüploade bestanden bekijken | Portal → opslagaccount `vuleapstorage` → *Containers* → `supabase-storage` |
+| Lokaal ontwikkelen tegen Azure | Meld je aan bij Azure (`az login --tenant vunl.onmicrosoft.com`, `az account set --subscription "VU - BETA AI Hub Pilot"`) en draai `node azure/scripts/local-env.mjs`. Dat zet de Supabase-waarden in je `.env` en laat je IP-adres toe op de database. Daarna `npm run dev` |
 | De kosten volgen | Portal → `vu-leap-rg` → *Cost analysis*. Bij 80% van het maandbudget komt er een e-mail |
 
 ## Wat anders is dan bij Supabase en Replit
@@ -119,5 +120,6 @@ az containerapp hostname bind -g $RG -n $APP --hostname leap.vu-edulab.nl --envi
 | `deploy.sh [apps…]` | Images bouwen en de Container Apps aanmaken of bijwerken (`storage`, `supabase`, `app`) |
 | `migrate-data.sh` | Database, accounts en opslagregels kopiëren uit Supabase. Nodig: `SUPABASE_DB_URL` |
 | `copy-storage.sh` | Geüploade bestanden kopiëren uit Supabase Storage. Nodig: `SOURCE_URL`, `SOURCE_KEY` |
+| `local-env.mjs` | Je eigen `.env` aansluiten op Azure en je IP-adres toelaten op de database (Node, werkt ook op Windows) |
 
 Geen enkel script toont een geheim, en er staan geen geheimen in deze repo.
