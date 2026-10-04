@@ -33,6 +33,7 @@ jobs:
   deploy:
     if: vars.AZURE_CLIENT_ID != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -44,11 +45,19 @@ jobs:
 
       - name: Image bouwen
         run: |
+          # Benodigde az-uitbreidingen zonder vraag installeren.
+          az config set extension.use_dynamic_install=yes_without_prompt core.only_show_errors=true
           # De twee VITE_-waarden komen in de frontendbundel; het zijn het publieke
           # adres en de publieke sleutel, geen geheimen.
-          SUPABASE_URL="https://$(az containerapp show -g "$RG" -n "$SUPABASE_APP" --query properties.configuration.ingress.fqdn -o tsv)"
+          FQDN=$(az containerapp show -g "$RG" -n "$SUPABASE_APP" --query properties.configuration.ingress.fqdn -o tsv)
           ANON_KEY=$(az keyvault secret show --vault-name "$KV" -n anon-key --query value -o tsv)
-          az acr build -r "$ACR" -t "leap-app:${GITHUB_SHA::7}" . --no-logs \
+          if [ -z "$FQDN" ] || [ -z "$ANON_KEY" ]; then
+            echo "::error::Supabase-adres of anon-key niet gevonden; de image is niet gebouwd."
+            exit 1
+          fi
+          SUPABASE_URL="https://$FQDN"
+          # Het bouwlogboek staat hieronder, zodat een mislukte build direct te zien is.
+          az acr build -r "$ACR" -t "leap-app:${GITHUB_SHA::7}" . \
             --build-arg VITE_PUBLIC_SUPABASE_URL="$SUPABASE_URL" \
             --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY="$ANON_KEY" \
             --build-arg VITE_PUBLIC_REALTIME=off
