@@ -29,9 +29,12 @@ done
 
 # GitHub mag zich zonder wachtwoord aanmelden als id-leap-deploy, alleen vanaf
 # deze repo en branch. De rol op de resourcegroep kent een Owner toe (zie README).
+# GitHub noemt eigenaar en repo met hun vaste nummers erbij (eigenaar@id/repo@id),
+# zodat een hernoemde repo niet stilletjes toegang houdt of verliest.
+GH_SUBJECT="repo:${GH_REPO%%/*}@$(gh api "users/${GH_REPO%%/*}" --jq .id)/${GH_REPO#*/}@$(gh api "repos/$GH_REPO" --jq .id):ref:refs/heads/$GH_BRANCH"
 az identity federated-credential create -g "$RG" --identity-name "$DEPLOY_IDENTITY" -n "gh-$GH_BRANCH" \
   --issuer https://token.actions.githubusercontent.com --audiences api://AzureADTokenExchange \
-  --subject "repo:$GH_REPO:ref:refs/heads/$GH_BRANCH" -o none
+  --subject "$GH_SUBJECT" -o none
 
 # Key Vault met toegangsbeleid (geen RBAC): zo kan een Contributor de apps
 # leesrechten op de geheimen geven zonder dat een Owner rollen hoeft toe te kennen.
