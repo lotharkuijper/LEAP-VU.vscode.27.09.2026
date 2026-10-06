@@ -47,7 +47,7 @@ MAIL_EMAIL_SERVICE=vu-referentietoets-email
 MAIL_DOMAIN=vu-edulab.nl
 MAIL_SENDER_NAME=leap
 MAIL_SENDER=$MAIL_SENDER_NAME@$MAIL_DOMAIN
-MAIL_REPLY_TO=onderwijswerkplaats@vu.nl
+MAIL_REPLY_TO=l.d.j.kuijper@vu.nl
 
 # Adressen. LEAP zelf staat op het eigen adres leap.vu-edulab.nl; de
 # Supabase-onderdelen op het standaarddomein van de Container Apps-omgeving.

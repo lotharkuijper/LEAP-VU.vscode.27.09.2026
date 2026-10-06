@@ -50,7 +50,7 @@ De namen staan in `scripts/config.sh`.
 - **E-mail.** Alle e-mails (account bevestigen, uitnodiging, wachtwoord vergeten, Studiecafé-meldingen)
   komen van `leap@vu-edulab.nl`, via Azure Communication Services. Het domein `vu-edulab.nl` is van
   de Onderwijswerkplaats en ontvangt zelf geen e-mail; een antwoord op een LEAP-mail gaat naar het
-  adres in `MAIL_REPLY_TO` (`scripts/config.sh`). Er geldt een limiet van 30 e-mails per minuut en
+  adres in `MAIL_REPLY_TO` (`scripts/config.sh`, nu Lothar). Er geldt een limiet van 30 e-mails per minuut en
   100 per uur; nodig dus niet meer dan zo'n 80 studenten per uur uit.
 - **Edge Functions** (`supabase/functions/`) draaien niet op Azure. De app roept ze niet aan.
 - **Eén kopie van de app.** Lopende taken (begrippen extraheren) en de tijdklok voor de
