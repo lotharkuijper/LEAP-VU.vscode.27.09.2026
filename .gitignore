@@ -30,3 +30,6 @@ supabase/.temp/
 
 # Uitvoer van de schermcontrole (scripts/ui-audit.mjs)
 ui-audit-output/
+
+# Momentopnamen van de database tijdens het testen (scripts/db-snapshot.mjs)
+db-backups/
