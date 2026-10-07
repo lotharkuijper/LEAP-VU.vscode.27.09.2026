@@ -129,6 +129,7 @@ import {
 } from './documentTranslation.js';
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
+import { registerDesignAssistantRoutes } from './designAssistant.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
 import { buildSourcesInstructionBlock, buildNumberedRagContext } from './citationSources.js';
@@ -14224,6 +14225,27 @@ registerRelationshipAdjustRoute(app, {
   setRelationshipLevel,
   levelKey: relLevelKey,
   reputationActive,
+});
+
+// Ontwerphulp: optionele chatbot voor docenten in het beheer (server/designAssistant.js).
+registerDesignAssistantRoutes(app, {
+  supabaseAdmin,
+  authUser,
+  isStaffForCourse,
+  isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
+  buildLanguageInstruction,
+  normalizeLang,
+  apiBase: () => `http://127.0.0.1:${PORT}`,
+  chat: async (messages) => {
+    if (!AZURE_CHAT_READY) throw new Error(LLM_NOT_CONFIGURED_MSG);
+    const r = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages,
+      ...chatModelParams({ temperature: 0.4, maxTokens: 3000 }),
+    }, { timeoutMs: 120000 });
+    if (!r.ok) throw new Error(`Taalmodel-fout (${r.status})`);
+    return ((await r.json()).choices?.[0]?.message?.content || '').trim();
+  },
 });
 
 // POST /api/projects/:projectId/groups/:groupId/personas/:personaId/consultations-grant

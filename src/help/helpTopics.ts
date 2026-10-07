@@ -41,6 +41,7 @@ export const HELP_TOPICS = [
   'personas.conductRules',
   'personas.feedbackRounds',
   'personas.avatar',
+  'designAssistant.overview',
   // Quizbronnen, zoekgevoeligheid, leerniveaus, chat-instructies
   'quizSources.overview',
   'quizSources.mix',

@@ -28,6 +28,7 @@ import type { MaterialStep } from '../components/material/ReadinessStep';
 import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset } from '../lib/ragPresets';
 import { HelpToggle } from '../components/help/HelpToggle';
 import { ConceptQualityPanel } from '../components/ConceptQualityPanel';
+import { DesignAssistant } from '../components/admin/DesignAssistant';
 import { ExtractionProgressText } from '../components/ExtractionProgressText';
 import { startConceptExtractionTask, CONCEPT_TASK_KIND } from '../lib/conceptExtractionJob';
 import { useTask } from '../lib/backgroundTasks';
@@ -63,7 +64,7 @@ interface ChatbotPrompt {
   updated_at: string;
 }
 
-type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels';
+type TabType = 'material' | 'design_assistant' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels';
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -254,7 +255,7 @@ export function AdminPage() {
     if ((t as string | null) === 'sharestats_import') t = 'imports';
     // Persona's horen sinds 2026-09-27 bij Projecten (tabblad Persona-sjablonen).
     if ((t as string | null) === 'personas') t = 'projects_admin';
-    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
+    const allowed: TabType[] = ['material','design_assistant','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
     if (t && allowed.includes(t)) return t;
     return isAdmin ? 'users' : 'material';
   })();
@@ -306,7 +307,7 @@ export function AdminPage() {
     }
     const t = raw as TabType | null;
     if (t && t !== activeTab) {
-      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
+      const allowed: TabType[] = ['material','design_assistant','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
       if (allowed.includes(t)) setActiveTabState(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1496,6 +1497,7 @@ export function AdminPage() {
 
 const tabs = [
   { id: 'material' as TabType, label: t('admin.tabs.material'), icon: Library, show: true },
+  { id: 'design_assistant' as TabType, label: t('admin.tabs.designAssistant'), icon: Sparkles, show: isAdmin || isDocent },
   { id: 'users' as TabType, label: t('admin.tabs.users'), icon: Users, show: isAdmin },
   { id: 'add_users' as TabType, label: t('admin.tabs.addUsers'), icon: UserPlus, show: isAdmin || isDocent },
   { id: 'documents' as TabType, label: t('admin.tabs.documents'), icon: FolderTree, show: true },
@@ -1515,6 +1517,8 @@ const tabs = [
 // Cursusmateriaal voorop; systeemzaken apart (admin); de vorige indeling blijft
 // bereikbaar als ingeklapte "Klassieke weergave".
 const tabGroups = [
+  // Ontwerphulp: een aanbod, apart van de gewone onderdelen (experiment 2026-10-07).
+  { key: 'help', label: t('admin.tabGroups.help'), ids: ['design_assistant'], collapsible: false },
   { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
   { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'], collapsible: false },
   { key: 'classic', label: t('admin.tabGroups.classic'), ids: ['documents', 'rag_beheer', 'concepts'], collapsible: true },
@@ -2587,6 +2591,9 @@ const tabGroups = [
           {activeTab === 'quiz_sources' && <QuizSourcesAdminPanel />}
           {activeTab === 'course_info' && <CursusInfoTab />}
           {activeTab === 'learning_levels' && <LearningLevelsAdminTab />}
+          {activeTab === 'design_assistant' && (
+            <DesignAssistant courseId={activeCourseId} courseName={activeCourse?.name} onNavigate={(tab) => setActiveTab(tab as TabType)} />
+          )}
 
           {activeTab === 'prompts' && (
             <div className="space-y-6">

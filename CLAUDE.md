@@ -80,6 +80,16 @@
 - Groups submit work to an evaluator via `POST …/groups/:groupId/personas/:personaId/feedback` (stored in `project_group_products`, reviewed by `runEvaluatorReview`). A round only counts when a review was produced (`feedbackRoundsState`). Evaluator reviews do not change any relationship.
 - Admin modals that can grow taller than the screen are rendered with `createPortal(…, document.body)`. The sticky top bar is z-50, and a modal inside the page content would fall behind it.
 
+## Design assistant ("Ontwerphulp")
+- This is an optional chatbot for teachers in Beheer (tab `design_assistant`). It is an experiment since 2026-10-07. The rollback point is git tag `pre-ontwerphulp-2026-10-07`, and the admin can switch it off in the tab itself.
+- It must keep up with the engine. Its knowledge of LEAP is NEVER hand-written in the prompt; it is assembled per question in `server/designAssistant.js` from:
+  - `ADMIN_SECTIONS` (tabs + who may use them);
+  - the help texts (`help.*` in nl.json);
+  - the manual (`docs/handleiding/handleiding.html`, copied into the Docker image);
+  - the course state, fetched through the existing admin routes with the teacher's token.
+- When you add, remove or re-permission an admin tab, or add a new help-text group, update `ADMIN_SECTIONS`. `server/__tests__/designAssistant.test.js` fails until you do.
+- Only the admin can change the bot's way of working (prompt) and the on/off switch (chatbot_prompts rows `__design_assistant_prompt__` / `__design_assistant_enabled__`). The bot never changes anything itself; it gives advice and drafts.
+
 ## Background tasks
 - Admin actions that take longer than a few seconds run as a background task via `startTask` (`src/lib/backgroundTasks.ts`), not only inside the component. Examples: extracting concepts, uploading files, importing or updating websites, and ShareStats imports.
 - A task keeps running when the user moves to another part of the app. The task tray (`TaskTray`, bottom right) shows progress and a "… is done — View result" notice with a link back.
