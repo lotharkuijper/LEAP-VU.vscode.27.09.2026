@@ -63,7 +63,7 @@ export const ADMIN_SECTIONS = [
 /** Buiten /admin, maar wel relevant voor het inrichten. */
 export const OTHER_PAGES = [
   { path: '/admin/courses', label: 'Cursussen beheren', what: 'Cursussen aanmaken, leden beheren, beschikbaar maken voor studenten.' },
-  { path: '/projects', label: 'Projectruimte', what: 'Wat groepen zien; docenten corrigeren hier de verstandhouding met rolspelers en kennen extra gesprekken toe.' },
+  { path: '/projects', label: 'Projectruimte', what: 'De werkplek van een groep. Alleen de groepsleden zien wat daar gebeurt; docenten niet (privacy). Docenten zien in Projecten alleen wie in welke groep zit. Het contact met een rolspeler herstellen en extra gesprekken toekennen kan alleen een beheerder.' },
 ];
 
 // ── Bronnen inlezen (met cache op wijzigingstijd) ─────────────────────────────
