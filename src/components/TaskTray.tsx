@@ -98,7 +98,7 @@ export function TaskTray() {
 
   return (
     <div
-      className="fixed bottom-4 right-4 z-[90] w-[min(22rem,calc(100vw-2rem))]"
+      className="fixed bottom-4 right-4 z-[90] w-[min(22rem,calc(100vw-2rem))] sm:right-[calc(1rem+var(--leap-side-panel,0px))]"
       role="region"
       aria-label={t('tasks.regionLabel')}
       data-testid="task-tray"

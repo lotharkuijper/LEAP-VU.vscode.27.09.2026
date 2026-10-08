@@ -46,8 +46,6 @@ export const ADMIN_SECTIONS = [
     what: 'Vraagbanken importeren (onder andere ShareStats).' },
   { tab: 'add_users', labelKey: 'admin.tabs.addUsers', audience: 'all', helpGroups: [],
     what: 'Studenten en docenten aan de cursus toevoegen, ook in bulk.' },
-  { tab: 'design_assistant', labelKey: 'admin.tabs.designAssistant', audience: 'all', helpGroups: ['designAssistant'],
-    what: 'Deze Ontwerphulp zelf.' },
   { tab: 'users', labelKey: 'admin.tabs.users', audience: 'admin', helpGroups: [],
     what: 'Alle gebruikers van LEAP en hun rol.' },
   { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: [],
@@ -60,8 +58,10 @@ export const ADMIN_SECTIONS = [
     what: 'Klassieke weergave: begrippenlijst (ook bereikbaar via Cursusmateriaal → Begrippen).' },
 ];
 
-/** Buiten /admin, maar wel relevant voor het inrichten. */
+/** Buiten de tabbladen van /admin, maar wel relevant voor het inrichten. */
 export const OTHER_PAGES = [
+  { path: '(zijpaneel in heel Beheer)', label: 'Ontwerphulp', helpGroups: ['designAssistant'],
+    what: 'Dit gesprek zelf: een zijpaneel dat open blijft terwijl de docent tussen onderdelen wisselt. Links in je antwoorden openen het onderdeel achter het paneel.' },
   { path: '/admin/courses', label: 'Cursussen beheren', what: 'Cursussen aanmaken, leden beheren, beschikbaar maken voor studenten.' },
   { path: '/projects', label: 'Projectruimte', what: 'De werkplek van een groep. Alleen de groepsleden zien wat daar gebeurt; docenten niet (privacy). Docenten zien in Projecten alleen wie in welke groep zit. Het contact met een rolspeler herstellen en extra gesprekken toekennen kan alleen een beheerder.' },
 ];
@@ -135,7 +135,12 @@ export function buildLeapKnowledge({ locale, handbookText, role }) {
       }
     }
   }
-  for (const p of OTHER_PAGES) lines.push('', `## ${p.label} (${p.path})`, p.what);
+  for (const p of OTHER_PAGES) {
+    lines.push('', `## ${p.label} (${p.path})`, p.what);
+    for (const g of p.helpGroups || []) {
+      for (const t of Object.values(help[g] || {})) if (t.title && t.body) lines.push(`- ${t.title}: ${t.body}`);
+    }
+  }
   if (handbookText) {
     lines.push('', '# Handleiding voor docenten (achtergrond en werkwijze)', handbookText.slice(0, 60000));
   }
@@ -229,8 +234,21 @@ Je werkwijze:
 - Houd antwoorden kort en overzichtelijk. Liever een gerichte vraag dan een lang betoog.
 - Over VU-specifiek beleid (toetsbeleid, programmaleerdoelen) heb je nog geen documenten; zeg dat als het ter sprake komt en geef algemene onderwijskundige principes.`;
 
+const STEP_NL = { files: 'stap 1 Bestanden', processing: 'stap 2 Verwerking', concepts: 'stap 3 Begrippen', ready: 'stap 4 Klaar voor studenten' };
+
+/** Pure: leesbare beschrijving van waar de docent in het beheer is, of ''. */
+export function describePlace(context, locale = {}) {
+  if (!context || typeof context.tab !== 'string') return '';
+  const section = ADMIN_SECTIONS.find(s => s.tab === context.tab);
+  if (!section) return '';
+  const parts = [`${locale[section.labelKey] || section.labelKey} (/admin?tab=${section.tab})`];
+  if (context.tab === 'material' && STEP_NL[context.step]) parts.push(STEP_NL[context.step]);
+  if (context.tab === 'projects_admin' && context.view === 'templates') parts.push('Persona-sjablonen');
+  return parts.join(' → ');
+}
+
 /** Pure: de berichten voor het taalmodel. */
-export function buildDesignAssistantMessages({ adminPrompt, knowledge, courseSummary, messages, languageInstruction = '' }) {
+export function buildDesignAssistantMessages({ adminPrompt, knowledge, courseSummary, messages, languageInstruction = '', place = '' }) {
   const system = [
     (adminPrompt && adminPrompt.trim()) || DEFAULT_DESIGN_ASSISTANT_PROMPT,
     '',
@@ -239,6 +257,7 @@ export function buildDesignAssistantMessages({ adminPrompt, knowledge, courseSum
     '',
     '────────── STAND VAN DE CURSUS ──────────',
     courseSummary || '(niet beschikbaar)',
+    ...(place ? ['', '────────── WAAR DE DOCENT NU IS ──────────', `De docent heeft dit onderdeel open naast het gesprek: ${place}. Sluit daar zo mogelijk op aan (bv. bij "wat zie ik hier?").`] : []),
     languageInstruction || '',
   ].join('\n');
   const history = (Array.isArray(messages) ? messages : [])
@@ -361,6 +380,7 @@ export function registerDesignAssistantRoutes(app, deps) {
         courseSummary,
         messages,
         languageInstruction: buildLanguageInstruction(lang),
+        place: describePlace(req.body?.context, loadLocale()),
       });
       const reply = await chat(built);
       if (!reply) return res.status(502).json({ error: 'De Ontwerphulp gaf geen antwoord. Probeer het opnieuw.' });

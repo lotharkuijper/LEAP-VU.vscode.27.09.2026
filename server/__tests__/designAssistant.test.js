@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  ADMIN_SECTIONS, buildLeapKnowledge, loadLeapKnowledge, helpTextsByGroup, htmlToText,
+  ADMIN_SECTIONS, OTHER_PAGES, describePlace, buildLeapKnowledge, loadLeapKnowledge, helpTextsByGroup, htmlToText,
   summarizeCourse, buildDesignAssistantMessages, DEFAULT_DESIGN_ASSISTANT_PROMPT,
 } from '../designAssistant.js';
 
@@ -36,7 +36,7 @@ describe('de Ontwerphulp beweegt mee met het beheer', () => {
 
   it('elke groep hulpteksten hoort bij een onderdeel', () => {
     const groups = Object.keys(helpTextsByGroup(nl));
-    const mapped = new Set(ADMIN_SECTIONS.flatMap(s => s.helpGroups));
+    const mapped = new Set([...ADMIN_SECTIONS, ...OTHER_PAGES].flatMap(s => s.helpGroups || []));
     expect(groups.filter(g => !mapped.has(g))).toEqual([]);
   });
 
@@ -102,6 +102,21 @@ describe('stand van de cursus', () => {
   });
   it('zonder gegevens geen verzinsels', () => {
     expect(summarizeCourse({ course: { name: 'X' } })).not.toMatch(/Begrippen|Quizbronnen/);
+  });
+});
+
+describe('waar de docent is', () => {
+  it('onderdeel en stap worden leesbaar meegegeven', () => {
+    expect(describePlace({ tab: 'material', step: 'concepts' }, nl)).toBe(`${nl['admin.tabs.material']} (/admin?tab=material) → stap 3 Begrippen`);
+    expect(describePlace({ tab: 'projects_admin', view: 'templates' }, nl)).toContain('Persona-sjablonen');
+    expect(describePlace({ tab: 'bestaat_niet' }, nl)).toBe('');
+    expect(describePlace(null, nl)).toBe('');
+  });
+  it('de plek komt in het systeembericht', () => {
+    const msgs = buildDesignAssistantMessages({ knowledge: 'K', courseSummary: 'C', messages: [{ role: 'user', content: 'Hoi' }], place: 'Cursusmateriaal → stap 3 Begrippen' });
+    expect(msgs[0].content).toContain('WAAR DE DOCENT NU IS');
+    expect(msgs[0].content).toContain('stap 3 Begrippen');
+    expect(buildDesignAssistantMessages({ knowledge: '', courseSummary: '', messages: [{ role: 'user', content: 'x' }] })[0].content).not.toContain('WAAR DE DOCENT NU IS');
   });
 });
 
