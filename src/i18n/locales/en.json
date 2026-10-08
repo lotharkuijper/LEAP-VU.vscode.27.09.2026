@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Learning levels",
   "admin.tabs.settings": "Settings",
   "admin.learningLevels.title": "Student learning levels",
-  "admin.learningLevels.intro": "Overview of the self-chosen learning level (1–5) per student for {course}. Students set this themselves; you cannot change it.",
+  "admin.learningLevels.intro": "How many students of {course} work at which learning level (1–5). Students choose their level themselves; which level an individual student chooses is deliberately not shown.",
   "admin.learningLevels.readonlyNote": "Read-only: the student stays in control of their own level.",
   "admin.learningLevels.noCourse": "Pick an active course first to view learning levels.",
   "admin.learningLevels.loading": "Loading learning levels…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Try with a concept",
   "help.searchSensitivity.tryTerm.body": "Type a concept and see how many passages LEAP finds in your material with this setting. This shows in advance whether the setting is too broad or too strict. Nothing changes for students.",
   "help.learningLevels.overview.title": "Learning levels",
-  "help.learningLevels.overview.body": "Students choose their own level (1–5). LEAP adapts its explanations in the chat, “I explain” and personas to it: simpler at a low level, deeper at a high level. You can only view the level, not change it.",
+  "help.learningLevels.overview.body": "Students choose their own level (1–5). LEAP adapts the explanations in the chat, “I explain” and personas to it. You only see how many students work at each level, not who chooses which level.",
   "help.chatInstructions.overview.title": "Chat instructions",
   "help.chatInstructions.overview.body": "The standing instructions LEAP receives for the chat and for “I explain”, such as tone, approach and what the AI may or may not do. A change applies immediately to all students of this course. Change with care.",
   "help.quizSources.coverage.title": "Coverage overview",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Keep track of the relationship with the group",
   "admin.personaRole.roleplayer.reputationDesc": "After each conversation LEAP assesses how the group behaved towards {name}, using your conduct rules. The relationship then goes one step up, stays the same or goes one step down. Students see the level.",
   "admin.personaRole.roleplayer.startLevel": "Starting level",
-  "admin.personaRole.roleplayer.brokenWarning": "If the relationship is already \"cold\" and another conversation goes badly, {name} breaks off contact. The group then completes the project without {name}. Only you can still restore contact, in the project room.",
+  "admin.personaRole.roleplayer.brokenWarning": "If the relationship is already \"cold\" and another conversation goes badly, {name} breaks off contact. The group then completes the project without {name}. Only a LEAP administrator can restore it.",
   "admin.personaRole.roleplayer.badgeReputation": "relationship",
   "admin.personaRole.rules.title": "Conduct rules",
   "admin.personaRole.rules.positive": "What makes {name} more positive?",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "Saved.",
   "admin.designAssistant.admin.resetPrompt": "Back to the default instructions",
   "help.designAssistant.overview.title": "Design assistant",
-  "help.designAssistant.overview.body": "An optional conversation partner for setting up your course. It knows LEAP and the current state of your course, and helps you align learning goals, activities and feedback. It changes nothing itself; you adopt what you find useful."
+  "help.designAssistant.overview.body": "An optional conversation partner for setting up your course. It knows LEAP and the current state of your course, and helps you align learning goals, activities and feedback. It changes nothing itself; you adopt what you find useful.",
+  "admin.projects.groups.title": "Groups ({count})",
+  "admin.projects.groups.privacy": "You can see who is in which group. What a group does in the project room (chat, conversations with personas, feedback) is for the group only.",
+  "admin.projects.groups.empty": "There are no groups yet.",
+  "admin.projects.groups.noMembers": "no members yet",
+  "admin.projects.groups.finalized": "finished"
 }

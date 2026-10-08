@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "学习等级",
   "admin.tabs.settings": "设置",
   "admin.learningLevels.title": "学生的学习等级",
-  "admin.learningLevels.intro": "{course} 中每位学生自行选择的学习等级（1–5）概览。学生自己设置；你无法更改。",
+  "admin.learningLevels.intro": "{course} 中有多少学生在各学习水平（1–5）上学习。学生自行选择自己的水平；你有意看不到单个学生选择了哪个水平。",
   "admin.learningLevels.readonlyNote": "只读：学生始终掌控自己的等级。",
   "admin.learningLevels.noCourse": "请先选择一个活动课程以查看学习等级。",
   "admin.learningLevels.loading": "正在加载学习等级…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "用一个概念试试",
   "help.searchSensitivity.tryTerm.body": "输入一个概念，查看在此设置下 LEAP 能在你的材料中找到多少段落。这样你可以提前判断设置是否过宽或过严。对学生不会有任何影响。",
   "help.learningLevels.overview.title": "学习水平",
-  "help.learningLevels.overview.body": "学生自行选择自己的水平（1–5）。LEAP 会据此调整聊天、“我来解释”和人格角色中的讲解：水平低时更简单，水平高时更深入。你只能查看水平，不能修改。",
+  "help.learningLevels.overview.body": "学生自行选择自己的水平（1–5）。LEAP 会据此调整聊天、“我来解释”和人物角色中的说明。你只能看到每个水平有多少学生在学习，看不到谁选择了哪个水平。",
   "help.chatInstructions.overview.title": "聊天指令",
   "help.chatInstructions.overview.body": "LEAP 在聊天和“我来解释”中会收到的固定指令，例如语气、方法，以及 AI 可以或不可以做什么。修改会立即对本课程的所有学生生效。请谨慎修改。",
   "help.quizSources.coverage.title": "覆盖概览",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "记录与小组的关系状态",
   "admin.personaRole.roleplayer.reputationDesc": "每次对话后，LEAP 会根据你的行为规则评估小组对 {name} 的态度。关系状态随后会上升一级、保持不变或下降一级。学生可以看到该级别。",
   "admin.personaRole.roleplayer.startLevel": "起始级别",
-  "admin.personaRole.roleplayer.brokenWarning": "如果关系状态已经是“冷淡”，而一次对话再次表现不佳，{name} 就会中断联系。小组之后将在没有 {name} 的情况下完成项目。只有你可以在项目空间中恢复联系。",
+  "admin.personaRole.roleplayer.brokenWarning": "如果关系已经处于“冷淡”状态，而对话再次进展不顺，{name} 会中断联系。小组随后将在没有 {name} 的情况下完成项目。只有 LEAP 管理员可以恢复。",
   "admin.personaRole.roleplayer.badgeReputation": "关系",
   "admin.personaRole.rules.title": "行为规则",
   "admin.personaRole.rules.positive": "什么会让 {name} 更积极？",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "已保存。",
   "admin.designAssistant.admin.resetPrompt": "恢复为默认指令",
   "help.designAssistant.overview.title": "设计助手",
-  "help.designAssistant.overview.body": "一个可选的对话伙伴，用于帮助你设置课程。它了解 LEAP 以及你课程的当前状态，并帮助你协调学习目标、活动和反馈。它不会自行更改任何内容；你可以采用你认为有用的部分。"
+  "help.designAssistant.overview.body": "一个可选的对话伙伴，用于帮助你设置课程。它了解 LEAP 以及你课程的当前状态，并帮助你协调学习目标、活动和反馈。它不会自行更改任何内容；你可以采用你认为有用的部分。",
+  "admin.projects.groups.title": "小组（{count}）",
+  "admin.projects.groups.privacy": "你可以看到谁在哪个小组。小组在项目空间中做的内容（聊天、与人物角色对话、反馈）仅对该小组可见。",
+  "admin.projects.groups.empty": "还没有小组。",
+  "admin.projects.groups.noMembers": "还没有成员",
+  "admin.projects.groups.finalized": "已完成"
 }

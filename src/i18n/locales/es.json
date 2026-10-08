@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Niveles de aprendizaje",
   "admin.tabs.settings": "Configuración",
   "admin.learningLevels.title": "Niveles de aprendizaje de los estudiantes",
-  "admin.learningLevels.intro": "Resumen del nivel de aprendizaje autoelegido (1–5) por estudiante para {course}. Los estudiantes lo configuran ellos mismos; tú no puedes modificarlo.",
+  "admin.learningLevels.intro": "Cuántos estudiantes de {course} trabajan en cada nivel de aprendizaje (1–5). Los estudiantes eligen su nivel; deliberadamente no ves qué nivel elige cada estudiante.",
   "admin.learningLevels.readonlyNote": "Solo lectura: el estudiante sigue teniendo el control de su propio nivel.",
   "admin.learningLevels.noCourse": "Elige primero un curso activo para ver los niveles de aprendizaje.",
   "admin.learningLevels.loading": "Cargando niveles de aprendizaje…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Prueba con un concepto",
   "help.searchSensitivity.tryTerm.body": "Escribe un concepto y mira cuántos pasajes encuentra LEAP en tu material con esta configuración. Así puedes ver de antemano si la configuración es demasiado amplia o demasiado estricta. No cambia nada para los estudiantes.",
   "help.learningLevels.overview.title": "Niveles de aprendizaje",
-  "help.learningLevels.overview.body": "Los estudiantes eligen su propio nivel (1–5). LEAP adapta a ese nivel la explicación en el chat, “Yo explico” y con las personas: más sencilla en un nivel bajo, más profunda en un nivel alto. Tú solo puedes ver el nivel, no modificarlo.",
+  "help.learningLevels.overview.body": "Los estudiantes eligen su nivel (1–5). LEAP adapta a ello la explicación en el chat, “Yo explico” y en los personajes. Solo ves cuántos estudiantes trabajan en cada nivel, no quién elige qué nivel.",
   "help.chatInstructions.overview.title": "Instrucciones del chat",
   "help.chatInstructions.overview.body": "Las instrucciones fijas que recibe LEAP para el chat y para “Yo explico”, como el tono, el enfoque y lo que la IA puede o no puede hacer. Un cambio se aplica de inmediato a todos los estudiantes de este curso. Modifica con cuidado.",
   "help.quizSources.coverage.title": "Resumen de cobertura",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Registrar la relación con el grupo",
   "admin.personaRole.roleplayer.reputationDesc": "Después de cada conversación, LEAP evalúa cómo se comportó el grupo con {name}, según tus reglas de conducta. La relación sube un nivel, se mantiene igual o baja un nivel. Los estudiantes ven el nivel.",
   "admin.personaRole.roleplayer.startLevel": "Nivel inicial",
-  "admin.personaRole.roleplayer.brokenWarning": "Si la relación ya está en \"fría\" y una conversación vuelve a ir mal, {name} rompe el contacto. Entonces el grupo completa el proyecto sin {name}. Solo tú puedes restablecer el contacto, en el espacio del proyecto.",
+  "admin.personaRole.roleplayer.brokenWarning": "Si la relación ya está en \"fría\" y una conversación vuelve a ir mal, {name} rompe el contacto. Entonces el grupo finaliza el proyecto sin {name}. Solo un administrador de LEAP puede restablecerlo.",
   "admin.personaRole.roleplayer.badgeReputation": "relación",
   "admin.personaRole.rules.title": "Reglas de conducta",
   "admin.personaRole.rules.positive": "¿Qué hace que {name} sea más positivo?",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "Guardado.",
   "admin.designAssistant.admin.resetPrompt": "Volver a la instrucción predeterminada",
   "help.designAssistant.overview.title": "Asistente de diseño",
-  "help.designAssistant.overview.body": "Un interlocutor opcional para configurar tu curso. Conoce LEAP y el estado actual de tu curso, y te ayuda a alinear los objetivos de aprendizaje, las actividades y la retroalimentación. No cambia nada por sí mismo; tú aprovechas lo que te resulte útil."
+  "help.designAssistant.overview.body": "Un interlocutor opcional para configurar tu curso. Conoce LEAP y el estado actual de tu curso, y te ayuda a alinear los objetivos de aprendizaje, las actividades y la retroalimentación. No cambia nada por sí mismo; tú aprovechas lo que te resulte útil.",
+  "admin.projects.groups.title": "Grupos ({count})",
+  "admin.projects.groups.privacy": "Ves quién está en qué grupo. Lo que un grupo hace en el espacio del proyecto (chat, conversaciones con personajes, feedback) solo es visible para el propio grupo.",
+  "admin.projects.groups.empty": "Todavía no hay grupos.",
+  "admin.projects.groups.noMembers": "aún no hay miembros",
+  "admin.projects.groups.finalized": "finalizado"
 }

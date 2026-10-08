@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "مستويات التعلّم",
   "admin.tabs.settings": "الإعدادات",
   "admin.learningLevels.title": "مستويات تعلّم الطلاب",
-  "admin.learningLevels.intro": "نظرة عامة على مستوى التعلّم المختار ذاتيًا (1–5) لكل طالب في {course}. يضبط الطلاب ذلك بأنفسهم؛ لا يمكنك تغييره.",
+  "admin.learningLevels.intro": "عدد طلاب {course} الذين يعملون في كل مستوى تعلّم (1–5). يختار الطلاب مستواهم بأنفسهم؛ ولا ترى عمدًا المستوى الذي اختاره كل طالب على حدة.",
   "admin.learningLevels.readonlyNote": "للقراءة فقط: يبقى الطالب المتحكّم في مستواه الخاص.",
   "admin.learningLevels.noCourse": "اختر أولًا مساقًا نشطًا لعرض مستويات التعلّم.",
   "admin.learningLevels.loading": "جارٍ تحميل مستويات التعلّم…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "جرّب باستخدام مفهوم",
   "help.searchSensitivity.tryTerm.body": "اكتب مفهومًا وشاهد كم مقطعًا يجد LEAP في موادك باستخدام هذا الإعداد. هكذا تعرف مسبقًا إن كان الإعداد واسعًا جدًا أو صارمًا جدًا. لن يتغير شيء للطلاب.",
   "help.learningLevels.overview.title": "مستويات التعلم",
-  "help.learningLevels.overview.body": "يختار الطلاب مستواهم بأنفسهم (1–5). يكيّف LEAP الشرح في الدردشة، و«أنا أشرح»، ولدى الشخصيات وفقًا لذلك: أبسط عند المستوى المنخفض، وأعمق عند المستوى المرتفع. يمكنك فقط عرض المستوى، وليس تغييره.",
+  "help.learningLevels.overview.body": "يختار الطلاب مستواهم بأنفسهم (1–5). يكيّف LEAP الشرح في الدردشة و«أشرح» ومع الشخصيات بناءً على ذلك. ترى فقط عدد الطلاب الذين يعملون في كل مستوى، وليس من اختار أي مستوى.",
   "help.chatInstructions.overview.title": "تعليمات الدردشة",
   "help.chatInstructions.overview.body": "التعليمات الثابتة التي يتلقاها LEAP في الدردشة و«أنا أشرح»، مثل النبرة، والمنهجية، وما يُسمح للذكاء الاصطناعي بفعله أو لا. يسري أي تغيير فورًا على جميع طلاب هذا المقرر. عدّل بحذر.",
   "help.quizSources.coverage.title": "نظرة عامة على التغطية",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "متابعة مستوى العلاقة مع المجموعة",
   "admin.personaRole.roleplayer.reputationDesc": "بعد كل محادثة، يقيّم LEAP كيف تعاملت المجموعة مع {name} وفقًا لقواعد السلوك التي وضعتها. عندها يرتفع مستوى العلاقة خطوة، أو يبقى كما هو، أو ينخفض خطوة. يرى الطلاب المستوى.",
   "admin.personaRole.roleplayer.startLevel": "مستوى البداية",
-  "admin.personaRole.roleplayer.brokenWarning": "إذا كان مستوى العلاقة بالفعل \"باردًا\" وسارت محادثة أخرى بشكل سيئ، فسيقطع {name} الاتصال. عندها تُكمل المجموعة المشروع من دون {name}. أنت فقط يمكنك استعادة الاتصال، في مساحة المشروع.",
+  "admin.personaRole.roleplayer.brokenWarning": "إذا كانت العلاقة بالفعل \"باردة\" وسار الحوار بشكل سيئ مرة أخرى، فسيقطع {name} التواصل. تُكمل المجموعة المشروع حينها من دون {name}. لا يمكن استعادة التواصل إلا بواسطة مسؤول في LEAP.",
   "admin.personaRole.roleplayer.badgeReputation": "العلاقة",
   "admin.personaRole.rules.title": "قواعد السلوك",
   "admin.personaRole.rules.positive": "ما الذي يجعل {name} أكثر إيجابية؟",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "تم الحفظ.",
   "admin.designAssistant.admin.resetPrompt": "العودة إلى التعليمات الافتراضية",
   "help.designAssistant.overview.title": "مساعدة التصميم",
-  "help.designAssistant.overview.body": "محاور اختياري يساعدك في إعداد مقررك. يعرف LEAP والحالة الحالية لمقررك، ويساعدك على مواءمة أهداف التعلم والأنشطة والتغذية الراجعة. لا يغيّر شيئًا بنفسه؛ أنت تختار ما تجده مفيدًا."
+  "help.designAssistant.overview.body": "محاور اختياري يساعدك في إعداد مقررك. يعرف LEAP والحالة الحالية لمقررك، ويساعدك على مواءمة أهداف التعلم والأنشطة والتغذية الراجعة. لا يغيّر شيئًا بنفسه؛ أنت تختار ما تجده مفيدًا.",
+  "admin.projects.groups.title": "المجموعات ({count})",
+  "admin.projects.groups.privacy": "ترى من يوجد في أي مجموعة. ما تفعله المجموعة في مساحة المشروع (الدردشة، الحوارات مع الشخصيات، الملاحظات) يكون متاحًا للمجموعة نفسها فقط.",
+  "admin.projects.groups.empty": "لا توجد مجموعات بعد.",
+  "admin.projects.groups.noMembers": "لا أعضاء بعد",
+  "admin.projects.groups.finalized": "مكتمل"
 }

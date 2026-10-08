@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "学習レベル",
   "admin.tabs.settings": "設定",
   "admin.learningLevels.title": "学生の学習レベル",
-  "admin.learningLevels.intro": "{course}における学生ごとの自己選択した学習レベル（1〜5）の概要。学生が自分で設定するもので、あなたは変更できません。",
+  "admin.learningLevels.intro": "{course}の学生がどの学習レベル（1〜5）で取り組んでいるかの人数。学生は自分でレベルを選ぶよ。個々の学生がどのレベルを選んだかは、意図的に表示されないよ。",
   "admin.learningLevels.readonlyNote": "読み取り専用：自分のレベルは学生本人が管理します。",
   "admin.learningLevels.noCourse": "学習レベルを表示するには、まずアクティブなコースを選んでください。",
   "admin.learningLevels.loading": "学習レベルを読み込み中…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "用語で試す",
   "help.searchSensitivity.tryTerm.body": "用語を入力すると、この設定で LEAP が教材内から何箇所見つけるかを確認できます。設定が広すぎるか厳しすぎるかを事前に確認できます。学生向けには何も変わりません。",
   "help.learningLevels.overview.title": "学習レベル",
-  "help.learningLevels.overview.body": "学生は自分でレベル（1〜5）を選びます。LEAP はそれに合わせて、チャット、「解説する」、ペルソナでの説明を調整します。低いレベルではより簡単に、高いレベルではより深く説明します。あなたはレベルを確認するだけで、変更はできません。",
+  "help.learningLevels.overview.body": "学生は自分でレベル（1〜5）を選ぶよ。LEAPはそれに合わせて、チャット、「説明する」、ペルソナでの説明を調整するよ。各レベルで取り組んでいる学生数だけが表示され、誰がどのレベルを選んだかは表示されないよ。",
   "help.chatInstructions.overview.title": "チャット指示",
   "help.chatInstructions.overview.body": "チャットと「解説する」で LEAP に常に渡される指示です。口調、進め方、AI がしてよいこと・してはいけないことなどが含まれます。変更はこのコースのすべての学生にすぐ適用されます。慎重に変更してください。",
   "help.quizSources.coverage.title": "カバレッジ概要",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "グループとの関係を記録する",
   "admin.personaRole.roleplayer.reputationDesc": "各会話の後、LEAP はあなたの行動ルールに従って、グループが {name} に対してどのように接したかを評価する。その結果、関係は1段階上がる、変わらない、または1段階下がる。学生にはレベルが表示される。",
   "admin.personaRole.roleplayer.startLevel": "開始レベル",
-  "admin.personaRole.roleplayer.brokenWarning": "関係がすでに「冷たい」状態で、次の会話もまたうまくいかなかった場合、{name} は連絡を断つ。その場合、グループは {name} なしでプロジェクトを完了する。連絡を回復できるのは、プロジェクトルームであなただけ。",
+  "admin.personaRole.roleplayer.brokenWarning": "関係がすでに「冷たい」状態で、会話が再びうまくいかない場合、{name}は連絡を断つよ。その場合、グループは{name}なしでプロジェクトを完了する。復旧できるのはLEAPの管理者だけだよ。",
   "admin.personaRole.roleplayer.badgeReputation": "関係性",
   "admin.personaRole.rules.title": "行動ルール",
   "admin.personaRole.rules.positive": "何が{name}をよりポジティブにする？",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "保存しました。",
   "admin.designAssistant.admin.resetPrompt": "デフォルトの指示に戻す",
   "help.designAssistant.overview.title": "デザイン支援",
-  "help.designAssistant.overview.body": "コースを設計するための任意の相談相手です。LEAPとあなたのコースの現在の状態を把握し、学習目標、活動、フィードバックを整合させるのを手伝います。自分で変更を加えることはありません。使えると思うものだけをあなたが取り入れます。"
+  "help.designAssistant.overview.body": "コースを設計するための任意の相談相手です。LEAPとあなたのコースの現在の状態を把握し、学習目標、活動、フィードバックを整合させるのを手伝います。自分で変更を加えることはありません。使えると思うものだけをあなたが取り入れます。",
+  "admin.projects.groups.title": "グループ（{count}）",
+  "admin.projects.groups.privacy": "誰がどのグループにいるかは見えるよ。グループがプロジェクトスペースで行うこと（チャット、ペルソナとの会話、フィードバック）は、そのグループだけが見られるよ。",
+  "admin.projects.groups.empty": "まだグループはありません。",
+  "admin.projects.groups.noMembers": "まだメンバーはいません",
+  "admin.projects.groups.finalized": "完了済み"
 }

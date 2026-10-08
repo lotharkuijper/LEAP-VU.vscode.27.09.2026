@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "학습 수준",
   "admin.tabs.settings": "설정",
   "admin.learningLevels.title": "학생별 학습 수준",
-  "admin.learningLevels.intro": "{course}에서 학생별로 스스로 선택한 학습 수준(1–5) 개요야. 학생이 직접 설정하며, 너는 변경할 수 없어.",
+  "admin.learningLevels.intro": "{course}의 학생들이 어떤 학습 수준(1–5)에서 학습하고 있는지 보여줘. 학생들은 자신의 수준을 직접 선택해. 개별 학생이 어떤 수준을 선택했는지는 의도적으로 보이지 않아.",
   "admin.learningLevels.readonlyNote": "읽기 전용: 학생이 자신의 수준을 계속 직접 관리해.",
   "admin.learningLevels.noCourse": "학습 수준을 보려면 먼저 활성 강좌를 선택해.",
   "admin.learningLevels.loading": "학습 수준 로드 중…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "개념으로 시도하기",
   "help.searchSensitivity.tryTerm.body": "개념을 입력하고 이 설정에서 LEAP가 네 자료에서 몇 개의 구절을 찾는지 확인해. 이렇게 하면 설정이 너무 넓거나 너무 엄격한지 미리 알 수 있어. 학생들에게는 아무 변화도 없어.",
   "help.learningLevels.overview.title": "학습 수준",
-  "help.learningLevels.overview.body": "학생들이 직접 자신의 수준(1–5)을 선택해. LEAP는 채팅, “내가 설명할게”, 페르소나에서 그에 맞게 설명을 조정해: 낮은 수준에서는 더 쉽게, 높은 수준에서는 더 깊이 있게. 너는 수준을 볼 수만 있고 변경할 수는 없어.",
+  "help.learningLevels.overview.body": "학생들은 자신의 수준(1–5)을 직접 선택해. LEAP은 이에 맞춰 채팅, “설명해줄게”, 페르소나에서 설명을 조정해. 각 수준에서 학습하는 학생 수만 볼 수 있고, 누가 어떤 수준을 선택했는지는 볼 수 없어.",
   "help.chatInstructions.overview.title": "채팅 지침",
   "help.chatInstructions.overview.body": "채팅과 “내가 설명할게”에서 LEAP에 항상 전달되는 고정 지침이야. 예: 말투, 접근 방식, AI가 해도 되는 것과 안 되는 것. 변경 사항은 이 과목의 모든 학생에게 즉시 적용돼. 신중하게 수정해.",
   "help.quizSources.coverage.title": "범위 개요",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "그룹과의 관계 추적",
   "admin.personaRole.roleplayer.reputationDesc": "각 대화 후 LEAP은 네 행동 규칙에 따라 그룹이 {name}에게 어떻게 대했는지 평가해. 그러면 관계가 한 단계 올라가거나, 그대로 유지되거나, 한 단계 내려가. 학생들은 그 수준을 볼 수 있어.",
   "admin.personaRole.roleplayer.startLevel": "시작 수준",
-  "admin.personaRole.roleplayer.brokenWarning": "관계가 이미 \"차가움\"이고 대화가 다시 나쁘게 진행되면 {name}이 연락을 끊어. 그러면 그룹은 {name} 없이 프로젝트를 마무리해. 프로젝트 공간에서 오직 너만 연락을 복구할 수 있어.",
+  "admin.personaRole.roleplayer.brokenWarning": "이미 관계가 \"차가움\" 상태이고 대화가 다시 나쁘게 진행되면 {name}이(가) 연락을 끊어. 그러면 그룹은 {name} 없이 프로젝트를 마무리해. 복구는 LEAP 관리자만 할 수 있어.",
   "admin.personaRole.roleplayer.badgeReputation": "관계",
   "admin.personaRole.rules.title": "행동 규칙",
   "admin.personaRole.rules.positive": "무엇이 {name}을 더 긍정적으로 만들까?",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "저장되었습니다.",
   "admin.designAssistant.admin.resetPrompt": "기본 지침으로 되돌리기",
   "help.designAssistant.overview.title": "설계 도우미",
-  "help.designAssistant.overview.body": "네 과정을 구성하는 데 도움을 주는 선택형 대화 파트너입니다. LEAP과 네 과정의 현재 상태를 알고 있으며, 학습 목표, 활동, 피드백이 서로 잘 맞도록 도와줍니다. 직접 변경하지는 않으며, 유용하다고 생각하는 것만 네가 적용하면 됩니다."
+  "help.designAssistant.overview.body": "네 과정을 구성하는 데 도움을 주는 선택형 대화 파트너입니다. LEAP과 네 과정의 현재 상태를 알고 있으며, 학습 목표, 활동, 피드백이 서로 잘 맞도록 도와줍니다. 직접 변경하지는 않으며, 유용하다고 생각하는 것만 네가 적용하면 됩니다.",
+  "admin.projects.groups.title": "그룹({count})",
+  "admin.projects.groups.privacy": "어떤 학생이 어떤 그룹에 있는지 볼 수 있어. 그룹이 프로젝트 공간에서 하는 활동(채팅, 페르소나와의 대화, 피드백)은 해당 그룹만 볼 수 있어.",
+  "admin.projects.groups.empty": "아직 그룹이 없어.",
+  "admin.projects.groups.noMembers": "아직 구성원 없음",
+  "admin.projects.groups.finalized": "완료됨"
 }

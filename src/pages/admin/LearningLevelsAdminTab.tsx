@@ -18,6 +18,7 @@ interface LevelRow {
 
 interface LevelsResponse {
   levels: LevelRow[];
+  labels?: Record<string, string>;
   distribution: Record<string, number>;
   total: number;
   defaultLevel: number;
@@ -68,20 +69,6 @@ export function LearningLevelsAdminTab() {
     load();
   }, [load]);
 
-  const formatDate = (iso: string | null) => {
-    if (!iso) return '—';
-    try {
-      return new Date(iso).toLocaleString(lang === 'nl' ? 'nl-NL' : undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    } catch {
-      return iso;
-    }
-  };
 
   if (!activeCourseId) {
     return (
@@ -152,7 +139,7 @@ export function LearningLevelsAdminTab() {
               {LEVELS.map(l => {
                 const count = data.distribution?.[String(l)] || 0;
                 const pct = Math.round((count / maxCount) * 100);
-                const label = data.levels.find(r => r.level === l)?.label || `${l}`;
+                const label = data.labels?.[String(l)] || `${l}`;
                 return (
                   <div key={l} className="flex items-center gap-3" data-testid={`row-distribution-level-${l}`}>
                     <div className="w-28 shrink-0 text-xs text-gray-500 truncate" title={label}>
@@ -176,53 +163,13 @@ export function LearningLevelsAdminTab() {
             </p>
           </div>
 
-          {/* Per-student lijst */}
-          {data.levels.length === 0 ? (
+          {/* Privacy (2026-10-08): geen lijst per student — alleen de verdeling hierboven. */}
+          {data.total === 0 && (
             <div className="text-sm text-gray-500" data-testid="text-learning-levels-empty">
               <p>{t('admin.learningLevels.empty')}</p>
               <p className="mt-1 text-xs text-gray-400">
                 {t('admin.learningLevels.emptyHint', { level: String(data.defaultLevel) })}
               </p>
-            </div>
-          ) : (
-            <div className="chic-card overflow-x-auto">
-              <table className="w-full min-w-[32rem] text-sm" data-testid="table-learning-levels">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    <th className="px-4 py-2.5">{t('admin.learningLevels.colName')}</th>
-                    <th className="px-4 py-2.5">{t('admin.learningLevels.colLevel')}</th>
-                    <th className="px-4 py-2.5">{t('admin.learningLevels.colUpdated')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.levels.map(row => (
-                    <tr
-                      key={row.user_id}
-                      className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50"
-                      data-testid={`row-student-level-${row.user_id}`}
-                    >
-                      <td className="px-4 py-2.5">
-                        <div className="font-medium text-gray-800" data-testid={`text-student-name-${row.user_id}`}>
-                          {row.name || row.email || row.user_id}
-                        </div>
-                        {row.name && row.email && (
-                          <div className="text-xs text-gray-400">{row.email}</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium text-gray-700 bg-gray-100"
-                          data-testid={`badge-student-level-${row.user_id}`}
-                        >
-                          <span className={`w-2 h-2 rounded-full ${LEVEL_BAR_COLORS[row.level] || 'bg-blue-400'}`} />
-                          {row.level}. {row.label || ''}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-gray-500">{formatDate(row.updated_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             </div>
           )}
         </>

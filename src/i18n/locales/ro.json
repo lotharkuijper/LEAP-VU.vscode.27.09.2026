@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Niveluri de învățare",
   "admin.tabs.settings": "Setări",
   "admin.learningLevels.title": "Nivelurile de învățare ale studenților",
-  "admin.learningLevels.intro": "Prezentare generală a nivelului de învățare ales de fiecare student (1–5) pentru {course}. Studenții îl setează singuri; tu nu îl poți modifica.",
+  "admin.learningLevels.intro": "Câți studenți de la {course} lucrează la fiecare nivel de învățare (1–5). Studenții își aleg singuri nivelul; nu vezi în mod intenționat ce nivel alege un student individual.",
   "admin.learningLevels.readonlyNote": "Doar citire: studentul rămâne responsabil de propriul nivel.",
   "admin.learningLevels.noCourse": "Alege mai întâi un curs activ pentru a vedea nivelurile de învățare.",
   "admin.learningLevels.loading": "Se încarcă nivelurile de învățare…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Încearcă cu un concept",
   "help.searchSensitivity.tryTerm.body": "Tastează un concept și vezi câte pasaje găsește LEAP în materialul tău cu această setare. Astfel vezi dinainte dacă setarea este prea largă sau prea strictă. Nu se schimbă nimic pentru studenți.",
   "help.learningLevels.overview.title": "Niveluri de învățare",
-  "help.learningLevels.overview.body": "Studenții își aleg singuri nivelul (1–5). LEAP adaptează explicațiile din chat, „Eu explic” și de la persoane în funcție de acesta: mai simple la un nivel scăzut, mai aprofundate la un nivel ridicat. Tu poți doar să vezi nivelul, nu să îl modifici.",
+  "help.learningLevels.overview.body": "Studenții își aleg singuri nivelul (1–5). LEAP adaptează în funcție de acesta explicațiile din chat, „Explic” și cele pentru personaje. Vezi doar câți studenți lucrează la fiecare nivel, nu cine alege ce nivel.",
   "help.chatInstructions.overview.title": "Instrucțiuni pentru chat",
   "help.chatInstructions.overview.body": "Instrucțiunile fixe pe care LEAP le primește pentru chat și pentru „Eu explic”, precum tonul, abordarea și ce are sau nu voie să facă AI-ul. O modificare se aplică imediat tuturor studenților din acest curs. Modifică cu grijă.",
   "help.quizSources.coverage.title": "Prezentare generală a acoperirii",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Urmărește relația cu grupul",
   "admin.personaRole.roleplayer.reputationDesc": "După fiecare conversație, LEAP evaluează cum s-a comportat grupul față de {name}, conform regulilor tale de comportament. Relația urcă apoi cu un pas, rămâne la fel sau coboară cu un pas. Studenții văd nivelul.",
   "admin.personaRole.roleplayer.startLevel": "Nivel inițial",
-  "admin.personaRole.roleplayer.brokenWarning": "Dacă relația este deja la nivelul „rece” și o conversație decurge din nou prost, {name} întrerupe contactul. Grupul finalizează apoi proiectul fără {name}. Doar tu mai poți restabili contactul, în spațiul proiectului.",
+  "admin.personaRole.roleplayer.brokenWarning": "Dacă relația este deja „rece” și o conversație decurge din nou prost, {name} întrerupe contactul. Grupul finalizează apoi proiectul fără {name}. Doar un administrator LEAP poate restabili contactul.",
   "admin.personaRole.roleplayer.badgeReputation": "relație",
   "admin.personaRole.rules.title": "Reguli de comportament",
   "admin.personaRole.rules.positive": "Ce îl/o face pe {name} mai pozitiv(ă)?",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "Salvat.",
   "admin.designAssistant.admin.resetPrompt": "Înapoi la instrucțiunea implicită",
   "help.designAssistant.overview.title": "Asistent de proiectare",
-  "help.designAssistant.overview.body": "Un partener de conversație opțional pentru configurarea cursului tău. Cunoaște LEAP și starea actuală a cursului tău și te ajută să aliniez obiectivele de învățare, activitățile și feedbackul. Nu modifică nimic singur; tu preiei ceea ce consideri util."
+  "help.designAssistant.overview.body": "Un partener de conversație opțional pentru configurarea cursului tău. Cunoaște LEAP și starea actuală a cursului tău și te ajută să aliniez obiectivele de învățare, activitățile și feedbackul. Nu modifică nimic singur; tu preiei ceea ce consideri util.",
+  "admin.projects.groups.title": "Grupuri ({count})",
+  "admin.projects.groups.privacy": "Vezi cine face parte din fiecare grup. Ce face un grup în spațiul de proiect (chat, conversații cu personaje, feedback) este vizibil doar pentru grupul respectiv.",
+  "admin.projects.groups.empty": "Nu există încă grupuri.",
+  "admin.projects.groups.noMembers": "încă nu există membri",
+  "admin.projects.groups.finalized": "finalizat"
 }

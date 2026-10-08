@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Niveaux d’apprentissage",
   "admin.tabs.settings": "Paramètres",
   "admin.learningLevels.title": "Niveaux d’apprentissage des étudiants",
-  "admin.learningLevels.intro": "Aperçu du niveau d’apprentissage auto-sélectionné (1–5) par étudiant pour {course}. Les étudiants le définissent eux-mêmes ; tu ne peux pas le modifier.",
+  "admin.learningLevels.intro": "Combien d’étudiants de {course} travaillent à quel niveau d’apprentissage (1–5). Les étudiants choisissent eux-mêmes leur niveau ; tu ne vois volontairement pas quel niveau choisit un étudiant individuel.",
   "admin.learningLevels.readonlyNote": "Lecture seule : l’étudiant garde le contrôle de son propre niveau.",
   "admin.learningLevels.noCourse": "Choisis d’abord un cours actif pour consulter les niveaux d’apprentissage.",
   "admin.learningLevels.loading": "Chargement des niveaux d’apprentissage…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Essaie avec un concept",
   "help.searchSensitivity.tryTerm.body": "Saisis un concept et vois combien de passages LEAP trouve dans ton matériel avec ce réglage. Tu vois ainsi à l’avance si le réglage est trop large ou trop strict. Rien ne change pour les étudiants.",
   "help.learningLevels.overview.title": "Niveaux d’apprentissage",
-  "help.learningLevels.overview.body": "Les étudiants choisissent eux-mêmes leur niveau (1–5). LEAP adapte les explications dans le chat, « J’explique » et avec les personas : plus simples à un niveau bas, plus approfondies à un niveau élevé. Tu peux seulement consulter le niveau, pas le modifier.",
+  "help.learningLevels.overview.body": "Les étudiants choisissent eux-mêmes leur niveau (1–5). LEAP adapte en conséquence les explications dans le chat, « J’explique » et avec les personas. Tu vois seulement combien d’étudiants travaillent à chaque niveau, pas qui choisit quel niveau.",
   "help.chatInstructions.overview.title": "Instructions du chat",
   "help.chatInstructions.overview.body": "Les instructions fixes fournies à LEAP pour le chat et pour « J’explique », comme le ton, l’approche et ce que l’IA peut ou ne peut pas faire. Une modification s’applique immédiatement à tous les étudiants de ce cours. Modifie avec prudence.",
   "help.quizSources.coverage.title": "Aperçu de la couverture",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Suivre la relation avec le groupe",
   "admin.personaRole.roleplayer.reputationDesc": "Après chaque conversation, LEAP évalue comment le groupe s’est comporté envers {name}, selon tes règles de conduite. La relation monte alors d’un niveau, reste inchangée ou descend d’un niveau. Les étudiants voient le niveau.",
   "admin.personaRole.roleplayer.startLevel": "Niveau de départ",
-  "admin.personaRole.roleplayer.brokenWarning": "Si la relation est déjà au niveau « froid » et qu’une conversation se passe de nouveau mal, {name} coupe le contact. Le groupe termine alors le projet sans {name}. Toi seul peux encore rétablir le contact, dans l’espace projet.",
+  "admin.personaRole.roleplayer.brokenWarning": "Si la relation est déjà « froide » et qu’une conversation se passe de nouveau mal, {name} coupe le contact. Le groupe termine alors le projet sans {name}. Seul un administrateur de LEAP peut rétablir la situation.",
   "admin.personaRole.roleplayer.badgeReputation": "relation",
   "admin.personaRole.rules.title": "Règles de comportement",
   "admin.personaRole.rules.positive": "Qu’est-ce qui rend {name} plus positif ?",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "Enregistré.",
   "admin.designAssistant.admin.resetPrompt": "Revenir à l’instruction par défaut",
   "help.designAssistant.overview.title": "Aide à la conception",
-  "help.designAssistant.overview.body": "Un partenaire de discussion facultatif pour configurer ton cours. Il connaît LEAP et l’état actuel de ton cours, et t’aide à harmoniser objectifs d’apprentissage, activités et feedback. Il ne modifie rien lui-même ; tu reprends ce qui te semble utile."
+  "help.designAssistant.overview.body": "Un partenaire de discussion facultatif pour configurer ton cours. Il connaît LEAP et l’état actuel de ton cours, et t’aide à harmoniser objectifs d’apprentissage, activités et feedback. Il ne modifie rien lui-même ; tu reprends ce qui te semble utile.",
+  "admin.projects.groups.title": "Groupes ({count})",
+  "admin.projects.groups.privacy": "Tu vois qui fait partie de quel groupe. Ce qu’un groupe fait dans l’espace projet (chat, conversations avec les personas, feedback) n’est visible que par le groupe lui-même.",
+  "admin.projects.groups.empty": "Il n’y a pas encore de groupes.",
+  "admin.projects.groups.noMembers": "pas encore de membres",
+  "admin.projects.groups.finalized": "terminé"
 }

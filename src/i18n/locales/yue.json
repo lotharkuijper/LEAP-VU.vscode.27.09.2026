@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "學習級別",
   "admin.tabs.settings": "設定",
   "admin.learningLevels.title": "學生嘅學習級別",
-  "admin.learningLevels.intro": "{course} 每位學生自選學習級別（1–5）概覽。學生自行設定；你唔可以更改。",
+  "admin.learningLevels.intro": "{course} 有幾多學生喺邊個學習程度（1–5）學緊。學生會自己揀程度；你係刻意睇唔到個別學生揀咗邊個程度。",
   "admin.learningLevels.readonlyNote": "唯讀：學生仍然掌控自己嘅級別。",
   "admin.learningLevels.noCourse": "請先揀一個有效課程嚟查看學習級別。",
   "admin.learningLevels.loading": "載入學習級別中…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "用一個概念試吓",
   "help.searchSensitivity.tryTerm.body": "輸入一個概念，睇吓用呢個設定，LEAP 喺你嘅材料搵到幾多段落。咁你可以預先知道個設定係太寬鬆定太嚴格。對學生唔會有任何改變。",
   "help.learningLevels.overview.title": "學習程度",
-  "help.learningLevels.overview.body": "學生自己揀程度（1–5）。LEAP 會按佢哋嘅程度，調整聊天、「我嚟解釋」同 persona 入面嘅解釋：程度低就簡單啲，程度高就深入啲。你只可以查看程度，唔可以更改。",
+  "help.learningLevels.overview.body": "學生會自己揀程度（1–5）。LEAP 會因應呢個程度調整聊天、「我嚟解釋」同 persona 入面嘅講解。你只會睇到每個程度有幾多學生，唔會睇到邊個學生揀咗邊個程度。",
   "help.chatInstructions.overview.title": "聊天指示",
   "help.chatInstructions.overview.body": "LEAP 喺聊天同「我嚟解釋」時會跟隨嘅固定指示，例如語氣、做法，以及 AI 可以或者唔可以做啲乜。修改會即時套用到呢個課程所有學生。請小心修改。",
   "help.quizSources.coverage.title": "覆蓋概覽",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "追蹤同小組嘅關係",
   "admin.personaRole.roleplayer.reputationDesc": "每次對話後，LEAP 會按照你嘅行為規則，評估小組對 {name} 嘅態度。關係會上升一級、保持不變，或者下降一級。學生會見到等級。",
   "admin.personaRole.roleplayer.startLevel": "起始等級",
-  "admin.personaRole.roleplayer.brokenWarning": "如果關係已經係「冷淡」，而下一次對話又再次表現差，{name} 就會中斷聯絡。小組之後會喺冇 {name} 嘅情況下完成專案。只有你可以喺專案空間恢復聯絡。",
+  "admin.personaRole.roleplayer.brokenWarning": "如果關係已經係「冷淡」，而對話再次進展得唔好，{name} 就會中斷聯絡。小組之後會喺冇 {name} 嘅情況下完成項目。只有 LEAP 管理員可以修復。",
   "admin.personaRole.roleplayer.badgeReputation": "關係",
   "admin.personaRole.rules.title": "行為守則",
   "admin.personaRole.rules.positive": "咩會令 {name} 更正面？",
@@ -2767,5 +2767,10 @@
   "admin.designAssistant.admin.saved": "已儲存。",
   "admin.designAssistant.admin.resetPrompt": "返回預設指示",
   "help.designAssistant.overview.title": "設計助手",
-  "help.designAssistant.overview.body": "一個可選用嘅對話夥伴，幫你設定課程。佢了解 LEAP 同你課程嘅目前狀態，幫你將學習目標、活動同回饋互相配合。佢唔會自行更改任何嘢；你可以採用你覺得有用嘅內容。"
+  "help.designAssistant.overview.body": "一個可選用嘅對話夥伴，幫你設定課程。佢了解 LEAP 同你課程嘅目前狀態，幫你將學習目標、活動同回饋互相配合。佢唔會自行更改任何嘢；你可以採用你覺得有用嘅內容。",
+  "admin.projects.groups.title": "小組（{count}）",
+  "admin.projects.groups.privacy": "你會睇到邊個喺邊個小組。至於小組喺項目空間做嘅嘢（聊天、同 persona 對話、回饋），只有小組自己睇到。",
+  "admin.projects.groups.empty": "仲未有小組。",
+  "admin.projects.groups.noMembers": "仲未有成員",
+  "admin.projects.groups.finalized": "已完成"
 }
