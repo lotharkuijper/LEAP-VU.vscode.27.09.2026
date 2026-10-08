@@ -80,6 +80,25 @@
 - Groups submit work to an evaluator via `POST …/groups/:groupId/personas/:personaId/feedback` (stored in `project_group_products`, reviewed by `runEvaluatorReview`). A round only counts when a review was produced (`feedbackRoundsState`). Evaluator reviews do not change any relationship.
 - Admin modals that can grow taller than the screen are rendered with `createPortal(…, document.body)`. The sticky top bar is z-50, and a modal inside the page content would fall behind it.
 
+## Privacy: what teachers may see (decided 2026-10-08)
+- A teacher may ONLY see:
+  - who is in their own course(s);
+  - who is in which project group within those courses (`/api/projects/:id/groups-overview`; names only).
+- No teacher access to:
+  - learning journals;
+  - quiz attempts, scores and answers;
+  - "Ik leg uit" explanations;
+  - project sessions;
+  - group chats and persona conversations;
+  - feedback, badges and relationship (verstandhouding);
+  - files uploaded by groups;
+  - profiles outside their own courses;
+  - the individual learning level of a student (only the distribution).
+- The exceptions are things a student deliberately shares: Studiecafé posts and submitted project products.
+- Group content is for group members and LEAP admins only. In the server use `isLeapAdmin(profile)` plus membership, never `isStaffForCourse` for group content. In the database: migration `20261008100000_teacher_privacy` (rollback script next to it).
+- `server/__tests__/teacherPrivacy.test.js` guards this.
+- Roles can only be changed by an admin or the server (trigger `pr_guard_profile_role`).
+
 ## Design assistant ("Ontwerphulp")
 - This is an optional chatbot for teachers in Beheer (tab `design_assistant`). It is an experiment since 2026-10-07. The rollback point is git tag `pre-ontwerphulp-2026-10-07`, and the admin can switch it off in the tab itself.
 - It must keep up with the engine. Its knowledge of LEAP is NEVER hand-written in the prompt; it is assembled per question in `server/designAssistant.js` from:
