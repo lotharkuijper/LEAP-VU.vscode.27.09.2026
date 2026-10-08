@@ -5,7 +5,8 @@
 // { level: -3..2, note } — de docent kiest het niveau (−3 = contact verbroken,
 // −2 koud … +2 warm) en legt kort uit waarom. Dit is ook de enige manier om
 // een verbroken contact te herstellen. Alleen docenten van de cursus, en alleen
-// bij een persona die een verstandhouding bijhoudt.
+// bij een persona die een verstandhouding bijhoudt. Sinds 2026-10-08 (privacy)
+// geeft server/index.js hier alleen beheerders door (docenten zien groepen niet).
 // Afhankelijkheden komen via `deps` binnen zodat de autorisatie en de wiring
 // geautomatiseerd getest kunnen worden (server/__tests__/staffAdjust.integration.test.js).
 // ───────────────────────────────────────────────────────────────────────────
@@ -41,7 +42,7 @@ export function registerRelationshipAdjustRoute(app, deps) {
       const { data: profile } = await supabaseAdmin
         .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
       const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
-      if (!isStaff) return res.status(403).json({ error: 'Alleen staff van deze cursus mag de relatie aanpassen' });
+      if (!isStaff) return res.status(403).json({ error: 'Alleen een beheerder mag de verstandhouding aanpassen' });
 
       const { data: groupCheck } = await supabaseAdmin
         .from('project_groups').select('id, project_id').eq('id', groupId).maybeSingle();

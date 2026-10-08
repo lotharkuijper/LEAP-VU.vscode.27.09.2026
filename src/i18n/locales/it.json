@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Livelli di apprendimento",
   "admin.tabs.settings": "Impostazioni",
   "admin.learningLevels.title": "Livelli di apprendimento degli studenti",
-  "admin.learningLevels.intro": "Panoramica del livello di apprendimento scelto autonomamente (1–5) per studente per {course}. Gli studenti lo impostano da soli; tu non puoi modificarlo.",
+  "admin.learningLevels.intro": "Quanti studenti di {course} lavorano a quale livello di apprendimento (1–5). Gli studenti scelgono autonomamente il proprio livello; intenzionalmente non vedi quale livello sceglie un singolo studente.",
   "admin.learningLevels.readonlyNote": "Sola lettura: lo studente mantiene il controllo del proprio livello.",
   "admin.learningLevels.noCourse": "Scegli prima un corso attivo per visualizzare i livelli di apprendimento.",
   "admin.learningLevels.loading": "Caricamento dei livelli di apprendimento…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Prova con un concetto",
   "help.searchSensitivity.tryTerm.body": "Digita un concetto e vedi quanti passaggi LEAP trova nel tuo materiale con questa impostazione. Così puoi capire in anticipo se l’impostazione è troppo ampia o troppo rigorosa. Per gli studenti non cambia nulla.",
   "help.learningLevels.overview.title": "Livelli di apprendimento",
-  "help.learningLevels.overview.body": "Gli studenti scelgono autonomamente il proprio livello (1–5). LEAP adatta di conseguenza le spiegazioni nella chat, in “Spiego io” e per le persona: più semplici a un livello basso, più approfondite a un livello alto. Tu puoi solo visualizzare il livello, non modificarlo.",
+  "help.learningLevels.overview.body": "Gli studenti scelgono autonomamente il proprio livello (1–5). LEAP adatta di conseguenza la spiegazione nella chat, “Spiego” e per le persona. Vedi solo quanti studenti lavorano a ciascun livello, non chi sceglie quale livello.",
   "help.chatInstructions.overview.title": "Istruzioni per la chat",
   "help.chatInstructions.overview.body": "Le istruzioni fisse che LEAP riceve per la chat e per “Spiego io”, come tono, approccio e cosa l’AI può o non può fare. Una modifica vale subito per tutti gli studenti di questo corso. Modifica con attenzione.",
   "help.quizSources.coverage.title": "Panoramica della copertura",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Tenere traccia del rapporto con il gruppo",
   "admin.personaRole.roleplayer.reputationDesc": "Dopo ogni conversazione, LEAP valuta come il gruppo si è posto nei confronti di {name}, secondo le tue regole di comportamento. Il rapporto sale di un livello, resta invariato o scende di un livello. Gli studenti vedono il livello.",
   "admin.personaRole.roleplayer.startLevel": "Livello iniziale",
-  "admin.personaRole.roleplayer.brokenWarning": "Se il rapporto è già su \"freddo\" e una conversazione va di nuovo male, {name} interrompe il contatto. Il gruppo completa quindi il progetto senza {name}. Solo tu puoi ancora ripristinare il contatto, nello spazio del progetto.",
+  "admin.personaRole.roleplayer.brokenWarning": "Se il rapporto è già su \"freddo\" e una conversazione va di nuovo male, {name} interrompe il contatto. Il gruppo conclude quindi il progetto senza {name}. Solo un amministratore di LEAP può ripristinarlo.",
   "admin.personaRole.roleplayer.badgeReputation": "rapporto",
   "admin.personaRole.rules.title": "Regole di comportamento",
   "admin.personaRole.rules.positive": "Cosa rende {name} più positivo?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Rules of conduct",
   "help.personas.conductRules.body": "Describe in plain language what improves the relationship level and what worsens it. The persona itself does not see these rules, so it cannot reveal them either. Try them out with the test conversation.",
   "help.personas.feedbackRounds.title": "Feedback rounds",
-  "help.personas.feedbackRounds.body": "How often a group can submit work to this assessor. Each submission with feedback counts as one round; if feedback fails, it does not count. Leave empty = unlimited."
+  "help.personas.feedbackRounds.body": "How often a group can submit work to this assessor. Each submission with feedback counts as one round; if feedback fails, it does not count. Leave empty = unlimited.",
+  "admin.projects.groups.title": "Gruppi ({count})",
+  "admin.projects.groups.privacy": "Vedi chi fa parte di quale gruppo. Ciò che un gruppo fa nello spazio di progetto (chat, conversazioni con le persona, feedback) è visibile solo al gruppo stesso.",
+  "admin.projects.groups.empty": "Non ci sono ancora gruppi.",
+  "admin.projects.groups.noMembers": "ancora nessun membro",
+  "admin.projects.groups.finalized": "completato"
 }

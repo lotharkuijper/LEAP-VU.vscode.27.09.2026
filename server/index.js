@@ -10753,7 +10753,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       if (g.project_id !== projectId) return res.status(400).json({ error: 'Groep hoort niet bij dit project' });
 
       const isMember = await isGroupMember(g.id, auth.user.id);
-      if (!isMember && !isStaff) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
+      if (!isMember && !isLeapAdmin(profile)) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
       group = g;
 
       const { data: m } = await supabaseAdmin
@@ -11621,7 +11621,8 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
     const { data: grpRow } = await supabaseAdmin
       .from('project_groups').select('project_id, projects(course_id)').eq('id', groupId).maybeSingle();
     const grpCourseId = grpRow?.projects?.course_id || null;
-    const isStaffUser = await isStaffForCourse(auth.user, prof, grpCourseId);
+    const isStaffUser = isLeapAdmin(prof); // docenten niet (privacy); grpCourseId alleen nog ter controle
+    void grpCourseId;
     if (!isMember && !isStaffUser) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
 
     const { data: threads } = await supabaseAdmin
@@ -12341,6 +12342,14 @@ app.post('/api/projects/copy-personas-from-library', async (req, res) => {
 // Helper: alleen admin/superuser óf een docent die lid is van de cursus
 // waar het project onder valt. Voor docenten zónder course-lidmaatschap
 // (= een andere cursus) is het project niet bewerkbaar.
+// Privacy (2026-10-08): de INHOUD van een projectgroep (chat, gesprekken met
+// persona's, logboek, feedback, verstandhouding, bestanden van de groep) is
+// alleen voor de leden van die groep en voor beheerders van LEAP — niet voor
+// docenten. Docenten zien wel wie er in welke groep zit (groups-overview).
+function isLeapAdmin(profile) {
+  return !!profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
+}
+
 async function requireProjectStaff(projectId, user, profile) {
   if (!projectId || !user) return { ok: false, status: 401, error: 'Niet geauthenticeerd' };
   const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
@@ -12688,7 +12697,7 @@ app.get('/api/projects/:projectId/personas/:personaId/documents', async (req, re
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
     // Toegang: groepslid, óf staff van de cursus van dit project. Een docent
     // van een andere cursus krijgt geen toegang.
-    const staffAccess = await requireProjectStaff(projectId, auth.user, profile);
+    const staffAccess = { ok: isLeapAdmin(profile) };
     if (!staffAccess.ok && !(await isGroupMember(groupId, auth.user.id))) {
       return res.status(403).json({ error: 'Geen toegang tot deze groep of dit project' });
     }
@@ -12949,7 +12958,7 @@ app.get('/api/projects/:projectId/personas/:personaId/documents/:docId/download'
     }
     let { data: doc, error: e } = await supabaseAdmin
       .from('project_persona_documents')
-      .select('id, filename, content_text, is_hidden_rubric, visible_to_students')
+      .select('id, filename, content_text, is_hidden_rubric, visible_to_students, group_id')
       .eq('id', docId).eq('project_id', projectId).eq('persona_id', personaId).maybeSingle();
     // Defensief: oude DB zonder visible_to_students-kolom.
     if (e && (e.code === '42703' || /visible_to_students/i.test(e.message || ''))) {
@@ -12960,6 +12969,16 @@ app.get('/api/projects/:projectId/personas/:personaId/documents/:docId/download'
     }
     if (e) return res.status(500).json({ error: e.message });
     if (!doc) return res.status(404).json({ error: 'Document niet gevonden' });
+    // Een bestand dat een GROEP heeft geüpload (geen rubric): alleen die groep en beheerders.
+    if (doc.group_id && doc.is_hidden_rubric !== true) {
+      if (!isLeapAdmin(profile) && !(await isGroupMember(doc.group_id, auth.user.id))) {
+        return res.status(403).json({ error: 'Geen toegang tot deze groep' });
+      }
+      const fname = doc.filename || 'document';
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fname)}"`);
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+      return res.send(doc.content_text || '');
+    }
     if (!isStaff && doc.visible_to_students !== true) {
       return res.status(403).json({ error: 'Deze rubric is niet zichtbaar voor studenten' });
     }
@@ -13655,7 +13674,7 @@ app.get('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =>
     if (!docCheck || docCheck.project_id !== projectId) {
       return res.status(404).json({ error: 'Document niet gevonden in dit project' });
     }
-    const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
+    const isStaff = isLeapAdmin(profile);
     const memberOfGroup = await isGroupMember(groupId, auth.user.id);
     if (!isStaff && !memberOfGroup) {
       return res.status(403).json({ error: 'Geen toegang tot deze groep' });
@@ -13901,7 +13920,7 @@ async function loadFeedbackContext(req, res, { requirePersona = true } = {}) {
   if (!group || group.project_id !== projectId) { res.status(404).json({ error: 'Groep niet gevonden in dit project' }); return null; }
   const { data: profile } = await supabaseAdmin
     .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-  const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
+  const isStaff = isLeapAdmin(profile);
   const memberOfGroup = await isGroupMember(groupId, auth.user.id);
   if (!isStaff && !memberOfGroup) { res.status(403).json({ error: 'Geen toegang tot deze groep' }); return null; }
   let persona = null;
@@ -14163,7 +14182,7 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
+    const isStaff = isLeapAdmin(profile);
     const memberOfGroup = await isGroupMember(groupId, auth.user.id);
     if (!isStaff && !memberOfGroup) {
       return res.status(403).json({ error: 'Geen toegang tot deze groep' });
@@ -14220,7 +14239,8 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
 registerRelationshipAdjustRoute(app, {
   supabaseAdmin,
   authUser,
-  isStaffForCourse,
+  // Privacy: docenten zien groepen niet meer; corrigeren doet de beheerder.
+  isStaffForCourse: async (_user, profile) => isLeapAdmin(profile),
   setRelationshipLevel,
   levelKey: relLevelKey,
   reputationActive,
@@ -14243,8 +14263,7 @@ app.post('/api/projects/:projectId/groups/:groupId/personas/:personaId/consultat
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
     const { data: profile } = await supabaseAdmin
       .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
-    const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
-    if (!isStaff) return res.status(403).json({ error: 'Alleen staff van deze cursus mag raadplegingen toekennen' });
+    if (!isLeapAdmin(profile)) return res.status(403).json({ error: 'Alleen een beheerder mag extra gesprekken toekennen' });
 
     const { data: groupCheck } = await supabaseAdmin
       .from('project_groups').select('id, project_id').eq('id', groupId).maybeSingle();
@@ -14600,9 +14619,43 @@ app.get('/api/admin/courses/:courseId/submissions', async (req, res) => {
   }
 });
 
+// GET /api/projects/:projectId/groups-overview — voor docenten van de cursus:
+// welke groepen er zijn en wie erin zit. Bewust ALLEEN namen en groep; de
+// inhoud van een groep blijft voor de groep zelf (privacy, 2026-10-08).
+app.get('/api/projects/:projectId/groups-overview', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  try {
+    const { data: profile } = await supabaseAdmin.from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const access = await requireProjectStaff(req.params.projectId, auth.user, profile);
+    if (!access.ok) return res.status(access.status).json({ error: access.error });
+    const { data: groups } = await supabaseAdmin
+      .from('project_groups').select('id, name, status, created_at')
+      .eq('project_id', req.params.projectId).order('created_at');
+    const ids = (groups || []).map(g => g.id);
+    const { data: members } = ids.length
+      ? await supabaseAdmin.from('project_group_members').select('group_id, user_id, profiles(full_name, email)').in('group_id', ids)
+      : { data: [] };
+    return res.json({
+      groups: (groups || []).map(g => ({
+        id: g.id,
+        name: g.name,
+        status: g.status || 'active',
+        members: (members || []).filter(m => m.group_id === g.id).map(m => ({
+          name: m.profiles?.full_name || m.profiles?.email || null,
+          email: m.profiles?.email || null,
+        })).sort((a, b) => String(a.name).localeCompare(String(b.name), 'nl')),
+      })),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/admin/courses/:courseId/learning-levels — staff-inzicht (Task #297):
-// toont per student het zelfgekozen leerniveau (1..5) voor deze cursus + een
-// geaggregeerde verdeling. READ-ONLY: docenten kunnen het niveau NIET wijzigen
+// sinds 2026-10-08 (privacy) ALLEEN de verdeling over de niveaus, zonder namen:
+// een docent ziet niet welk niveau een individuele student kiest. READ-ONLY: docenten kunnen het niveau NIET wijzigen
 // (de student blijft de baas, kernprincipe van Task #296). Toegang via service-
 // role zodat de eigen-rij-RLS op student_course_levels niet versoepeld hoeft te
 // worden; gegate op admin/superuser of docent van déze cursus.
@@ -14645,34 +14698,16 @@ app.get('/api/admin/courses/:courseId/learning-levels', async (req, res) => {
       return res.status(500).json({ error: e.message });
     }
 
-    const userIds = Array.from(new Set((rows || []).map(r => r.user_id).filter(Boolean)));
-    let profMap = new Map();
-    if (userIds.length) {
-      const { data: profs } = await supabaseAdmin
-        .from('profiles').select('id, full_name, email').in('id', userIds);
-      profMap = new Map((profs || []).map(p => [p.id, p]));
-    }
-
     const labels = LEVEL_LABELS[lang] || LEVEL_LABELS.nl;
     const distribution = emptyDistribution();
-    const levels = (rows || []).map(r => {
-      const lvl = r.level;
-      if (lvl >= LEVEL_MIN && lvl <= LEVEL_MAX) distribution[lvl] += 1;
-      const p = profMap.get(r.user_id);
-      return {
-        user_id: r.user_id,
-        name: p?.full_name || p?.email || null,
-        email: p?.email || null,
-        level: lvl,
-        label: labels[lvl] || null,
-        updated_at: r.updated_at,
-      };
-    });
-
+    for (const r of rows || []) {
+      if (r.level >= LEVEL_MIN && r.level <= LEVEL_MAX) distribution[r.level] += 1;
+    }
     return res.json({
-      levels,
+      levels: [], // per student: bewust niet meer (privacy)
+      labels,
       distribution,
-      total: levels.length,
+      total: (rows || []).length,
       defaultLevel: LEVEL_DEFAULT,
     });
   } catch (err) {

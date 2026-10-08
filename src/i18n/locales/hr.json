@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Razine učenja",
   "admin.tabs.settings": "Postavke",
   "admin.learningLevels.title": "Razine učenja studenata",
-  "admin.learningLevels.intro": "Pregled samostalno odabrane razine učenja (1–5) po studentu za {course}. Studenti to postavljaju sami; ti to ne možeš promijeniti.",
+  "admin.learningLevels.intro": "Koliko studenata kolegija {course} radi na kojoj razini učenja (1–5). Studenti sami biraju svoju razinu; namjerno ne vidiš koju je razinu odabrao pojedini student.",
   "admin.learningLevels.readonlyNote": "Samo za čitanje: student zadržava kontrolu nad vlastitom razinom.",
   "admin.learningLevels.noCourse": "Najprije odaberi aktivni kolegij za prikaz razina učenja.",
   "admin.learningLevels.loading": "Učitavanje razina učenja…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Isprobaj s pojmom",
   "help.searchSensitivity.tryTerm.body": "Upiši pojam i vidi koliko odlomaka LEAP s ovom postavkom pronalazi u tvojem materijalu. Tako unaprijed vidiš je li postavka preširoka ili prestroga. Za studente se ništa ne mijenja.",
   "help.learningLevels.overview.title": "Razine učenja",
-  "help.learningLevels.overview.body": "Studenti sami biraju svoju razinu (1–5). LEAP tome prilagođava objašnjenja u chatu, “Ja objašnjavam” i kod persona: jednostavnije na niskoj razini, dublje na visokoj razini. Ti razinu možeš samo pregledati, ne i mijenjati.",
+  "help.learningLevels.overview.body": "Studenti sami biraju svoju razinu (1–5). LEAP tome prilagođava objašnjenja u chatu, „Objašnjavam” i kod persona. Vidiš samo koliko studenata radi na svakoj razini, ne i tko je odabrao koju razinu.",
   "help.chatInstructions.overview.title": "Upute za chat",
   "help.chatInstructions.overview.body": "Stalne upute koje LEAP dobiva za chat i za “Ja objašnjavam”, kao što su ton, pristup i što AI smije ili ne smije raditi. Izmjena odmah vrijedi za sve studente ovog kolegija. Mijenjaj pažljivo.",
   "help.quizSources.coverage.title": "Pregled pokrivenosti",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Prati odnos s grupom",
   "admin.personaRole.roleplayer.reputationDesc": "Nakon svakog razgovora LEAP procjenjuje kako se grupa postavila prema {name}, prema tvojim pravilima ponašanja. Odnos se zatim podigne za jedan korak, ostaje isti ili se spusti za jedan korak. Studenti vide razinu.",
   "admin.personaRole.roleplayer.startLevel": "Početna razina",
-  "admin.personaRole.roleplayer.brokenWarning": "Ako je odnos već na razini \"hladno\" i razgovor ponovno prođe loše, {name} prekida kontakt. Grupa tada dovršava projekt bez {name}. Samo ti možeš ponovno obnoviti kontakt, u projektnom prostoru.",
+  "admin.personaRole.roleplayer.brokenWarning": "Ako je odnos već postavljen na „hladan” i razgovor ponovno loše prođe, {name} prekida kontakt. Grupa tada dovršava projekt bez {name}. Obnoviti ga može samo administrator LEAP-a.",
   "admin.personaRole.roleplayer.badgeReputation": "odnos",
   "admin.personaRole.rules.title": "Pravila ponašanja",
   "admin.personaRole.rules.positive": "Što {name} čini pozitivnijim?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Pravila ponašanja",
   "help.personas.conductRules.body": "Opiši običnim jezikom što poboljšava odnos, a što ga pogoršava. Sama persona ne vidi ta pravila, pa ih ne može ni odati. Isprobaj ih u probnom razgovoru.",
   "help.personas.feedbackRounds.title": "Krugovi povratnih informacija",
-  "help.personas.feedbackRounds.body": "Koliko puta grupa može predati rad ovom ocjenjivaču. Svaka predaja s povratnim informacijama računa se kao jedan krug; ako povratne informacije ne uspiju, ne računa se. Ostavi prazno = neograničeno."
+  "help.personas.feedbackRounds.body": "Koliko puta grupa može predati rad ovom ocjenjivaču. Svaka predaja s povratnim informacijama računa se kao jedan krug; ako povratne informacije ne uspiju, ne računa se. Ostavi prazno = neograničeno.",
+  "admin.projects.groups.title": "Grupe ({count})",
+  "admin.projects.groups.privacy": "Vidiš tko je u kojoj grupi. Ono što grupa radi u projektnom prostoru (chat, razgovori s personama, povratne informacije) vidljivo je samo samoj grupi.",
+  "admin.projects.groups.empty": "Još nema grupa.",
+  "admin.projects.groups.noMembers": "još nema članova",
+  "admin.projects.groups.finalized": "završeno"
 }

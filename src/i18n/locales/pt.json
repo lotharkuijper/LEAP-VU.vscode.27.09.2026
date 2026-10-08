@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Níveis de aprendizagem",
   "admin.tabs.settings": "Definições",
   "admin.learningLevels.title": "Níveis de aprendizagem dos estudantes",
-  "admin.learningLevels.intro": "Visão geral do nível de aprendizagem escolhido pelo próprio estudante (1–5) por estudante para {course}. Os estudantes definem isto por si; tu não podes alterá-lo.",
+  "admin.learningLevels.intro": "Quantos estudantes de {course} estão a trabalhar em cada nível de aprendizagem (1–5). Os estudantes escolhem o seu próprio nível; deliberadamente, não vês qual nível um estudante individual escolhe.",
   "admin.learningLevels.readonlyNote": "Só de leitura: o estudante continua a controlar o seu próprio nível.",
   "admin.learningLevels.noCourse": "Escolhe primeiro uma disciplina ativa para veres os níveis de aprendizagem.",
   "admin.learningLevels.loading": "A carregar níveis de aprendizagem…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Experimenta com um conceito",
   "help.searchSensitivity.tryTerm.body": "Escreve um conceito e vê quantas passagens o LEAP encontra no teu material com esta definição. Assim vês antecipadamente se a definição é demasiado ampla ou demasiado rigorosa. Nada muda para os estudantes.",
   "help.learningLevels.overview.title": "Níveis de aprendizagem",
-  "help.learningLevels.overview.body": "Os estudantes escolhem o seu próprio nível (1–5). O LEAP adapta a isso a explicação no chat, em “Eu explico” e nas personas: mais simples num nível baixo, mais aprofundada num nível alto. Tu só podes ver o nível, não alterá-lo.",
+  "help.learningLevels.overview.body": "Os estudantes escolhem o seu próprio nível (1–5). O LEAP adapta a isso as explicações no chat, em “Eu explico” e nas personas. Vês apenas quantos estudantes trabalham em cada nível, não quem escolhe que nível.",
   "help.chatInstructions.overview.title": "Instruções do chat",
   "help.chatInstructions.overview.body": "As instruções fixas que o LEAP recebe para o chat e para “Eu explico”, como tom, abordagem e o que a IA pode ou não fazer. Uma alteração aplica-se imediatamente a todos os estudantes deste curso. Altera com cuidado.",
   "help.quizSources.coverage.title": "Visão geral da cobertura",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Acompanhar a relação com o grupo",
   "admin.personaRole.roleplayer.reputationDesc": "Depois de cada conversa, o LEAP avalia como o grupo se posicionou perante {name}, de acordo com as tuas regras de conduta. A relação sobe então um nível, mantém-se igual ou desce um nível. Os estudantes veem o nível.",
   "admin.personaRole.roleplayer.startLevel": "Nível inicial",
-  "admin.personaRole.roleplayer.brokenWarning": "Se a relação já estiver em \"fria\" e uma conversa voltar a correr mal, {name} corta o contacto. O grupo conclui então o projeto sem {name}. Só tu podes ainda restabelecer o contacto, na sala do projeto.",
+  "admin.personaRole.roleplayer.brokenWarning": "Se a relação já estiver \"fria\" e uma conversa voltar a correr mal, {name} corta o contacto. O grupo conclui então o projeto sem {name}. Só um administrador do LEAP pode repor a situação.",
   "admin.personaRole.roleplayer.badgeReputation": "relação",
   "admin.personaRole.rules.title": "Regras de conduta",
   "admin.personaRole.rules.positive": "O que torna {name} mais positivo?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Regras de conduta",
   "help.personas.conductRules.body": "Descreve em linguagem simples o que melhora a relação e o que a piora. A própria persona não vê estas regras, por isso também não as pode revelar. Experimenta-as com a conversa de teste.",
   "help.personas.feedbackRounds.title": "Rondas de feedback",
-  "help.personas.feedbackRounds.body": "Quantas vezes um grupo pode entregar trabalho a este avaliador. Cada entrega com feedback conta como uma ronda; se o feedback falhar, não conta. Deixar em branco = ilimitado."
+  "help.personas.feedbackRounds.body": "Quantas vezes um grupo pode entregar trabalho a este avaliador. Cada entrega com feedback conta como uma ronda; se o feedback falhar, não conta. Deixar em branco = ilimitado.",
+  "admin.projects.groups.title": "Grupos ({count})",
+  "admin.projects.groups.privacy": "Vês quem está em que grupo. O que um grupo faz no espaço do projeto (chat, conversas com personas, feedback) é apenas para o próprio grupo.",
+  "admin.projects.groups.empty": "Ainda não há grupos.",
+  "admin.projects.groups.noMembers": "ainda sem membros",
+  "admin.projects.groups.finalized": "concluído"
 }

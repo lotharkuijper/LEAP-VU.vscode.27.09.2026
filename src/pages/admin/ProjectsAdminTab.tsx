@@ -88,6 +88,13 @@ interface ProjectDoc {
   created_at: string;
 }
 
+interface GroupOverview {
+  id: string;
+  name: string;
+  status: string;
+  members: Array<{ name: string | null; email: string | null }>;
+}
+
 interface RubricDoc {
   id: string;
   filename: string;
@@ -497,6 +504,17 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
   const [importingLib, setImportingLib] = useState(false);
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
+  const [groups, setGroups] = useState<GroupOverview[] | null>(null);
+
+  // Privacy (2026-10-08): een docent ziet wie in welke groep zit, niet wat een
+  // groep in de projectruimte doet.
+  const loadGroups = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/projects/${project.id}/groups-overview`, { headers: { Authorization: `Bearer ${token}` } });
+      if (r.ok) setGroups((await r.json()).groups || []);
+    } catch { /* overzicht is aanvullend */ }
+  }, [project.id, token]);
+  useEffect(() => { void loadGroups(); }, [loadGroups]);
 
   const loadSubmissions = useCallback(async () => {
     if (!project.submissions_enabled) { setSubmissions([]); return; }
@@ -972,6 +990,35 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           )}
         </div>
       )}
+
+      {/* Groepen: alleen wie erin zit */}
+      <div className="chic-card p-5" data-testid="card-project-groups">
+        <h3 className="font-semibold text-gray-900">{t('admin.projects.groups.title', { count: String(groups?.length ?? 0) })}</h3>
+        <AdminHint variant="intro" className="mb-3">{t('admin.projects.groups.privacy')}</AdminHint>
+        {groups === null ? (
+          <p className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t('common.loading')}</p>
+        ) : groups.length === 0 ? (
+          <p className="text-sm text-gray-500" data-testid="text-no-groups">{t('admin.projects.groups.empty')}</p>
+        ) : (
+          <ul className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(16rem,100%),1fr))]">
+            {groups.map(g => (
+              <li key={g.id} className="rounded-lg border border-gray-200 p-3" data-testid={`group-overview-${g.id}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate font-medium text-gray-900">{g.name}</span>
+                  {g.status === 'finalized' && <span className="flex-shrink-0 text-[10px] text-gray-500">{t('admin.projects.groups.finalized')}</span>}
+                </div>
+                {g.members.length === 0 ? (
+                  <p className="mt-1 text-xs text-gray-400">{t('admin.projects.groups.noMembers')}</p>
+                ) : (
+                  <ul className="mt-1 space-y-0.5 text-xs text-gray-700">
+                    {g.members.map((m, i) => <li key={i} className="truncate">{m.name || m.email}</li>)}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       {/* Persona's */}
       <div className="chic-card p-5">

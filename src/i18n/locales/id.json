@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Tingkat pembelajaran",
   "admin.tabs.settings": "Pengaturan",
   "admin.learningLevels.title": "Tingkat pembelajaran mahasiswa",
-  "admin.learningLevels.intro": "Ikhtisar tingkat pembelajaran pilihan sendiri (1–5) per mahasiswa untuk {course}. Mahasiswa mengaturnya sendiri; kamu tidak dapat mengubahnya.",
+  "admin.learningLevels.intro": "Berapa banyak mahasiswa dari {course} yang bekerja pada level belajar mana (1–5). Mahasiswa memilih level mereka sendiri; kamu sengaja tidak dapat melihat level yang dipilih oleh masing-masing mahasiswa.",
   "admin.learningLevels.readonlyNote": "Hanya baca: mahasiswa tetap mengendalikan tingkatnya sendiri.",
   "admin.learningLevels.noCourse": "Pilih dulu mata kuliah aktif untuk melihat tingkat pembelajaran.",
   "admin.learningLevels.loading": "Memuat tingkat pembelajaran…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Coba dengan sebuah istilah",
   "help.searchSensitivity.tryTerm.body": "Ketik sebuah istilah dan lihat berapa banyak bagian yang ditemukan LEAP dalam materimu dengan pengaturan ini. Dengan begitu, kamu bisa melihat sebelumnya apakah pengaturannya terlalu luas atau terlalu ketat. Tidak ada yang berubah untuk mahasiswa.",
   "help.learningLevels.overview.title": "Tingkat pembelajaran",
-  "help.learningLevels.overview.body": "Mahasiswa memilih sendiri tingkat mereka (1–5). LEAP menyesuaikan penjelasan di chat, “Aku jelaskan”, dan pada persona: lebih sederhana pada tingkat rendah, lebih mendalam pada tingkat tinggi. Kamu hanya bisa melihat tingkatnya, tidak mengubahnya.",
+  "help.learningLevels.overview.body": "Mahasiswa memilih sendiri level mereka (1–5). LEAP menyesuaikan penjelasan di chat, “Saya jelaskan”, dan pada persona berdasarkan pilihan itu. Kamu hanya melihat berapa banyak mahasiswa yang bekerja pada tiap level, bukan siapa memilih level mana.",
   "help.chatInstructions.overview.title": "Instruksi chat",
   "help.chatInstructions.overview.body": "Instruksi tetap yang diberikan kepada LEAP untuk chat dan “Aku jelaskan”, seperti nada, pendekatan, serta apa yang boleh atau tidak boleh dilakukan AI. Perubahan langsung berlaku untuk semua mahasiswa di mata kuliah ini. Ubah dengan hati-hati.",
   "help.quizSources.coverage.title": "Ringkasan cakupan",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Melacak hubungan dengan kelompok",
   "admin.personaRole.roleplayer.reputationDesc": "Setelah setiap percakapan, LEAP menilai bagaimana sikap kelompok terhadap {name}, sesuai aturan perilaku yang kamu tetapkan. Hubungan kemudian naik satu langkah, tetap sama, atau turun satu langkah. Mahasiswa melihat levelnya.",
   "admin.personaRole.roleplayer.startLevel": "Level awal",
-  "admin.personaRole.roleplayer.brokenWarning": "Jika hubungan sudah berada di level \"dingin\" dan percakapan kembali berjalan buruk, {name} akan memutus kontak. Kelompok lalu menyelesaikan proyek tanpa {name}. Hanya kamu yang masih bisa memulihkan kontak, di ruang proyek.",
+  "admin.personaRole.roleplayer.brokenWarning": "Jika hubungan sudah berada pada status \"dingin\" dan percakapan kembali berjalan buruk, {name} akan memutus kontak. Kelompok kemudian menyelesaikan proyek tanpa {name}. Pemulihan hanya dapat dilakukan oleh administrator LEAP.",
   "admin.personaRole.roleplayer.badgeReputation": "hubungan baik",
   "admin.personaRole.rules.title": "Aturan perilaku",
   "admin.personaRole.rules.positive": "Apa yang membuat {name} lebih positif?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Aturan perilaku",
   "help.personas.conductRules.body": "Jelaskan dengan bahasa biasa apa yang meningkatkan hubungan dan apa yang memperburuknya. Persona itu sendiri tidak melihat aturan ini, jadi ia juga tidak bisa membocorkannya. Cobalah dengan percakapan uji coba.",
   "help.personas.feedbackRounds.title": "Putaran feedback",
-  "help.personas.feedbackRounds.body": "Berapa kali sebuah kelompok dapat mengumpulkan pekerjaan kepada penilai ini. Setiap pengumpulan dengan feedback dihitung sebagai satu putaran; jika feedback gagal, tidak dihitung. Kosongkan = tanpa batas."
+  "help.personas.feedbackRounds.body": "Berapa kali sebuah kelompok dapat mengumpulkan pekerjaan kepada penilai ini. Setiap pengumpulan dengan feedback dihitung sebagai satu putaran; jika feedback gagal, tidak dihitung. Kosongkan = tanpa batas.",
+  "admin.projects.groups.title": "Kelompok ({count})",
+  "admin.projects.groups.privacy": "Kamu dapat melihat siapa berada di kelompok mana. Apa yang dilakukan kelompok di ruang proyek (chat, percakapan dengan persona, umpan balik) hanya dapat dilihat oleh kelompok itu sendiri.",
+  "admin.projects.groups.empty": "Belum ada kelompok.",
+  "admin.projects.groups.noMembers": "belum ada anggota",
+  "admin.projects.groups.finalized": "selesai"
 }

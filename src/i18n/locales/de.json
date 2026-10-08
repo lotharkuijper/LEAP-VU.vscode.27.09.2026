@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Lernniveaus",
   "admin.tabs.settings": "Einstellungen",
   "admin.learningLevels.title": "Lernniveaus der Studierenden",
-  "admin.learningLevels.intro": "Übersicht über das selbst gewählte Lernniveau (1–5) pro Student:in für {course}. Studierende legen dies selbst fest; du kannst es nicht ändern.",
+  "admin.learningLevels.intro": "Wie viele Studierende von {course} auf welchem Lernniveau (1–5) arbeiten. Studierende wählen ihr Niveau selbst; welches Niveau ein einzelner Studierender wählt, siehst du bewusst nicht.",
   "admin.learningLevels.readonlyNote": "Nur Lesen: Die Studierenden behalten die Kontrolle über ihr eigenes Niveau.",
   "admin.learningLevels.noCourse": "Wähle zuerst einen aktiven Kurs aus, um die Lernniveaus anzusehen.",
   "admin.learningLevels.loading": "Lernniveaus werden geladen…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Mit einem Begriff ausprobieren",
   "help.searchSensitivity.tryTerm.body": "Gib einen Begriff ein und sieh, wie viele Passagen LEAP mit dieser Einstellung in deinem Material findet. So siehst du vorab, ob die Einstellung zu breit oder zu streng ist. Für Studierende ändert sich nichts.",
   "help.learningLevels.overview.title": "Lernniveaus",
-  "help.learningLevels.overview.body": "Studierende wählen ihr Niveau (1–5) selbst. LEAP passt die Erklärung im Chat, bei „Ich erkläre“ und bei Personas daran an: einfacher bei niedrigem Niveau, vertiefender bei hohem Niveau. Du kannst das Niveau nur ansehen, nicht ändern.",
+  "help.learningLevels.overview.body": "Studierende wählen ihr Niveau (1–5) selbst. LEAP passt die Erklärungen im Chat, bei „Ich erkläre“ und bei Personas daran an. Du siehst nur, wie viele Studierende auf jedem Niveau arbeiten, nicht wer welches Niveau wählt.",
   "help.chatInstructions.overview.title": "Chat-Anweisungen",
   "help.chatInstructions.overview.body": "Die festen Anweisungen, die LEAP für den Chat und für „Ich erkläre“ erhält, z. B. Ton, Vorgehen und was die KI tun darf oder nicht. Eine Änderung gilt sofort für alle Studierenden dieses Kurses. Ändere sie mit Bedacht.",
   "help.quizSources.coverage.title": "Abdeckungsübersicht",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Beziehung zur Gruppe nachverfolgen",
   "admin.personaRole.roleplayer.reputationDesc": "Nach jedem Gespräch bewertet LEAP, wie die Gruppe {name} gegenüber aufgetreten ist, gemäß deinen Verhaltensregeln. Die Beziehung steigt dann um eine Stufe, bleibt gleich oder sinkt um eine Stufe. Studierende sehen das Niveau.",
   "admin.personaRole.roleplayer.startLevel": "Startniveau",
-  "admin.personaRole.roleplayer.brokenWarning": "Steht die Beziehung bereits auf „kalt“ und verläuft ein Gespräch erneut schlecht, bricht {name} den Kontakt ab. Die Gruppe schließt das Projekt dann ohne {name} ab. Nur du kannst den Kontakt noch wiederherstellen, im Projektraum.",
+  "admin.personaRole.roleplayer.brokenWarning": "Steht das Verhältnis bereits auf „kalt“ und verläuft ein Gespräch erneut schlecht, bricht {name} den Kontakt ab. Die Gruppe schließt das Projekt dann ohne {name} ab. Wiederherstellen kann das nur ein LEAP-Administrator.",
   "admin.personaRole.roleplayer.badgeReputation": "Verhältnis",
   "admin.personaRole.rules.title": "Verhaltensregeln",
   "admin.personaRole.rules.positive": "Was macht {name} positiver?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Verhaltensregeln",
   "help.personas.conductRules.body": "Beschreibe in normaler Sprache, was das Verhältnis verbessert und was es verschlechtert. Die Persona selbst sieht diese Regeln nicht, kann sie also auch nicht verraten. Probiere sie mit dem Testgespräch aus.",
   "help.personas.feedbackRounds.title": "Feedbackrunden",
-  "help.personas.feedbackRounds.body": "Wie oft eine Gruppe bei diesem Beurteiler Arbeit einreichen kann. Jede Einreichung mit Feedback zählt als eine Runde; klappt das Feedback nicht, zählt sie nicht. Leer lassen = unbegrenzt."
+  "help.personas.feedbackRounds.body": "Wie oft eine Gruppe bei diesem Beurteiler Arbeit einreichen kann. Jede Einreichung mit Feedback zählt als eine Runde; klappt das Feedback nicht, zählt sie nicht. Leer lassen = unbegrenzt.",
+  "admin.projects.groups.title": "Gruppen ({count})",
+  "admin.projects.groups.privacy": "Du siehst, wer in welcher Gruppe ist. Was eine Gruppe im Projektraum macht (Chat, Gespräche mit Personas, Feedback), ist nur für die Gruppe selbst sichtbar.",
+  "admin.projects.groups.empty": "Es gibt noch keine Gruppen.",
+  "admin.projects.groups.noMembers": "noch keine Mitglieder",
+  "admin.projects.groups.finalized": "abgeschlossen"
 }

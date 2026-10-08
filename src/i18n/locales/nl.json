@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Leerniveaus",
   "admin.tabs.settings": "Instellingen",
   "admin.learningLevels.title": "Leerniveaus van studenten",
-  "admin.learningLevels.intro": "Overzicht van het zelfgekozen leerniveau (1–5) per student voor {course}. Studenten stellen dit zelf in; jij kunt het niet wijzigen.",
+  "admin.learningLevels.intro": "Hoeveel studenten van {course} op welk leerniveau (1–5) werken. Studenten kiezen hun niveau zelf; welk niveau een individuele student kiest, zie je bewust niet.",
   "admin.learningLevels.readonlyNote": "Alleen-lezen: de student blijft de baas over het eigen niveau.",
   "admin.learningLevels.noCourse": "Kies eerst een actieve cursus om de leerniveaus te bekijken.",
   "admin.learningLevels.loading": "Leerniveaus laden…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Probeer met een begrip",
   "help.searchSensitivity.tryTerm.body": "Typ een begrip en zie hoeveel passages LEAP met deze instelling in je materiaal vindt. Zo zie je vooraf of de instelling te ruim of te streng is. Er verandert niets voor studenten.",
   "help.learningLevels.overview.title": "Leerniveaus",
-  "help.learningLevels.overview.body": "Studenten kiezen zelf hun niveau (1–5). LEAP past daar de uitleg in de chat, “Ik leg uit” en bij persona’s op aan: eenvoudiger bij een laag niveau, dieper bij een hoog niveau. Jij kunt het niveau alleen bekijken, niet wijzigen.",
+  "help.learningLevels.overview.body": "Studenten kiezen zelf hun niveau (1–5). LEAP past daar de uitleg in de chat, “Ik leg uit” en bij persona’s op aan. Je ziet alleen hoeveel studenten op elk niveau werken, niet wie welk niveau kiest.",
   "help.chatInstructions.overview.title": "Chat-instructies",
   "help.chatInstructions.overview.body": "De vaste instructies die LEAP meekrijgt bij de chat en bij “Ik leg uit”, zoals toon, aanpak en wat de AI wel of niet mag doen. Een wijziging geldt meteen voor alle studenten van deze cursus. Wijzig met zorg.",
   "help.quizSources.coverage.title": "Dekkingsoverzicht",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Verstandhouding met de groep bijhouden",
   "admin.personaRole.roleplayer.reputationDesc": "Na elk gesprek beoordeelt LEAP hoe de groep zich tegenover {name} opstelde, volgens jouw gedragsregels. De verstandhouding gaat dan een stap omhoog, blijft gelijk of gaat een stap omlaag. Studenten zien het niveau.",
   "admin.personaRole.roleplayer.startLevel": "Startniveau",
-  "admin.personaRole.roleplayer.brokenWarning": "Staat de verstandhouding al op \"koud\" en verloopt een gesprek opnieuw slecht, dan verbreekt {name} het contact. De groep rondt het project dan af zonder {name}. Alleen jij kunt het contact nog herstellen, in de projectruimte.",
+  "admin.personaRole.roleplayer.brokenWarning": "Staat de verstandhouding al op \"koud\" en verloopt een gesprek opnieuw slecht, dan verbreekt {name} het contact. De groep rondt het project dan af zonder {name}. Herstellen kan alleen een beheerder van LEAP.",
   "admin.personaRole.roleplayer.badgeReputation": "verstandhouding",
   "admin.personaRole.rules.title": "Gedragsregels",
   "admin.personaRole.rules.positive": "Wat maakt {name} positiever?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Gedragsregels",
   "help.personas.conductRules.body": "Beschrijf in gewone taal wat de verstandhouding verbetert en wat hem verslechtert. De persona zelf krijgt deze regels niet te zien, dus hij kan ze ook niet verklappen. Probeer ze uit met het proefgesprek.",
   "help.personas.feedbackRounds.title": "Feedbackrondes",
-  "help.personas.feedbackRounds.body": "Hoe vaak een groep werk kan inleveren bij deze beoordelaar. Elke inlevering met feedback telt als één ronde; lukt de feedback niet, dan telt hij niet. Leeg laten = onbeperkt."
+  "help.personas.feedbackRounds.body": "Hoe vaak een groep werk kan inleveren bij deze beoordelaar. Elke inlevering met feedback telt als één ronde; lukt de feedback niet, dan telt hij niet. Leeg laten = onbeperkt.",
+  "admin.projects.groups.title": "Groepen ({count})",
+  "admin.projects.groups.privacy": "Je ziet wie in welke groep zit. Wat een groep in de projectruimte doet (chat, gesprekken met persona's, feedback), is alleen voor de groep zelf.",
+  "admin.projects.groups.empty": "Er zijn nog geen groepen.",
+  "admin.projects.groups.noMembers": "nog geen leden",
+  "admin.projects.groups.finalized": "afgerond"
 }

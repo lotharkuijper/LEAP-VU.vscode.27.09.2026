@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Poziomy nauki",
   "admin.tabs.settings": "Ustawienia",
   "admin.learningLevels.title": "Poziomy nauki studentów",
-  "admin.learningLevels.intro": "Przegląd wybranego samodzielnie poziomu nauki (1–5) dla każdego studenta w kursie {course}. Studenci ustawiają go sami; nie możesz go zmienić.",
+  "admin.learningLevels.intro": "Ilu studentów kursu {course} pracuje na którym poziomie uczenia się (1–5). Studenci sami wybierają swój poziom; celowo nie widzisz, jaki poziom wybiera konkretny student.",
   "admin.learningLevels.readonlyNote": "Tylko do odczytu: student zachowuje kontrolę nad własnym poziomem.",
   "admin.learningLevels.noCourse": "Najpierw wybierz aktywny kurs, aby zobaczyć poziomy nauki.",
   "admin.learningLevels.loading": "Ładowanie poziomów nauki…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Wypróbuj pojęcie",
   "help.searchSensitivity.tryTerm.body": "Wpisz pojęcie i zobacz, ile fragmentów LEAP przy tym ustawieniu znajdzie w twoich materiałach. Dzięki temu z góry zobaczysz, czy ustawienie jest zbyt szerokie lub zbyt rygorystyczne. Dla studentów nic się nie zmieni.",
   "help.learningLevels.overview.title": "Poziomy nauki",
-  "help.learningLevels.overview.body": "Studenci sami wybierają swój poziom (1–5). LEAP dostosowuje do niego wyjaśnienia w czacie, „Wyjaśniam” oraz przy personach: prościej na niskim poziomie, bardziej szczegółowo na wysokim. Ty możesz tylko zobaczyć poziom, nie możesz go zmienić.",
+  "help.learningLevels.overview.body": "Studenci sami wybierają swój poziom (1–5). LEAP dostosowuje do niego wyjaśnienia na czacie, w „Wyjaśnię” oraz przy personach. Widzisz tylko, ilu studentów pracuje na każdym poziomie, a nie kto wybrał który poziom.",
   "help.chatInstructions.overview.title": "Instrukcje czatu",
   "help.chatInstructions.overview.body": "Stałe instrukcje, które LEAP otrzymuje dla czatu i „Wyjaśniam”, takie jak ton, podejście oraz to, co AI może lub czego nie może robić. Zmiana od razu obowiązuje wszystkich studentów tego kursu. Zmieniaj ostrożnie.",
   "help.quizSources.coverage.title": "Przegląd pokrycia",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Śledź relację z grupą",
   "admin.personaRole.roleplayer.reputationDesc": "Po każdej rozmowie LEAP ocenia, jak grupa zachowywała się wobec {name}, zgodnie z twoimi zasadami zachowania. Relacja przechodzi wtedy o jeden krok w górę, pozostaje bez zmian albo spada o jeden krok. Studenci widzą poziom.",
   "admin.personaRole.roleplayer.startLevel": "Poziom początkowy",
-  "admin.personaRole.roleplayer.brokenWarning": "Jeśli relacja jest już na poziomie „chłodna” i kolejna rozmowa znów przebiegnie źle, {name} zerwie kontakt. Grupa dokończy wtedy projekt bez {name}. Tylko ty możesz jeszcze przywrócić kontakt w przestrzeni projektu.",
+  "admin.personaRole.roleplayer.brokenWarning": "Jeśli relacja jest już „chłodna” i rozmowa ponownie przebiega źle, {name} zrywa kontakt. Grupa kończy wtedy projekt bez {name}. Przywrócić kontakt może tylko administrator LEAP.",
   "admin.personaRole.roleplayer.badgeReputation": "relacja",
   "admin.personaRole.rules.title": "Zasady zachowania",
   "admin.personaRole.rules.positive": "Co sprawia, że {name} staje się bardziej pozytywny(-a)?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Zasady postępowania",
   "help.personas.conductRules.body": "Opisz prostym językiem, co poprawia relację, a co ją pogarsza. Sama persona nie widzi tych zasad, więc nie może ich zdradzić. Wypróbuj je w rozmowie testowej.",
   "help.personas.feedbackRounds.title": "Rundy informacji zwrotnej",
-  "help.personas.feedbackRounds.body": "Ile razy grupa może przesłać pracę do tego oceniającego. Każde przesłanie z informacją zwrotną liczy się jako jedna runda; jeśli feedback się nie uda, nie liczy się. Pozostaw puste = bez ograniczeń."
+  "help.personas.feedbackRounds.body": "Ile razy grupa może przesłać pracę do tego oceniającego. Każde przesłanie z informacją zwrotną liczy się jako jedna runda; jeśli feedback się nie uda, nie liczy się. Pozostaw puste = bez ograniczeń.",
+  "admin.projects.groups.title": "Grupy ({count})",
+  "admin.projects.groups.privacy": "Widzisz, kto jest w której grupie. To, co grupa robi w przestrzeni projektu (czat, rozmowy z personami, informacje zwrotne), jest widoczne tylko dla samej grupy.",
+  "admin.projects.groups.empty": "Nie ma jeszcze żadnych grup.",
+  "admin.projects.groups.noMembers": "jeszcze brak członków",
+  "admin.projects.groups.finalized": "ukończono"
 }

@@ -842,7 +842,7 @@
   "admin.tabs.learningLevels": "Öğrenme düzeyleri",
   "admin.tabs.settings": "Ayarlar",
   "admin.learningLevels.title": "Öğrencilerin öğrenme düzeyleri",
-  "admin.learningLevels.intro": "{course} için öğrenci başına kendi seçtiği öğrenme düzeyinin (1–5) özeti. Öğrenciler bunu kendileri ayarlar; sen değiştiremezsin.",
+  "admin.learningLevels.intro": "{course} dersindeki kaç öğrencinin hangi öğrenme düzeyinde (1–5) çalıştığını gösterir. Öğrenciler düzeylerini kendileri seçer; tek tek öğrencilerin hangi düzeyi seçtiğini bilinçli olarak görmezsin.",
   "admin.learningLevels.readonlyNote": "Salt okunur: Öğrenci kendi düzeyinin kontrolünü elinde tutar.",
   "admin.learningLevels.noCourse": "Öğrenme düzeylerini görüntülemek için önce aktif bir ders seç.",
   "admin.learningLevels.loading": "Öğrenme düzeyleri yükleniyor…",
@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Bir kavramla dene",
   "help.searchSensitivity.tryTerm.body": "Bir kavram yaz ve bu ayarla LEAP’in materyalinde kaç pasaj bulduğunu gör. Böylece ayarın çok geniş mi yoksa çok katı mı olduğunu önceden görebilirsin. Öğrenciler için hiçbir şey değişmez.",
   "help.learningLevels.overview.title": "Öğrenme düzeyleri",
-  "help.learningLevels.overview.body": "Öğrenciler düzeylerini (1–5) kendileri seçer. LEAP, sohbet, “Ben açıklıyorum” ve personalardaki açıklamaları buna göre uyarlar: düşük düzeyde daha basit, yüksek düzeyde daha derin. Sen düzeyi yalnızca görüntüleyebilirsin, değiştiremezsin.",
+  "help.learningLevels.overview.body": "Öğrenciler düzeylerini (1–5) kendileri seçer. LEAP, sohbetteki açıklamaları, “Açıklıyorum” bölümünü ve personaları buna göre uyarlar. Yalnızca her düzeyde kaç öğrencinin çalıştığını görürsün, kimin hangi düzeyi seçtiğini değil.",
   "help.chatInstructions.overview.title": "Sohbet talimatları",
   "help.chatInstructions.overview.body": "LEAP’in sohbet ve “Ben açıklıyorum” için aldığı sabit talimatlar; örneğin ton, yaklaşım ve yapay zekânın neyi yapıp yapamayacağı. Bir değişiklik bu dersin tüm öğrencileri için hemen geçerli olur. Dikkatli değiştir.",
   "help.quizSources.coverage.title": "Kapsam özeti",
@@ -2687,7 +2687,7 @@
   "admin.personaRole.roleplayer.reputation": "Grupla ilişki düzeyini takip et",
   "admin.personaRole.roleplayer.reputationDesc": "Her görüşmeden sonra LEAP, senin davranış kurallarına göre grubun {name} karşısında nasıl davrandığını değerlendirir. İlişki düzeyi bir adım yükselir, aynı kalır veya bir adım düşer. Öğrenciler seviyeyi görür.",
   "admin.personaRole.roleplayer.startLevel": "Başlangıç seviyesi",
-  "admin.personaRole.roleplayer.brokenWarning": "İlişki düzeyi zaten \"soğuk\" ise ve bir görüşme yine kötü geçerse, {name} iletişimi keser. Grup projeyi {name} olmadan tamamlar. İletişimi yalnızca sen, proje alanında yeniden kurabilirsin.",
+  "admin.personaRole.roleplayer.brokenWarning": "İlişki zaten \"soğuk\" durumdaysa ve bir görüşme yine kötü geçerse, {name} iletişimi keser. Grup projeyi {name} olmadan tamamlar. Bunu yalnızca bir LEAP yöneticisi düzeltebilir.",
   "admin.personaRole.roleplayer.badgeReputation": "ilişki",
   "admin.personaRole.rules.title": "Davranış kuralları",
   "admin.personaRole.rules.positive": "{name} için ne daha olumlu olur?",
@@ -2738,5 +2738,10 @@
   "help.personas.conductRules.title": "Davranış kuralları",
   "help.personas.conductRules.body": "İlişki düzeyini neyin iyileştirdiğini ve neyin kötüleştirdiğini sade bir dille açıkla. Personanın kendisi bu kuralları görmez, bu yüzden onları ifşa edemez. Deneme görüşmesiyle bunları test et.",
   "help.personas.feedbackRounds.title": "Geri bildirim turları",
-  "help.personas.feedbackRounds.body": "Bir grubun bu değerlendiriciye kaç kez çalışma teslim edebileceği. Geri bildirim verilen her teslim bir tur sayılır; geri bildirim başarısız olursa sayılmaz. Boş bırak = sınırsız."
+  "help.personas.feedbackRounds.body": "Bir grubun bu değerlendiriciye kaç kez çalışma teslim edebileceği. Geri bildirim verilen her teslim bir tur sayılır; geri bildirim başarısız olursa sayılmaz. Boş bırak = sınırsız.",
+  "admin.projects.groups.title": "Gruplar ({count})",
+  "admin.projects.groups.privacy": "Kimin hangi grupta olduğunu görürsün. Bir grubun proje alanında yaptıkları (sohbet, personalarla görüşmeler, geri bildirim) yalnızca grubun kendisi tarafından görülebilir.",
+  "admin.projects.groups.empty": "Henüz grup yok.",
+  "admin.projects.groups.noMembers": "henüz üye yok",
+  "admin.projects.groups.finalized": "tamamlandı"
 }
