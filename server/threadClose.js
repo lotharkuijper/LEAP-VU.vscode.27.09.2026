@@ -46,7 +46,7 @@ export async function judgeConversation({ chat, persona, level, allMsgs, lang, l
     return validateConductJudgement(raw);
   } catch (e) {
     console.warn('[reputation] beoordeling mislukt, niveau blijft gelijk:', e.message);
-    return { step: 0, reason: '' };
+    return { step: 0, reason: '', failed: true };
   }
 }
 
@@ -108,16 +108,35 @@ export async function setRelationshipLevelImpl(
 }
 
 /**
+ * Oordeel alvast uitrekenen (tijdens het venster "Gesprek afsluiten"), zonder
+ * iets op te slaan. Retour: null (geen verstandhouding of mislukt) of
+ * { level, step, reason } — `level` is het niveau waarmee is geoordeeld.
+ */
+export async function precomputeJudgement(deps, { persona, projectId, groupId, allMsgs, lang, languageName }) {
+  if (!reputationActive(persona) || !projectId) return null;
+  const read = await readRelationship(deps.supabaseAdmin, { projectId, groupId, personaId: persona.id });
+  if (read.missing) return null;
+  const level = read.row ? clampLevel(read.row.score) : clampStartLevel(persona.start_level);
+  const j = await judgeConversation({ chat: deps.chat, persona, level, allMsgs, lang, languageName });
+  if (j.failed) return null;
+  return { level, step: j.step, reason: j.reason };
+}
+
+/**
  * Hele stap na het afronden van een gesprek: oordeel vragen en — bij een
  * verandering — het nieuwe niveau opslaan. Retour: null (geen verstandhouding)
- * of { step, reason, from, to }.
+ * of { step, reason, from, to }. Een vooraf berekend oordeel (`precomputed`,
+ * zie precomputeJudgement) wordt alleen gebruikt als het niveau sindsdien niet
+ * is veranderd; anders wordt opnieuw geoordeeld.
  */
-export async function applyConversationJudgement(deps, { persona, projectId, groupId, threadId, allMsgs, lang, languageName }) {
+export async function applyConversationJudgement(deps, { persona, projectId, groupId, threadId, allMsgs, lang, languageName, precomputed = null }) {
   if (!reputationActive(persona) || !projectId) return null;
   const read = await readRelationship(deps.supabaseAdmin, { projectId, groupId, personaId: persona.id });
   if (read.missing) return null;
   const from = read.row ? clampLevel(read.row.score) : clampStartLevel(persona.start_level);
-  const { step, reason } = await judgeConversation({ chat: deps.chat, persona, level: from, allMsgs, lang, languageName });
+  const { step, reason } = (precomputed && precomputed.level === from)
+    ? precomputed
+    : await judgeConversation({ chat: deps.chat, persona, level: from, allMsgs, lang, languageName });
   if (step === 0) return { step: 0, reason: '', from, to: from };
   const row = await setRelationshipLevelImpl(deps, {
     projectId, groupId, personaId: persona.id,

@@ -170,7 +170,8 @@ import {
   isThreadStale as conIsThreadStale,
   consultationLimitMessage as conLimitMessage,
 } from './consultationLimit.js';
-import { setRelationshipLevelImpl, applyConversationJudgement } from './threadClose.js';
+import { setRelationshipLevelImpl, applyConversationJudgement, precomputeJudgement } from './threadClose.js';
+import { createClosePrep, generateThreadSummary } from './threadClosePrep.js';
 import { randomUUID } from 'node:crypto';
 import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, buildDuplicateSuggestionPrompt, buildMergeSuggestions, mapLimit } from './conceptConsolidation.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
@@ -11322,70 +11323,90 @@ app.post('/api/projects/groups/:groupId/threads/:threadId/close-preview', async 
     }
     const { data: thread } = await supabaseAdmin
       .from('group_persona_threads')
-      .select('id, group_id, closed_at')
+      .select('id, group_id, persona_id, closed_at')
       .eq('id', threadId).eq('group_id', groupId).is('closed_at', null).maybeSingle();
     if (!thread) return res.status(404).json({ error: 'Thread niet gevonden of al afgesloten' });
 
-    const { data: msgs } = await supabaseAdmin
-      .from('group_persona_messages')
-      .select('role, content')
-      .eq('thread_id', threadId)
-      .order('created_at', { ascending: true });
-    const allMsgs = msgs || [];
+    const [{ allMsgs }, ctx] = await Promise.all([loadThreadMessages(thread.id), loadThreadCloseContext(thread, groupId)]);
     // Te weinig berichten: lege neerslag teruggeven zodat afsluiten altijd werkt.
     if (allMsgs.length < 2) {
       return res.json({ topics: [], agreements: [] });
     }
-
-    const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 
-    const conversationText = allMsgs
-      .map(m => `${m.role === 'user' ? 'Student' : 'Persona'}: ${(m.content || '').slice(0, 2000)}`)
-      .join('\n').slice(0, 12000);
-
-    const msgCount = allMsgs.filter(m => m.role === 'user').length;
-    const topicsInstruction = lang !== 'nl'
-      ? (msgCount <= 3 ? '2-3 short topics' : msgCount <= 8 ? '3-5 topics' : '5-8 topics')
-      : (msgCount <= 3 ? '2-3 korte onderwerpen' : msgCount <= 8 ? '3-5 onderwerpen' : '5-8 onderwerpen');
-
-    const langInstruction = lang === 'nl'
-      ? 'Schrijf in het Nederlands.'
-      : `Write everything in ${languageEnglishName(lang)}. Keep every JSON property name exactly as written in the structure above (do not translate the keys); only the string values may be in ${languageEnglishName(lang)}.`;
-    const prompt = lang !== 'nl'
-      ? `You are a minute-taker. Analyse the following conversation between a student and an AI persona.\n\nRespond ONLY with valid JSON in this structure:\n{\n  "topics": [...],\n  "agreements": [...]\n}\n\n- "topics": array of ${topicsInstruction}. Each item is one discussed topic (concise, max 1 sentence).\n- "agreements": array of 0 or more strings. Only concrete agreements or commitments. Leave empty if none.\n\n${langInstruction} No markdown outside the JSON, no explanation.\n\nConversation:\n${conversationText}`
-      : `Je bent een notulist. Analyseer het volgende gesprek tussen een student en een AI-persona.\n\nGeef je antwoord UITSLUITEND als geldige JSON met deze structuur:\n{\n  "topics": [...],\n  "agreements": [...]\n}\n\n- "topics": array van ${topicsInstruction}. Elk item is één besproken onderwerp (bondig, maximaal 1 zin).\n- "agreements": array van 0 of meer strings. Alleen concrete afspraken of toezeggingen. Laat leeg als er geen zijn.\n\n${langInstruction} Geen markdown buiten de JSON, geen uitleg.\n\nGesprek:\n${conversationText}`;
-
-    let topics = [];
-    let agreements = [];
-    try {
-      const chatResp = await openaiChatCompletion({
-        model: OPENAI_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        ...chatModelParams({ temperature: 0.2, maxTokens: 600 }),
-        response_format: { type: 'json_object' },
-      });
-      if (chatResp.ok) {
-        const raw = ((await chatResp.json()).choices?.[0]?.message?.content || '{}').trim();
-        const parsed = JSON.parse(raw);
-        topics = Array.isArray(parsed.topics) ? parsed.topics.filter(t => typeof t === 'string' && t.trim()) : [];
-        agreements = Array.isArray(parsed.agreements) ? parsed.agreements.filter(a => typeof a === 'string' && a.trim()) : [];
-      }
-    } catch (e) {
-      console.error('[close-preview] LLM/parse fout:', e.message);
-    }
-    // Fallback als het model geen bruikbare output geeft.
-    if (topics.length === 0) {
-      topics = allMsgs.filter(m => m.role === 'user')
-        .map(m => (m.content || '').slice(0, 100))
-        .filter(Boolean).slice(0, 3);
-    }
+    // Neerslag maken (of hergebruiken) en het oordeel over de verstandhouding
+    // alvast op de achtergrond starten; bij het afsluiten ligt alles klaar.
+    const { topics, agreements } = await threadClosePrep.preview(threadCloseJobs({ thread, groupId, lang, allMsgs, ...ctx }));
     return res.json({ topics, agreements });
   } catch (err) {
     console.error('[threads/close-preview]', err);
     return res.status(500).json({ error: err.message });
   }
 });
+
+// Gesprek afsluiten: neerslag en oordeel worden tussen het venster en de
+// bevestiging bewaard (server/threadClosePrep.js), zodat de klik op
+// "Gesprek afsluiten" niet opnieuw op het taalmodel hoeft te wachten.
+const threadClosePrep = createClosePrep();
+const THREAD_CLOSE_LLM_TIMEOUT_MS = 60000;
+
+async function threadCloseChat(messages, maxTokens, temperature) {
+  const r = await openaiChatCompletion({
+    model: OPENAI_MODEL,
+    messages,
+    ...chatModelParams({ temperature, maxTokens }),
+    response_format: { type: 'json_object' },
+  }, { timeoutMs: THREAD_CLOSE_LLM_TIMEOUT_MS });
+  if (!r.ok) throw new Error(`Taalmodel-fout (${r.status})`);
+  return (await r.json()).choices?.[0]?.message?.content || '';
+}
+
+async function loadThreadMessages(threadId) {
+  const { data: msgs } = await supabaseAdmin
+    .from('group_persona_messages')
+    .select('role, content')
+    .eq('thread_id', threadId)
+    .order('created_at', { ascending: true });
+  return { allMsgs: msgs || [] };
+}
+
+// Persona + project van een gesprek (voor de verstandhouding).
+async function loadThreadCloseContext(thread, groupId) {
+  let persona = null;
+  let projectId = null;
+  if (thread.persona_id) {
+    const { data: p } = await supabaseAdmin
+      .from('project_personas')
+      .select('id, name, project_id, system_prompt, persona_type, reputation_enabled, conduct_rules, start_level')
+      .eq('id', thread.persona_id).maybeSingle();
+    persona = p || null;
+    projectId = persona?.project_id || null;
+  }
+  if (!projectId) {
+    const { data: g } = await supabaseAdmin
+      .from('project_groups').select('project_id').eq('id', groupId).maybeSingle();
+    projectId = g?.project_id || null;
+  }
+  return { persona, projectId };
+}
+
+// De twee taalmodel-klussen bij het afsluiten, als uitstelbare functies.
+function threadCloseJobs({ thread, groupId, lang, allMsgs, persona, projectId }) {
+  const languageName = languageEnglishName(lang);
+  return {
+    threadId: thread.id,
+    allMsgs,
+    lang,
+    summarize: () => (AZURE_CHAT_READY
+      ? generateThreadSummary({ chat: (m) => threadCloseChat(m, 700, 0.2), allMsgs, lang, languageName })
+      : generateThreadSummary({ chat: null, allMsgs, lang, languageName })),
+    judge: (persona && AZURE_CHAT_READY && reputationActive(persona))
+      ? () => precomputeJudgement({ supabaseAdmin, chat: (m) => threadCloseChat(m, 300, 0) }, {
+        persona, projectId, groupId, allMsgs, lang, languageName,
+      })
+      : null,
+  };
+}
 
 // POST /api/projects/groups/:groupId/threads/:threadId/close
 // Genereert server-side de AI-samenvatting en markeert de thread als afgesloten.
@@ -11429,71 +11450,13 @@ async function loadConsultationGrant(projectId, groupId, personaId) {
 // agreements), DB-update en — indien van toepassing — cue-emissie op de
 // relatie. Wordt gedeeld door het /close-endpoint én de lazy auto-close.
 async function performThreadClose({ thread, groupId, lang, closedBy }) {
-  // Persona + project ophalen voor de samenvatting en de verstandhouding.
-  let persona = null;
-  let projectIdForRel = null;
-  if (thread.persona_id) {
-    const { data: p } = await supabaseAdmin
-      .from('project_personas')
-      .select('id, name, project_id, system_prompt, persona_type, reputation_enabled, conduct_rules, start_level')
-      .eq('id', thread.persona_id).maybeSingle();
-    persona = p || null;
-    projectIdForRel = persona?.project_id || null;
-  }
-  if (!projectIdForRel) {
-    const { data: g } = await supabaseAdmin
-      .from('project_groups').select('project_id').eq('id', groupId).maybeSingle();
-    projectIdForRel = g?.project_id || null;
-  }
+  const [{ allMsgs }, ctx] = await Promise.all([loadThreadMessages(thread.id), loadThreadCloseContext(thread, groupId)]);
+  const { persona, projectId } = ctx;
 
-  // --- Server-side samenvatting genereren (zelfde logica als /close-preview) ---
-  const { data: msgs } = await supabaseAdmin
-    .from('group_persona_messages')
-    .select('role, content')
-    .eq('thread_id', thread.id)
-    .order('created_at', { ascending: true });
-  const allMsgs = msgs || [];
-  let topics = [];
-  let agreements = [];
-
-  if (AZURE_CHAT_READY) {
-    const conversationText = allMsgs
-      .map(m => `${m.role === 'user' ? 'Student' : 'Persona'}: ${(m.content || '').slice(0, 2000)}`)
-      .join('\n').slice(0, 12000);
-    const msgCount = allMsgs.filter(m => m.role === 'user').length;
-    const topicsInstruction = lang !== 'nl'
-      ? (msgCount <= 3 ? '2-3 short topics' : msgCount <= 8 ? '3-5 topics' : '5-8 topics')
-      : (msgCount <= 3 ? '2-3 korte onderwerpen' : msgCount <= 8 ? '3-5 onderwerpen' : '5-8 onderwerpen');
-    const langInstruction = lang === 'nl'
-      ? 'Schrijf in het Nederlands.'
-      : `Write everything in ${languageEnglishName(lang)}. Keep every JSON property name exactly as written in the structure above (do not translate the keys); only the string values may be in ${languageEnglishName(lang)}.`;
-    const prompt = lang !== 'nl'
-      ? `You are a minute-taker. Analyse the following conversation between a student and an AI persona.\n\nRespond ONLY with valid JSON in this structure:\n{\n  "topics": [...],\n  "agreements": [...]\n}\n\n- "topics": array of ${topicsInstruction}. Each item is one discussed topic (concise, max 1 sentence).\n- "agreements": array of 0 or more strings. Only concrete agreements or commitments. Leave empty if none.\n\n${langInstruction} No markdown outside the JSON, no explanation.\n\nConversation:\n${conversationText}`
-      : `Je bent een notulist. Analyseer het volgende gesprek tussen een student en een AI-persona.\n\nGeef je antwoord UITSLUITEND als geldige JSON met deze structuur:\n{\n  "topics": [...],\n  "agreements": [...]\n}\n\n- "topics": array van ${topicsInstruction}. Elk item is één besproken onderwerp (bondig, maximaal 1 zin).\n- "agreements": array van 0 of meer strings. Alleen concrete afspraken of toezeggingen. Laat leeg als er geen zijn.\n\n${langInstruction} Geen markdown buiten de JSON, geen uitleg.\n\nGesprek:\n${conversationText}`;
-    try {
-      const chatResp = await openaiChatCompletion({
-        model: OPENAI_MODEL,
-        messages: [{ role: 'user', content: prompt }],
-        ...chatModelParams({ temperature: 0.2, maxTokens: 700 }),
-        response_format: { type: 'json_object' },
-      });
-      if (chatResp.ok) {
-        const raw = ((await chatResp.json()).choices?.[0]?.message?.content || '{}').trim();
-        let parsed;
-        try { parsed = JSON.parse(raw); } catch { parsed = {}; }
-        topics = Array.isArray(parsed.topics) ? parsed.topics.filter(t => typeof t === 'string' && t.trim()) : [];
-        agreements = Array.isArray(parsed.agreements) ? parsed.agreements.filter(a => typeof a === 'string' && a.trim()) : [];
-      }
-    } catch (e) {
-      console.error('[threads/close] LLM/parse fout:', e.message);
-    }
-  }
-  // Fallback als het model geen bruikbare output geeft.
-  if (topics.length === 0) {
-    topics = allMsgs.filter(m => m.role === 'user')
-      .map(m => (m.content || '').slice(0, 100))
-      .filter(Boolean).slice(0, 3);
-  }
+  // Neerslag + oordeel: uit het venster als dat nog geldig is, anders nu
+  // (tegelijk in plaats van na elkaar).
+  const { summary, judgement } = await threadClosePrep.forClose(threadCloseJobs({ thread, groupId, lang, allMsgs, ...ctx }));
+  const { topics, agreements } = summary;
 
   // --- Schrijf naar DB: alleen server gegenereerde waarden ---
   const { error: updErr } = await supabaseAdmin
@@ -11507,26 +11470,17 @@ async function performThreadClose({ thread, groupId, lang, closedBy }) {
     .eq('id', thread.id);
   if (updErr) throw new Error(updErr.message);
 
-  // Verstandhouding (alleen een rolspeler die er een bijhoudt): een aparte
-  // beoordeling met de gedragsregels van de docent. Idempotent per gesprek.
+  // Verstandhouding (alleen een rolspeler die er een bijhoudt): het oordeel met
+  // de gedragsregels van de docent opslaan. Idempotent per gesprek.
   let reputation = null;
   if (persona && AZURE_CHAT_READY && reputationActive(persona)) {
     try {
       reputation = await applyConversationJudgement({
         supabaseAdmin,
-        chat: async (messages) => {
-          const r = await openaiChatCompletion({
-            model: OPENAI_MODEL,
-            messages,
-            ...chatModelParams({ temperature: 0, maxTokens: 300 }),
-            response_format: { type: 'json_object' },
-          });
-          if (!r.ok) throw new Error(`Taalmodel-fout (${r.status})`);
-          return (await r.json()).choices?.[0]?.message?.content || '';
-        },
+        chat: (m) => threadCloseChat(m, 300, 0),
       }, {
-        persona, projectId: projectIdForRel, groupId, threadId: thread.id, allMsgs,
-        lang, languageName: languageEnglishName(lang),
+        persona, projectId, groupId, threadId: thread.id, allMsgs,
+        lang, languageName: languageEnglishName(lang), precomputed: judgement,
       });
     } catch (relErr) {
       console.warn('[threads/close] verstandhouding bijwerken mislukte:', relErr.message);
