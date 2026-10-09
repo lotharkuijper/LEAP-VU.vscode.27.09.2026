@@ -49,6 +49,8 @@ export const HELP_TOPICS = [
   'searchSensitivity.overview',
   'searchSensitivity.tryTerm',
   'learningLevels.overview',
+  // Quiz (student)
+  'quiz.progress',
   // Analyse (losse module: src/features/analytics)
   'analytics.thermometer',
   'analytics.platform',

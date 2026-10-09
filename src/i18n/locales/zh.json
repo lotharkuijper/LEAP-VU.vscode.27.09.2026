@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "仅供管理员使用：按部分查看请求、服务器错误和响应时间，按课程和按周查看 Azure OpenAI 的 token 使用量，以及未正确读取的文档。不包含个人数据。",
   "analytics.thermometer.noData": "这一期间还没有关于你的概念的测验或聊天数据。",
   "analytics.thermometer.showAll": "显示全部 {n} 个概念",
-  "analytics.thermometer.showWithData": "仅显示有数据的概念"
+  "analytics.thermometer.showWithData": "仅显示有数据的概念",
+  "quiz.progress.practiced": "已练习 {n} / {total}",
+  "quiz.progress.practiceButton": "练习你觉得难的内容",
+  "quiz.progress.reason.weak": "仍然有点难",
+  "quiz.progress.reason.due": "该复习了",
+  "quiz.progress.reason.dueDays": "{n} 天前 · 复习",
+  "quiz.progress.reason.new": "尚未练习",
+  "quiz.progress.reason.ok": "掌握得不错",
+  "quiz.progress.showAll": "显示全部 {n} 个概念",
+  "quiz.progress.showLess": "显示更少",
+  "help.quiz.progress.title": "你的进度",
+  "help.quiz.progress.body": "每个概念会显示你最近三次测验的得分。“练习你觉得难的内容”会选择你仍觉得难或很久没练习过的概念。你已经掌握得好的内容会稍后再出现。只有你能看到这些。",
+  "explain.practiceWithQuiz": "通过简短测验练习 {name}"
 }

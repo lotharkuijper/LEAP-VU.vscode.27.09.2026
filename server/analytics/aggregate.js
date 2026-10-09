@@ -28,7 +28,7 @@ export function periodStart(weeks, now = new Date()) {
 /** Kleine letters, zonder accenten en leestekens; voor het herkennen van begrippen. */
 export function normalizeText(s) {
   return String(s || '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();

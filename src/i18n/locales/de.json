@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Nur für Administratoren: Anfragen, Serverfehler und Antwortzeit pro Komponente, Token-Nutzung von Azure OpenAI pro Kurs und pro Woche sowie Dokumente, die nicht richtig eingelesen wurden. Keine personenbezogenen Daten.",
   "analytics.thermometer.noData": "In diesem Zeitraum gibt es noch keine Quiz- oder Chatdaten zu deinen Begriffen.",
   "analytics.thermometer.showAll": "Alle {n} Begriffe anzeigen",
-  "analytics.thermometer.showWithData": "Nur Begriffe mit Daten"
+  "analytics.thermometer.showWithData": "Nur Begriffe mit Daten",
+  "quiz.progress.practiced": "{n} von {total} geübt",
+  "quiz.progress.practiceButton": "Übe, was dir schwerfällt",
+  "quiz.progress.reason.weak": "Noch schwierig",
+  "quiz.progress.reason.due": "Zeit zum Wiederholen",
+  "quiz.progress.reason.dueDays": "Vor {n} Tagen · wiederholen",
+  "quiz.progress.reason.new": "Noch nicht geübt",
+  "quiz.progress.reason.ok": "Läuft gut",
+  "quiz.progress.showAll": "Alle {n} Begriffe anzeigen",
+  "quiz.progress.showLess": "Weniger anzeigen",
+  "help.quiz.progress.title": "Dein Fortschritt",
+  "help.quiz.progress.body": "Pro Begriff deine Punktzahl aus deinen letzten drei Quizzen. „Übe, was dir schwerfällt“ wählt Begriffe aus, die dir noch schwerfallen oder die du lange nicht geübt hast. Was du gut kennst, kommt später wieder. Nur du siehst das.",
+  "explain.practiceWithQuiz": "Übe {name} mit einem kurzen Quiz"
 }

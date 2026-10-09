@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "केवल प्रशासकों के लिए: प्रति घटक अनुरोध, सर्वर त्रुटियाँ और प्रतिक्रिया समय, प्रति कोर्स और प्रति सप्ताह Azure OpenAI का टोकन उपयोग, और वे दस्तावेज़ जो ठीक से नहीं पढ़े गए। व्यक्तियों के बारे में कोई डेटा नहीं।",
   "analytics.thermometer.noData": "इस अवधि में तुम्हारी अवधारणाओं के बारे में अभी कोई क्विज़ या चैट डेटा नहीं है।",
   "analytics.thermometer.showAll": "सभी {n} अवधारणाएँ दिखाओ",
-  "analytics.thermometer.showWithData": "केवल डेटा वाली अवधारणाएँ"
+  "analytics.thermometer.showWithData": "केवल डेटा वाली अवधारणाएँ",
+  "quiz.progress.practiced": "{total} में से {n} अभ्यास किए",
+  "quiz.progress.practiceButton": "जो तुम्हें कठिन लगता है उसका अभ्यास करो",
+  "quiz.progress.reason.weak": "अभी कठिन है",
+  "quiz.progress.reason.due": "दोहराने का समय",
+  "quiz.progress.reason.dueDays": "{n} दिन पहले · दोहराओ",
+  "quiz.progress.reason.new": "अभी अभ्यास नहीं किया",
+  "quiz.progress.reason.ok": "अच्छा चल रहा है",
+  "quiz.progress.showAll": "सभी {n} अवधारणाएँ दिखाओ",
+  "quiz.progress.showLess": "कम दिखाओ",
+  "help.quiz.progress.title": "तुम्हारी प्रगति",
+  "help.quiz.progress.body": "हर अवधारणा के लिए तुम्हारी पिछली तीन क्विज़ों का स्कोर। \"जो तुम्हें कठिन लगता है उसका अभ्यास करो\" उन अवधारणाओं को चुनता है जो तुम्हें अभी कठिन लगती हैं या जिनका तुमने लंबे समय से अभ्यास नहीं किया। जो तुम्हें अच्छी तरह आता है, वह बाद में फिर आएगा। यह सिर्फ़ तुम देखते हो।",
+  "explain.practiceWithQuiz": "एक छोटी क्विज़ के साथ {name} का अभ्यास करो"
 }

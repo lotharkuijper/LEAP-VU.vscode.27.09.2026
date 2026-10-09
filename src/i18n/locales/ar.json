@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "للمسؤولين فقط: الطلبات، أخطاء الخادم ووقت الاستجابة لكل جزء، استخدام رموز Azure OpenAI لكل مقرر ولكل أسبوع، والمستندات التي لم تُستورد بشكل صحيح. لا توجد بيانات عن الأشخاص.",
   "analytics.thermometer.noData": "لا توجد بعد بيانات اختبارات أو دردشة حول مفاهيمك في هذه الفترة.",
   "analytics.thermometer.showAll": "اعرض كل المفاهيم ({n})",
-  "analytics.thermometer.showWithData": "المفاهيم التي تحتوي على بيانات فقط"
+  "analytics.thermometer.showWithData": "المفاهيم التي تحتوي على بيانات فقط",
+  "quiz.progress.practiced": "تمرين {n} من {total}",
+  "quiz.progress.practiceButton": "تدرّب على ما تجده صعبًا",
+  "quiz.progress.reason.weak": "لا يزال صعبًا",
+  "quiz.progress.reason.due": "حان وقت المراجعة",
+  "quiz.progress.reason.dueDays": "منذ {n} أيام · مراجعة",
+  "quiz.progress.reason.new": "لم تتدرّب عليه بعد",
+  "quiz.progress.reason.ok": "الأمور تسير جيدًا",
+  "quiz.progress.showAll": "اعرض كل المفاهيم الـ {n}",
+  "quiz.progress.showLess": "عرض أقل",
+  "help.quiz.progress.title": "تقدّمك",
+  "help.quiz.progress.body": "لكل مفهوم، درجتك في آخر ثلاثة اختبارات. \"تدرّب على ما تجده صعبًا\" يختار المفاهيم التي لا تزال تجدها صعبة أو لم تتدرّب عليها منذ مدة. ما تعرفه جيدًا سيعود لاحقًا. أنت وحدك ترى هذا.",
+  "explain.practiceWithQuiz": "تدرّب على {name} من خلال اختبار قصير"
 }

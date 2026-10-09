@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Μόνο για διαχειριστές: αιτήματα, σφάλματα διακομιστή και χρόνος απόκρισης ανά ενότητα, χρήση tokens του Azure OpenAI ανά μάθημα και ανά εβδομάδα, και έγγραφα που δεν διαβάστηκαν σωστά. Χωρίς δεδομένα για άτομα.",
   "analytics.thermometer.noData": "Δεν υπάρχουν ακόμα δεδομένα κουίζ ή συνομιλίας για τις έννοιές σου σε αυτήν την περίοδο.",
   "analytics.thermometer.showAll": "Εμφάνιση όλων των {n} εννοιών",
-  "analytics.thermometer.showWithData": "Μόνο έννοιες με δεδομένα"
+  "analytics.thermometer.showWithData": "Μόνο έννοιες με δεδομένα",
+  "quiz.progress.practiced": "{n} από {total} εξασκημένα",
+  "quiz.progress.practiceButton": "Εξασκήσου σε ό,τι σε δυσκολεύει",
+  "quiz.progress.reason.weak": "Ακόμα δύσκολο",
+  "quiz.progress.reason.due": "Ώρα για επανάληψη",
+  "quiz.progress.reason.dueDays": "πριν από {n} ημέρες · επανάληψη",
+  "quiz.progress.reason.new": "Δεν έχεις εξασκηθεί ακόμα",
+  "quiz.progress.reason.ok": "Πηγαίνει καλά",
+  "quiz.progress.showAll": "Εμφάνιση όλων των {n} εννοιών",
+  "quiz.progress.showLess": "Εμφάνιση λιγότερων",
+  "help.quiz.progress.title": "Η πρόοδός σου",
+  "help.quiz.progress.body": "Για κάθε έννοια, η βαθμολογία σου στα τρία τελευταία κουίζ. Το \"Εξασκήσου σε ό,τι σε δυσκολεύει\" επιλέγει έννοιες που ακόμα σε δυσκολεύουν ή που δεν έχεις εξασκήσει για καιρό. Όσα ξέρεις καλά θα εμφανιστούν ξανά αργότερα. Μόνο εσύ το βλέπεις αυτό.",
+  "explain.practiceWithQuiz": "Εξασκήσου στο {name} με ένα σύντομο κουίζ"
 }

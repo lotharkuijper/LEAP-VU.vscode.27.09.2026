@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useLanguage } from '../i18n';
 import { translations } from '../i18n/translations';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +26,9 @@ import { PromptDebugBadge } from '../components/PromptDebugBadge';
 import { QuizCheckLLMButton } from '../components/QuizCheckLLMButton';
 import { QuizGenerationProgress, type GenerationPhase } from '../components/QuizGenerationProgress';
 import { estimateQuizSeconds, recordQuizDuration, roundSeconds } from '../lib/quizTimeEstimate';
+import { difficultyForLevel } from '../lib/conceptProgress';
+import { useLearningLevel } from '../hooks/useLearningLevel';
+import { ConceptProgressCard } from '../components/quiz/ConceptProgressCard';
 import {
   Play,
   CheckCircle,
@@ -153,6 +156,18 @@ export function QuizPage() {
   const [topicSearch, setTopicSearch] = useState('');
   const [questionType, setQuestionType] = useState<QuestionType>('mcq');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
+  // Standaardmoeilijkheid volgt het leerniveau, tot de student zelf kiest.
+  const { level: learningLevel, loaded: learningLevelLoaded } = useLearningLevel(activeCourse);
+  const difficultyChosen = useRef(false);
+  useEffect(() => {
+    if (learningLevelLoaded && !difficultyChosen.current) setDifficulty(difficultyForLevel(learningLevel));
+  }, [learningLevel, learningLevelLoaded]);
+  // Vanuit "Ik leg uit" (/quiz?concept=<id>&name=<naam>): dat begrip alvast kiezen.
+  const conceptFromUrl = useRef<{ id: string | null; name: string | null } | null>(
+    typeof window !== 'undefined'
+      ? (() => { const q = new URLSearchParams(window.location.search); return q.get('concept') || q.get('name') ? { id: q.get('concept'), name: q.get('name') } : null; })()
+      : null,
+  );
   const [numQuestions, setNumQuestions] = useState(5);
   const [setupValidationError, setSetupValidationError] = useState<string | null>(null);
 
@@ -295,6 +310,13 @@ export function QuizPage() {
       setSelectedTopicIds(prev => {
         const next = new Set<string>();
         for (const t of list) if (prev.has(t.id)) next.add(t.id);
+        const wanted = conceptFromUrl.current;
+        if (wanted) {
+          const hit = list.find(t => t.id === wanted.id)
+            || list.find(t => wanted.name && t.name.toLowerCase() === wanted.name.toLowerCase());
+          if (hit) next.add(hit.id);
+          conceptFromUrl.current = null;
+        }
         return next;
       });
     } catch (err: any) {
@@ -739,6 +761,18 @@ export function QuizPage() {
           <div className="lg:col-span-2 chic-card p-6 space-y-6">
             <h2 className="text-xl font-bold text-gray-900">{t('quiz.startNew')}</h2>
 
+            {/* JOUW VOORTGANG: wat je per begrip beheerst en wat je nu kunt oefenen */}
+            {!topicsLoading && availableTopics.length > 0 && (
+              <ConceptProgressCard
+                topics={availableTopics}
+                attempts={attempts}
+                onPractice={(ids) => {
+                  setSelectedTopicIds(new Set(ids));
+                  if (setupValidationError) setSetupValidationError(null);
+                }}
+              />
+            )}
+
             {/* TOPICS */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -942,7 +976,7 @@ export function QuizPage() {
                 {(['easy', 'medium', 'hard'] as const).map(level => (
                   <button
                     key={level}
-                    onClick={() => setDifficulty(level)}
+                    onClick={() => { difficultyChosen.current = true; setDifficulty(level); }}
                     className={`px-4 py-3 rounded-lg font-medium transition-all ${
                       difficulty === level
                         ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg'

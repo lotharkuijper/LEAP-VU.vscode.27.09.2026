@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "管理者のみ：項目ごとのリクエスト、サーバーエラー、応答時間、コース別・週別のAzure OpenAIのトークン使用量、正しく読み込まれなかったドキュメント。個人に関するデータはありません。",
   "analytics.thermometer.noData": "この期間には、あなたの概念に関するクイズやチャットのデータはまだありません。",
   "analytics.thermometer.showAll": "{n}個の概念をすべて表示",
-  "analytics.thermometer.showWithData": "データのある概念のみ"
+  "analytics.thermometer.showWithData": "データのある概念のみ",
+  "quiz.progress.practiced": "{total}件中{n}件を練習済み",
+  "quiz.progress.practiceButton": "苦手なところを練習",
+  "quiz.progress.reason.weak": "まだ苦手",
+  "quiz.progress.reason.due": "復習するタイミング",
+  "quiz.progress.reason.dueDays": "{n}日前 · 復習",
+  "quiz.progress.reason.new": "まだ練習していない",
+  "quiz.progress.reason.ok": "順調",
+  "quiz.progress.showAll": "{n}個の用語をすべて表示",
+  "quiz.progress.showLess": "表示を減らす",
+  "help.quiz.progress.title": "あなたの進捗",
+  "help.quiz.progress.body": "用語ごとに、直近3回のクイズでのスコアを表示します。「苦手なところを練習」は、まだ苦手な用語や長い間練習していない用語を選びます。よく理解できているものは後でまた出てきます。これはあなただけが見られます。",
+  "explain.practiceWithQuiz": "短いクイズで{name}を練習"
 }

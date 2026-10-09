@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Solo per amministratori: richieste, errori del server e tempi di risposta per componente, utilizzo dei token di Azure OpenAI per corso e per settimana, e documenti che non sono stati acquisiti correttamente. Nessun dato personale.",
   "analytics.thermometer.noData": "In questo periodo non ci sono ancora dati di quiz o chat sui tuoi concetti.",
   "analytics.thermometer.showAll": "Mostra tutti i {n} concetti",
-  "analytics.thermometer.showWithData": "Solo concetti con dati"
+  "analytics.thermometer.showWithData": "Solo concetti con dati",
+  "quiz.progress.practiced": "{n} di {total} esercitati",
+  "quiz.progress.practiceButton": "Esercitati su ciò che trovi difficile",
+  "quiz.progress.reason.weak": "Ancora difficile",
+  "quiz.progress.reason.due": "È ora di ripassare",
+  "quiz.progress.reason.dueDays": "{n} giorni fa · ripassare",
+  "quiz.progress.reason.new": "Non ancora esercitato",
+  "quiz.progress.reason.ok": "Va bene",
+  "quiz.progress.showAll": "Mostra tutti i {n} concetti",
+  "quiz.progress.showLess": "Mostra meno",
+  "help.quiz.progress.title": "I tuoi progressi",
+  "help.quiz.progress.body": "Per ogni concetto, il tuo punteggio negli ultimi tre quiz. \"Esercitati su ciò che trovi difficile\" sceglie i concetti che trovi ancora difficili o che non hai esercitato da molto tempo. Ciò che conosci bene tornerà più avanti. Solo tu puoi vederlo.",
+  "explain.practiceWithQuiz": "Esercitati su {name} con un breve quiz"
 }

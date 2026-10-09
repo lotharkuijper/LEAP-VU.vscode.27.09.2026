@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Samo za administratore: zahtjevi, pogreške poslužitelja i vrijeme odgovora po komponenti, potrošnja tokena za Azure OpenAI po kolegiju i po tjednu te dokumenti koji nisu ispravno učitani. Nema podataka o osobama.",
   "analytics.thermometer.noData": "U ovom razdoblju još nema podataka iz kvizova ili chata o tvojim pojmovima.",
   "analytics.thermometer.showAll": "Prikaži svih {n} pojmova",
-  "analytics.thermometer.showWithData": "Samo pojmovi s podacima"
+  "analytics.thermometer.showWithData": "Samo pojmovi s podacima",
+  "quiz.progress.practiced": "{n} od {total} uvježbano",
+  "quiz.progress.practiceButton": "Vježbaj ono što ti je teško",
+  "quiz.progress.reason.weak": "Još teško",
+  "quiz.progress.reason.due": "Vrijeme je za ponavljanje",
+  "quiz.progress.reason.dueDays": "Prije {n} dana · ponoviti",
+  "quiz.progress.reason.new": "Još nije uvježbano",
+  "quiz.progress.reason.ok": "Ide dobro",
+  "quiz.progress.showAll": "Prikaži svih {n} pojmova",
+  "quiz.progress.showLess": "Prikaži manje",
+  "help.quiz.progress.title": "Tvoj napredak",
+  "help.quiz.progress.body": "Za svaki pojam tvoj rezultat u posljednja tri kviza. \"Vježbaj ono što ti je teško\" bira pojmove koji su ti još teški ili ih dugo nisi vježbao/la. Ono što dobro znaš vratit će se kasnije. Samo ti to vidiš.",
+  "explain.practiceWithQuiz": "Vježbaj {name} kratkim kvizom"
 }

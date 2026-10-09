@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Yalnızca yöneticiler için: bölüm başına istekler, sunucu hataları ve yanıt süresi, kurs ve hafta başına Azure OpenAI token kullanımı ve düzgün içe aktarılmamış belgeler. Kişilere ait veri yok.",
   "analytics.thermometer.noData": "Bu dönemde kavramlarınla ilgili henüz quiz veya sohbet verisi yok.",
   "analytics.thermometer.showAll": "Tüm {n} kavramı göster",
-  "analytics.thermometer.showWithData": "Yalnızca verisi olan kavramlar"
+  "analytics.thermometer.showWithData": "Yalnızca verisi olan kavramlar",
+  "quiz.progress.practiced": "{total} içinden {n} çalışıldı",
+  "quiz.progress.practiceButton": "Zorlandığın konuları çalış",
+  "quiz.progress.reason.weak": "Hâlâ zor",
+  "quiz.progress.reason.due": "Tekrar etme zamanı",
+  "quiz.progress.reason.dueDays": "{n} gün önce · tekrar et",
+  "quiz.progress.reason.new": "Henüz çalışılmadı",
+  "quiz.progress.reason.ok": "İyi gidiyor",
+  "quiz.progress.showAll": "Tüm {n} kavramı göster",
+  "quiz.progress.showLess": "Daha az göster",
+  "help.quiz.progress.title": "İlerlemen",
+  "help.quiz.progress.body": "Her kavram için son üç quizindeki puanın. \"Zorlandığın konuları çalış\" hâlâ zorlandığın veya uzun süredir çalışmadığın kavramları seçer. İyi bildiklerin daha sonra tekrar karşına çıkar. Bunu yalnızca sen görürsün.",
+  "explain.practiceWithQuiz": "{name} konusunu kısa bir quiz ile çalış"
 }

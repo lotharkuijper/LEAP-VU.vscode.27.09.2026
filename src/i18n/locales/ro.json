@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Doar pentru administratori: solicitări, erori de server și timp de răspuns per componentă, utilizarea tokenurilor Azure OpenAI per curs și pe săptămână, și documente care nu au fost importate corect. Fără date despre persoane.",
   "analytics.thermometer.noData": "În această perioadă nu există încă date despre chestionare sau chat pentru conceptele tale.",
   "analytics.thermometer.showAll": "Afișează toate cele {n} concepte",
-  "analytics.thermometer.showWithData": "Doar conceptele cu date"
+  "analytics.thermometer.showWithData": "Doar conceptele cu date",
+  "quiz.progress.practiced": "{n} din {total} exersate",
+  "quiz.progress.practiceButton": "Exersează ce ți se pare dificil",
+  "quiz.progress.reason.weak": "Încă dificil",
+  "quiz.progress.reason.due": "E timpul să repeți",
+  "quiz.progress.reason.dueDays": "acum {n} zile · repetă",
+  "quiz.progress.reason.new": "Încă neexersat",
+  "quiz.progress.reason.ok": "Merge bine",
+  "quiz.progress.showAll": "Afișează toate cele {n} concepte",
+  "quiz.progress.showLess": "Afișează mai puțin",
+  "help.quiz.progress.title": "Progresul tău",
+  "help.quiz.progress.body": "Pentru fiecare concept, scorul tău din ultimele trei quizuri. „Exersează ce ți se pare dificil” alege concepte care încă ți se par dificile sau pe care nu le-ai exersat de mult. Ce știi bine revine mai târziu. Doar tu vezi asta.",
+  "explain.practiceWithQuiz": "Exersează {name} cu un quiz scurt"
 }

@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Solo para administradores: solicitudes, errores del servidor y tiempo de respuesta por componente, uso de tokens de Azure OpenAI por curso y por semana, y documentos que no se han leído correctamente. Sin datos sobre personas.",
   "analytics.thermometer.noData": "Aún no hay datos de cuestionarios o chats sobre tus conceptos en este período.",
   "analytics.thermometer.showAll": "Mostrar los {n} conceptos",
-  "analytics.thermometer.showWithData": "Solo conceptos con datos"
+  "analytics.thermometer.showWithData": "Solo conceptos con datos",
+  "quiz.progress.practiced": "{n} de {total} practicados",
+  "quiz.progress.practiceButton": "Practica lo que te cuesta",
+  "quiz.progress.reason.weak": "Todavía cuesta",
+  "quiz.progress.reason.due": "Hora de repasar",
+  "quiz.progress.reason.dueDays": "hace {n} días · repasar",
+  "quiz.progress.reason.new": "Aún no practicado",
+  "quiz.progress.reason.ok": "Va bien",
+  "quiz.progress.showAll": "Mostrar los {n} conceptos",
+  "quiz.progress.showLess": "Mostrar menos",
+  "help.quiz.progress.title": "Tu progreso",
+  "help.quiz.progress.body": "Por concepto, tu puntuación en tus últimos tres cuestionarios. \"Practica lo que te cuesta\" elige conceptos que aún te cuestan o que no has practicado desde hace tiempo. Lo que conoces bien volverá más adelante. Solo tú ves esto.",
+  "explain.practiceWithQuiz": "Practica {name} con un cuestionario breve"
 }

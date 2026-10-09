@@ -24,6 +24,12 @@ import { shouldCelebrate, type ReadinessResult } from '../lib/readiness';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
 
 
+// Handtekening van een opgeslagen tutorantwoord (staat in retrieved_context).
+function turnSigOf(row: unknown): { sig?: string } {
+  const sig = (row as { retrieved_context?: { turnSig?: unknown } | null })?.retrieved_context?.turnSig;
+  return typeof sig === 'string' ? { sig } : {};
+}
+
 interface ChatMessage extends Message {
   id: string;
   timestamp: string;
@@ -673,7 +679,7 @@ export function ChatPage() {
       content: msg.content,
       timestamp: msg.created_at,
       retrievedContext: msg.retrieved_context,
-      ...(typeof msg.retrieved_context?.turnSig === 'string' ? { sig: msg.retrieved_context.turnSig } : {}),
+      ...turnSigOf(msg),
     })));
   };
 

@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Hanya untuk admin: permintaan, kesalahan server, dan waktu respons per bagian, penggunaan token Azure OpenAI per mata kuliah dan per minggu, serta dokumen yang tidak terbaca dengan baik. Tidak ada data tentang individu.",
   "analytics.thermometer.noData": "Belum ada data kuis atau chat tentang konsep-konsepmu pada periode ini.",
   "analytics.thermometer.showAll": "Tampilkan semua {n} konsep",
-  "analytics.thermometer.showWithData": "Hanya konsep dengan data"
+  "analytics.thermometer.showWithData": "Hanya konsep dengan data",
+  "quiz.progress.practiced": "{n} dari {total} sudah dilatih",
+  "quiz.progress.practiceButton": "Latih yang menurutmu sulit",
+  "quiz.progress.reason.weak": "Masih sulit",
+  "quiz.progress.reason.due": "Waktunya mengulang",
+  "quiz.progress.reason.dueDays": "{n} hari lalu · ulangi",
+  "quiz.progress.reason.new": "Belum dilatih",
+  "quiz.progress.reason.ok": "Sudah baik",
+  "quiz.progress.showAll": "Tampilkan semua {n} konsep",
+  "quiz.progress.showLess": "Tampilkan lebih sedikit",
+  "help.quiz.progress.title": "Progresmu",
+  "help.quiz.progress.body": "Untuk setiap konsep, skormu dari tiga kuis terakhirmu. \"Latih yang menurutmu sulit\" memilih konsep yang masih sulit bagimu atau sudah lama tidak kamu latih. Yang sudah kamu kuasai akan muncul lagi nanti. Hanya kamu yang bisa melihat ini.",
+  "explain.practiceWithQuiz": "Latih {name} dengan kuis singkat"
 }

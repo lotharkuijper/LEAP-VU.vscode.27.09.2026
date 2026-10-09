@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Réservé aux administrateurs : requêtes, erreurs serveur et temps de réponse par composant, utilisation des tokens Azure OpenAI par cours et par semaine, et documents qui n’ont pas été correctement importés. Aucune donnée personnelle.",
   "analytics.thermometer.noData": "Aucune donnée de quiz ou de chat sur tes concepts pour cette période.",
   "analytics.thermometer.showAll": "Afficher les {n} concepts",
-  "analytics.thermometer.showWithData": "Seulement les concepts avec des données"
+  "analytics.thermometer.showWithData": "Seulement les concepts avec des données",
+  "quiz.progress.practiced": "{n} sur {total} travaillés",
+  "quiz.progress.practiceButton": "Travaille ce qui te semble difficile",
+  "quiz.progress.reason.weak": "Encore difficile",
+  "quiz.progress.reason.due": "Il est temps de réviser",
+  "quiz.progress.reason.dueDays": "Il y a {n} jours · à réviser",
+  "quiz.progress.reason.new": "Pas encore travaillé",
+  "quiz.progress.reason.ok": "Ça se passe bien",
+  "quiz.progress.showAll": "Afficher les {n} notions",
+  "quiz.progress.showLess": "Afficher moins",
+  "help.quiz.progress.title": "Ta progression",
+  "help.quiz.progress.body": "Pour chaque notion, ton score sur tes trois derniers quiz. « Travaille ce qui te semble difficile » choisit les notions que tu trouves encore difficiles ou que tu n’as pas travaillées depuis longtemps. Ce que tu connais bien reviendra plus tard. Toi seul peux voir cela.",
+  "explain.practiceWithQuiz": "Travaille {name} avec un court quiz"
 }

@@ -1041,6 +1041,18 @@ export function ExplainPage() {
                   lang={lang}
                 />
               )}
+
+              {/* Volgende stap: oefen dit begrip met een korte quiz. */}
+              {feedback && selectedConcept && (
+                <a
+                  href={`/quiz?concept=${encodeURIComponent(selectedConcept.id)}&name=${encodeURIComponent(selectedConcept.name)}`}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
+                  data-testid="link-practice-quiz"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {t('explain.practiceWithQuiz', { name: conceptName(selectedConcept) })}
+                </a>
+              )}
             </>
           )}
         </div>

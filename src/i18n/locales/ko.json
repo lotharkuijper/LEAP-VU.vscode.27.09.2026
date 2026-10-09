@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "관리자 전용: 구성 요소별 요청, 서버 오류 및 응답 시간, 강좌별 및 주별 Azure OpenAI 토큰 사용량, 제대로 가져오지 못한 문서. 개인에 대한 데이터는 없음.",
   "analytics.thermometer.noData": "이 기간에는 아직 네 개념에 대한 퀴즈 또는 채팅 데이터가 없어.",
   "analytics.thermometer.showAll": "모든 {n}개 개념 표시",
-  "analytics.thermometer.showWithData": "데이터가 있는 개념만"
+  "analytics.thermometer.showWithData": "데이터가 있는 개념만",
+  "quiz.progress.practiced": "{total}개 중 {n}개 연습함",
+  "quiz.progress.practiceButton": "어려운 것 연습하기",
+  "quiz.progress.reason.weak": "아직 어려움",
+  "quiz.progress.reason.due": "복습할 시간",
+  "quiz.progress.reason.dueDays": "{n}일 전 · 복습",
+  "quiz.progress.reason.new": "아직 연습하지 않음",
+  "quiz.progress.reason.ok": "잘하고 있음",
+  "quiz.progress.showAll": "개념 {n}개 모두 보기",
+  "quiz.progress.showLess": "덜 보기",
+  "help.quiz.progress.title": "너의 진행 상황",
+  "help.quiz.progress.body": "각 개념별로 최근 세 번의 퀴즈 점수를 보여줘. \"어려운 것 연습하기\"는 아직 어렵거나 오랫동안 연습하지 않은 개념을 선택해. 잘 아는 내용은 나중에 다시 나와. 이건 너만 볼 수 있어.",
+  "explain.practiceWithQuiz": "짧은 퀴즈로 {name} 연습하기"
 }

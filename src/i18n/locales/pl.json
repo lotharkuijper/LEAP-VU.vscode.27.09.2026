@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Tylko dla administratorów: żądania, błędy serwera i czas odpowiedzi według części, użycie tokenów Azure OpenAI według kursu i tygodnia oraz dokumenty, które nie zostały poprawnie wczytane. Bez danych o osobach.",
   "analytics.thermometer.noData": "W tym okresie nie ma jeszcze danych z quizów ani czatów dotyczących twoich pojęć.",
   "analytics.thermometer.showAll": "Pokaż wszystkie {n} pojęcia",
-  "analytics.thermometer.showWithData": "Tylko pojęcia z danymi"
+  "analytics.thermometer.showWithData": "Tylko pojęcia z danymi",
+  "quiz.progress.practiced": "Przećwiczono {n} z {total}",
+  "quiz.progress.practiceButton": "Ćwicz to, co sprawia ci trudność",
+  "quiz.progress.reason.weak": "Nadal trudne",
+  "quiz.progress.reason.due": "Czas na powtórkę",
+  "quiz.progress.reason.dueDays": "{n} dni temu · powtórka",
+  "quiz.progress.reason.new": "Jeszcze niećwiczone",
+  "quiz.progress.reason.ok": "Idzie dobrze",
+  "quiz.progress.showAll": "Pokaż wszystkie pojęcia ({n})",
+  "quiz.progress.showLess": "Pokaż mniej",
+  "help.quiz.progress.title": "Twój postęp",
+  "help.quiz.progress.body": "Dla każdego pojęcia widzisz swój wynik z ostatnich trzech quizów. „Ćwicz to, co sprawia ci trudność” wybiera pojęcia, które nadal sprawiają ci trudność albo których dawno nie ćwiczyłeś/ćwiczyłaś. To, co dobrze znasz, wróci później. Tylko ty to widzisz.",
+  "explain.practiceWithQuiz": "Ćwicz {name} w krótkim quizie"
 }

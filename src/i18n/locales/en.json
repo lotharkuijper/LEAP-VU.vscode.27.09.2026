@@ -690,7 +690,7 @@
   "quiz.verificationFailedDetail": "{failed} checks failed due to a technical error; those questions were withheld as a precaution. Last error: {error}",
   "quiz.estimate.single": "Estimated wait: about {seconds} seconds",
   "quiz.estimate.range": "Estimated wait: about {low}–{high} seconds (every question is strictly checked first)",
-  "quiz.progress.title": "LEAP is putting your quiz together",
+  "quiz.progress.title": "Your progress per concept",
   "quiz.progress.count": "{approved} of {target} questions approved",
   "quiz.progress.remaining": "About {seconds} seconds to go…",
   "quiz.progress.almostDone": "Almost there…",
@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Admins only: requests, server errors and response time per component, Azure OpenAI token use per course and per week, and documents that were not processed properly. No data about individuals.",
   "analytics.thermometer.noData": "No quiz or chat data about your concepts in this period yet.",
   "analytics.thermometer.showAll": "Show all {n} concepts",
-  "analytics.thermometer.showWithData": "Only concepts with data"
+  "analytics.thermometer.showWithData": "Only concepts with data",
+  "quiz.progress.practiced": "{n} of {total} practised",
+  "quiz.progress.practiceButton": "Practise what you find hard",
+  "quiz.progress.reason.weak": "Still hard",
+  "quiz.progress.reason.due": "Time to review",
+  "quiz.progress.reason.dueDays": "{n} days ago · review",
+  "quiz.progress.reason.new": "Not practised yet",
+  "quiz.progress.reason.ok": "Going well",
+  "quiz.progress.showAll": "Show all {n} concepts",
+  "quiz.progress.showLess": "Show less",
+  "help.quiz.progress.title": "Your progress",
+  "help.quiz.progress.body": "Per concept, your score over your last three quizzes. \"Practise what you find hard\" picks concepts you still find hard or have not practised for a while. What you know well comes back later. Only you can see this.",
+  "explain.practiceWithQuiz": "Practise {name} with a short quiz"
 }

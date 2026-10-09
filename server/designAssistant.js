@@ -64,6 +64,8 @@ export const ADMIN_SECTIONS = [
 export const OTHER_PAGES = [
   { path: '(zijpaneel in heel Beheer)', label: 'Ontwerphulp', helpGroups: ['designAssistant'],
     what: 'Dit gesprek zelf: een zijpaneel dat open blijft terwijl de docent tussen onderdelen wisselt. Links in je antwoorden openen het onderdeel achter het paneel.' },
+  { path: '/quiz', label: 'Quiz (studentkant)', helpGroups: ['quiz'],
+    what: 'Studenten zien per begrip hun eigen voortgang (alleen voor henzelf) en kunnen "Oefen wat je lastig vindt" kiezen: gespreide herhaling op basis van hun eigen quizscores. De standaardmoeilijkheid volgt hun leerniveau; na "Ik leg uit" kunnen ze direct een quiz over dat begrip starten.' },
   { path: '/admin/courses', label: 'Cursussen beheren', what: 'Cursussen aanmaken, leden beheren, beschikbaar maken voor studenten.' },
   { path: '/projects', label: 'Projectruimte', what: 'De werkplek van een groep. Alleen de groepsleden zien wat daar gebeurt; docenten niet (privacy). Docenten zien in Projecten alleen wie in welke groep zit. Het contact met een rolspeler herstellen en extra gesprekken toekennen kan alleen een beheerder.' },
 ];

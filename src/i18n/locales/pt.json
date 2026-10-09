@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Apenas para administradores: pedidos, erros do servidor e tempo de resposta por componente, utilização de tokens do Azure OpenAI por curso e por semana, e documentos que não foram importados corretamente. Sem dados sobre pessoas.",
   "analytics.thermometer.noData": "Neste período ainda não há dados de questionários ou chat sobre os teus conceitos.",
   "analytics.thermometer.showAll": "Mostrar todos os {n} conceitos",
-  "analytics.thermometer.showWithData": "Apenas conceitos com dados"
+  "analytics.thermometer.showWithData": "Apenas conceitos com dados",
+  "quiz.progress.practiced": "{n} de {total} praticados",
+  "quiz.progress.practiceButton": "Pratica o que achas difícil",
+  "quiz.progress.reason.weak": "Ainda difícil",
+  "quiz.progress.reason.due": "Está na hora de rever",
+  "quiz.progress.reason.dueDays": "há {n} dias · rever",
+  "quiz.progress.reason.new": "Ainda não praticado",
+  "quiz.progress.reason.ok": "Está a correr bem",
+  "quiz.progress.showAll": "Mostrar todos os {n} conceitos",
+  "quiz.progress.showLess": "Mostrar menos",
+  "help.quiz.progress.title": "O teu progresso",
+  "help.quiz.progress.body": "Por conceito, a tua pontuação nos teus últimos três questionários. \"Pratica o que achas difícil\" escolhe conceitos que ainda achas difíceis ou que não praticas há muito tempo. O que já conheces bem volta mais tarde. Só tu vês isto.",
+  "explain.practiceWithQuiz": "Pratica {name} com um questionário curto"
 }

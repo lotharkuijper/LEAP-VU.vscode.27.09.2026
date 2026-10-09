@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Лише для адміністраторів: запити, помилки сервера та час відповіді за розділами, використання токенів Azure OpenAI за курсом і за тижнем, а також документи, які було зчитано некоректно. Без даних про осіб.",
   "analytics.thermometer.noData": "У цей період ще немає даних вікторин або чату щодо твоїх понять.",
   "analytics.thermometer.showAll": "Показати всі {n} поняття",
-  "analytics.thermometer.showWithData": "Лише поняття з даними"
+  "analytics.thermometer.showWithData": "Лише поняття з даними",
+  "quiz.progress.practiced": "{n} з {total} відпрацьовано",
+  "quiz.progress.practiceButton": "Потренуй те, що тобі важко",
+  "quiz.progress.reason.weak": "Ще важко",
+  "quiz.progress.reason.due": "Час повторити",
+  "quiz.progress.reason.dueDays": "{n} днів тому · повторити",
+  "quiz.progress.reason.new": "Ще не відпрацьовано",
+  "quiz.progress.reason.ok": "Добре виходить",
+  "quiz.progress.showAll": "Показати всі {n} поняття",
+  "quiz.progress.showLess": "Показати менше",
+  "help.quiz.progress.title": "Твій прогрес",
+  "help.quiz.progress.body": "Для кожного поняття — твій результат за останні три тести. «Потренуй те, що тобі важко» вибирає поняття, які тобі ще складні або які ти давно не відпрацьовував/відпрацьовувала. Те, що ти добре знаєш, повернеться пізніше. Це бачиш лише ти.",
+  "explain.practiceWithQuiz": "Потренуй {name} у короткому тесті"
 }

@@ -690,7 +690,7 @@
   "quiz.verificationFailedDetail": "{failed} controles mislukten door een technische fout; die vragen zijn uit voorzorg niet getoond. Laatste fout: {error}",
   "quiz.estimate.single": "Geschatte wachttijd: ongeveer {seconds} seconden",
   "quiz.estimate.range": "Geschatte wachttijd: ongeveer {low}–{high} seconden (elke vraag wordt eerst streng gecontroleerd)",
-  "quiz.progress.title": "LEAP stelt je quiz samen",
+  "quiz.progress.title": "Jouw voortgang per begrip",
   "quiz.progress.count": "{approved} van {target} vragen goedgekeurd",
   "quiz.progress.remaining": "Nog ongeveer {seconds} seconden…",
   "quiz.progress.almostDone": "Bijna klaar…",
@@ -2834,5 +2834,17 @@
   "help.analytics.platform.body": "Alleen voor beheerders: verzoeken, serverfouten en responstijd per onderdeel, tokengebruik van Azure OpenAI per cursus en per week, en documenten die niet goed zijn ingelezen. Geen gegevens over personen.",
   "analytics.thermometer.noData": "In deze periode nog geen quiz- of chatgegevens over je begrippen.",
   "analytics.thermometer.showAll": "Toon alle {n} begrippen",
-  "analytics.thermometer.showWithData": "Alleen begrippen met gegevens"
+  "analytics.thermometer.showWithData": "Alleen begrippen met gegevens",
+  "quiz.progress.practiced": "{n} van {total} geoefend",
+  "quiz.progress.practiceButton": "Oefen wat je lastig vindt",
+  "quiz.progress.reason.weak": "Nog lastig",
+  "quiz.progress.reason.due": "Tijd om te herhalen",
+  "quiz.progress.reason.dueDays": "{n} dagen geleden · herhalen",
+  "quiz.progress.reason.new": "Nog niet geoefend",
+  "quiz.progress.reason.ok": "Gaat goed",
+  "quiz.progress.showAll": "Toon alle {n} begrippen",
+  "quiz.progress.showLess": "Minder tonen",
+  "help.quiz.progress.title": "Jouw voortgang",
+  "help.quiz.progress.body": "Per begrip je score over je laatste drie quizzen. \"Oefen wat je lastig vindt\" kiest begrippen die je nog lastig vindt of lang niet hebt geoefend. Wat je goed kent, komt later terug. Alleen jij ziet dit.",
+  "explain.practiceWithQuiz": "Oefen {name} met een korte quiz"
 }
