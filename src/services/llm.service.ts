@@ -6,6 +6,8 @@ import { tStatic } from '../i18n/translations';
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  /** Handtekening van de server bij een echt tutorantwoord (telt voor "klaar voor een hoger niveau?"). */
+  sig?: string;
 }
 
 export interface LLMResponse {
@@ -13,6 +15,8 @@ export interface LLMResponse {
   error?: string;
   /** Alleen bij een readiness-vraag: het oordeel van de server. */
   readiness?: ReadinessResult;
+  /** Handtekening van deze beurt (tutorchat); bewaar hem bij het antwoord. */
+  turnSig?: string;
 }
 
 export class LLMError extends Error {
@@ -175,7 +179,11 @@ export async function sendChatMessage(
       throw new LLMError(tStatic(_getLang(), 'llm.err.emptyAnswer'), 502, 'empty_response', 'empty content');
     }
 
-    return data.readiness ? { content, readiness: data.readiness as ReadinessResult } : { content };
+    return {
+      content,
+      ...(data.readiness ? { readiness: data.readiness as ReadinessResult } : {}),
+      ...(typeof data.turnSig === 'string' ? { turnSig: data.turnSig } : {}),
+    };
   } catch (error: any) {
     console.error('[LLM] Error calling chat API:', error);
     // LLMError (afkomstig uit callChatAPI of het lege-antwoord-pad) ongewijzigd

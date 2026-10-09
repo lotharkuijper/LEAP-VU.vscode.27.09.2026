@@ -172,11 +172,11 @@ import {
 } from './consultationLimit.js';
 import { setRelationshipLevelImpl, applyConversationJudgement, precomputeJudgement } from './threadClose.js';
 import { createClosePrep, generateThreadSummary } from './threadClosePrep.js';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHmac } from 'node:crypto';
 import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, buildDuplicateSuggestionPrompt, buildMergeSuggestions, mapLimit } from './conceptConsolidation.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
 import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
-import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countPriorStudentMessages, levelName, topicKey } from './readiness.js';
+import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countVerifiedPriorStudentMessages, turnSignature, levelName, topicKey } from './readiness.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -263,6 +263,11 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const SUPERUSER_EMAIL = 'l.d.j.kuijper@vu.nl';
 
 let supabaseAdmin = null;
+// Ondertekening van echte tutorbeurten (zie server/readiness.js). Eigen geheim
+// via LEAP_TURN_SECRET, anders afgeleid van de service-role-sleutel.
+const TURN_SECRET = process.env.LEAP_TURN_SECRET
+  || createHmac('sha256', String(process.env.SUPABASE_SERVICE_ROLE_KEY || 'leap-dev')).update('leap-turn-v1').digest('hex');
+const turnHmac = (text) => createHmac('sha256', TURN_SECRET).update(text).digest('base64url');
 if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
   supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -658,7 +663,8 @@ app.post('/api/chat', async (req, res) => {
   // Bron-instructieblok voor [1]/[2]/... citaten (gedeeld met de persona-chat).
   const chatSourcesBlock = buildSourcesInstructionBlock(sources);
 
-  const userMessages = Array.isArray(messages) ? messages.filter(m => m.role !== 'system') : [];
+  const rawUserMessages = Array.isArray(messages) ? messages.filter(m => m && m.role !== 'system') : [];
+  const userMessages = rawUserMessages.map(m => ({ role: m.role, content: m.content }));
 
   let finalMessages;
   if (skipSystemPrompt) {
@@ -891,13 +897,20 @@ app.post('/api/chat', async (req, res) => {
           verdict: readinessParsed.verdict,
           topic: readinessParsed.topic,
           topics: readinessCtx.topics,
-          priorStudentMessages: countPriorStudentMessages(userMessages),
+          // Alleen beurten die de server zelf heeft beantwoord tellen mee.
+          priorStudentMessages: countVerifiedPriorStudentMessages(rawUserMessages, { hmac: turnHmac, userId: auth.user.id, courseId }),
           currentLevel: readinessCtx.currentLevel,
         });
         data.readiness = await recordReadinessOutcome({ user: auth.user, courseId, lang, outcome, answerText: readinessParsed.text });
       } catch (rErr) {
         console.warn('[/api/chat] readiness-verwerking mislukt:', rErr?.message || rErr);
       }
+    }
+    // Tutorchat: onderteken deze beurt, zodat hij later meetelt voor "klaar
+    // voor een hoger niveau?" (de browser bewaart de handtekening bij het antwoord).
+    if (req.body?.purpose === 'tutor_chat' && courseId) {
+      const lastUser = [...userMessages].reverse().find(m => m.role === 'user');
+      if (lastUser) data.turnSig = turnSignature(turnHmac, { userId: auth.user.id, courseId, content: lastUser.content });
     }
     return res.json(data);
   } catch (err) {
@@ -999,13 +1012,17 @@ async function createReadinessJournalEntry({ user, courseId, lang, outcome, answ
   }
 }
 
-async function resolveJournalCourseId(courseId) {
+async function resolveJournalCourseId(courseId, user = null) {
   if (!courseId || typeof courseId !== 'string' || !JOURNAL_UUID_RE.test(courseId)) return null;
   if (!supabaseAdmin) return null;
   try {
     const { data } = await supabaseAdmin
       .from('courses').select('id').eq('id', courseId).maybeSingle();
-    return data?.id || null;
+    if (!data?.id) return null;
+    // Alleen een cursus die de student ook echt mag gebruiken (geen labels
+    // van andermans cursus op je dagboek).
+    if (user && !(await userHasCourseAccess(user, null, data.id))) return null;
+    return data.id;
   } catch { return null; }
 }
 
@@ -1135,7 +1152,7 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`
               const chatData = await chatResp.json();
               const summaryContent = chatData.choices?.[0]?.message?.content;
               if (summaryContent) {
-                const journalCourseId = await resolveJournalCourseId(courseId);
+                const journalCourseId = await resolveJournalCourseId(courseId, user);
                 const { data: entry, error: journalError } = await supabaseAdmin
                   .from('learning_journal_entries')
                   .insert({
@@ -7313,7 +7330,7 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`
             const chatData = await chatResp.json();
             const summaryContent = chatData.choices?.[0]?.message?.content;
             if (summaryContent) {
-              const journalCourseId = await resolveJournalCourseId(courseId);
+              const journalCourseId = await resolveJournalCourseId(courseId, user);
               const { data: entry, error: journalError } = await supabaseAdmin
                 .from('learning_journal_entries')
                 .insert({
@@ -7643,7 +7660,7 @@ app.post('/api/quiz/save-summary', async (req, res) => {
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const params = buildQuizSummaryParams({ topics, difficulty, questionType, questions, answers, scorePercentage, lang });
-    const journalCourseId = await resolveJournalCourseId(courseId);
+    const journalCourseId = await resolveJournalCourseId(courseId, user);
     const result = await generateAndSaveQuizSummary({ user, lang, courseId: journalCourseId, ...params });
 
     if (result.summaryFailed) {
@@ -7707,7 +7724,7 @@ app.post(['/api/quiz/delete', '/api/quiz/archive'], async (req, res) => {
         scorePercentage: row.score_percentage,
         lang,
       });
-      const journalCourseId = await resolveJournalCourseId(courseId);
+      const journalCourseId = await resolveJournalCourseId(courseId, user);
       const result = await generateAndSaveQuizSummary({ user, lang, courseId: journalCourseId, ...params });
       journalEntryId = result.journalEntryId;
       summaryFailed = result.summaryFailed;

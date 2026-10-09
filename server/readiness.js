@@ -72,6 +72,39 @@ export function countPriorStudentMessages(messages) {
   return users.slice(0, -1).filter(m => String(m.content || '').trim().length >= MIN_MESSAGE_CHARS).length;
 }
 
+// ── Echte beurten (2026-10-09) ────────────────────────────────────────────────
+// De gespreksgeschiedenis komt uit de browser en kon dus verzonnen worden om
+// een prestatie te "verdienen". Daarom ondertekent de server elke beurt die
+// echt door de tutor is beantwoord: HMAC over (gebruiker, cursus, tekst van het
+// studentbericht). De browser bewaart die handtekening bij het antwoord en
+// stuurt hem mee (`sig` op het assistent-bericht). Alleen ondertekende beurten
+// tellen voor MIN_STUDENT_MESSAGES.
+
+/** Handtekening van één beurt. `hmac(text)` levert een hex/base64-HMAC met het servergeheim. */
+export function turnSignature(hmac, { userId, courseId, content }) {
+  return hmac(`leap-turn-v1|${userId}|${courseId}|${String(content || '').trim()}`);
+}
+
+/**
+ * Pure: telt de eigen, inhoudelijke berichten van de student vóór de
+ * readiness-vraag die direct gevolgd worden door een door de server
+ * ondertekend antwoord voor precies dat bericht, deze gebruiker en cursus.
+ */
+export function countVerifiedPriorStudentMessages(messages, { hmac, userId, courseId }) {
+  const list = Array.isArray(messages) ? messages : [];
+  let lastUser = -1;
+  for (let i = list.length - 1; i >= 0; i--) if (list[i]?.role === 'user') { lastUser = i; break; }
+  let n = 0;
+  for (let i = 0; i < lastUser; i++) {
+    const m = list[i];
+    const next = list[i + 1];
+    if (m?.role !== 'user' || next?.role !== 'assistant' || typeof next.sig !== 'string') continue;
+    if (String(m.content || '').trim().length < MIN_MESSAGE_CHARS) continue;
+    if (next.sig === turnSignature(hmac, { userId, courseId, content: m.content })) n++;
+  }
+  return n;
+}
+
 /** Pure: het onderwerp uit het label koppelen aan een begrip van de cursus (of null). */
 export function matchTopic(topic, topics) {
   if (!topic) return null;

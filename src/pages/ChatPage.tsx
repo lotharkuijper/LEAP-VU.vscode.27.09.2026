@@ -672,7 +672,8 @@ export function ChatPage() {
       role: msg.role as 'user' | 'assistant',
       content: msg.content,
       timestamp: msg.created_at,
-      retrievedContext: msg.retrieved_context
+      retrievedContext: msg.retrieved_context,
+      ...(typeof msg.retrieved_context?.turnSig === 'string' ? { sig: msg.retrieved_context.turnSig } : {}),
     })));
   };
 
@@ -913,7 +914,8 @@ export function ChatPage() {
         role: 'assistant',
         content: response.content,
         timestamp: new Date().toISOString(),
-        retrievedContext,
+        retrievedContext: response.turnSig ? { ...retrievedContext, turnSig: response.turnSig } : retrievedContext,
+        ...(response.turnSig ? { sig: response.turnSig } : {}),
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -961,7 +963,7 @@ export function ChatPage() {
 
     const isFirstMessage = messages.length === 0;
     const history: Message[] = [
-      ...messages.slice(-10).map(msg => ({ role: msg.role, content: msg.content })),
+      ...messages.slice(-10).map(msg => ({ role: msg.role, content: msg.content, ...(msg.sig ? { sig: msg.sig } : {}) })),
       { role: 'user' as const, content: userMessage.content },
     ];
 

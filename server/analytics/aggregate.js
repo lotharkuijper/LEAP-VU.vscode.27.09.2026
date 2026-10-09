@@ -59,6 +59,26 @@ function topicMatches(topic, concept) {
 }
 
 /**
+ * Gemiddelde waarin elke student even zwaar weegt: eerst per student, dan
+ * over de studenten. Zo kan één student met veel pogingen (of verzonnen
+ * pogingen) het cijfer niet domineren. Geeft { students, attempts, avg }.
+ */
+export function perStudentAverage(rows) {
+  const by = new Map();
+  for (const a of rows) {
+    const cur = by.get(a.student_id) || { sum: 0, n: 0 };
+    cur.sum += a.score_percentage; cur.n++;
+    by.set(a.student_id, cur);
+  }
+  const means = [...by.values()].map(v => v.sum / v.n);
+  return {
+    students: by.size,
+    attempts: rows.length,
+    avg: means.length ? Math.round(means.reduce((x, y) => x + y, 0) / means.length) : null,
+  };
+}
+
+/**
  * Begrippen-thermometer voor één cursus.
  *  attempts: [{ student_id, topics: string[], score_percentage }]
  *  concepts: [{ name, aliases }]
@@ -68,41 +88,34 @@ function topicMatches(topic, concept) {
  */
 export function buildConceptThermometer({ attempts = [], concepts = [], chatRows = [], k = K_MIN }) {
   const perConcept = concepts.map(c => {
-    const students = new Set();
-    let sum = 0, n = 0;
-    for (const a of attempts) {
-      if (!Array.isArray(a.topics) || !a.topics.some(t => topicMatches(t, c))) continue;
-      if (typeof a.score_percentage !== 'number') continue;
-      students.add(a.student_id);
-      sum += a.score_percentage;
-      n++;
-    }
-    const enough = students.size >= k;
+    const rows = attempts.filter(a => Array.isArray(a.topics) && a.topics.some(t => topicMatches(t, c))
+      && typeof a.score_percentage === 'number');
+    const s = perStudentAverage(rows);
+    const enough = s.students >= k;
     const chat = (kind) => chatRows.filter(r => r.kind === kind && r.key === c.name).reduce((s, r) => s + Number(r.n || 0), 0);
     const asked = chat('chat_concept_hit') + chat('chat_concept_miss');
     const misses = chat('chat_concept_miss');
     return {
       name: c.name,
       quiz: {
-        attempts: enough ? n : null,
-        avgScore: enough && n ? Math.round(sum / n) : null,
-        suppressed: students.size > 0 && !enough,
+        attempts: enough ? s.attempts : null,
+        avgScore: enough ? s.avg : null,
+        suppressed: s.students > 0 && !enough,
       },
       chat: { asked, misses },
     };
   });
 
   const ev = (key) => chatRows.filter(r => r.kind === 'chat_evidence' && r.key === key).reduce((s, r) => s + Number(r.n || 0), 0);
-  const allStudents = new Set(attempts.filter(a => typeof a.score_percentage === 'number').map(a => a.student_id));
-  const scored = attempts.filter(a => typeof a.score_percentage === 'number');
-  const courseEnough = allStudents.size >= k;
+  const course = perStudentAverage(attempts.filter(a => typeof a.score_percentage === 'number'));
+  const courseEnough = course.students >= k;
 
   return {
     k,
     quiz: {
-      attempts: courseEnough ? scored.length : null,
-      avgScore: courseEnough && scored.length ? Math.round(scored.reduce((s, a) => s + a.score_percentage, 0) / scored.length) : null,
-      suppressed: allStudents.size > 0 && !courseEnough,
+      attempts: courseEnough ? course.attempts : null,
+      avgScore: courseEnough ? course.avg : null,
+      suppressed: course.students > 0 && !courseEnough,
     },
     chat: { hit: ev('hit'), miss: ev('miss') },
     concepts: perConcept,
@@ -115,15 +128,15 @@ export function weeklyQuizSeries(attempts = [], k = K_MIN) {
   for (const a of attempts) {
     if (typeof a.score_percentage !== 'number' || !a.created_at) continue;
     const w = weekStart(new Date(a.created_at));
-    const cur = byWeek.get(w) || { students: new Set(), sum: 0, n: 0 };
-    cur.students.add(a.student_id); cur.sum += a.score_percentage; cur.n++;
-    byWeek.set(w, cur);
+    if (!byWeek.has(w)) byWeek.set(w, []);
+    byWeek.get(w).push(a);
   }
-  return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([week, v]) => (
-    v.students.size >= k
-      ? { week, avgScore: Math.round(v.sum / v.n), attempts: v.n }
-      : { week, avgScore: null, attempts: null, suppressed: true }
-  ));
+  return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([week, rows]) => {
+    const v = perStudentAverage(rows);
+    return v.students >= k
+      ? { week, avgScore: v.avg, attempts: v.attempts }
+      : { week, avgScore: null, attempts: null, suppressed: true };
+  });
 }
 
 /** Telt ingest-problemen in één cursus (zelfde regels als "Klaar voor studenten"). */
