@@ -38,6 +38,8 @@ export const ADMIN_SECTIONS = [
     what: 'Praktische cursusinformatie (rooster, deadlines) die de chat mag gebruiken voor praktische vragen.' },
   { tab: 'learning_levels', labelKey: 'admin.tabs.learningLevels', audience: 'all', helpGroups: ['learningLevels'],
     what: 'Overzicht van de leerniveaus die studenten zelf kiezen (alleen bekijken).' },
+  { tab: 'analytics', labelKey: 'admin.tabs.analytics', audience: 'all', helpGroups: ['analytics'],
+    what: 'Analyse, alleen in totalen (cijfers op minder dan 5 studenten blijven verborgen). Docent: begrippen-thermometer met gemiddelde quizscore per begrip en chatvragen waarvoor de chat geen goed bewijs in het materiaal vond. Beheerder: ook gezondheid en kosten (fouten, responstijd, tokens, inleesproblemen).' },
   { tab: 'prompts', labelKey: 'admin.tabs.prompts', audience: 'all', helpGroups: ['chatInstructions'],
     what: 'Chat-instructies: toon en aanpak van de tutor in de chat en bij Ik leg uit, eventueel per cursus.' },
   { tab: 'rag_settings', labelKey: 'admin.tabs.ragSettings', audience: 'all', helpGroups: ['searchSensitivity'],

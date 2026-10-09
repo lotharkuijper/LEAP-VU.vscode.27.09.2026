@@ -49,6 +49,9 @@ export const HELP_TOPICS = [
   'searchSensitivity.overview',
   'searchSensitivity.tryTerm',
   'learningLevels.overview',
+  // Analyse (losse module: src/features/analytics)
+  'analytics.thermometer',
+  'analytics.platform',
   'chatInstructions.overview',
   // Verdieping (fase 2/3)
   'quizSources.coverage',

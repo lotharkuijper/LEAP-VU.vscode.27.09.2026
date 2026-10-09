@@ -130,6 +130,7 @@ import {
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
+import { installAnalytics } from './analytics/index.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
 import { buildSourcesInstructionBlock, buildNumberedRagContext } from './citationSources.js';
@@ -269,6 +270,10 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
 } else {
   console.warn('[API Server] SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL missing — admin routes disabled');
 }
+
+// Analytics: geaggregeerde tellers, losse module (zie server/analytics/index.js).
+// Staat vóór de routes zodat de meting elk /api-verzoek ziet.
+installAnalytics(app, { getDb: () => supabaseAdmin, authUser, isStaffForCourse, isLeapAdmin });
 
 // === Azure OpenAI (chat/completions) ===
 // Alle chat-/completion-aanroepen lopen via de Azure OpenAI-resource van de VU

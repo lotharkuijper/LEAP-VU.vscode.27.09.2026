@@ -6,7 +6,7 @@ import { getActiveLang } from '../i18n/activeLang';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Users, UserPlus, FileUp, BookOpen, Settings, Search, Upload, File, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Eye, Tag, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, History } from 'lucide-react';
+import { BarChart3, Users, UserPlus, FileUp, BookOpen, Settings, Search, Upload, File, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Eye, Tag, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Database } from '../lib/database.types';
 import { DocumentUploadModal } from '../components/DocumentUploadModal';
@@ -17,6 +17,7 @@ import { QuizSourcesAdminPanel } from '../components/QuizSourcesAdminPanel';
 import CursusInfoTab from '../components/CursusInfoTab';
 import { ProjectsAdminTab } from './admin/ProjectsAdminTab';
 import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
+import { AnalyticsAdminTab } from '../features/analytics/AnalyticsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { classifyConceptForTeacher, getDifficultyTier, type ConceptClass, type DifficultyTier } from '../lib/conceptClassification';
@@ -64,7 +65,7 @@ interface ChatbotPrompt {
   updated_at: string;
 }
 
-type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels';
+type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels' | 'analytics';
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -260,7 +261,7 @@ export function AdminPage() {
       try { localStorage.setItem('leap-design-assistant-open', '1'); } catch { /* */ }
       t = 'material';
     }
-    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
+    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics'];
     if (t && allowed.includes(t)) return t;
     return isAdmin ? 'users' : 'material';
   })();
@@ -313,7 +314,7 @@ export function AdminPage() {
     }
     const t = raw as TabType | null;
     if (t && t !== activeTab) {
-      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels'];
+      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics'];
       if (allowed.includes(t)) setActiveTabState(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1515,6 +1516,7 @@ const tabs = [
   { id: 'projects_admin' as TabType, label: t('admin.tabs.projects'), icon: FolderTree, show: isAdmin || isDocent },
   { id: 'course_info' as TabType, label: t('admin.tabs.courseInfo'), icon: BookText, show: isAdmin || isDocent },
   { id: 'learning_levels' as TabType, label: t('admin.tabs.learningLevels'), icon: GraduationCap, show: isAdmin || isDocent },
+  { id: 'analytics' as TabType, label: t('admin.tabs.analytics'), icon: BarChart3, show: isAdmin || isDocent },
   { id: 'settings' as TabType, label: t('admin.tabs.settings'), icon: Settings, show: isAdmin },
 ].filter(tab => tab.show);
 
@@ -1522,7 +1524,7 @@ const tabs = [
 // Cursusmateriaal voorop; systeemzaken apart (admin); de vorige indeling blijft
 // bereikbaar als ingeklapte "Klassieke weergave".
 const tabGroups = [
-  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
+  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'analytics', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
   { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'], collapsible: false },
   { key: 'classic', label: t('admin.tabGroups.classic'), ids: ['documents', 'rag_beheer', 'concepts'], collapsible: true },
 ].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
@@ -2609,6 +2611,7 @@ const tabGroups = [
           {activeTab === 'quiz_sources' && <QuizSourcesAdminPanel />}
           {activeTab === 'course_info' && <CursusInfoTab />}
           {activeTab === 'learning_levels' && <LearningLevelsAdminTab />}
+          {activeTab === 'analytics' && <AnalyticsAdminTab onOpenMaterial={() => setActiveTab('material')} />}
 
 
           {activeTab === 'prompts' && (

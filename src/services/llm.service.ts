@@ -164,6 +164,8 @@ export async function sendChatMessage(
       sources: sources && sources.length > 0 ? sources : undefined,
       learningLevel,
       courseId,
+      // Alleen voor de (losse) analytics-module: telt of de tutorchat bewijs vond.
+      purpose: 'tutor_chat',
       ...(options?.readinessCheck ? { readinessCheck: true } : {}),
     });
 

@@ -100,7 +100,7 @@
 - Roles can only be changed by an admin or the server (trigger `pr_guard_profile_role`).
 
 ## Design assistant ("Ontwerphulp")
-- This is an optional chatbot for teachers in Beheer (tab `design_assistant`). It is an experiment since 2026-10-07. The rollback point is git tag `pre-ontwerphulp-2026-10-07`, and the admin can switch it off in the tab itself.
+- This is an optional chatbot for teachers in Beheer: a side panel (`DesignAssistantDock`) opened from a tab on the right edge, available in every Beheer section and kept open while switching sections. It knows where the teacher is (`describePlace`). It is an experiment since 2026-10-07. The rollback point is git tag `pre-ontwerphulp-2026-10-07`, and the admin can switch it off via the gear in the panel.
 - It must keep up with the engine. Its knowledge of LEAP is NEVER hand-written in the prompt; it is assembled per question in `server/designAssistant.js` from:
   - `ADMIN_SECTIONS` (tabs + who may use them);
   - the help texts (`help.*` in nl.json);
@@ -108,6 +108,14 @@
   - the course state, fetched through the existing admin routes with the teacher's token.
 - When you add, remove or re-permission an admin tab, or add a new help-text group, update `ADMIN_SECTIONS`. `server/__tests__/designAssistant.test.js` fails until you do.
 - Only the admin can change the bot's way of working (prompt) and the on/off switch (chatbot_prompts rows `__design_assistant_prompt__` / `__design_assistant_enabled__`). The bot never changes anything itself; it gives advice and drafts.
+
+## Analytics (tab "Analyse", since 2026-10-09)
+- A deliberately LOOSE module, so it can be removed as one piece. Server code lives in `server/analytics/`, frontend in `src/features/analytics/`. The header of `server/analytics/index.js` lists every touchpoint elsewhere: one import and one `installAnalytics(…)` call in `server/index.js`, `purpose: 'tutor_chat'` in `sendChatMessage`, the tab in `AdminPage`, `ADMIN_SECTIONS`, the help ids and the locale keys. Do not call analytics code from other modules; `server/__tests__/analytics.test.js` checks that `server/index.js` touches it only through that one import and call.
+- Only aggregates, never people:
+  - The table `analytics_counters` holds counters per (week, course, kind, key) with no user ids, no timestamps and no question text. Migration `20261009100000_analytics_counters`, rollback script next to it.
+  - Quiz figures are computed live from `quiz_attempts` and hidden below `K_MIN` = 5 distinct students (per concept, per course and per week).
+- Measuring happens in one middleware (requests, duration, 5xx errors) and a wrapper around global `fetch` (Azure OpenAI `usage` tokens, attributed to the running request via AsyncLocalStorage). Tutor-chat questions are matched against concept names and aliases in memory, and only the concept name is counted. Measuring must never break a request: every hook is wrapped in try/catch, and a missing table pauses writing.
+- Teachers see the concept thermometer for their own course (`isStaffForCourse`). Platform health and costs are for LEAP admins only.
 
 ## Background tasks
 - Admin actions that take longer than a few seconds run as a background task via `startTask` (`src/lib/backgroundTasks.ts`), not only inside the component. Examples: extracting concepts, uploading files, importing or updating websites, and ShareStats imports.
