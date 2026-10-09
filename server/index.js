@@ -131,6 +131,7 @@ import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
 import { installAnalytics } from './analytics/index.js';
+import { createUserCache, createProfileCache } from './authCache.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
 import { buildSourcesInstructionBlock, buildNumberedRagContext } from './citationSources.js';
@@ -276,6 +277,13 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
 } else {
   console.warn('[API Server] SUPABASE_SERVICE_ROLE_KEY or SUPABASE_URL missing — admin routes disabled');
 }
+
+// Inlogcontrole en profiel kort onthouden (server/authCache.js): scheelt per
+// verzoek een rondgang naar de inlogserver en een profielvraag. In tests uit.
+const AUTH_CACHE_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : Number(process.env.LEAP_AUTH_CACHE_MS ?? 30000);
+const userCache = createUserCache({ ttlMs: AUTH_CACHE_TTL_MS });
+const profileCache = createProfileCache({ ttlMs: AUTH_CACHE_TTL_MS });
+const loadProfileRoleEmail = (id) => supabaseAdmin.from('profiles').select('role, email').eq('id', id).maybeSingle();
 
 // Analytics: geaggregeerde tellers, losse module (zie server/analytics/index.js).
 // Staat vóór de routes zodat de meting elk /api-verzoek ziet.
@@ -1050,7 +1058,7 @@ app.post(['/api/chat/delete', '/api/chat/archive'], async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Niet geauthenticeerd' });
     }
@@ -1264,11 +1272,10 @@ app.put('/api/rag-settings', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     // Per-cursus RAG: vereist staff voor die cursus. Globale defaults:
     // alleen admin.
@@ -1385,11 +1392,10 @@ app.get('/api/rag-settings/overrides', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     const isAllowed = await isStaffAnywhere(user, profile);
     if (!isAllowed) return res.status(403).json({ error: 'Onvoldoende rechten' });
@@ -1439,11 +1445,10 @@ app.delete('/api/rag-settings/:courseId', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     const isAllowed = await isStaffForCourse(user, profile, courseId);
     if (!isAllowed) return res.status(403).json({ error: 'Onvoldoende rechten' });
@@ -1482,11 +1487,10 @@ app.post('/api/admin/test-rag-similarity', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     // Diagnose mag door admin én docent uitgevoerd worden
     // (consistent met /api/rag-settings: zelfde gebruikers die drempels mogen aanpassen,
@@ -1719,7 +1723,7 @@ app.get('/api/course-rag-folder-ids', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -1763,8 +1767,7 @@ app.get('/api/course-rag-folder-ids', async (req, res) => {
 async function resolveAdminUser(req) {
   const auth = await authUser(req);
   if (auth.error) return { error: auth.error };
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+  const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
   if (!profile) return { error: { status: 403, body: { error: 'Profiel niet gevonden' } } };
   const isAdmin = profile.role === 'admin' || profile.email === SUPERUSER_EMAIL;
   // Task #165: 'docent' is geen globale rol meer. Voor backward-compat
@@ -2786,8 +2789,7 @@ app.post('/api/admin/process-pptx', async (req, res) => {
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { user } = auth;
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+  const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
   const { documentId, lang = 'nl' } = req.body || {};
   if (!documentId) return res.status(400).json({ error: 'documentId vereist' });
@@ -2844,8 +2846,7 @@ app.post('/api/admin/process-docx', async (req, res) => {
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { user } = auth;
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+  const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
   const { documentId } = req.body || {};
   if (!documentId) return res.status(400).json({ error: 'documentId vereist' });
@@ -2905,8 +2906,7 @@ app.post('/api/admin/process-rag-document', async (req, res) => {
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { user } = auth;
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+  const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
   const { documentId, lang = 'nl' } = req.body || {};
   if (!documentId) return res.status(400).json({ error: 'documentId vereist' });
@@ -3028,16 +3028,12 @@ app.post('/api/admin/create-rag-folder', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile, error: profileError } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     if (profileError || !profile) {
       return res.status(403).json({ error: 'Could not verify user role' });
@@ -5040,16 +5036,12 @@ app.get('/api/rag-enabled-folders', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: callerProfile } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: callerProfile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     const isAdmin = callerProfile?.role === 'admin' || callerProfile?.email === SUPERUSER_EMAIL;
 
@@ -5152,7 +5144,7 @@ app.get('/api/folder-type', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -5192,11 +5184,10 @@ app.post('/api/admin/record-doc-mutation', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Not authenticated' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     if (!(await isStaffForCourse(user, profile, courseId))) {
       return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
@@ -5249,16 +5240,12 @@ app.get('/api/admin/concepts-meta', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile, error: profileError } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     if (profileError || !profile) {
       return res.status(403).json({ error: 'Could not verify user role' });
@@ -5414,7 +5401,7 @@ async function requireConceptStaff(req, res, courseId) {
   const auth = await authUser(req);
   if (auth.error) { res.status(auth.error.status).json(auth.error.body); return null; }
   if (!courseId) { res.status(400).json({ error: 'courseId is vereist' }); return null; }
-  const { data: profile } = await supabaseAdmin.from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+  const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
   if (!(await isStaffForCourse(auth.user, profile, courseId))) { res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' }); return null; }
   return auth.user;
 }
@@ -5588,16 +5575,12 @@ async function extractConceptsHandler(req, res) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile, error: profileError } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     if (profileError || !profile) {
       return res.status(403).json({ error: 'Could not verify user role' });
@@ -6561,7 +6544,7 @@ app.get('/api/concepts', async (req, res) => {
     global: { headers: { Authorization: authHeader } },
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: { user }, error: userError } = await callerClient.auth.getUser();
+  const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
   if (userError || !user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -6581,8 +6564,7 @@ app.get('/api/concepts', async (req, res) => {
   let canUseManageScope = false;
   if (scope === 'manage') {
     try {
-      const { data: profile } = await supabaseAdmin
-        .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+      const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
       canUseManageScope = profile?.role === 'admin' || profile?.role === 'docent' || profile?.email === SUPERUSER_EMAIL;
     } catch { /* best effort — val terug op gefilterd */ }
   }
@@ -6707,16 +6689,12 @@ app.post('/api/admin/concepts/set-approval', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile, error: profileError } = await profileCache.get(user.id, loadProfileRoleEmail);
     if (profileError || !profile) {
       return res.status(403).json({ error: 'Could not verify user role' });
     }
@@ -6823,16 +6801,12 @@ app.delete('/api/admin/concepts/:id', async (req, res) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile, error: profileError } = await profileCache.get(user.id, loadProfileRoleEmail);
 
     if (profileError || !profile) {
       return res.status(403).json({ error: 'Could not verify user role' });
@@ -6872,7 +6846,7 @@ app.get('/api/journal', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const { data, error } = await supabaseAdmin
@@ -6912,11 +6886,10 @@ app.patch('/api/journal/:id', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
     // Alleen admin/superuser mag andermans journal-entries bewerken.
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
 
@@ -6957,11 +6930,10 @@ app.delete('/api/journal/:id', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
     // Alleen admin/superuser mag andermans journal-entries verwijderen.
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
 
@@ -7001,7 +6973,7 @@ app.get('/api/explain/history', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     // Cursus-scoping (Task #246): alleen uitleg van begrippen uit de actieve
@@ -7099,7 +7071,7 @@ app.get('/api/explain/:id', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const { id } = req.params;
@@ -7143,7 +7115,7 @@ app.post('/api/explain/save', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     // Bepaal nieuwe versie op basis van bestaande pogingen
@@ -7207,7 +7179,7 @@ app.delete('/api/explain/:id', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const { id } = req.params;
@@ -7251,7 +7223,7 @@ app.post(['/api/explain/delete', '/api/explain/archive'], async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const { data: row, error: fetchErr } = await supabaseAdmin
@@ -7656,7 +7628,7 @@ app.post('/api/quiz/save-summary', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const params = buildQuizSummaryParams({ topics, difficulty, questionType, questions, answers, scorePercentage, lang });
@@ -7698,7 +7670,7 @@ app.post(['/api/quiz/delete', '/api/quiz/archive'], async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const { data: row, error: fetchErr } = await supabaseAdmin
@@ -7779,7 +7751,7 @@ app.post('/api/projects/save-summary', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const { data: row, error: fetchErr } = await supabaseAdmin
@@ -7946,7 +7918,7 @@ app.get('/api/admin/prompts-migration-status', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: userError } = await callerClient.auth.getUser();
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
     const { data: profile } = await supabaseAdmin.from('profiles').select('role').eq('id', user.id).maybeSingle();
     const isAdminCheck = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
@@ -9005,16 +8977,12 @@ async function requireAuthUser(req, res) {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error } = await callerClient.auth.getUser();
+    const { data: { user }, error } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (error || !user) {
       res.status(401).json({ error: 'Niet geauthenticeerd' });
       return null;
     }
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
     return { user, profile: profile || { role: 'student' } };
   } catch (err) {
     res.status(401).json({ error: 'Authenticatie mislukt: ' + err.message });
@@ -9151,16 +9119,12 @@ async function requireAdminOrDocent(req, res) {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error } = await callerClient.auth.getUser();
+    const { data: { user }, error } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (error || !user) {
       res.status(401).json({ error: 'Niet geauthenticeerd' });
       return null;
     }
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('role, email')
-      .eq('id', user.id)
-      .maybeSingle();
+    const { data: profile } = await profileCache.get(user.id, loadProfileRoleEmail);
     const isSuperuser = profile?.email === SUPERUSER_EMAIL;
     // Toegestaan voor superuser/admin, of voor wie in minstens één cursus
     // docent is. Per-cursus checks volgen in de aanroepende endpoint.
@@ -9919,7 +9883,7 @@ app.get('/api/quiz/prompts', async (req, res) => {
       global: { headers: { Authorization: authHeader } },
       auth: { autoRefreshToken: false, persistSession: false },
     });
-    const { data: { user }, error: uErr } = await callerClient.auth.getUser();
+    const { data: { user }, error: uErr } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (uErr || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
     const names = Object.keys(QUIZ_PROMPT_DEFAULTS);
@@ -10501,7 +10465,7 @@ async function authUser(req) {
     global: { headers: { Authorization: authHeader } },
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: { user }, error } = await callerClient.auth.getUser();
+  const { data: { user }, error } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
   if (error || !user) return { error: { status: 401, body: { error: 'Niet geauthenticeerd' } } };
   return { user };
 }
@@ -10629,8 +10593,7 @@ app.post('/api/projects/groups', async (req, res) => {
     // Autorisatie: alleen leden van de cursus (of staff) mogen een groep
     // aanmaken. Voorkomt dat een willekeurige ingelogde user buiten de cursus
     // groepen aanmaakt op andermans projecten.
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
     if (!isStaff) {
       if (!project.course_id || !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
@@ -10702,8 +10665,7 @@ app.post('/api/projects/groups/join', async (req, res) => {
     // een gelekte code een buitenstaander toegang tot de chat geven.
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', group.project_id).maybeSingle();
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = await isStaffForCourse(auth.user, profile, project?.course_id);
     if (!isStaff && project?.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
       return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
@@ -10754,15 +10716,19 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
   const { groupId } = req.query;
 
   try {
-    const { data: project } = await supabaseAdmin
-      .from('projects').select('*').eq('id', projectId).maybeSingle();
+    // Project, profiel en groep hangen niet van elkaar af: tegelijk ophalen.
+    const [{ data: project }, { data: profile }, groupRes] = await Promise.all([
+      supabaseAdmin.from('projects').select('*').eq('id', projectId).maybeSingle(),
+      profileCache.get(auth.user.id, loadProfileRoleEmail),
+      groupId
+        ? supabaseAdmin.from('project_groups').select('*').eq('id', groupId).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
 
     // Authorisatie: ook zonder groupId moeten we project-toegang afdwingen
     // (anders lekken we projectinhoud + persona-bibliotheek aan iedere ingelogde
     // user, ongeacht cursus-toegang).
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
     const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
     if (!isStaff && !(await userHasProjectAccess(auth.user, profile, project))) {
       return res.status(403).json({ error: 'Geen toegang tot dit project' });
@@ -10771,29 +10737,51 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
     let group = null;
     let members = [];
     if (groupId) {
-      const { data: g } = await supabaseAdmin
-        .from('project_groups').select('*').eq('id', groupId).maybeSingle();
+      const g = groupRes.data;
       if (!g) return res.status(404).json({ error: 'Groep niet gevonden' });
       if (g.project_id !== projectId) return res.status(400).json({ error: 'Groep hoort niet bij dit project' });
 
-      const isMember = await isGroupMember(g.id, auth.user.id);
+      const [isMember, { data: m }] = await Promise.all([
+        isGroupMember(g.id, auth.user.id),
+        supabaseAdmin
+          .from('project_group_members')
+          .select('id, user_id, role, joined_at, profiles(id, full_name, email)')
+          .eq('group_id', g.id),
+      ]);
       if (!isMember && !isLeapAdmin(profile)) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
       group = g;
-
-      const { data: m } = await supabaseAdmin
-        .from('project_group_members')
-        .select('id, user_id, role, joined_at, profiles(id, full_name, email)')
-        .eq('group_id', g.id);
       members = m || [];
     }
+
+    // Project-brede docent-documenten (read-only voor studenten).
+    // Studenten zien alleen bestanden die is_visible_to_students = true hebben.
+    let pdQuery = supabaseAdmin
+      .from('project_documents')
+      .select('id, filename, byte_size, mime_type, document_ref_id, is_visible_to_students, uploaded_by, created_at')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false });
+    if (!isStaff) pdQuery = pdQuery.eq('is_visible_to_students', true);
+
+    // Personas, tussenstanden, documenten en beoordelaars: tegelijk.
+    const [{ data: pp }, { data: cps }, { data: projectDocs }, { data: evRows }] = await Promise.all([
+      supabaseAdmin.from('project_personas').select('*').eq('project_id', projectId).order('sort_order'),
+      group
+        ? supabaseAdmin.from('group_checkpoints').select('*').eq('group_id', group.id).order('created_at', { ascending: false })
+        : Promise.resolve({ data: [] }),
+      pdQuery,
+      supabaseAdmin
+        .from('project_personas')
+        .select('id, name, avatar_emoji, avatar, persona_type')
+        .eq('project_id', projectId)
+        .eq('persona_type', 'evaluator')
+        .order('sort_order'),
+    ]);
 
     // Personas: project-eigen heeft voorrang; anders bibliotheek van de cursus.
     // Studenten zien evaluator-persona's NIET; staff wel (zodat ze in de
     // beheer-flow zichtbaar blijven en de evaluate-knop in de UI verschijnt).
     let personas = [];
     let evaluatorCount = 0;
-    const { data: pp } = await supabaseAdmin
-      .from('project_personas').select('*').eq('project_id', projectId).order('sort_order');
     if (pp && pp.length > 0) {
       // Alleen project-eigen evaluators tellen mee voor hasEvaluator zodat de
       // UI-knop precies overeenkomt met wat /evaluate kan beoordelen
@@ -10823,34 +10811,13 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       }];
     }
 
-    let checkpoints = [];
-    if (group) {
-      const { data: cps } = await supabaseAdmin
-        .from('group_checkpoints').select('*').eq('group_id', group.id).order('created_at', { ascending: false });
-      checkpoints = cps || [];
-    }
-
-    // Project-brede docent-documenten (read-only voor studenten).
-    // Studenten zien alleen bestanden die is_visible_to_students = true hebben.
-    let pdQuery = supabaseAdmin
-      .from('project_documents')
-      .select('id, filename, byte_size, mime_type, document_ref_id, is_visible_to_students, uploaded_by, created_at')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-    if (!isStaff) pdQuery = pdQuery.eq('is_visible_to_students', true);
-    const { data: projectDocs } = await pdQuery;
+    const checkpoints = cps || [];
 
     // Task #166: minimale evaluator-info voor non-staff zodat de
     // document-review UI per upload de avatars + "Vraag oordeel aan"-knop kan
     // tonen, zonder de evaluators door de persona-dropdown te leaken.
     let evaluators = [];
     {
-      const { data: evRows } = await supabaseAdmin
-        .from('project_personas')
-        .select('id, name, avatar_emoji, avatar, persona_type')
-        .eq('project_id', projectId)
-        .eq('persona_type', 'evaluator')
-        .order('sort_order');
       const evIds = (evRows || []).map(p => p.id);
       // Task #253: voor studenten zichtbaar gemaakte rubrics per evaluator.
       // Staff ziet ook alle rubrics (incl. niet-zichtbare) met hun status.
@@ -10898,23 +10865,24 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       const lang = normalizeLang(req.query.lang);
       const projectPersonas = personas.filter(p => p._source === 'project');
       // Lui auto-close per persona met een ingesteld venster.
-      for (const p of projectPersonas) {
-        if (conNormalizeAutoCloseHours(p.auto_close_hours) === null) continue;
-        try {
-          await autoCloseStaleThreads({
-            groupId: group.id, personaId: p.id,
-            autoCloseHours: p.auto_close_hours,
-            closedBy: auth.user.id, lang,
-          });
-        } catch (e) {
-          console.warn('[room] auto-close mislukte:', e.message);
-        }
-      }
+      await Promise.all(projectPersonas
+        .filter(p => conNormalizeAutoCloseHours(p.auto_close_hours) !== null)
+        .map(p => autoCloseStaleThreads({
+          groupId: group.id, personaId: p.id,
+          autoCloseHours: p.auto_close_hours,
+          closedBy: auth.user.id, lang,
+        }).catch(e => console.warn('[room] auto-close mislukte:', e.message))));
       // Verbruik (threads, open + gesloten) per persona tellen.
-      const { data: allThreads } = await supabaseAdmin
-        .from('group_persona_threads')
-        .select('persona_id, closed_at')
-        .eq('group_id', group.id);
+      const [{ data: allThreads }, { data: grants, error: grantErr }] = await Promise.all([
+        supabaseAdmin
+          .from('group_persona_threads')
+          .select('persona_id, closed_at')
+          .eq('group_id', group.id),
+        supabaseAdmin
+          .from('project_persona_consultation_grants')
+          .select('persona_id, extra_consultations')
+          .eq('project_id', projectId).eq('group_id', group.id),
+      ]);
       const usedByPersona = new Map();
       const openByPersona = new Set();
       (allThreads || []).forEach(t => {
@@ -10923,10 +10891,6 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       });
       // Extra toekenningen per persona (defensief tegen ontbrekende tabel).
       const extraByPersona = new Map();
-      const { data: grants, error: grantErr } = await supabaseAdmin
-        .from('project_persona_consultation_grants')
-        .select('persona_id, extra_consultations')
-        .eq('project_id', projectId).eq('group_id', group.id);
       if (!grantErr) {
         (grants || []).forEach(g => extraByPersona.set(g.persona_id, conNormalizeExtra(g.extra_consultations)));
       }
@@ -10976,15 +10940,19 @@ app.post('/api/projects/persona-chat', async (req, res) => {
   }
 
   try {
-    if (!(await isGroupMember(groupId, auth.user.id))) {
+    // Lidmaatschap en groep (met project) tegelijk ophalen.
+    const [isMember, { data: group }] = await Promise.all([
+      isGroupMember(groupId, auth.user.id),
+      supabaseAdmin.from('project_groups').select('id, project_id, projects(id, course_id)').eq('id', groupId).maybeSingle(),
+    ]);
+    if (!isMember) {
       return res.status(403).json({ error: 'Geen toegang tot deze groep' });
     }
-
-    const { data: group } = await supabaseAdmin
-      .from('project_groups').select('id, project_id').eq('id', groupId).maybeSingle();
     if (!group) return res.status(404).json({ error: 'Groep niet gevonden' });
-    const { data: project } = await supabaseAdmin
-      .from('projects').select('id, course_id').eq('id', group.project_id).maybeSingle();
+    // Project zit normaal in hetzelfde antwoord; anders (oudere omgeving) los ophalen.
+    const project = group.projects
+      ? { id: group.projects.id, course_id: group.projects.course_id }
+      : (await supabaseAdmin.from('projects').select('id, course_id').eq('id', group.project_id).maybeSingle()).data;
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
 
     // Persona ophalen — moet uiteindelijk een project_persona zijn (FK op
@@ -11128,95 +11096,86 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       history = prev || [];
     }
 
-    // User-bericht opslaan.
-    if (threadId) {
-      await supabaseAdmin.from('group_persona_messages').insert({
-        thread_id: threadId,
-        user_id: auth.user.id,
-        role: 'user',
-        content: message,
-      });
-    }
-
-    // RAG: chunks zoeken (alleen als persona.rag_enabled). We scopen ALTIJD
-    // op de cursusfolders — anders zou een persona zonder rag_folder_ids
-    // (`null`) feitelijk over alle cursussen heen kunnen zoeken.
-    let context = '';
-    let ragSources = [];
-    if (persona.rag_enabled) {
-      const ragSettings = await loadRagSettings(project?.course_id || null);
-      const cfg = ragSettings.project;
-      const courseFolders = await courseRagFolderIds(project?.course_id || null);
-      let folderIds;
-      if (Array.isArray(persona.rag_folder_ids) && persona.rag_folder_ids.length > 0) {
-        // Persona-folders intersecten met cursusfolders zodat een verkeerd
-        // ingestelde persona nooit buiten de cursus-scope kan zoeken.
-        const allowed = new Set(courseFolders);
-        folderIds = persona.rag_folder_ids.filter(id => allowed.has(id));
-      } else {
-        folderIds = courseFolders;
-      }
-      const { matched } = await searchChunksServerSide(
-        message, cfg.similarity_threshold, cfg.match_count, folderIds,
-        { enabled: cfg.query_expansion_enabled }, lang, 'project'
-      );
-      if (matched && matched.length > 0) {
+    // Deze stappen hangen niet van elkaar af en lopen tegelijk:
+    //  * het bericht van de student opslaan;
+    //  * RAG: chunks zoeken (alleen als persona.rag_enabled). We scopen ALTIJD
+    //    op de cursusfolders — anders zou een persona zonder rag_folder_ids
+    //    (`null`) feitelijk over alle cursussen heen kunnen zoeken;
+    //  * geüploade documenten voor deze persona — uitsluitend van de huidige
+    //    groep, zodat parallelle groepen elkaars uploads niet mengen;
+    //  * project-brede docent-uploads (zichtbaar voor alle groepen + persona's);
+    //  * eerder gemaakte afspraken uit afgesloten gesprekken met deze persona.
+    const [, rag, uploadedContext, projectDocContext, priorAgreements] = await Promise.all([
+      threadId
+        ? supabaseAdmin.from('group_persona_messages').insert({
+          thread_id: threadId,
+          user_id: auth.user.id,
+          role: 'user',
+          content: message,
+        })
+        : null,
+      (async () => {
+        if (!persona.rag_enabled) return { context: '', sources: [] };
+        const [ragSettings, courseFolders] = await Promise.all([
+          loadRagSettings(project?.course_id || null),
+          courseRagFolderIds(project?.course_id || null),
+        ]);
+        const cfg = ragSettings.project;
+        let folderIds;
+        if (Array.isArray(persona.rag_folder_ids) && persona.rag_folder_ids.length > 0) {
+          // Persona-folders intersecten met cursusfolders zodat een verkeerd
+          // ingestelde persona nooit buiten de cursus-scope kan zoeken.
+          const allowed = new Set(courseFolders);
+          folderIds = persona.rag_folder_ids.filter(id => allowed.has(id));
+        } else {
+          folderIds = courseFolders;
+        }
+        const { matched } = await searchChunksServerSide(
+          message, cfg.similarity_threshold, cfg.match_count, folderIds,
+          { enabled: cfg.query_expansion_enabled }, lang, 'project'
+        );
         // Zelfde bronverwijzingen als de chat: één genummerde bron per
         // document, zodat [n] in het antwoord klikbaar naar het cursusdocument
         // wijst en de bronnenlijst onder het antwoord klopt.
-        ({ context, sources: ragSources } = buildNumberedRagContext(matched, 5));
-      }
-    }
-
-    // Geüploade documenten voor deze persona ophalen — uitsluitend van de
-    // huidige groep, zodat parallelle groepen elkaars uploads niet mengen.
-    let uploadedContext = '';
-    if (persona.id !== '__default__') {
-      const { data: docs } = await supabaseAdmin
-        .from('project_persona_documents')
-        .select('filename, content_text')
-        .eq('project_id', project.id).eq('persona_id', persona.id).eq('group_id', groupId)
-        .order('created_at', { ascending: true })
-        .limit(10);
-      if (docs && docs.length > 0) {
+        return matched && matched.length > 0 ? buildNumberedRagContext(matched, 5) : { context: '', sources: [] };
+      })(),
+      (async () => {
+        if (persona.id === '__default__') return '';
+        const { data: docs } = await supabaseAdmin
+          .from('project_persona_documents')
+          .select('filename, content_text')
+          .eq('project_id', project.id).eq('persona_id', persona.id).eq('group_id', groupId)
+          .order('created_at', { ascending: true })
+          .limit(10);
         // Beperk per-doc tot ~6k tekens om context-window niet te overschrijden.
-        uploadedContext = docs.map(d =>
-          `[Document: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`
-        ).join('\n\n');
-      }
-    }
-
-    // Project-brede docent-uploads (zichtbaar voor alle groepen + alle persona's).
-    let projectDocContext = '';
-    {
-      const { data: pdocs } = await supabaseAdmin
-        .from('project_documents')
-        .select('filename, content_text')
-        .eq('project_id', project.id)
-        .eq('is_visible_to_students', true)
-        .not('content_text', 'is', null)
-        .order('created_at', { ascending: true })
-        .limit(10);
-      if (pdocs && pdocs.length > 0) {
-        projectDocContext = pdocs.map(d =>
-          `[Projectdocument: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`
-        ).join('\n\n');
-      }
-    }
-
-    // Eerdere gemaakte afspraken ophalen uit afgesloten gesprekken met dezelfde persona.
-    let priorAgreements = [];
-    if (persona.id !== '__default__') {
-      const { data: closedThreads } = await supabaseAdmin
-        .from('group_persona_threads')
-        .select('agreements, closed_at')
-        .eq('group_id', groupId)
-        .eq('persona_id', persona.id)
-        .not('closed_at', 'is', null)
-        .order('closed_at', { ascending: false })
-        .limit(3);
-      priorAgreements = (closedThreads || []).flatMap(t => t.agreements || []).filter(Boolean);
-    }
+        return (docs || []).map(d => `[Document: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`).join('\n\n');
+      })(),
+      (async () => {
+        const { data: pdocs } = await supabaseAdmin
+          .from('project_documents')
+          .select('filename, content_text')
+          .eq('project_id', project.id)
+          .eq('is_visible_to_students', true)
+          .not('content_text', 'is', null)
+          .order('created_at', { ascending: true })
+          .limit(10);
+        return (pdocs || []).map(d => `[Projectdocument: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`).join('\n\n');
+      })(),
+      (async () => {
+        if (persona.id === '__default__') return [];
+        const { data: closedThreads } = await supabaseAdmin
+          .from('group_persona_threads')
+          .select('agreements, closed_at')
+          .eq('group_id', groupId)
+          .eq('persona_id', persona.id)
+          .not('closed_at', 'is', null)
+          .order('closed_at', { ascending: false })
+          .limit(3);
+        return (closedThreads || []).flatMap(t => t.agreements || []).filter(Boolean);
+      })(),
+    ]);
+    const context = rag.context || '';
+    const ragSources = rag.sources || [];
 
     const agreementsBlock = priorAgreements.length > 0
       ? `\n\nGemaakte afspraken in eerdere gesprekken:\n${priorAgreements.map(a => `- ${a}`).join('\n')}`
@@ -11592,8 +11551,7 @@ app.get('/api/projects/groups/:groupId/conversation-log', async (req, res) => {
 
   try {
     const isMember = await isGroupMember(groupId, auth.user.id);
-    const { data: prof } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: prof } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     // Cursus van de groep ophalen om docent-staff per cursus te checken.
     const { data: grpRow } = await supabaseAdmin
       .from('project_groups').select('project_id, projects(course_id)').eq('id', groupId).maybeSingle();
@@ -12249,8 +12207,7 @@ app.post('/api/projects/copy-personas-from-library', async (req, res) => {
   if (!projectId) return res.status(400).json({ error: 'projectId vereist' });
 
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     // Cursus van het project ophalen om docent-status per cursus te checken.
     const { data: projForRole } = await supabaseAdmin
       .from('projects').select('course_id').eq('id', projectId).maybeSingle();
@@ -12357,8 +12314,7 @@ app.patch('/api/projects/:projectId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
 
@@ -12395,8 +12351,7 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const project = access.project;
@@ -12494,8 +12449,7 @@ app.post('/api/projects/:projectId/personas/from-library/:coursePersonaId', asyn
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, coursePersonaId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const project = access.project;
@@ -12559,8 +12513,7 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, personaId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
 
@@ -12644,8 +12597,7 @@ app.delete('/api/projects/:projectId/personas/:personaId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, personaId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const { error: e } = await supabaseAdmin
@@ -12670,8 +12622,7 @@ app.get('/api/projects/:projectId/personas/:personaId/documents', async (req, re
   const groupId = req.query.groupId ? String(req.query.groupId) : null;
   if (!groupId) return res.status(400).json({ error: 'groupId vereist' });
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     // Toegang: groepslid, óf staff van de cursus van dit project. Een docent
     // van een andere cursus krijgt geen toegang.
     const staffAccess = { ok: isLeapAdmin(profile) };
@@ -12757,8 +12708,7 @@ app.post('/api/projects/:projectId/personas/:personaId/documents',
   }
   const filename = req.file.originalname || 'upload';
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     // Schrijven = groepsleden. Admin/superuser mag als noodgreep ook
     // uploaden (bijv. om voor een groep een document recht te zetten);
     // docent zonder groepslidmaatschap mag niet schrijven.
@@ -12842,8 +12792,7 @@ app.delete('/api/projects/:projectId/personas/:personaId/documents/:docId', asyn
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, personaId, docId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const staffAccess = await requireProjectStaff(projectId, auth.user, profile);
     const isCourseStaff = staffAccess.ok;
     const { data: doc } = await supabaseAdmin
@@ -12883,8 +12832,7 @@ app.patch('/api/projects/:projectId/personas/:personaId/documents/:docId/visibil
     return res.status(400).json({ error: 'visibleToStudents moet een boolean zijn' });
   }
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const staffAccess = await requireProjectStaff(projectId, auth.user, profile);
     if (!staffAccess.ok) {
       return res.status(403).json({ error: 'Alleen een docent van deze cursus mag de zichtbaarheid wijzigen' });
@@ -12924,8 +12872,7 @@ app.get('/api/projects/:projectId/personas/:personaId/documents/:docId/download'
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, personaId, docId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
@@ -13118,8 +13065,7 @@ app.post('/api/projects/student-restart', async (req, res) => {
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
     if (project.status === 'archived') return res.status(400).json({ error: 'Project is gearchiveerd' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
     if (!isStaff && project.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
       return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
@@ -13175,8 +13121,7 @@ app.get('/api/projects/:projectId/documents', async (req, res) => {
     const { data: project } = await supabaseAdmin
       .from('projects').select('*').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     if (!(await userHasProjectAccess(auth.user, profile, project))) {
       return res.status(403).json({ error: 'Geen toegang tot dit project' });
     }
@@ -13439,8 +13384,7 @@ app.post('/api/projects/:projectId/documents', docUpload.single('file'), async (
   if (!req.file) return res.status(400).json({ error: 'Geen bestand ontvangen (veld "file")' });
   const filename = req.file.originalname || 'upload';
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const materialKind = ['assignment', 'data', 'literature', 'other'].includes(req.body?.material_kind) ? req.body.material_kind : undefined;
@@ -13473,8 +13417,7 @@ app.get('/api/projects/:projectId/documents/:docId/download', async (req, res) =
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     if (!(await userHasProjectAccess(auth.user, profile, project))) {
       return res.status(403).json({ error: 'Geen toegang tot dit project' });
     }
@@ -13550,8 +13493,7 @@ app.patch('/api/projects/:projectId/documents/:docId', async (req, res) => {
     return res.status(400).json({ error: 'is_visible_to_students moet een boolean zijn' });
   }
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const { data, error: e } = await supabaseAdmin
@@ -13572,8 +13514,7 @@ app.delete('/api/projects/:projectId/documents/:docId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, docId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     // Haal eerst document_ref_id op zodat we de documents-rij ook kunnen verwijderen.
@@ -13633,8 +13574,7 @@ app.get('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =>
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     if (!(await userHasProjectAccess(auth.user, profile, project))) {
       return res.status(403).json({ error: 'Geen toegang tot dit project' });
     }
@@ -13895,8 +13835,7 @@ async function loadFeedbackContext(req, res, { requirePersona = true } = {}) {
   const { data: group } = await supabaseAdmin
     .from('project_groups').select('id, project_id, name, status').eq('id', groupId).maybeSingle();
   if (!group || group.project_id !== projectId) { res.status(404).json({ error: 'Groep niet gevonden in dit project' }); return null; }
-  const { data: profile } = await supabaseAdmin
-    .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+  const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
   const isStaff = isLeapAdmin(profile);
   const memberOfGroup = await isGroupMember(groupId, auth.user.id);
   if (!isStaff && !memberOfGroup) { res.status(403).json({ error: 'Geen toegang tot deze groep' }); return null; }
@@ -14042,8 +13981,7 @@ app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =
       .eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
     const memberOfGroup = await isGroupMember(groupId, auth.user.id);
     const authzCheck = canRequestDocumentReview({ isStaff, isGroupMember: memberOfGroup });
@@ -14157,8 +14095,7 @@ app.get('/api/projects/:projectId/groups/:groupId/relationships', async (req, re
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = isLeapAdmin(profile);
     const memberOfGroup = await isGroupMember(groupId, auth.user.id);
     if (!isStaff && !memberOfGroup) {
@@ -14259,8 +14196,7 @@ app.post('/api/projects/:projectId/groups/:groupId/personas/:personaId/consultat
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     if (!isLeapAdmin(profile)) return res.status(403).json({ error: 'Alleen een beheerder mag extra gesprekken toekennen' });
 
     const { data: groupCheck } = await supabaseAdmin
@@ -14339,8 +14275,7 @@ async function listProjectSubmissionsHandler(req, res) {
       .from('projects').select('id, course_id, submissions_enabled').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     // 'Staff' = admin/superuser OF docent met cursus-lidmaatschap. Een docent
     // van een andere cursus mag deze submissions niet zien.
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
@@ -14487,8 +14422,7 @@ app.get('/api/projects/:projectId/submissions/:subId/download', async (req, res)
     const { data: project } = await supabaseAdmin
       .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
     const isCourseStaff = isAdmin
       || (project.course_id && await isCourseTeacher(auth.user.id, project.course_id));
@@ -14528,8 +14462,7 @@ app.delete('/api/projects/:projectId/submissions/:subId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, subId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const { error: e } = await supabaseAdmin
@@ -14565,8 +14498,7 @@ app.get('/api/admin/courses/:courseId/submissions', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { courseId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
     const isCourseStaff = isAdmin
       || (await isCourseTeacher(auth.user.id, courseId));
@@ -14625,7 +14557,7 @@ app.get('/api/projects/:projectId/groups-overview', async (req, res) => {
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   try {
-    const { data: profile } = await supabaseAdmin.from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(req.params.projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
     const { data: groups } = await supabaseAdmin
@@ -14664,8 +14596,7 @@ app.get('/api/admin/courses/:courseId/learning-levels', async (req, res) => {
   const { courseId } = req.params;
   const lang = String(req.query.lang || 'nl').toLowerCase() === 'nl' ? 'nl' : 'en';
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
     const isCourseStaff = isAdmin || (await isCourseTeacher(auth.user.id, courseId));
     if (!isCourseStaff) return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
@@ -14733,8 +14664,7 @@ app.get('/api/admin/uploads-folder/:folderId/submissions', async (req, res) => {
     if (!assign) return res.status(404).json({ error: 'Uploads-map is niet aan een cursus gekoppeld' });
     const courseId = assign.course_id;
 
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isAdmin = profile && (profile.role === 'admin' || profile.email === SUPERUSER_EMAIL);
     const isCourseStaff = isAdmin
       || (await isCourseTeacher(auth.user.id, courseId));
@@ -14804,8 +14734,7 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
     const { data: group } = await supabaseAdmin
       .from('project_groups').select('id, project_id, name').eq('id', groupId).maybeSingle();
     if (!group) return res.status(404).json({ error: 'Groep niet gevonden' });
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isMember = await isGroupMember(groupId, auth.user.id);
     if (!isMember) {
       // Niet-leden moeten staff zijn ÉN aan dit specifieke project gekoppeld.
@@ -15007,8 +14936,7 @@ app.post('/api/projects/:projectId/personas/:personaId/copy-to-library', async (
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { projectId, personaId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     // Docent van de cursus van het project of admin (requireProjectStaff); het
     // sjabloon komt in de bibliotheek van diezelfde cursus.
     const access = await requireProjectStaff(projectId, auth.user, profile);
@@ -15093,8 +15021,7 @@ app.post('/api/admin/personas/conduct-test', async (req, res) => {
   const text = typeof transcript === 'string' ? transcript.trim() : '';
   if (!text) return res.status(400).json({ error: 'Schrijf eerst een voorbeeldgesprek.' });
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     if (!(await isStaffForCourse(auth.user, profile, courseId))) {
       return res.status(403).json({ error: 'Alleen docenten van deze cursus' });
     }
@@ -15128,8 +15055,7 @@ app.post('/api/admin/course-personas', async (req, res) => {
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const { course_id, name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, badge_award_mode } = req.body || {};
     if (!course_id || !name?.trim()) return res.status(400).json({ error: 'course_id en name zijn verplicht' });
     if (!(await isStaffForCourse(auth.user, profile, course_id))) {
@@ -15171,8 +15097,7 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { personaId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const found = await loadCoursePersonaForStaff(personaId, auth.user, profile);
     if (found.error) return res.status(found.status).json({ error: found.error });
     const { name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, badge_award_mode } = req.body || {};
@@ -15222,8 +15147,7 @@ app.delete('/api/admin/course-personas/:personaId', async (req, res) => {
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   const { personaId } = req.params;
   try {
-    const { data: profile } = await supabaseAdmin
-      .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const found = await loadCoursePersonaForStaff(personaId, auth.user, profile);
     if (found.error) return res.status(found.status).json({ error: found.error });
     const { error: delErr } = await supabaseAdmin
