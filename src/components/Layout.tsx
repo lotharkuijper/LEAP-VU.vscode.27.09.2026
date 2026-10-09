@@ -7,6 +7,7 @@ import {
   BarChart3,
   Settings,
   LogOut,
+  ShieldCheck,
   Menu,
   X,
   GraduationCap,
@@ -16,6 +17,7 @@ import {
   Coffee
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Tooltip } from './help/Tooltip';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import ActiveCourseBadge from "./ActiveCourseBadge";
 import { useLanguage } from '../i18n';
@@ -171,6 +173,17 @@ export function Layout({ children }: LayoutProps) {
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
 
+              {/* MIJN GEGEVENS */}
+              <Tooltip label={t('nav.myData')}>
+                <button
+                  onClick={() => navigate('/my-data')}
+                  className="hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  data-testid="button-my-data"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                </button>
+              </Tooltip>
+
               {/* LOGOUT */}
               <button
                 onClick={handleLogout}
@@ -244,6 +257,15 @@ export function Layout({ children }: LayoutProps) {
               >
                 <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                 <span>{t('nav.refreshProfile')}</span>
+              </button>
+
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/my-data'); }}
+                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-100 transition-all font-medium w-full"
+                data-testid="button-my-data-mobile"
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span>{t('nav.myData')}</span>
               </button>
 
               <button

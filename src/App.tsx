@@ -19,6 +19,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m 
 const ActivatePage = lazy(() => import('./pages/ActivatePage').then(m => ({ default: m.ActivatePage })));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ChatPage = lazy(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
+const MyDataPage = lazy(() => import('./pages/MyDataPage').then(m => ({ default: m.MyDataPage })));
 const ExplainPage = lazy(() => import('./pages/ExplainPage').then(m => ({ default: m.ExplainPage })));
 const QuizPage = lazy(() => import('./pages/QuizPage').then(m => ({ default: m.QuizPage })));
 const ProjectsPage = lazy(() => import('./pages/ProjectsPage').then(m => ({ default: m.ProjectsPage })));
@@ -210,6 +211,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <FeedbackPage />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/my-data"
+        element={
+          <ProtectedRoute>
+            <MyDataPage />
           </ProtectedRoute>
         }
       />

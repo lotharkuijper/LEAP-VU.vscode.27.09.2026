@@ -56,6 +56,7 @@ export function createTtlCache({ ttlMs = 30000, max = 5000, now = () => Date.now
 export function createUserCache({ ttlMs = 30000, now = () => Date.now() } = {}) {
   const cache = createTtlCache({ ttlMs, now });
   const inflight = new Map();
+  const keysByUser = new Map(); // user-id → cache-sleutels (om iemand direct te vergeten)
   async function getUser(authHeader, verify) {
     const token = bearer(authHeader);
     if (!token) return verify();
@@ -71,7 +72,13 @@ export function createUserCache({ ttlMs = 30000, now = () => Date.now() } = {}) 
       try {
         const r = await verify();
         const user = r?.data?.user;
-        if (user && !r.error) cache.set(key, user, exp ?? now() + ttlMs);
+        if (user && !r.error) {
+          cache.set(key, user, exp ?? now() + ttlMs);
+          if (!keysByUser.has(user.id)) keysByUser.set(user.id, new Set());
+          const keys = keysByUser.get(user.id);
+          keys.add(key);
+          if (keys.size > 20) keys.delete(keys.values().next().value); // oudste sleutel is al lang verlopen
+        }
         return r;
       } finally {
         inflight.delete(key);
@@ -80,7 +87,12 @@ export function createUserCache({ ttlMs = 30000, now = () => Date.now() } = {}) 
     inflight.set(key, p);
     return p;
   }
-  return { getUser, clear: () => cache.clear(), size: () => cache.size() };
+  /** Direct vergeten (bv. na het verwijderen van een account). */
+  function forgetUser(userId) {
+    for (const k of keysByUser.get(userId) || []) cache.delete(k);
+    keysByUser.delete(userId);
+  }
+  return { getUser, forgetUser, clear: () => { cache.clear(); keysByUser.clear(); }, size: () => cache.size() };
 }
 
 /**

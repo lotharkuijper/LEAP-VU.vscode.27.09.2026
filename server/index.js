@@ -130,6 +130,7 @@ import {
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
+import { registerMyDataRoutes } from './myData.js';
 import { installAnalytics } from './analytics/index.js';
 import { createUserCache, createProfileCache } from './authCache.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
@@ -14158,6 +14159,15 @@ registerRelationshipAdjustRoute(app, {
   setRelationshipLevel,
   levelKey: relLevelKey,
   reputationActive,
+});
+
+// Mijn gegevens: eigen gegevens downloaden en het eigen account verwijderen (server/myData.js).
+registerMyDataRoutes(app, {
+  supabaseAdmin,
+  authUser,
+  getProfile: async (id) => (await profileCache.get(id, loadProfileRoleEmail)).data,
+  superuserEmail: SUPERUSER_EMAIL,
+  onDeleted: (id) => { userCache.forgetUser(id); profileCache.invalidate(id); },
 });
 
 // Ontwerphulp: optionele chatbot voor docenten in het beheer (server/designAssistant.js).

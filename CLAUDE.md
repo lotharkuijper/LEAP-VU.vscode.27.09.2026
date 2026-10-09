@@ -117,6 +117,29 @@
 - Measuring happens in one middleware (requests, duration, 5xx errors) and a wrapper around global `fetch` (Azure OpenAI `usage` tokens, attributed to the running request via AsyncLocalStorage). Tutor-chat questions are matched against concept names and aliases in memory, and only the concept name is counted. Measuring must never break a request: every hook is wrapped in try/catch, and a missing table pauses writing.
 - Teachers see the concept thermometer for their own course (`isStaffForCourse`). Platform health and costs are for LEAP admins only.
 
+## Learning data integrity (2026-10-09)
+- The browser writes quiz attempts, journal entries and learning levels directly, so the database guards them (migration `20261009120000_learning_data_integrity`, with rollback):
+  - The course must be usable by the user (`leap_can_use_course`).
+  - Quiz scores are recomputed by the trigger `quiz_attempt_rescore`: multiple choice against the answer key, open answers clamped to 0–100.
+  - Attempts cannot be updated afterwards; students may delete their own.
+  - Students cannot update journal entries. Never add a browser-side `.update()` on these tables; `server/__tests__/learningIntegrity.test.js` checks this.
+- "Ready for a higher level?" only counts tutor turns the server signed (`turnSignature` / `countVerifiedPriorStudentMessages` in `server/readiness.js`; HMAC with `LEAP_TURN_SECRET` or a key derived from the service-role key). The client keeps the signature on the assistant message (`sig`, stored in `retrieved_context.turnSig`). It is stripped before messages go to the model.
+- Teacher analytics average per student first (`perStudentAverage`), so many attempts by one student cannot dominate.
+
+## Auth and profile cache
+- Every `callerClient.auth.getUser()` goes through `userCache.getUser(authHeader, …)`, and every `profiles.select('role, email')` by id goes through `profileCache.get(id, loadProfileRoleEmail)` (`server/authCache.js`).
+  - TTL is 30 s and never runs past the token's `exp`.
+  - Failures are not cached, and the cache is off in tests.
+  - After deleting a user, call `userCache.forgetUser(id)` and `profileCache.invalidate(id)`.
+  - `server/__tests__/authCache.test.js` fails on a new uncached copy.
+
+## Student-facing learning loop and own data
+- "Your progress" on the quiz page (`src/lib/conceptProgress.ts`, client only, the student's own attempts) does spaced repetition: weak first, then due, then new.
+  - The default difficulty follows the learning level.
+  - `/quiz?concept=<id>&name=<name>` preselects a concept; Explain links to it.
+- My data (`/my-data`, `server/myData.js`): download everything as JSON, a printable learning record (`src/lib/learningDossier.ts`), and self-service account deletion (confirm with own email; not for admins).
+  - New tables with a user column must be listed in `EXPORT_SOURCES` or `NOT_EXPORTED`; `server/__tests__/myData.test.js` checks this.
+
 ## Background tasks
 - Admin actions that take longer than a few seconds run as a background task via `startTask` (`src/lib/backgroundTasks.ts`), not only inside the component. Examples: extracting concepts, uploading files, importing or updating websites, and ShareStats imports.
 - A task keeps running when the user moves to another part of the app. The task tray (`TaskTray`, bottom right) shows progress and a "… is done — View result" notice with a link back.

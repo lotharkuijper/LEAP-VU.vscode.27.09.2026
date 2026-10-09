@@ -33,6 +33,8 @@ export function LoginPage() {
   // Wachtwoord-vergeten-modus: toont een apart e-mailformulier i.p.v. login.
   const [isForgot, setIsForgot] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  // Na het zelf verwijderen van een account (Mijn gegevens) een bevestiging tonen.
+  const [accountDeleted] = useState(() => typeof window !== 'undefined' && (window.history.state as { usr?: { notice?: string } } | null)?.usr?.notice === 'accountDeleted');
   const { signIn, signUp } = useAuth();
   const { t, lang, setLang } = useLanguage();
 
@@ -183,6 +185,11 @@ export function LoginPage() {
             )
           ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
+            {accountDeleted && (
+              <div className="rounded-lg border border-accent-200 bg-accent-50 px-4 py-3 text-sm text-accent-800" role="status" data-testid="text-account-deleted">
+                {t('myData.delete.done')}
+              </div>
+            )}
             {isSignUp && (
               <div>
                 <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700 mb-2">
