@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Wypróbuj pojęcie",
   "help.searchSensitivity.tryTerm.body": "Wpisz pojęcie i zobacz, ile fragmentów LEAP przy tym ustawieniu znajdzie w twoich materiałach. Dzięki temu z góry zobaczysz, czy ustawienie jest zbyt szerokie lub zbyt rygorystyczne. Dla studentów nic się nie zmieni.",
   "help.learningLevels.overview.title": "Poziomy nauki",
-  "help.learningLevels.overview.body": "Studenci sami wybierają swój poziom (1–5). LEAP dostosowuje do niego wyjaśnienia na czacie, w „Wyjaśnię” oraz przy personach. Widzisz tylko, ilu studentów pracuje na każdym poziomie, a nie kto wybrał który poziom.",
+  "help.learningLevels.overview.body": "Studenci sami wybierają swój poziom (1–5). LEAP dostosowuje do niego wyjaśnienia na czacie i w sekcji „Ja wyjaśniam”, a quiz zaczyna się od odpowiedniego poziomu trudności. W projektach poziom nie ma znaczenia. Widzisz tylko, ilu studentów pracuje na każdym poziomie, ale nie to, kto wybrał jaki poziom.",
   "help.chatInstructions.overview.title": "Instrukcje czatu",
   "help.chatInstructions.overview.body": "Stałe instrukcje, które LEAP otrzymuje dla czatu i „Wyjaśniam”, takie jak ton, podejście oraz to, co AI może lub czego nie może robić. Zmiana od razu obowiązuje wszystkich studentów tego kursu. Zmieniaj ostrożnie.",
   "help.quizSources.coverage.title": "Przegląd pokrycia",

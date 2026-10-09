@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Încearcă cu un concept",
   "help.searchSensitivity.tryTerm.body": "Tastează un concept și vezi câte pasaje găsește LEAP în materialul tău cu această setare. Astfel vezi dinainte dacă setarea este prea largă sau prea strictă. Nu se schimbă nimic pentru studenți.",
   "help.learningLevels.overview.title": "Niveluri de învățare",
-  "help.learningLevels.overview.body": "Studenții își aleg singuri nivelul (1–5). LEAP adaptează în funcție de acesta explicațiile din chat, „Explic” și cele pentru personaje. Vezi doar câți studenți lucrează la fiecare nivel, nu cine alege ce nivel.",
+  "help.learningLevels.overview.body": "Studenții își aleg singuri nivelul (1–5). LEAP adaptează în funcție de acesta explicațiile din chat și de la „Eu explic”, iar quizul începe la o dificultate potrivită. În proiecte, nivelul nu are niciun rol. Vezi doar câți studenți lucrează la fiecare nivel, nu cine alege ce nivel.",
   "help.chatInstructions.overview.title": "Instrucțiuni pentru chat",
   "help.chatInstructions.overview.body": "Instrucțiunile fixe pe care LEAP le primește pentru chat și pentru „Eu explic”, precum tonul, abordarea și ce are sau nu voie să facă AI-ul. O modificare se aplică imediat tuturor studenților din acest curs. Modifică cu grijă.",
   "help.quizSources.coverage.title": "Prezentare generală a acoperirii",

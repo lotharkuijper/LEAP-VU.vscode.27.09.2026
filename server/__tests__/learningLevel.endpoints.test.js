@@ -251,10 +251,13 @@ describe('POST /api/chat — leerniveau-injectie (Task #301)', () => {
   });
 });
 
-describe('POST /api/projects/persona-chat — leerniveau-injectie (Task #301)', () => {
+// 2026-10-09: in projecten spelen leerniveaus geen rol meer (begeleider,
+// beoordelaar en rolspeler doen er niets mee). De persona-chat negeert een
+// meegestuurd niveau.
+describe('POST /api/projects/persona-chat — geen leerniveau in projecten', () => {
   const BASE = { groupId: 'g1', personaId: '__default__', message: 'Hoe begin ik mijn onderzoeksvraag?' };
 
-  it('vouwt het leerniveau-blok in de systeemprompt VÓÓR de langSuffix', async () => {
+  it('een meegestuurd niveau komt niet in de systeemprompt', async () => {
     const fetchMock = mockChatFetch();
 
     const res = await postJson('/api/projects/persona-chat', {
@@ -265,18 +268,12 @@ describe('POST /api/projects/persona-chat — leerniveau-injectie (Task #301)', 
 
     expect(res.status).toBe(200);
     const sys = systemPromptOfFirstCall(fetchMock);
-
-    expect(sys).toContain(LEVEL_MARKER_EN);
-    expect(sys).toContain(buildLevelInstructionBlock(5, 'en'));
-
-    const levelIdx = sys.indexOf(LEVEL_MARKER_EN);
-    const langIdx = sys.indexOf(LANG_MARKER);
-    expect(levelIdx).toBeGreaterThan(-1);
-    expect(langIdx).toBeGreaterThan(-1);
-    expect(levelIdx).toBeLessThan(langIdx);
+    expect(sys).not.toContain(LEVEL_MARKER_EN);
+    expect(sys).not.toContain(buildLevelInstructionBlock(5, 'en'));
+    expect(sys).toContain(LANG_MARKER);
   });
 
-  it('injecteert GEEN blok bij een ontbrekend niveau (neutraal gedrag behouden)', async () => {
+  it('zonder niveau: ook geen blok (neutraal gedrag)', async () => {
     const fetchMock = mockChatFetch();
 
     const res = await postJson('/api/projects/persona-chat', {

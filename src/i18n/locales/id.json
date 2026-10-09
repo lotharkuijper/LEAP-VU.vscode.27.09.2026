@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Coba dengan sebuah istilah",
   "help.searchSensitivity.tryTerm.body": "Ketik sebuah istilah dan lihat berapa banyak bagian yang ditemukan LEAP dalam materimu dengan pengaturan ini. Dengan begitu, kamu bisa melihat sebelumnya apakah pengaturannya terlalu luas atau terlalu ketat. Tidak ada yang berubah untuk mahasiswa.",
   "help.learningLevels.overview.title": "Tingkat pembelajaran",
-  "help.learningLevels.overview.body": "Mahasiswa memilih sendiri level mereka (1–5). LEAP menyesuaikan penjelasan di chat, “Saya jelaskan”, dan pada persona berdasarkan pilihan itu. Kamu hanya melihat berapa banyak mahasiswa yang bekerja pada tiap level, bukan siapa memilih level mana.",
+  "help.learningLevels.overview.body": "Mahasiswa memilih sendiri level mereka (1–5). LEAP menyesuaikan penjelasan di chat dan pada “Saya menjelaskan” berdasarkan level itu, dan kuis dimulai dengan tingkat kesulitan yang sesuai. Dalam proyek, level tidak berperan. Kamu hanya melihat berapa banyak mahasiswa yang bekerja di setiap level, bukan siapa yang memilih level tertentu.",
   "help.chatInstructions.overview.title": "Instruksi chat",
   "help.chatInstructions.overview.body": "Instruksi tetap yang diberikan kepada LEAP untuk chat dan “Aku jelaskan”, seperti nada, pendekatan, serta apa yang boleh atau tidak boleh dilakukan AI. Perubahan langsung berlaku untuk semua mahasiswa di mata kuliah ini. Ubah dengan hati-hati.",
   "help.quizSources.coverage.title": "Ringkasan cakupan",

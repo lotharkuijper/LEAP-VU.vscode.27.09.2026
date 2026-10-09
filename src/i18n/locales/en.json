@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Try with a concept",
   "help.searchSensitivity.tryTerm.body": "Type a concept and see how many passages LEAP finds in your material with this setting. This shows in advance whether the setting is too broad or too strict. Nothing changes for students.",
   "help.learningLevels.overview.title": "Learning levels",
-  "help.learningLevels.overview.body": "Students choose their own level (1–5). LEAP adapts the explanations in the chat, “I explain” and personas to it. You only see how many students work at each level, not who chooses which level.",
+  "help.learningLevels.overview.body": "Students choose their own level (1–5). LEAP adapts the explanations in the chat and in “I explain” to it, and the quiz starts at a matching difficulty. Levels play no role in projects. You only see how many students work at each level, not who chooses which level.",
   "help.chatInstructions.overview.title": "Chat instructions",
   "help.chatInstructions.overview.body": "The standing instructions LEAP receives for the chat and for “I explain”, such as tone, approach and what the AI may or may not do. A change applies immediately to all students of this course. Change with care.",
   "help.quizSources.coverage.title": "Coverage overview",

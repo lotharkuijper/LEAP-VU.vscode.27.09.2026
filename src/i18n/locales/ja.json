@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "用語で試す",
   "help.searchSensitivity.tryTerm.body": "用語を入力すると、この設定で LEAP が教材内から何箇所見つけるかを確認できます。設定が広すぎるか厳しすぎるかを事前に確認できます。学生向けには何も変わりません。",
   "help.learningLevels.overview.title": "学習レベル",
-  "help.learningLevels.overview.body": "学生は自分でレベル（1〜5）を選ぶよ。LEAPはそれに合わせて、チャット、「説明する」、ペルソナでの説明を調整するよ。各レベルで取り組んでいる学生数だけが表示され、誰がどのレベルを選んだかは表示されないよ。",
+  "help.learningLevels.overview.body": "学生は自分でレベル（1〜5）を選ぶ。LEAP はそれに合わせて、チャットや「説明する」での解説を調整し、クイズは適切な難易度から始まる。プロジェクトではレベルは関係しない。各レベルで取り組んでいる学生の人数だけが表示され、誰がどのレベルを選んだかは表示されない。",
   "help.chatInstructions.overview.title": "チャット指示",
   "help.chatInstructions.overview.body": "チャットと「解説する」で LEAP に常に渡される指示です。口調、進め方、AI がしてよいこと・してはいけないことなどが含まれます。変更はこのコースのすべての学生にすぐ適用されます。慎重に変更してください。",
   "help.quizSources.coverage.title": "カバレッジ概要",

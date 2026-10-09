@@ -59,6 +59,8 @@
 
 ## Learning journal
 - Automatic journal entries (reflections) are stored in three blocks: summary, feedback (went well / to improve) and next steps, in `learning_journal_entries.sections`, plus `learning_level` (the student's level at that moment, where applicable). New generators append `journalFormatInstruction(lang)` to the prompt and save `...journalFieldsFromModel(text, lang)` (`server/journalSections.js`); `content` always stays filled as readable text. The model uses fixed `### SUMMARY` etc. headings, not JSON, so LaTeX survives.
+- Project entries (interim checkpoint, final reflection, overview across conversations, summary per persona conversation) use the same blocks. Structured input is converted without an extra LLM call (`server/projectJournal.js`); free text is generated in blocks directly. Every journal insert in the checkpoint route passes `sections`; `server/__tests__/projectJournal.test.js` checks this.
+- Learning levels play no role in projects. The project room has no level selector or readiness button, and the persona chat ignores `learningLevel`.
 
 ## Achievements
 - Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input, and the topic must be an approved course concept.

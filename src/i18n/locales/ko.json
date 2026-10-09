@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "개념으로 시도하기",
   "help.searchSensitivity.tryTerm.body": "개념을 입력하고 이 설정에서 LEAP가 네 자료에서 몇 개의 구절을 찾는지 확인해. 이렇게 하면 설정이 너무 넓거나 너무 엄격한지 미리 알 수 있어. 학생들에게는 아무 변화도 없어.",
   "help.learningLevels.overview.title": "학습 수준",
-  "help.learningLevels.overview.body": "학생들은 자신의 수준(1–5)을 직접 선택해. LEAP은 이에 맞춰 채팅, “설명해줄게”, 페르소나에서 설명을 조정해. 각 수준에서 학습하는 학생 수만 볼 수 있고, 누가 어떤 수준을 선택했는지는 볼 수 없어.",
+  "help.learningLevels.overview.body": "학생들은 자신의 수준(1~5)을 직접 선택해. LEAP은 이에 맞춰 채팅과 “내가 설명할게”에서의 설명을 조정하고, 퀴즈는 적절한 난이도에서 시작돼. 프로젝트에서는 수준이 영향을 미치지 않아. 각 수준에서 몇 명의 학생이 학습하는지만 볼 수 있고, 누가 어떤 수준을 선택했는지는 볼 수 없어.",
   "help.chatInstructions.overview.title": "채팅 지침",
   "help.chatInstructions.overview.body": "채팅과 “내가 설명할게”에서 LEAP에 항상 전달되는 고정 지침이야. 예: 말투, 접근 방식, AI가 해도 되는 것과 안 되는 것. 변경 사항은 이 과목의 모든 학생에게 즉시 적용돼. 신중하게 수정해.",
   "help.quizSources.coverage.title": "범위 개요",

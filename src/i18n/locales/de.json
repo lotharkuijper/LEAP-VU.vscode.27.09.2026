@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Mit einem Begriff ausprobieren",
   "help.searchSensitivity.tryTerm.body": "Gib einen Begriff ein und sieh, wie viele Passagen LEAP mit dieser Einstellung in deinem Material findet. So siehst du vorab, ob die Einstellung zu breit oder zu streng ist. Für Studierende ändert sich nichts.",
   "help.learningLevels.overview.title": "Lernniveaus",
-  "help.learningLevels.overview.body": "Studierende wählen ihr Niveau (1–5) selbst. LEAP passt die Erklärungen im Chat, bei „Ich erkläre“ und bei Personas daran an. Du siehst nur, wie viele Studierende auf jedem Niveau arbeiten, nicht wer welches Niveau wählt.",
+  "help.learningLevels.overview.body": "Studierende wählen ihr Niveau (1–5) selbst. LEAP passt die Erklärungen im Chat und bei „Ich erkläre“ daran an, und das Quiz beginnt mit einem passenden Schwierigkeitsgrad. In Projekten spielt das Niveau keine Rolle. Du siehst nur, wie viele Studierende auf jedem Niveau arbeiten, nicht wer welches Niveau wählt.",
   "help.chatInstructions.overview.title": "Chat-Anweisungen",
   "help.chatInstructions.overview.body": "Die festen Anweisungen, die LEAP für den Chat und für „Ich erkläre“ erhält, z. B. Ton, Vorgehen und was die KI tun darf oder nicht. Eine Änderung gilt sofort für alle Studierenden dieses Kurses. Ändere sie mit Bedacht.",
   "help.quizSources.coverage.title": "Abdeckungsübersicht",

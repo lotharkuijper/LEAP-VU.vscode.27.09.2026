@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Bir kavramla dene",
   "help.searchSensitivity.tryTerm.body": "Bir kavram yaz ve bu ayarla LEAP’in materyalinde kaç pasaj bulduğunu gör. Böylece ayarın çok geniş mi yoksa çok katı mı olduğunu önceden görebilirsin. Öğrenciler için hiçbir şey değişmez.",
   "help.learningLevels.overview.title": "Öğrenme düzeyleri",
-  "help.learningLevels.overview.body": "Öğrenciler düzeylerini (1–5) kendileri seçer. LEAP, sohbetteki açıklamaları, “Açıklıyorum” bölümünü ve personaları buna göre uyarlar. Yalnızca her düzeyde kaç öğrencinin çalıştığını görürsün, kimin hangi düzeyi seçtiğini değil.",
+  "help.learningLevels.overview.body": "Öğrenciler seviyelerini (1–5) kendileri seçer. LEAP, sohbetteki açıklamayı ve “Ben açıklıyorum” bölümünü buna göre uyarlar; test de uygun bir zorluk düzeyinde başlar. Projelerde seviye rol oynamaz. Yalnızca her seviyede kaç öğrencinin çalıştığını görürsün; kimin hangi seviyeyi seçtiğini görmezsin.",
   "help.chatInstructions.overview.title": "Sohbet talimatları",
   "help.chatInstructions.overview.body": "LEAP’in sohbet ve “Ben açıklıyorum” için aldığı sabit talimatlar; örneğin ton, yaklaşım ve yapay zekânın neyi yapıp yapamayacağı. Bir değişiklik bu dersin tüm öğrencileri için hemen geçerli olur. Dikkatli değiştir.",
   "help.quizSources.coverage.title": "Kapsam özeti",

@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Isprobaj s pojmom",
   "help.searchSensitivity.tryTerm.body": "Upiši pojam i vidi koliko odlomaka LEAP s ovom postavkom pronalazi u tvojem materijalu. Tako unaprijed vidiš je li postavka preširoka ili prestroga. Za studente se ništa ne mijenja.",
   "help.learningLevels.overview.title": "Razine učenja",
-  "help.learningLevels.overview.body": "Studenti sami biraju svoju razinu (1–5). LEAP tome prilagođava objašnjenja u chatu, „Objašnjavam” i kod persona. Vidiš samo koliko studenata radi na svakoj razini, ne i tko je odabrao koju razinu.",
+  "help.learningLevels.overview.body": "Studenti sami biraju svoju razinu (1–5). LEAP prilagođava objašnjenja u chatu i kod „Ja objašnjavam” toj razini, a kviz počinje s odgovarajućom težinom. U projektima razina nema ulogu. Vidiš samo koliko studenata radi na svakoj razini, ne i tko je odabrao koju razinu.",
   "help.chatInstructions.overview.title": "Upute za chat",
   "help.chatInstructions.overview.body": "Stalne upute koje LEAP dobiva za chat i za “Ja objašnjavam”, kao što su ton, pristup i što AI smije ili ne smije raditi. Izmjena odmah vrijedi za sve studente ovog kolegija. Mijenjaj pažljivo.",
   "help.quizSources.coverage.title": "Pregled pokrivenosti",

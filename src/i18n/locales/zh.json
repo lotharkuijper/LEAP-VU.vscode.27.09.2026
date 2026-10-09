@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "用一个概念试试",
   "help.searchSensitivity.tryTerm.body": "输入一个概念，查看在此设置下 LEAP 能在你的材料中找到多少段落。这样你可以提前判断设置是否过宽或过严。对学生不会有任何影响。",
   "help.learningLevels.overview.title": "学习水平",
-  "help.learningLevels.overview.body": "学生自行选择自己的水平（1–5）。LEAP 会据此调整聊天、“我来解释”和人物角色中的说明。你只能看到每个水平有多少学生在学习，看不到谁选择了哪个水平。",
+  "help.learningLevels.overview.body": "学生自行选择自己的等级（1–5）。LEAP 会据此调整聊天中的讲解以及“我来解释”中的内容，测验也会从合适的难度开始。在项目中，等级不起作用。你只能看到每个等级有多少学生在学习，看不到谁选择了哪个等级。",
   "help.chatInstructions.overview.title": "聊天指令",
   "help.chatInstructions.overview.body": "LEAP 在聊天和“我来解释”中会收到的固定指令，例如语气、方法，以及 AI 可以或不可以做什么。修改会立即对本课程的所有学生生效。请谨慎修改。",
   "help.quizSources.coverage.title": "覆盖概览",

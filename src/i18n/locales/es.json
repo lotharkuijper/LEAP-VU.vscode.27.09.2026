@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Prueba con un concepto",
   "help.searchSensitivity.tryTerm.body": "Escribe un concepto y mira cuántos pasajes encuentra LEAP en tu material con esta configuración. Así puedes ver de antemano si la configuración es demasiado amplia o demasiado estricta. No cambia nada para los estudiantes.",
   "help.learningLevels.overview.title": "Niveles de aprendizaje",
-  "help.learningLevels.overview.body": "Los estudiantes eligen su nivel (1–5). LEAP adapta a ello la explicación en el chat, “Yo explico” y en los personajes. Solo ves cuántos estudiantes trabajan en cada nivel, no quién elige qué nivel.",
+  "help.learningLevels.overview.body": "Los estudiantes eligen su propio nivel (1–5). LEAP adapta a ese nivel la explicación en el chat y en «Yo explico», y el cuestionario empieza con una dificultad adecuada. En los proyectos, el nivel no influye. Solo ves cuántos estudiantes trabajan en cada nivel, no quién elige qué nivel.",
   "help.chatInstructions.overview.title": "Instrucciones del chat",
   "help.chatInstructions.overview.body": "Las instrucciones fijas que recibe LEAP para el chat y para “Yo explico”, como el tono, el enfoque y lo que la IA puede o no puede hacer. Un cambio se aplica de inmediato a todos los estudiantes de este curso. Modifica con cuidado.",
   "help.quizSources.coverage.title": "Resumen de cobertura",

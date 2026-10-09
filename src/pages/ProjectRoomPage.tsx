@@ -6,8 +6,6 @@ import { supabase } from '../lib/supabase';
 import { liveUpdates } from '../lib/liveUpdates';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
-import { useLearningLevel } from '../hooks/useLearningLevel';
-import { LearningLevelSelector } from '../components/LearningLevelSelector';
 import { PersonaMessageBody, personaSourcesFrom } from '../components/PersonaMessageBody';
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { PersonaAvatar } from '../components/PersonaAvatar';
@@ -19,7 +17,6 @@ import {
   ArrowLeft, Send, Users, MessageCircle, Bot, CheckCircle2,
   Flag, Clipboard, Copy, Loader2, BookOpen, Paperclip, Trash2, FileText, ShieldAlert, Download, Database, EyeOff,
   LogOut, ScrollText, ChevronDown, ChevronRight, UploadCloud,
-  TrendingUp,
 } from 'lucide-react';
 
 interface Persona {
@@ -207,7 +204,6 @@ export function ProjectRoomPage() {
   const isStaff = isAdmin || isDocent;
 
   const [project, setProject] = useState<Project | null>(null);
-  const { level: learningLevel, setLevel: setLearningLevel } = useLearningLevel(project?.course_id ?? null);
   const [group, setGroup] = useState<ProjectGroup | null>(null);
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [personas, setPersonas] = useState<Persona[]>([]);
@@ -654,7 +650,7 @@ export function ProjectRoomPage() {
       const r = await fetch('/api/projects/persona-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ groupId, personaId: activePersonaId, message: text, lang, learningLevel }),
+        body: JSON.stringify({ groupId, personaId: activePersonaId, message: text, lang }),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || t('room.personaChatFailed'));
@@ -1245,29 +1241,6 @@ export function ProjectRoomPage() {
                 </div>
               );
             })()}
-            <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
-              <LearningLevelSelector
-                value={learningLevel}
-                onChange={setLearningLevel}
-                compact
-                className="min-w-[240px]"
-              />
-              <button
-                type="button"
-                onClick={() => requestSendPersona(t('learningLevel.readinessPrompt'))}
-                disabled={
-                  !activePersona || personaLoading || isFinalized
-                  || !!relationships.find(r => r.personaId === activePersonaId && r.broken)
-                  || !!consultations.find(c => c.personaId === activePersonaId && c.blocked)
-                }
-                title={t('learningLevel.readinessHint')}
-                className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 flex items-center gap-1.5 whitespace-nowrap"
-                data-testid="button-readiness-persona"
-              >
-                <TrendingUp className="w-3.5 h-3.5" />
-                {t('learningLevel.readinessButton')}
-              </button>
-            </div>
             <div className="flex gap-2 items-end">
               <textarea
                 ref={personaInputRef}

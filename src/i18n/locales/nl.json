@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "Probeer met een begrip",
   "help.searchSensitivity.tryTerm.body": "Typ een begrip en zie hoeveel passages LEAP met deze instelling in je materiaal vindt. Zo zie je vooraf of de instelling te ruim of te streng is. Er verandert niets voor studenten.",
   "help.learningLevels.overview.title": "Leerniveaus",
-  "help.learningLevels.overview.body": "Studenten kiezen zelf hun niveau (1–5). LEAP past daar de uitleg in de chat, “Ik leg uit” en bij persona’s op aan. Je ziet alleen hoeveel studenten op elk niveau werken, niet wie welk niveau kiest.",
+  "help.learningLevels.overview.body": "Studenten kiezen zelf hun niveau (1–5). LEAP past daar de uitleg in de chat en bij “Ik leg uit” op aan, en de quiz begint op een passende moeilijkheid. In projecten speelt het niveau geen rol. Je ziet alleen hoeveel studenten op elk niveau werken, niet wie welk niveau kiest.",
   "help.chatInstructions.overview.title": "Chat-instructies",
   "help.chatInstructions.overview.body": "De vaste instructies die LEAP meekrijgt bij de chat en bij “Ik leg uit”, zoals toon, aanpak en wat de AI wel of niet mag doen. Een wijziging geldt meteen voor alle studenten van deze cursus. Wijzig met zorg.",
   "help.quizSources.coverage.title": "Dekkingsoverzicht",

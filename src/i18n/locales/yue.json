@@ -2502,7 +2502,7 @@
   "help.searchSensitivity.tryTerm.title": "用一個概念試吓",
   "help.searchSensitivity.tryTerm.body": "輸入一個概念，睇吓用呢個設定，LEAP 喺你嘅材料搵到幾多段落。咁你可以預先知道個設定係太寬鬆定太嚴格。對學生唔會有任何改變。",
   "help.learningLevels.overview.title": "學習程度",
-  "help.learningLevels.overview.body": "學生會自己揀程度（1–5）。LEAP 會因應呢個程度調整聊天、「我嚟解釋」同 persona 入面嘅講解。你只會睇到每個程度有幾多學生，唔會睇到邊個學生揀咗邊個程度。",
+  "help.learningLevels.overview.body": "學生自己揀佢哋嘅程度（1–5）。LEAP 會按呢個程度調整聊天同「我嚟解釋」入面嘅講解，而小測會由合適嘅難度開始。喺項目入面，程度唔會有影響。你只會睇到每個程度有幾多學生喺度學習，唔會睇到邊個揀咗邊個程度。",
   "help.chatInstructions.overview.title": "聊天指示",
   "help.chatInstructions.overview.body": "LEAP 喺聊天同「我嚟解釋」時會跟隨嘅固定指示，例如語氣、做法，以及 AI 可以或者唔可以做啲乜。修改會即時套用到呢個課程所有學生。請小心修改。",
   "help.quizSources.coverage.title": "覆蓋概覽",

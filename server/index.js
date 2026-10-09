@@ -131,6 +131,7 @@ import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
 import { registerMyDataRoutes } from './myData.js';
+import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
 import { installAnalytics } from './analytics/index.js';
 import { createUserCache, createProfileCache } from './authCache.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
@@ -10935,7 +10936,9 @@ app.post('/api/projects/persona-chat', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
-  const { groupId, personaId, message, lang = 'nl', learningLevel } = req.body || {};
+  // Geen leerniveau: in projecten spelen niveaus geen rol (begeleider, beoordelaar
+  // en rolspeler doen er niets mee).
+  const { groupId, personaId, message, lang = 'nl' } = req.body || {};
   if (!groupId || !personaId || !message) {
     return res.status(400).json({ error: 'groupId, personaId, message vereist' });
   }
@@ -11193,8 +11196,7 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       ? relBuildPromptBlock(relationship.score, persona.conduct_rules, lang, relationship.history)
       : '';
     // Task #296: leerniveau-blok vóór de taal-instructie (laatste blok blijft taal).
-    const levelBlock = buildLevelInstructionBlock(learningLevel, lang);
-    const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${levelBlock}${langSuffix}`;
+    const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${langSuffix}`;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
@@ -11843,6 +11845,7 @@ app.post('/api/projects/groups/:groupId/checkpoint', async (req, res) => {
 
     let aiSummary = '';
     let rubricFeedback = null;
+    let checkpointFields = null;
 
     if (kind === 'final') {
       const prompt = (enMode
@@ -11914,18 +11917,20 @@ ${reflection}`
 
 Project: ${project?.title || '(naamloos)'}
 Reflectie:
-${reflection}`) + buildLanguageInstruction(lang);
+${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguageInstruction(lang);
       const chatResp = await openaiChatCompletion({
         model: OPENAI_MODEL,
         messages: [{ role: 'user', content: prompt }],
-        ...chatModelParams({ temperature: 0.5, maxTokens: 700 }),
+        ...chatModelParams({ temperature: 0.5, maxTokens: 900 }),
       });
       if (!chatResp.ok) {
         const txt = await chatResp.text();
         return res.status(502).json({ error: 'Taalmodel-fout', detail: txt.slice(0, 500) });
       }
       const data = await chatResp.json();
-      aiSummary = data.choices?.[0]?.message?.content || '';
+      // In blokken voor het leerdagboek; ai_summary krijgt de leesbare versie.
+      checkpointFields = journalFieldsFromModel(data.choices?.[0]?.message?.content || '', lang);
+      aiSummary = checkpointFields.content;
     }
     // hasPersonaSummaries: aiSummary blijft leeg — journalinhoud zit in personaSummaries.
 
@@ -11972,26 +11977,19 @@ ${reflection}`) + buildLanguageInstruction(lang);
       .from('project_group_members').select('user_id').eq('group_id', groupId);
     const projectTitle = project?.title || '(naamloos project)';
     const titleLabel = kind === 'final' ? `Eindreflectie: ${projectTitle}` : `Projectreflectie: ${projectTitle}`;
-    let entryContent = aiSummary || reflection;
-    if (kind === 'final' && rubricFeedback) {
-      const perCrit = Array.isArray(rubricFeedback.per_criterium)
-        ? rubricFeedback.per_criterium.map(c => `**${c.criterium}** (${c.oordeel}): ${c.feedback}`).join('\n\n')
-        : '';
-      entryContent = [
-        rubricFeedback.samenvatting || '',
-        perCrit,
-        rubricFeedback.vervolgstappen ? `**Vervolgstappen**\n${rubricFeedback.vervolgstappen}` : '',
-        `\n---\n*Gezamenlijke reflectie van de groep:*\n${reflection}`,
-      ].filter(Boolean).join('\n\n');
-    }
+    // Dezelfde drie blokken als chat, Ik leg uit en quiz (server/projectJournal.js).
+    const entryFields = (kind === 'final' && rubricFeedback)
+      ? journalFromRubricFeedback(rubricFeedback, { lang, groupReflection: reflection })
+      : (checkpointFields || { content: aiSummary || reflection || '', sections: null });
 
-    if (members && members.length > 0) {
+    if (members && members.length > 0 && (entryFields.content || entryFields.sections)) {
       const sourceRef = `group_checkpoint:${cp.id}`;
       const rows = members.map(m => ({
         user_id: m.user_id,
         title: titleLabel,
-        content: entryContent,
-        activity_type: kind === 'final' ? 'project_reflection' : 'project_reflection',
+        content: entryFields.content,
+        sections: entryFields.sections,
+        activity_type: 'project_reflection',
         source_ref: sourceRef,
         course_id: checkpointCourseId,
       }));
@@ -12012,19 +12010,9 @@ ${reflection}`) + buildLanguageInstruction(lang);
         if (synthesis) {
           const synthLang = synthesis.lang || lang;
           const synthEnMode = synthLang !== 'nl';
-          const sections = [
-            synthesis.overeenstemming.length > 0
-              ? `**${synthEnMode ? 'Agreement' : 'Overeenstemming'}**\n${synthesis.overeenstemming.map(s => `• ${s}`).join('\n')}`
-              : '',
-            synthesis.spanningspunten.length > 0
-              ? `**${synthEnMode ? 'Tensions' : 'Spanningspunten'}**\n${synthesis.spanningspunten.map(s => `• ${s}`).join('\n')}`
-              : '',
-            synthesis.suggesties.length > 0
-              ? `**${synthEnMode ? 'Suggestions for next steps' : 'Suggesties voor vervolg'}**\n${synthesis.suggesties.map(s => `• ${s}`).join('\n')}`
-              : '',
-          ].filter(Boolean);
-          if (sections.length > 0) {
-            const synthesisContent = sections.join('\n\n');
+          const synthFields = journalFromSynthesis(synthesis, { lang: synthLang });
+          if (synthFields.sections) {
+            const synthesisContent = synthFields.content;
             const synthSourceRef = `group_checkpoint_synthesis:${cp.id}`;
             const synthRows = members.map(m => ({
               user_id: m.user_id,
@@ -12032,6 +12020,7 @@ ${reflection}`) + buildLanguageInstruction(lang);
                 ? `🔗 Overview across all conversations: ${projectTitle}`
                 : `🔗 Overzicht over alle gesprekken: ${projectTitle}`,
               content: synthesisContent,
+              sections: synthFields.sections,
               activity_type: 'project_reflection',
               source_ref: synthSourceRef,
               course_id: checkpointCourseId,
@@ -12066,10 +12055,8 @@ ${reflection}`) + buildLanguageInstruction(lang);
 
         for (const s of personaSummaries) {
           if (!s.threadId || !validThreadIds.has(s.threadId)) continue;
-          const content = [
-            s.studentSummary ? `**Inbreng student:**\n${s.studentSummary}` : '',
-            s.personaSummary ? `**Reactie van ${s.personaName || 'persona'}:**\n${s.personaSummary}` : '',
-          ].filter(Boolean).join('\n\n');
+          const tFields = journalFromPersonaSummary(s, { lang });
+          const content = tFields.content;
           if (!content.trim()) continue;
 
           const sourceRef = `group_thread_checkpoint:${cp.id}:${s.threadId}`;
@@ -12078,6 +12065,7 @@ ${reflection}`) + buildLanguageInstruction(lang);
             user_id: m.user_id,
             title: titleLabel,
             content,
+            sections: tFields.sections,
             activity_type: 'project_reflection',
             source_ref: sourceRef,
             course_id: checkpointCourseId,
@@ -12132,12 +12120,12 @@ ${reflection}`) + buildLanguageInstruction(lang);
           if (AZURE_CHAT_READY) {
             try {
               const sumPrompt = (lang !== 'nl'
-                ? `Summarise the following conversation with "${personaName}" in EXACTLY 4 short lines. Address the student as "you". Line 1: core question. Line 2: key insight. Line 3: open point or misconception. Line 4: next step. No bullet points, no heading, only four sentences on separate lines.\n\nConversation:\n${transcript}`
-                : `Vat het volgende gesprek met "${personaName}" samen in EXACT 4 korte regels. Spreek de student aan met "je"/"jij". Eerste regel: kernvraag. Tweede regel: belangrijkste inzicht. Derde regel: open punt of misvatting. Vierde regel: vervolgstap. Geen lijst-tekens, geen kop, alleen vier zinnen op aparte regels.\n\nGesprek:\n${transcript}`) + buildLanguageInstruction(lang);
+                ? `Summarise the following conversation with "${personaName}" for the student's learning journal. Address the student as "you". Cover the core question, the key insight, what is still open or misunderstood, and the next step. Base everything on the conversation only.\n\nConversation:\n${transcript}`
+                : `Vat het volgende gesprek met "${personaName}" samen voor het leerdagboek van de student. Spreek de student aan met "je"/"jij". Behandel de kernvraag, het belangrijkste inzicht, wat nog open is of misverstaan werd, en de vervolgstap. Baseer alles alleen op het gesprek.\n\nGesprek:\n${transcript}`) + journalFormatInstruction(lang !== 'nl' ? 'en' : 'nl') + buildLanguageInstruction(lang);
               const sr = await openaiChatCompletion({
                 model: OPENAI_MODEL,
                 messages: [{ role: 'user', content: sumPrompt }],
-                ...chatModelParams({ temperature: 0.3, maxTokens: 350 }),
+                ...chatModelParams({ temperature: 0.3, maxTokens: 600 }),
               });
               if (sr.ok) summaryText = ((await sr.json()).choices?.[0]?.message?.content || '').trim();
             } catch { /* val terug */ }
@@ -12149,10 +12137,12 @@ ${reflection}`) + buildLanguageInstruction(lang);
 
           const sourceRef = `group_thread_checkpoint:${cp.id}:${t.id}`;
           const titleLabel = `${persona?.avatar_emoji || '💬'} ${personaName}`;
+          const sumFields = journalFieldsFromModel(summaryText, lang);
           const tRows = (members || []).map(m => ({
             user_id: m.user_id,
             title: titleLabel,
-            content: summaryText,
+            content: sumFields.content,
+            sections: sumFields.sections,
             activity_type: 'project_reflection',
             source_ref: sourceRef,
             course_id: checkpointCourseId,
