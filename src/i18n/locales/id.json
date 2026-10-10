@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Tingkat {n}",
   "myData.dossier.journal": "Jurnal pembelajaran",
   "myData.dossier.noJournal": "Belum ada entri jurnal.",
-  "myData.dossier.courseUnknown": "kursus lain"
+  "myData.dossier.courseUnknown": "kursus lain",
+  "sources.openSource": "Buka sumber"
 }

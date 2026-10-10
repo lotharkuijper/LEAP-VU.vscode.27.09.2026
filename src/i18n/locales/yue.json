@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "級別 {n}",
   "myData.dossier.journal": "學習日誌",
   "myData.dossier.noJournal": "暫時未有日誌項目。",
-  "myData.dossier.courseUnknown": "其他課程"
+  "myData.dossier.courseUnknown": "其他課程",
+  "sources.openSource": "開啟來源"
 }

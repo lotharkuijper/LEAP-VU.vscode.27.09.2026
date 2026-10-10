@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Düzey {n}",
   "myData.dossier.journal": "Öğrenme günlüğü",
   "myData.dossier.noJournal": "Henüz günlük öğesi yok.",
-  "myData.dossier.courseUnknown": "başka ders"
+  "myData.dossier.courseUnknown": "başka ders",
+  "sources.openSource": "Açık kaynak"
 }

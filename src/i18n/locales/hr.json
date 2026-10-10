@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Razina {n}",
   "myData.dossier.journal": "Dnevnik učenja",
   "myData.dossier.noJournal": "Još nema stavki u dnevniku.",
-  "myData.dossier.courseUnknown": "drugi kolegij"
+  "myData.dossier.courseUnknown": "drugi kolegij",
+  "sources.openSource": "Otvori izvor"
 }

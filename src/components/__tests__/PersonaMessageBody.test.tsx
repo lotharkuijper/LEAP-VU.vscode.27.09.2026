@@ -54,6 +54,57 @@ describe('PersonaMessageBody', () => {
     expect(onOpen).toHaveBeenCalledWith({ documentId: 'd1', title: 'Hoorcollege 3 – Confounding', page: 12 });
   });
 
+  // Regressie 2026-10-10: een klik op de voetnoot deed niets of opende LEAP
+  // opnieuw in een nieuw venster. Nu opent het document op de juiste plek.
+  it('klik op het cijfer opent het document op de pagina van de bron', () => {
+    const onOpen = vi.fn();
+    render(
+      <LanguageProvider>
+        <PersonaMessageBody messageId="m3" content="Zie de definitie [1]." sources={SOURCES} onOpenSource={onOpen} />
+      </LanguageProvider>,
+    );
+    fireEvent.click(screen.getByTestId('citation-1'));
+    expect(onOpen).toHaveBeenCalledWith({ documentId: 'd1', title: 'Hoorcollege 3 – Confounding', page: 12 });
+  });
+
+  it('Markdown-voetnoten ([^1]) worden gewone bronverwijzingen; het voetnotenblok verdwijnt', () => {
+    const onOpen = vi.fn();
+    render(
+      <LanguageProvider>
+        <PersonaMessageBody
+          messageId="m4"
+          content={'Confounding vertekent het verband.[^1] Zie ook de werkgroep.[^2]\n\n[^1]: Hoorcollege 3, p. 12\n[^2]: Werkgroep 2'}
+          sources={SOURCES}
+          onOpenSource={onOpen}
+        />
+      </LanguageProvider>,
+    );
+    expect(screen.getByTestId('citation-1')).toBeTruthy();
+    expect(screen.getByTestId('citation-2')).toBeTruthy();
+    expect(document.body.textContent).not.toContain('[^');
+    expect(document.querySelector('a[href^="#user-content-fn"]')).toBeNull();
+    fireEvent.click(screen.getByTestId('citation-2'));
+    expect(onOpen).toHaveBeenCalledWith({ documentId: 'd2', title: 'Werkgroep 2', page: 4 });
+  });
+
+  it('links in een antwoord: intern niet in een nieuw tabblad, document-link opent de viewer', () => {
+    const onOpen = vi.fn();
+    render(
+      <LanguageProvider>
+        <PersonaMessageBody
+          messageId="m5"
+          content={'Lees [het college](/api/rag/documents/11111111-1111-1111-1111-111111111111/download), [verderop](#uitleg) of [de RIVM-site](https://www.rivm.nl).'}
+          sources={[{ index: 1, title: 'College', documentId: '11111111-1111-1111-1111-111111111111', pageStart: 3 }]}
+          onOpenSource={onOpen}
+        />
+      </LanguageProvider>,
+    );
+    expect(screen.getByText('verderop').getAttribute('target')).toBeNull();
+    expect(screen.getByText('de RIVM-site').getAttribute('target')).toBe('_blank');
+    fireEvent.click(screen.getByText('het college'));
+    expect(onOpen).toHaveBeenCalledWith({ documentId: '11111111-1111-1111-1111-111111111111', title: 'College', page: 3 });
+  });
+
   it('zonder bronnen: alleen de opgemaakte tekst, geen bronnenlijst', () => {
     render(
       <LanguageProvider>

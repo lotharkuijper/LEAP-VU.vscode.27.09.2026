@@ -41,6 +41,23 @@ function remarkHardBreaks() {
   };
 }
 
+/**
+ * Het model schrijft soms Markdown-voetnoten ([^1] met onderaan "[^1]: …")
+ * in plaats van de afgesproken [1]. Verwijzen die naar een bekende bron, dan
+ * maken we er een gewone bronverwijzing van en laten we het voetnotenblok weg
+ * (de bronnenlijst staat er al onder). Andere voetnoten blijven staan.
+ */
+export function normalizeFootnoteCitations(content: string, sources: CitationSource[]): string {
+  if (!content || sources.length === 0) return content;
+  const valid = new Set(sources.map(s => s.index));
+  const out = content
+    .replace(/^\[\^(\d{1,3})\]:[^\n]*(?:\n[ \t]+[^\n]*)*/gm, (m, n) => (valid.has(Number(n)) ? '' : m))
+    .replace(/\[\^(\d{1,3})\]/g, (m, n) => (valid.has(Number(n)) ? `[${n}]` : m));
+  return out === content ? content : out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+const RAG_DOC_LINK_RE = /\/api\/rag\/documents\/([0-9a-f-]{36})\//i;
+
 interface MarkdownMessageProps {
   content: string;
   sources?: CitationSource[];
@@ -103,11 +120,29 @@ export function MarkdownMessage({
           h2: ({ children }) => <h2>{wrap(children)}</h2>,
           h3: ({ children }) => <h3>{wrap(children)}</h3>,
           h4: ({ children }) => <h4>{wrap(children)}</h4>,
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {children}
-            </a>
-          ),
+          a: ({ href, children }) => {
+            const h = href || '';
+            // Sprong binnen het antwoord (bv. een voetnoot): hier blijven,
+            // niet in een nieuw tabblad (dat opende LEAP opnieuw).
+            if (h.startsWith('#')) {
+              return (
+                <a href={h} onClick={(e) => {
+                  e.preventDefault();
+                  document.getElementById(h.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }}>{children}</a>
+              );
+            }
+            // Link naar een cursusdocument: in LEAP openen, op de plek van de bron.
+            const doc = h.match(RAG_DOC_LINK_RE);
+            if (doc && onSourceOpen) {
+              const src = sources.find(s => s.documentId === doc[1]) || { index: 0, title: String(children ?? ''), documentId: doc[1] };
+              return <a href={h} onClick={(e) => { e.preventDefault(); onSourceOpen(src); }}>{children}</a>;
+            }
+            // Externe link: nieuw tabblad. Interne link: gewoon in LEAP.
+            return /^https?:\/\//i.test(h)
+              ? <a href={h} target="_blank" rel="noopener noreferrer">{children}</a>
+              : <a href={h}>{children}</a>;
+          },
           table: ({ children }) => (
             <div className="overflow-x-auto">
               <table className="border-collapse">{children}</table>
@@ -115,7 +150,7 @@ export function MarkdownMessage({
           ),
         }}
       >
-        {prepareLatex(content)}
+        {prepareLatex(normalizeFootnoteCitations(content, sources))}
       </ReactMarkdown>
     </div>
   );

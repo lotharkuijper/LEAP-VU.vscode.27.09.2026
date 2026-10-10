@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "レベル {n}",
   "myData.dossier.journal": "学習日誌",
   "myData.dossier.noJournal": "まだ日誌項目はありません。",
-  "myData.dossier.courseUnknown": "その他のコース"
+  "myData.dossier.courseUnknown": "その他のコース",
+  "sources.openSource": "ソースを開く"
 }

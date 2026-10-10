@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Niveau {n}",
   "myData.dossier.journal": "Leerdagboek",
   "myData.dossier.noJournal": "Nog geen dagboekitems.",
-  "myData.dossier.courseUnknown": "andere cursus"
+  "myData.dossier.courseUnknown": "andere cursus",
+  "sources.openSource": "Open bron"
 }

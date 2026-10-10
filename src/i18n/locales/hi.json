@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "स्तर {n}",
   "myData.dossier.journal": "सीखने की डायरी",
   "myData.dossier.noJournal": "अभी तक कोई डायरी प्रविष्टियाँ नहीं।",
-  "myData.dossier.courseUnknown": "अन्य कोर्स"
+  "myData.dossier.courseUnknown": "अन्य कोर्स",
+  "sources.openSource": "स्रोत खोलें"
 }

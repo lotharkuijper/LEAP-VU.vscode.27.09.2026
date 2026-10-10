@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "수준 {n}",
   "myData.dossier.journal": "학습 일지",
   "myData.dossier.noJournal": "아직 일지 항목이 없어.",
-  "myData.dossier.courseUnknown": "다른 강좌"
+  "myData.dossier.courseUnknown": "다른 강좌",
+  "sources.openSource": "오픈 소스"
 }

@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Poziom {n}",
   "myData.dossier.journal": "Dziennik nauki",
   "myData.dossier.noJournal": "Jeszcze brak wpisów w dzienniku.",
-  "myData.dossier.courseUnknown": "inny kurs"
+  "myData.dossier.courseUnknown": "inny kurs",
+  "sources.openSource": "Otwórz źródło"
 }

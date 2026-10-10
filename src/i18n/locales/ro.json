@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Nivelul {n}",
   "myData.dossier.journal": "Jurnal de învățare",
   "myData.dossier.noJournal": "Încă nu există intrări în jurnal.",
-  "myData.dossier.courseUnknown": "alt curs"
+  "myData.dossier.courseUnknown": "alt curs",
+  "sources.openSource": "Deschide sursa"
 }

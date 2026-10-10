@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Рівень {n}",
   "myData.dossier.journal": "Навчальний щоденник",
   "myData.dossier.noJournal": "Поки що немає записів у щоденнику.",
-  "myData.dossier.courseUnknown": "інший курс"
+  "myData.dossier.courseUnknown": "інший курс",
+  "sources.openSource": "Відкрити джерело"
 }

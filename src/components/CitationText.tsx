@@ -1,4 +1,5 @@
 import { Fragment, ReactNode, useState } from 'react';
+import { useLanguage } from '../i18n';
 
 export interface CitationSource {
   index: number;
@@ -23,6 +24,7 @@ function CitationSup({
   onClick?: (index: number) => void;
   onSourceOpen?: (source: CitationSource) => void;
 }) {
+  const { t } = useLanguage();
   const [hover, setHover] = useState(false);
   return (
     <span
@@ -37,6 +39,8 @@ function CitationSup({
         onClick={(e) => {
           e.preventDefault();
           if (onClick) onClick(source.index);
+          // Het document zelf openen, op de plek van de bron (pagina/dia).
+          if (onSourceOpen && source.documentId) onSourceOpen(source);
         }}
       >
         {source.index}
@@ -65,7 +69,7 @@ function CitationSup({
                   }
                 }}
               >
-                Open bron
+                {t('sources.openSource')}
               </a>
             </>
           )}

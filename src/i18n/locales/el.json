@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Επίπεδο {n}",
   "myData.dossier.journal": "Ημερολόγιο μάθησης",
   "myData.dossier.noJournal": "Δεν υπάρχουν ακόμα καταχωρίσεις ημερολογίου.",
-  "myData.dossier.courseUnknown": "άλλο μάθημα"
+  "myData.dossier.courseUnknown": "άλλο μάθημα",
+  "sources.openSource": "Άνοιγμα πηγής"
 }

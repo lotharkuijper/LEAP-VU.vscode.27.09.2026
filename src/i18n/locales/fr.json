@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "Niveau {n}",
   "myData.dossier.journal": "Journal d’apprentissage",
   "myData.dossier.noJournal": "Pas encore d’entrées dans le journal.",
-  "myData.dossier.courseUnknown": "autre cours"
+  "myData.dossier.courseUnknown": "autre cours",
+  "sources.openSource": "Ouvrir la source"
 }

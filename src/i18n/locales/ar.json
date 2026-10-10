@@ -2872,5 +2872,6 @@
   "myData.dossier.level": "المستوى {n}",
   "myData.dossier.journal": "يوميات التعلّم",
   "myData.dossier.noJournal": "لا توجد عناصر في اليوميات بعد.",
-  "myData.dossier.courseUnknown": "مقرر آخر"
+  "myData.dossier.courseUnknown": "مقرر آخر",
+  "sources.openSource": "افتح المصدر"
 }
