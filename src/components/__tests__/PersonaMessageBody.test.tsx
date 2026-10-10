@@ -105,6 +105,41 @@ describe('PersonaMessageBody', () => {
     expect(onOpen).toHaveBeenCalledWith({ documentId: '11111111-1111-1111-1111-111111111111', title: 'College', page: 3 });
   });
 
+  // Regressie 2026-10-10 (schermafbeelding): antwoord zonder bronnen met een
+  // verzonnen voetnoot → "Footnotes"-kop en dode links. Nu een gewone noot.
+  it('voetnoot zonder bron: geen dode link en geen "Footnotes"-kop, wel de noot', () => {
+    render(
+      <LanguageProvider>
+        <PersonaMessageBody
+          messageId="m6"
+          content={'Dat laatste zou leeftijd een mogelijke **effectmodifier** maken.[^1]\n\n[^1]: Cursusmateriaal over onderzoekspopulatie en effectmodificatie.'}
+          sources={[]}
+          onOpenSource={() => {}}
+        />
+      </LanguageProvider>,
+    );
+    expect(document.querySelector('a')).toBeNull();
+    expect(document.body.textContent).not.toMatch(/Footnotes/i);
+    expect(document.body.textContent).toContain('maken.¹');
+    expect(document.body.textContent).toContain('¹ Cursusmateriaal over onderzoekspopulatie en effectmodificatie.');
+  });
+
+  it('projectmateriaal als bron: klik opent dat document (geen cursusviewer)', () => {
+    const onOpen = vi.fn();
+    render(
+      <LanguageProvider>
+        <PersonaMessageBody
+          messageId="m7"
+          content={'Volgens de opdracht [1] kijken jullie naar slaap.'}
+          sources={[{ index: 1, title: 'Opdracht.pdf', kind: 'project_document', documentRef: 'pd1' }]}
+          onOpenSource={onOpen}
+        />
+      </LanguageProvider>,
+    );
+    fireEvent.click(screen.getByTestId('citation-1'));
+    expect(onOpen).toHaveBeenCalledWith({ title: 'Opdracht.pdf', kind: 'project_document', documentRef: 'pd1' });
+  });
+
   it('zonder bronnen: alleen de opgemaakte tekst, geen bronnenlijst', () => {
     render(
       <LanguageProvider>

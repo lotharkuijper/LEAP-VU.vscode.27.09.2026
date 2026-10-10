@@ -136,7 +136,7 @@ import { installAnalytics } from './analytics/index.js';
 import { createUserCache, createProfileCache } from './authCache.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
-import { buildSourcesInstructionBlock, buildNumberedRagContext } from './citationSources.js';
+import { buildSourcesInstructionBlock, buildNumberedRagContext, numberDocumentSources, buildNoSourcesInstructionBlock } from './citationSources.js';
 import { serverI18nMiddleware, translateServerMessage } from './serverI18n.js';
 import { purposeAllowsModule } from './filePurpose.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
@@ -11109,7 +11109,7 @@ app.post('/api/projects/persona-chat', async (req, res) => {
     //    groep, zodat parallelle groepen elkaars uploads niet mengen;
     //  * project-brede docent-uploads (zichtbaar voor alle groepen + persona's);
     //  * eerder gemaakte afspraken uit afgesloten gesprekken met deze persona.
-    const [, rag, uploadedContext, projectDocContext, priorAgreements] = await Promise.all([
+    const [, rag, groupDocs, projectDocs, priorAgreements] = await Promise.all([
       threadId
         ? supabaseAdmin.from('group_persona_messages').insert({
           thread_id: threadId,
@@ -11144,26 +11144,25 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         return matched && matched.length > 0 ? buildNumberedRagContext(matched, 5) : { context: '', sources: [] };
       })(),
       (async () => {
-        if (persona.id === '__default__') return '';
+        if (persona.id === '__default__') return [];
         const { data: docs } = await supabaseAdmin
           .from('project_persona_documents')
-          .select('filename, content_text')
+          .select('id, filename, content_text')
           .eq('project_id', project.id).eq('persona_id', persona.id).eq('group_id', groupId)
           .order('created_at', { ascending: true })
           .limit(10);
-        // Beperk per-doc tot ~6k tekens om context-window niet te overschrijden.
-        return (docs || []).map(d => `[Document: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`).join('\n\n');
+        return docs || [];
       })(),
       (async () => {
         const { data: pdocs } = await supabaseAdmin
           .from('project_documents')
-          .select('filename, content_text')
+          .select('id, filename, content_text')
           .eq('project_id', project.id)
           .eq('is_visible_to_students', true)
           .not('content_text', 'is', null)
           .order('created_at', { ascending: true })
           .limit(10);
-        return (pdocs || []).map(d => `[Projectdocument: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`).join('\n\n');
+        return pdocs || [];
       })(),
       (async () => {
         if (persona.id === '__default__') return [];
@@ -11178,17 +11177,28 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         return (closedThreads || []).flatMap(t => t.agreements || []).filter(Boolean);
       })(),
     ]);
+    // Alle bronnen doorgenummerd: cursusmateriaal, projectmateriaal van de
+    // docent, uploads van de groep (per document ~6k tekens).
     const context = rag.context || '';
-    const ragSources = rag.sources || [];
+    const projectNumbered = numberDocumentSources(projectDocs, { startIndex: (rag.sources || []).length + 1, kind: 'project_document' });
+    const groupNumbered = numberDocumentSources(groupDocs, { startIndex: (rag.sources || []).length + projectNumbered.sources.length + 1, kind: 'persona_document' });
+    const ragSources = [...(rag.sources || []), ...projectNumbered.sources, ...groupNumbered.sources];
 
     const agreementsBlock = priorAgreements.length > 0
       ? `\n\nGemaakte afspraken in eerdere gesprekken:\n${priorAgreements.map(a => `- ${a}`).join('\n')}`
       : '';
     const ragBlock = context
-      ? `\n\nContext uit cursusmateriaal (elk fragment begint met zijn bronnummer):\n${context}${buildSourcesInstructionBlock(ragSources)}`
+      ? `\n\nContext uit cursusmateriaal (elk fragment begint met zijn bronnummer):\n${context}`
       : '';
-    const docBlock = uploadedContext ? `\n\nGeüploade documenten van de groep:\n${uploadedContext}` : '';
-    const projectDocBlock = projectDocContext ? `\n\nProjectmateriaal van de docent:\n${projectDocContext}` : '';
+    const projectDocBlock = projectNumbered.context
+      ? `\n\nProjectmateriaal van de docent (elk document begint met zijn bronnummer):\n${projectNumbered.context}`
+      : '';
+    const docBlock = groupNumbered.context
+      ? `\n\nGeüploade documenten van de groep (elk document begint met zijn bronnummer):\n${groupNumbered.context}`
+      : '';
+    // Eén verwijsinstructie voor alle bronnen samen; zonder bronnen: geen
+    // verwijzingen of voetnoten verzinnen.
+    const sourcesRulesBlock = ragSources.length > 0 ? buildSourcesInstructionBlock(ragSources) : buildNoSourcesInstructionBlock();
     const langSuffix = buildLanguageInstruction(lang);
     // Verstandhouding (alleen rolspelers die er een bijhouden): niveau + gedrag
     // op dat niveau. De gedragsregels zelf gaan hier bewust niet mee.
@@ -11196,7 +11206,7 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       ? relBuildPromptBlock(relationship.score, persona.conduct_rules, lang, relationship.history)
       : '';
     // Task #296: leerniveau-blok vóór de taal-instructie (laatste blok blijft taal).
-    const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${langSuffix}`;
+    const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${sourcesRulesBlock}${langSuffix}`;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });

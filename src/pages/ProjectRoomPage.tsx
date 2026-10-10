@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { liveUpdates } from '../lib/liveUpdates';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
-import { PersonaMessageBody, personaSourcesFrom } from '../components/PersonaMessageBody';
+import { PersonaMessageBody, personaSourcesFrom, type PersonaSourceTarget } from '../components/PersonaMessageBody';
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { PersonaAvatar } from '../components/PersonaAvatar';
 import { ProductFeedbackPanel } from '../components/ProductFeedbackPanel';
@@ -568,6 +568,34 @@ export function ProjectRoomPage() {
       setAdjustError(e.message);
     } finally {
       setAdjustSaving(false);
+    }
+  };
+
+  // Bron uit een persona-antwoord openen: cursusdocument in de viewer (op de
+  // juiste pagina/dia), projectmateriaal of groepsupload als bestand.
+  const openPersonaSource = async (src: PersonaSourceTarget) => {
+    if (!src.kind && src.documentId) {
+      setViewerDoc({ documentId: src.documentId, title: src.title, page: src.page, seq: ++viewerSeqRef.current });
+      return;
+    }
+    if (!projectId || !token || !src.documentRef) return;
+    const url = src.kind === 'persona_document'
+      ? `/api/projects/${projectId}/personas/${activePersonaId}/documents/${src.documentRef}/download`
+      : `/api/projects/${projectId}/documents/${src.documentRef}/download`;
+    // Venster direct openen, anders blokkeert de browser het als pop-up.
+    const win = window.open('', '_blank');
+    try {
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error || t('room.downloadFailed'));
+      }
+      const blobUrl = URL.createObjectURL(await r.blob());
+      if (win) win.location.href = blobUrl; else window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (e: any) {
+      win?.close();
+      setError(e.message || t('room.downloadFailed'));
     }
   };
 
@@ -1190,7 +1218,7 @@ export function ProjectRoomPage() {
                       messageId={m.id}
                       content={m.content}
                       sources={personaSourcesFrom(m.rag_sources)}
-                      onOpenSource={(src) => setViewerDoc({ ...src, seq: ++viewerSeqRef.current })}
+                      onOpenSource={openPersonaSource}
                     />
                   ) : m.content}
                 </div>

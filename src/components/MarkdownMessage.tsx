@@ -45,15 +45,26 @@ function remarkHardBreaks() {
  * Het model schrijft soms Markdown-voetnoten ([^1] met onderaan "[^1]: …")
  * in plaats van de afgesproken [1]. Verwijzen die naar een bekende bron, dan
  * maken we er een gewone bronverwijzing van en laten we het voetnotenblok weg
- * (de bronnenlijst staat er al onder). Andere voetnoten blijven staan.
+ * (de bronnenlijst staat er al onder). Een voetnoot zonder bekende bron wordt
+ * een gewone noot onderaan, met een superscript-cijfer en zónder link: als
+ * link sprong hij alleen naar zichzelf en leek hij kapot.
  */
+const SUPERSCRIPT = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const supLabel = (label: string) => (/^\d+$/.test(label) ? [...label].map(d => SUPERSCRIPT[Number(d)]).join('') : `(${label})`);
+
 export function normalizeFootnoteCitations(content: string, sources: CitationSource[]): string {
-  if (!content || sources.length === 0) return content;
+  if (!content || !content.includes('[^')) return content;
   const valid = new Set(sources.map(s => s.index));
-  const out = content
-    .replace(/^\[\^(\d{1,3})\]:[^\n]*(?:\n[ \t]+[^\n]*)*/gm, (m, n) => (valid.has(Number(n)) ? '' : m))
-    .replace(/\[\^(\d{1,3})\]/g, (m, n) => (valid.has(Number(n)) ? `[${n}]` : m));
-  return out === content ? content : out.replace(/\n{3,}/g, '\n\n').trim();
+  const isSource = (label: string) => /^\d{1,3}$/.test(label) && valid.has(Number(label));
+  const notes: string[] = [];
+  let out = content.replace(/^\[\^([^\]\s]{1,20})\]:[ \t]*([^\n]*(?:\n[ \t]+[^\n]*)*)/gm, (_m, label: string, text: string) => {
+    if (!isSource(label)) notes.push(`${supLabel(label)} ${text.replace(/\n[ \t]+/g, ' ').trim()}`);
+    return '';
+  });
+  out = out.replace(/\[\^([^\]\s]{1,20})\]/g, (_m, label: string) => (isSource(label) ? `[${label}]` : supLabel(label)));
+  out = out.replace(/\n{3,}/g, '\n\n').trim();
+  if (notes.length) out += `\n\n${notes.map(n => `*${n}*`).join('  \n')}`;
+  return out;
 }
 
 const RAG_DOC_LINK_RE = /\/api\/rag\/documents\/([0-9a-f-]{36})\//i;

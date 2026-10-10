@@ -64,3 +64,26 @@ export function buildNumberedRagContext(matched, maxDocs = 5) {
   }
   return { sources, context: parts.join('\n\n---\n\n') };
 }
+
+// Projectmateriaal citeerbaar (2026-10-10): documenten van de docent en
+// uploads van de groep krijgen ook een bronnummer, doorgenummerd na het
+// cursusmateriaal. Zo kan de persona er met [n] naar verwijzen (en hoeft ze
+// geen voetnoot te verzinnen), en kan de student het document openen.
+// kind: 'project_document' (docent) of 'persona_document' (upload van de groep).
+export function numberDocumentSources(docs, { startIndex = 1, kind, maxChars = 6000 } = {}) {
+  const sources = [];
+  const parts = [];
+  for (const d of Array.isArray(docs) ? docs : []) {
+    if (!d || !d.id) continue;
+    const index = startIndex + sources.length;
+    const title = d.filename || 'Document';
+    sources.push({ index, title, kind, documentRef: d.id });
+    parts.push(`[${index}] ${title}\n${String(d.content_text || '').slice(0, maxChars)}`);
+  }
+  return { sources, context: parts.join('\n\n---\n\n') };
+}
+
+/** Geen genummerde bronnen in dit antwoord: dan ook geen verwijzingen verzinnen. */
+export function buildNoSourcesInstructionBlock() {
+  return '\n\nJe hebt bij dit antwoord geen genummerde bronnen. Gebruik daarom géén bronverwijzingen, voetnoten of verwijzingen naar "het cursusmateriaal"; zeg eerlijk wanneer iets uit je algemene kennis komt.';
+}

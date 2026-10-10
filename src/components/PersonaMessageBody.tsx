@@ -14,7 +14,22 @@ export interface PersonaSource {
   slideEnd?: number;
   pageStart?: number;
   pageEnd?: number;
+  /** Projectmateriaal (2026-10-10): document van de docent of upload van de groep. */
+  kind?: 'project_document' | 'persona_document';
+  documentRef?: string;
 }
+
+/** Wat de projectruimte nodig heeft om een bron te openen. */
+export interface PersonaSourceTarget {
+  documentId?: string;
+  title: string;
+  page?: number;
+  kind?: PersonaSource['kind'];
+  documentRef?: string;
+}
+
+/** Sleutel per bron: cursusdocument-id, of "<soort>:<id>" voor projectmateriaal. */
+const keyOf = (s: PersonaSource) => (s.kind && s.documentRef ? `${s.kind}:${s.documentRef}` : s.documentId);
 
 /**
  * Bruikbare bronnen uit `rag_sources`. Berichten van vóór 2026-09-27 bewaarden
@@ -43,29 +58,34 @@ export function PersonaMessageBody({
   messageId: string;
   content: string;
   sources: PersonaSource[];
-  onOpenSource: (s: { documentId: string; title: string; page?: number }) => void;
+  onOpenSource: (s: PersonaSourceTarget) => void;
 }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const citationSources = sources.map(s => ({
     index: s.index,
     title: s.title,
-    documentId: s.documentId,
-    href: ragDocumentDownloadUrl(s.documentId),
+    documentId: keyOf(s),
+    href: s.kind ? undefined : ragDocumentDownloadUrl(s.documentId),
   }));
   const listItems: SourceItem[] = sources.map(s => ({
     title: s.title,
     similarity: s.similarity ?? 0,
-    documentId: s.documentId,
-    href: ragDocumentDownloadUrl(s.documentId),
+    documentId: keyOf(s),
+    href: s.kind ? undefined : ragDocumentDownloadUrl(s.documentId),
     slideStart: s.slideStart,
     slideEnd: s.slideEnd,
     pageStart: s.pageStart,
     pageEnd: s.pageEnd,
   }));
-  const openById = (documentId: string | undefined) => {
-    const s = sources.find(x => x.documentId === documentId);
-    if (!s?.documentId) return;
+  const openById = (key: string | undefined) => {
+    const s = sources.find(x => keyOf(x) === key);
+    if (!s) return;
+    if (s.kind && s.documentRef) {
+      onOpenSource({ title: s.title, kind: s.kind, documentRef: s.documentRef });
+      return;
+    }
+    if (!s.documentId) return;
     onOpenSource({ documentId: s.documentId, title: s.title, page: s.pageStart ?? s.slideStart });
   };
   const scrollTo = (idx: number) => {
