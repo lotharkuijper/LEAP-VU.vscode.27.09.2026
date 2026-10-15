@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Trophy, X, Sparkles } from 'lucide-react';
 import { useLanguage } from '../i18n';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
 
 import type { ReadinessResult } from '../lib/readiness';
 export type { ReadinessResult };
@@ -37,6 +38,7 @@ export function LevelUpCelebration({ result, onAccept, onClose }: {
   onClose: () => void;
 }) {
   const { t } = useLanguage();
+  const courseFeatures = useCourseFeatures();
   const pieces = useMemo(confettiPieces, []);
   const acceptRef = useRef<HTMLButtonElement>(null);
   const levelLabel = t(`learningLevel.level${result.nextLevel}.label` as never);
@@ -93,7 +95,8 @@ export function LevelUpCelebration({ result, onAccept, onClose }: {
         {result.achievement && (
           <div className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full bg-accent-50 px-3 py-1.5 text-xs font-bold text-accent-800 ring-1 ring-accent-200" data-testid="levelup-achievement">
             🏆 {result.achievement.isNew
-              ? t('achievements.celebrate.earned')
+              // Leerdagboek uit: de prijzenkast staat in het dagboek, dus niet ernaar verwijzen.
+              ? (courseFeatures.visible('journal') ? t('achievements.celebrate.earned') : t('achievements.celebrate.earnedNoJournal'))
               : t('achievements.celebrate.alreadyEarned')}
           </div>
         )}

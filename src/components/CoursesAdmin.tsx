@@ -960,7 +960,7 @@ export default function CoursesAdmin() {
                                   </span>
                                   <button
                                     type="button"
-                                    onClick={() => goToAdminTab(c.id, 'documents')}
+                                    onClick={() => goToAdminTab(c.id, 'material&step=files')}
                                     className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition-colors"
                                     data-testid={`button-open-course-folder-${c.id}`}
                                   >

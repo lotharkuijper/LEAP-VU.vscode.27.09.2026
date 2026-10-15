@@ -19,6 +19,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { COURSE_FEATURES, normalizeCourseFeatures } from './courseFeatures.js';
+
+const FEATURE_NL = { chat: 'Chat', explain: 'Ik leg uit', quiz: 'Quiz', projects: 'Projecten', journal: 'Leerdagboek', studiecafe: 'Studiecafé' };
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -34,6 +37,8 @@ export const ADMIN_SECTIONS = [
     what: 'Waar quizvragen vandaan komen: cursusmateriaal (RAG), een vraagbank (ShareStats/CSV) of vrij door de AI, met dekking per begrip.' },
   { tab: 'projects_admin', labelKey: 'admin.tabs.projects', audience: 'all', helpGroups: ['projects', 'personas'],
     what: 'Groepsprojecten met persona\'s in drie rollen: begeleider, beoordelaar (rubric, feedbackrondes per product) en rolspeler (simulatie, eventueel met verstandhouding en gedragsregels). Ook persona-sjablonen en inleveren.' },
+  { tab: 'course_features', labelKey: 'admin.tabs.courseFeatures', audience: 'all', helpGroups: ['courseFeatures'],
+    what: 'Onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte.' },
   { tab: 'course_info', labelKey: 'admin.tabs.courseInfo', audience: 'all', helpGroups: [],
     what: 'Praktische cursusinformatie (rooster, deadlines) die de chat mag gebruiken voor praktische vragen.' },
   { tab: 'learning_levels', labelKey: 'admin.tabs.learningLevels', audience: 'all', helpGroups: ['learningLevels'],
@@ -52,12 +57,6 @@ export const ADMIN_SECTIONS = [
     what: 'Alle gebruikers van LEAP en hun rol.' },
   { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: [],
     what: 'Systeeminstellingen van LEAP.' },
-  { tab: 'documents', labelKey: 'admin.tabs.documents', audience: 'all', helpGroups: [], classic: true,
-    what: 'Klassieke weergave: mappen en documenten (vervangen door Cursusmateriaal).' },
-  { tab: 'rag_beheer', labelKey: 'admin.tabs.ragBeheer', audience: 'all', helpGroups: [], classic: true,
-    what: 'Klassieke weergave: verwerking van documenten (vervangen door Cursusmateriaal).' },
-  { tab: 'concepts', labelKey: 'admin.tabs.concepts', audience: 'all', helpGroups: [], classic: true,
-    what: 'Klassieke weergave: begrippenlijst (ook bereikbaar via Cursusmateriaal → Begrippen).' },
 ];
 
 /** Buiten de tabbladen van /admin, maar wel relevant voor het inrichten. */
@@ -132,7 +131,7 @@ export function buildLeapKnowledge({ locale, handbookText, role }) {
   lines.push('Link naar een onderdeel altijd als markdown-link met precies dit adres, bijvoorbeeld [Quiz-bronnen](/admin?tab=quiz_sources).');
   for (const s of ADMIN_SECTIONS) {
     const who = s.audience === 'admin' ? ' — ALLEEN BEHEERDER' : '';
-    lines.push('', `## ${label(s.labelKey)} (/admin?tab=${s.tab})${who}${s.classic ? ' — klassieke weergave' : ''}`, s.what);
+    lines.push('', `## ${label(s.labelKey)} (/admin?tab=${s.tab})${who}`, s.what);
     for (const g of s.helpGroups) {
       for (const t of Object.values(help[g] || {})) {
         if (t.title && t.body) lines.push(`- ${t.title}: ${t.body}`);
@@ -180,6 +179,10 @@ export function summarizeCourse(snap, locale = {}) {
   if (s.course) {
     out.push(`- Beschrijving: ${s.course.description || '(geen)'}`);
     out.push(`- Beschikbaar voor studenten: ${s.course.student_visible === false ? 'nee' : 'ja'}; actief: ${s.course.is_active === false ? 'nee' : 'ja'}`);
+    // Onderdelen per cursus (server/courseFeatures.js): adviseer niets wat uit staat zonder dat te zeggen.
+    const f = normalizeCourseFeatures(s.course.features);
+    const off = COURSE_FEATURES.filter(k => !f[k]).map(k => FEATURE_NL[k]);
+    out.push(`- Onderdelen voor studenten: ${off.length ? `uit: ${off.join(', ')} (aan te zetten in Onderdelen)` : 'alles aan'}`);
   }
   const r = s.readiness;
   if (r) {
@@ -367,7 +370,9 @@ export function registerDesignAssistantRoutes(app, deps) {
         get(`/api/admin/course-readiness/${encodeURIComponent(courseId)}`),
         get(`/api/quiz-sources-mix/${encodeURIComponent(courseId)}`),
         get(`/api/rag-settings?courseId=${encodeURIComponent(courseId)}`),
-        supabaseAdmin.from('courses').select('name, description, is_active, student_visible').eq('id', courseId).maybeSingle().then(r => r.data),
+        supabaseAdmin.from('courses').select('name, description, is_active, student_visible, features').eq('id', courseId).maybeSingle()
+          .then(r => (r.error ? supabaseAdmin.from('courses').select('name, description, is_active, student_visible').eq('id', courseId).maybeSingle() : r))
+          .then(r => r.data),
         supabaseAdmin.from('projects').select('id, title, research_question, submissions_enabled').eq('course_id', courseId).then(r => r.data || []),
       ]);
       let projects = projectRows;

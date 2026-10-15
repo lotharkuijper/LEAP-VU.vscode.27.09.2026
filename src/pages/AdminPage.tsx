@@ -6,24 +6,22 @@ import { getActiveLang } from '../i18n/activeLang';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { BarChart3, Users, UserPlus, FileUp, BookOpen, Settings, Search, Upload, File, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Eye, Tag, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, History } from 'lucide-react';
+import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, ToggleRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Database } from '../lib/database.types';
-import { DocumentUploadModal } from '../components/DocumentUploadModal';
-import { retryFailedDocument, UploadProgress } from '../services/document-upload.service';
-import { RAGSetupPanel } from '../components/RAGSetupPanel';
 import { ImportsHubPanel } from '../components/ImportsHubPanel';
 import { QuizSourcesAdminPanel } from '../components/QuizSourcesAdminPanel';
 import CursusInfoTab from '../components/CursusInfoTab';
 import { ProjectsAdminTab } from './admin/ProjectsAdminTab';
 import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
+import { CourseFeaturesAdminTab } from './admin/CourseFeaturesAdminTab';
 import { AnalyticsAdminTab } from '../features/analytics/AnalyticsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { classifyConceptForTeacher, getDifficultyTier, type ConceptClass, type DifficultyTier } from '../lib/conceptClassification';
 
-import DocumentsPage from '../pages/DocumentsPage';
 import { CourseMaterialWorkspace, MATERIAL_STEPS } from '../components/material/CourseMaterialWorkspace';
+import { extractionBody, DEFAULT_EXTRACTION_OPTIONS, type ExtractionOptions } from '../lib/conceptExtractionJob';
 import { ConceptDetailDrawer } from '../components/material/ConceptDetailDrawer';
 import type { MaterialStep } from '../components/material/ReadinessStep';
 import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset } from '../lib/ragPresets';
@@ -38,7 +36,6 @@ import { AdminHint } from '../components/help/AdminHint';
 import { HelpTip } from '../components/help/HelpTip';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
-type Document = Database['public']['Tables']['documents']['Row'];
 type Concept = Database['public']['Tables']['concepts']['Row'];
 
 function formatBackfillTime(isoString: string): string {
@@ -65,7 +62,11 @@ interface ChatbotPrompt {
   updated_at: string;
 }
 
-type TabType = 'material' | 'users' | 'add_users' | 'documents' | 'rag_beheer' | 'concepts' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels' | 'analytics';
+// De klassieke weergave (Documenten, RAG Beheer, Begrippen) is op 2026-10-15 verwijderd;
+// oude links gaan naar de bijbehorende stap in Cursusmateriaal.
+const LEGACY_MATERIAL_TABS: Record<string, MaterialStep> = { documents: 'files', rag_beheer: 'processing', concepts: 'concepts' };
+
+type TabType = 'material' | 'users' | 'add_users' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels' | 'analytics' | 'course_features';
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -261,7 +262,8 @@ export function AdminPage() {
       try { localStorage.setItem('leap-design-assistant-open', '1'); } catch { /* */ }
       t = 'material';
     }
-    const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics'];
+    if (t && LEGACY_MATERIAL_TABS[t as string]) t = 'material';
+    const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics','course_features'];
     if (t && allowed.includes(t)) return t;
     return isAdmin ? 'users' : 'material';
   })();
@@ -270,6 +272,8 @@ export function AdminPage() {
   // Werkruimte Cursusmateriaal: stap via ?step= (deelbare links), begrip-zijpaneel,
   // en een teller die de werkruimte laat verversen na wijzigingen in begrippen.
   const initialStep = (() => {
+    const legacy = LEGACY_MATERIAL_TABS[searchParams.get('tab') || ''];
+    if (legacy) return legacy;
     const st = searchParams.get('step') as MaterialStep | null;
     return st && (MATERIAL_STEPS as string[]).includes(st) ? st : 'files';
   })();
@@ -283,7 +287,9 @@ export function AdminPage() {
   };
   const [conceptDrawerId, setConceptDrawerId] = useState<string | null>(null);
   const [materialRefresh, setMaterialRefresh] = useState(0);
-  const [classicOpen, setClassicOpen] = useState(() => ['documents', 'rag_beheer', 'concepts'].includes(initialTab));
+  // Keuzes voor het extraheren van begrippen (taal, documenten): gedeeld door
+  // "Zoek nieuwe begrippen" en "Hergenereer begrippenlijst".
+  const [extractionOptions, setExtractionOptions] = useState<ExtractionOptions>(DEFAULT_EXTRACTION_OPTIONS);
   const setActiveTab = (t: TabType) => {
     setActiveTabState(t);
     const next = new URLSearchParams(searchParams);
@@ -312,15 +318,24 @@ export function AdminPage() {
       setActiveTabState('projects_admin');
       return;
     }
+    // Oude links naar de klassieke weergave: naar de stap in Cursusmateriaal.
+    if (raw && LEGACY_MATERIAL_TABS[raw]) {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', 'material');
+      next.set('step', LEGACY_MATERIAL_TABS[raw]);
+      setSearchParams(next, { replace: true });
+      setMaterialStepState(LEGACY_MATERIAL_TABS[raw]);
+      setActiveTabState('material');
+      return;
+    }
     const t = raw as TabType | null;
     if (t && t !== activeTab) {
-      const allowed: TabType[] = ['material','users','add_users','documents','rag_beheer','concepts','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics'];
+      const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics','course_features'];
       if (allowed.includes(t)) setActiveTabState(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [users, setUsers] = useState<Profile[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
   const [courseConcepts, setCourseConcepts] = useState<Concept[]>([]);
   const [globalConcepts, setGlobalConcepts] = useState<Concept[]>([]);
   const [prompts, setPrompts] = useState<ChatbotPrompt[]>([]);
@@ -389,7 +404,6 @@ export function AdminPage() {
   const [lastTeacherConfirm, setLastTeacherConfirm] = useState<
     { userId: string; courseId: string; message: string } | null
   >(null);
-  const [docMsg, setDocMsg] = useState<string | null>(null);
   const [promptMsg, setPromptMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<ChatbotPrompt | null>(null);
   const [promptContent, setPromptContent] = useState('');
@@ -402,10 +416,6 @@ export function AdminPage() {
   const [promptsMigration, setPromptsMigration] = useState<{ hasSection: boolean; sqlToRun: string | null } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadFolderId, setUploadFolderId] = useState<string | null>(null);
-  const [retryingDocId, setRetryingDocId] = useState<string | null>(null);
-  const [retryProgress, setRetryProgress] = useState<UploadProgress | null>(null);
   const [ragSettingsState, setRagSettingsState] = useState<RagSettingsConfig>(RAG_ADMIN_DEFAULTS);
   const [ragSettingsSaving, setRagSettingsSaving] = useState(false);
   const [ragSettingsMsg, setRagSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -496,9 +506,7 @@ export function AdminPage() {
 
   useEffect(() => {
     if (activeTab === 'users') loadUsers();
-    if (activeTab === 'documents') loadDocuments();
-    if (activeTab === 'concepts' || activeTab === 'material') { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); loadMaxConceptsSetting(); }
-    if (activeTab === 'rag_beheer') { loadConceptsMeta(); }
+    if (activeTab === 'material') { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); loadMaxConceptsSetting(); }
     if (activeTab === 'prompts') {
       loadPrompts();
       loadAllCourses();
@@ -562,20 +570,6 @@ export function AdminPage() {
       .select('user_id')
       .eq('member_role', 'teacher');
     setTeacherUserIds(new Set((tRows || []).map((r: { user_id: string }) => r.user_id)));
-  };
-
-  const loadDocuments = async () => {
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error loading documents:', error);
-      return;
-    }
-
-    setDocuments(data || []);
   };
 
   const loadConcepts = async () => {
@@ -1236,21 +1230,6 @@ export function AdminPage() {
     }
   };
 
-  const handleRetryDocument = async (documentId: string) => {
-    setRetryingDocId(documentId);
-    setRetryProgress(null);
-
-    try {
-      await retryFailedDocument(documentId, setRetryProgress);
-      loadDocuments();
-    } catch (error) {
-      console.error('Retry failed:', error);
-    } finally {
-      setRetryingDocId(null);
-      setRetryProgress(null);
-    }
-  };
-
   const handleAddConcept = async () => {
     if (!addConceptName.trim()) {
       setAddConceptError(t('admin.concepts.nameRequired'));
@@ -1317,9 +1296,10 @@ export function AdminPage() {
       // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
       const data = await startConceptExtractionTask({
         courseId: activeCourseId,
-        body: { courseId: activeCourseId, replace: true },
+        body: extractionBody(activeCourseId, true, extractionOptions),
         token: session.access_token,
         title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
+        resultLink: '/admin?tab=material&step=concepts',
       }).promise as { message?: string };
       setRegenerateResult({ message: data.message || '' });
       await loadConcepts();
@@ -1506,27 +1486,23 @@ const tabs = [
   { id: 'material' as TabType, label: t('admin.tabs.material'), icon: Library, show: true },
   { id: 'users' as TabType, label: t('admin.tabs.users'), icon: Users, show: isAdmin },
   { id: 'add_users' as TabType, label: t('admin.tabs.addUsers'), icon: UserPlus, show: isAdmin || isDocent },
-  { id: 'documents' as TabType, label: t('admin.tabs.documents'), icon: FolderTree, show: true },
-  { id: 'rag_beheer' as TabType, label: t('admin.tabs.ragBeheer'), icon: RefreshCw, show: true },
-  { id: 'concepts' as TabType, label: t('admin.tabs.concepts'), icon: BookOpen, show: true },
   { id: 'imports' as TabType, label: t('admin.tabs.imports'), icon: Download, show: true },
   { id: 'quiz_sources' as TabType, label: t('admin.tabs.quizSources'), icon: SlidersHorizontal, show: isAdmin || isDocent },
   { id: 'prompts' as TabType, label: t('admin.tabs.prompts'), icon: MessageSquareText, show: isAdmin || isDocent },
   { id: 'rag_settings' as TabType, label: t('admin.tabs.ragSettings'), icon: SlidersHorizontal, show: isAdmin || isDocent },
   { id: 'projects_admin' as TabType, label: t('admin.tabs.projects'), icon: FolderTree, show: isAdmin || isDocent },
   { id: 'course_info' as TabType, label: t('admin.tabs.courseInfo'), icon: BookText, show: isAdmin || isDocent },
+  { id: 'course_features' as TabType, label: t('admin.tabs.courseFeatures'), icon: ToggleRight, show: isAdmin || isDocent },
   { id: 'learning_levels' as TabType, label: t('admin.tabs.learningLevels'), icon: GraduationCap, show: isAdmin || isDocent },
   { id: 'analytics' as TabType, label: t('admin.tabs.analytics'), icon: BarChart3, show: isAdmin || isDocent },
   { id: 'settings' as TabType, label: t('admin.tabs.settings'), icon: Settings, show: isAdmin },
 ].filter(tab => tab.show);
 
 // Herinrichting 2026-09-25: alles voor één cursus onder "Mijn cursus", met
-// Cursusmateriaal voorop; systeemzaken apart (admin); de vorige indeling blijft
-// bereikbaar als ingeklapte "Klassieke weergave".
+// Cursusmateriaal voorop; systeemzaken apart (admin).
 const tabGroups = [
-  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'analytics', 'prompts', 'rag_settings', 'imports', 'add_users'], collapsible: false },
-  { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'], collapsible: false },
-  { key: 'classic', label: t('admin.tabGroups.classic'), ids: ['documents', 'rag_beheer', 'concepts'], collapsible: true },
+  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'course_features', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'analytics', 'prompts', 'rag_settings', 'imports', 'add_users'] },
+  { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'] },
 ].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
  .filter(g => g.items.length > 0);
 
@@ -1557,7 +1533,7 @@ const tabGroups = [
         courseName={activeCourse?.name}
         place={designPlace}
         context={{ tab: activeTab, step: activeTab === 'material' ? materialStep : null, view: activeTab === 'projects_admin' ? searchParams.get('view') : null }}
-        onNavigate={(tab) => setActiveTab(tab as TabType)}
+        onNavigate={(tab) => (LEGACY_MATERIAL_TABS[tab] ? setMaterialStep(LEGACY_MATERIAL_TABS[tab]) : setActiveTab(tab as TabType))}
         onOpenChange={setDesignOpen}
       />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -1651,25 +1627,10 @@ const tabGroups = [
         <nav className="hidden md:block w-52 flex-shrink-0 chic-card overflow-hidden self-start sticky top-4">
           {tabGroups.map((group, gi) => (
             <div key={group.key} className={gi > 0 ? 'border-t border-gray-100' : ''}>
-              {group.collapsible ? (
-                <button
-                  type="button"
-                  onClick={() => setClassicOpen(o => !o)}
-                  className="w-full flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1 hover:text-gray-600"
-                  title={t('admin.tabGroups.classicHint')}
-                  aria-expanded={classicOpen}
-                  data-testid="button-toggle-classic"
-                >
-                  <History className="w-3.5 h-3.5" />
-                  {group.label}
-                  {classicOpen ? <ChevronDown className="w-3.5 h-3.5 ml-auto" /> : <ChevronRight className="w-3.5 h-3.5 ml-auto" />}
-                </button>
-              ) : (
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1">
-                  {group.label}
-                </p>
-              )}
-              {(!group.collapsible || classicOpen) && group.items.map(tab => {
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1">
+                {group.label}
+              </p>
+              {group.items.map(tab => {
                 const Icon = tab.icon;
                 return (
                   <button
@@ -2012,56 +1973,6 @@ const tabGroups = [
             </div>
           )}
 
-{activeTab === 'documents' && (
-  <div>
-    <DocumentsPage />
-  </div>
-)}
-
-{activeTab === 'rag_beheer' && (
-  <div className="space-y-4">
-    {activeCourse && conceptsMeta && conceptsMeta.lastDocumentChange && (() => {
-      const effectiveRegen = [conceptsMeta.lastSuccessfulRegeneration, conceptsMeta.lastExtraction]
-        .filter(Boolean).sort().reverse()[0] ?? null;
-      return !effectiveRegen || conceptsMeta.lastDocumentChange > effectiveRegen;
-    })() && (
-      <div className="flex items-start justify-between gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3" data-testid="banner-docs-changed-rag">
-        <div className="flex items-start gap-2 text-sm text-amber-800">
-          <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
-          <span>
-            <strong>{t('admin.ragBeheer.docsChanged')}</strong> — {t('admin.ragBeheer.docsChangedDesc')}{' '}
-            {conceptsMeta.lastDocumentChange && (
-              <span className="text-amber-700">
-                {t('admin.ragBeheer.lastDocChange')}{' '}
-                {new Date(conceptsMeta.lastDocumentChange).toLocaleString(intlLocale(lang), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
-          </span>
-        </div>
-        <button
-          onClick={handleRegenerateConcepts}
-          disabled={regeneratingConcepts || conceptTaskRunning}
-          className="flex-shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
-          data-testid="button-regenerate-now-rag"
-        >
-          {regeneratingConcepts ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {t('admin.ragBeheer.working')}
-            </>
-          ) : (
-            <>
-              <RefreshCw className="w-3.5 h-3.5" />
-              {t('admin.ragBeheer.regenerateNow')}
-            </>
-          )}
-        </button>
-      </div>
-    )}
-    <RAGSetupPanel />
-  </div>
-)}
-
 
           {activeTab === 'material' && (
             <CourseMaterialWorkspace
@@ -2071,6 +1982,8 @@ const tabGroups = [
               onGoToTab={(tab) => setActiveTab(tab)}
               onConceptsChanged={() => { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); }}
               refreshKey={materialRefresh}
+              extractionOptions={extractionOptions}
+              onExtractionOptionsChange={setExtractionOptions}
             />
           )}
           {conceptDrawerId && activeCourseId && (
@@ -2083,8 +1996,8 @@ const tabGroups = [
             />
           )}
 
-          {(activeTab === 'concepts' || (activeTab === 'material' && materialStep === 'concepts')) && (
-            <div className={`space-y-4 ${activeTab === 'material' ? 'mt-4' : ''}`}>
+          {activeTab === 'material' && materialStep === 'concepts' && (
+            <div className="space-y-4 mt-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-[min(100%,16rem)] flex-1">
                   <AdminHint variant="intro">{t('admin.concepts.subtitle')}</AdminHint>
@@ -2610,6 +2523,7 @@ const tabGroups = [
 
           {activeTab === 'quiz_sources' && <QuizSourcesAdminPanel />}
           {activeTab === 'course_info' && <CursusInfoTab />}
+          {activeTab === 'course_features' && <CourseFeaturesAdminTab />}
           {activeTab === 'learning_levels' && <LearningLevelsAdminTab />}
           {activeTab === 'analytics' && <AnalyticsAdminTab onOpenMaterial={() => setActiveTab('material')} />}
 
@@ -3525,20 +3439,6 @@ const tabGroups = [
         </div>
       </div>
 
-      {showUploadModal && (
-        <DocumentUploadModal
-          onClose={() => {
-            setShowUploadModal(false);
-            setUploadFolderId(null);
-          }}
-          onSuccess={() => {
-            loadDocuments();
-            setShowUploadModal(false);
-            setUploadFolderId(null);
-          }}
-          folderId={uploadFolderId}
-        />
-      )}
     </div>
   );
 }

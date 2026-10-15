@@ -30,6 +30,11 @@
 - Office files should be converted to readable plain text; never write `[object Object]` into stored chunks.
 - Do not assume Supabase or Azure config is correct without checking the live runtime config and DB records.
 
+## Subject-neutral (2026-10-15)
+- LEAP is not tied to one subject. UI texts and the fixed LLM instructions in code contain no subject content (no epidemiology or statistics examples); use neutral examples or examples from several fields. server/__tests__/subjectNeutral.test.js enforces this.
+- The general chat and explain instructions in the DB are TEMPLATES (Sjabloon chat-instructie / Sjabloon Ik leg uit): the starting point a teacher adapts per course in Chat-instructies, and the fallback for courses without their own instruction. Subject content belongs in the per-course instruction. E&B1 has its own copy of the old E&B text.
+- Concepts never leak between courses: /api/concepts returns only the course's own concepts (no fallback to concepts without a course; without a course only the manage view sees everything). Query expansion uses only the concept's own aliases, key points and definition, with no static synonym list.
+
 ## Testing expectations
 - Prefer real behavior tests over mock-only assertions.
 - For ingestion and chunking fixes, add a reproduction/regression test.
@@ -39,6 +44,7 @@
 - `npx vitest run server/__tests__/ragProcessing.test.js`
 - `npx vitest run server/__tests__/conceptExtraction.test.js`
 - `npm run dev`
+- `node --env-file=.env scripts/check-document-viewer.mjs`: document viewer in a real browser (text layer for selecting and copying, zoom, full screen via the Fullscreen API, "Vraag in de chat").
 
 ## Code quality expectations
 - Keep fixes minimal and targeted.
@@ -61,6 +67,8 @@
 - Automatic journal entries (reflections) are stored in three blocks: summary, feedback (went well / to improve) and next steps, in `learning_journal_entries.sections`, plus `learning_level` (the student's level at that moment, where applicable). New generators append `journalFormatInstruction(lang)` to the prompt and save `...journalFieldsFromModel(text, lang)` (`server/journalSections.js`); `content` always stays filled as readable text. The model uses fixed `### SUMMARY` etc. headings, not JSON, so LaTeX survives.
 - Project entries (interim checkpoint, final reflection, overview across conversations, summary per persona conversation) use the same blocks. Structured input is converted without an extra LLM call (`server/projectJournal.js`); free text is generated in blocks directly. Every journal insert in the checkpoint route passes `sections`; `server/__tests__/projectJournal.test.js` checks this.
 - Learning levels play no role in projects. The project room has no level selector or readiness button, and the persona chat ignores `learningLevel`.
+- In the chat the level really changes the language. `server/learningLevel.js` has a level table (`LEVEL_PROFILES`) with six dimensions: language (CEFR B1→C2), terminology, sentences, abstraction, prior knowledge and step size, plus the answer length. The teacher's chat prompt and the level complement each other; neither overrules the other. The teacher decides the KIND of response: role, approach (e.g. Socratic), structure, tone and limits such as a maximum length. The level decides HOW technical and complex the answer is within that frame: language, terminology, abstraction, prior knowledge and the difficulty of a question. Length sits at the short or long end of the teacher's limit. The teacher's approach is carried out AT the level; for example, "start from what the student knows" means everyday experience at level 1 and a deeper aspect at level 5. Teachers do not need to specify language level in their prompt (help text `chatInstructions.overview`). Check changes with `node --env-file=.env scripts/eval-level-language.mjs` (real model, test account): LIX must rise from level 1 to 5, level 1 has at most ~1 technical term, and level 5 is at least 10 LIX points above level 1.
+- They play no role in "Ik leg uit" either (decided 2026-10-15): you master a concept or you do not. There is no selector, no level in the assessment, and no `learning_level` on explanation reflections. The level is chosen only in the chat.
 
 ## Achievements
 - Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input, and the topic must be an approved course concept.
@@ -142,6 +150,24 @@
 - My data (`/my-data`, `server/myData.js`): download everything as JSON, a printable learning record (`src/lib/learningDossier.ts`), and self-service account deletion (confirm with own email; not for admins).
   - New tables with a user column must be listed in `EXPORT_SOURCES` or `NOT_EXPORTED`; `server/__tests__/myData.test.js` checks this.
 
+## Course features on/off (2026-10-15)
+- Teachers switch student parts per course in Beheer → Onderdelen (`CourseFeaturesAdminTab`): chat, explain, quiz, projects, journal, studiecafe. `courses.features` stores only what is OFF (`{"quiz": false}`); a missing key means on. Switching off hides, it never deletes.
+- One rule everywhere: `server/courseFeatures.js` (server) and `src/lib/courseFeatures.ts` (browser, must stay identical; a test compares them). Course teachers and admins keep using a disabled part, labelled "uit voor studenten".
+- Enforced in three layers:
+  - browser: menu, dashboard tiles, `CourseFeatureGate` per page (in `ProtectedRoute`), and links between parts (`useCourseFeatures().visible(f)`);
+  - server: `rejectIfFeatureOff` / `courseFeatureOnFor`. `/api/chat` serves chat, explain and quiz, so only the part named by `featureForChatRequest` is blocked;
+  - database: `leap_course_feature_on` in the insert policies of conversations, quiz_attempts and learning_journal_entries (migration `20261015100000_course_features`, rollback next to it).
+- Every server write to `learning_journal_entries` must first check the journal switch; `server/__tests__/courseFeatures.test.js` fails otherwise. Evaluator reports ("Beoordeling opvragen") are always stored in `project_group_assessments` and shown in the project room, and in the journal only when it is on.
+## "Ik leg uit" feedback (2026-10-15)
+- `POST /api/explain/evaluate` assesses, scores and saves in one step; the browser only sends the explanation plus the course fragments it found. There is no browser-side save of feedback or score.
+- The server always appends `explainFormatInstruction` (`server/explainFeedback.js`) to the teacher's explain prompt. The prompt sets the tone; the block fixes the structure:
+  - `### FEEDBACK`: only about THIS concept and its definition. A related concept is never a shortcoming.
+  - `### SCORE`: 0–100 on a fixed scale. Start at 100. A reasonably good explanation is 70–90, a good one is 100.
+  - `### RELATED`: at most 3 concepts, only from approved course concepts that share evidence fragments (`rankRelatedConcepts`). They do not count towards the score.
+  - `### FEEDFORWARD`: 1–2 next steps.
+- Stored as `student_explanations.feedback = { content, sections }` and `score = { total, reason }`. The score is shown only to the student, not in progress or analytics (decision 2026-10-15).
+- `concepts.key_points` contains technical labels (`course_id:…`, `[RAG-…]`) and no real key points. Always filter them out (`cleanKeyPoints` / `realKeyPoints`) before they reach a prompt or a search query.
+- Calibration against the real model (prospective cohort study): excellent 100, reasonable 85, confused 40, wrong 30. Re-check with a live run after changing the scale.
 ## Background tasks
 - Admin actions that take longer than a few seconds run as a background task via `startTask` (`src/lib/backgroundTasks.ts`), not only inside the component. Examples: extracting concepts, uploading files, importing or updating websites, and ShareStats imports.
 - A task keeps running when the user moves to another part of the app. The task tray (`TaskTray`, bottom right) shows progress and a "… is done — View result" notice with a link back.

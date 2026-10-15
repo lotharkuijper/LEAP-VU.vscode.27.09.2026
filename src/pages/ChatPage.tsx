@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
+import { appendQuote, focusAtEnd } from '../lib/chatQuote';
 import { useLanguage } from '../i18n';
 import { supabase } from '../lib/supabase';
 import { sendChatMessage, llmErrorToDutch, type Message } from '../services/llm.service';
@@ -85,6 +87,7 @@ export function AssistantMessageBody({
   const { t } = useLanguage();
   const navigate = useNavigate();
   const { activeCourseId: activeCourse } = useActiveCourse();
+  const courseFeatures = useCourseFeatures();
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   // In-chat topic-kiezer (Task #354): de student kan een bestaand open topic van
@@ -310,6 +313,8 @@ export function AssistantMessageBody({
         />
       )}
       <div className="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-gray-200">
+        {/* Studiecafé uit in deze cursus: geen doorverwijzing. */}
+        {courseFeatures.visible('studiecafe') && (<>
         <button
           type="button"
           onClick={handleCheckLLM}
@@ -407,6 +412,7 @@ export function AssistantMessageBody({
             </div>
           )}
         </div>
+        </>)}
         <button
           type="button"
           onClick={handleCopyMarkdown}
@@ -453,6 +459,7 @@ export function AssistantMessageBody({
 export function ChatPage() {
   const { profile, signOut } = useAuth();
   const { activeCourseId: activeCourse } = useActiveCourse();
+  const pageFeatures = useCourseFeatures();
   const { level: learningLevel, setLevel: setLearningLevel } = useLearningLevel(activeCourse);
   const { t, lang } = useLanguage();
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -1100,7 +1107,7 @@ export function ChatPage() {
         </div>
       </div>
 
-      <div className="flex-1 chic-card flex flex-col">
+      <div className="min-w-[20rem] flex-1 chic-card flex flex-col">
         {!currentConversationId ? (
           <div className="flex-1 flex items-center justify-center text-gray-500">
             <div className="text-center">
@@ -1261,7 +1268,7 @@ export function ChatPage() {
               )}
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                 <RAGStatusIndicator strictMode={ragSettings.chat.rag_strict_mode} />
-                <div className="flex items-end gap-2 ml-auto">
+                <div className="flex flex-wrap items-end gap-2 ml-auto">
                   <LearningLevelSelector
                     value={learningLevel}
                     onChange={setLearningLevel}
@@ -1357,6 +1364,7 @@ export function ChatPage() {
               openSeq={viewerDoc.seq}
               onClose={() => { setViewerDoc(null); setViewerContext(null); }}
               onContextChange={setViewerContext}
+              onQuote={(text) => { setInput((prev) => appendQuote(prev, text)); focusAtEnd(chatInputRef.current); }}
             />
           </ViewerErrorBoundary>
         </div>
@@ -1450,11 +1458,15 @@ export function ChatPage() {
           <p className="text-sm text-gray-600 mb-2">
             {t('chat.deleteClosingText').replace('{title}', deleteDialog.title)}
           </p>
+          {pageFeatures.visible('journal') && (
           <p className="text-sm text-gray-600 mb-6">
             {t('chat.deleteAskSummary')}
           </p>
+          )}
 
           <div className="flex flex-col gap-3">
+            {/* Leerdagboek uit in deze cursus: geen reflectie aanbieden. */}
+            {pageFeatures.visible('journal') && (
             <button
               data-testid="btn-delete-with-summary"
               onClick={() => handleDelete(deleteDialog.conversationId, true)}
@@ -1464,6 +1476,7 @@ export function ChatPage() {
               {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookText className="w-4 h-4" />}
               {t('chat.deleteWithSummary')}
             </button>
+            )}
 
             <button
               data-testid="btn-delete-without-summary"

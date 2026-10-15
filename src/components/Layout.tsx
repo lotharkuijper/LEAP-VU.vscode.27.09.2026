@@ -14,7 +14,8 @@ import {
   RefreshCw,
   BookText,
   Package,
-  Coffee
+  Coffee,
+  EyeOff
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Tooltip } from './help/Tooltip';
@@ -24,6 +25,8 @@ import { useLanguage } from '../i18n';
 import { LanguageSelector } from './LanguageSelector';
 import { SECTION_COLORS } from '../lib/sectionColors';
 import { useStudiecafeUnread } from '../hooks/useStudiecafeUnread';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
+import { featureForPath } from '../lib/courseFeatures';
 
 interface LayoutProps {
   children: ReactNode;
@@ -38,9 +41,12 @@ interface NavItemProps {
   onClick?: () => void;
   badge?: number;
   badgeTitle?: string;
+  // Onderdeel staat uit voor studenten (alleen staf ziet het nog).
+  offForStudents?: boolean;
+  offLabel?: string;
 }
 
-function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, badgeTitle }: NavItemProps) {
+function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, badgeTitle, offForStudents = false, offLabel }: NavItemProps) {
   const baseClass = "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium";
   const activeClass = active
     ? `bg-gradient-to-r ${color} text-white shadow-md ring-1 ring-white/30`
@@ -64,7 +70,12 @@ function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, bad
           </span>
         )}
       </span>
-      <span>{label}</span>
+      <span className={offForStudents ? 'opacity-60' : undefined}>{label}</span>
+      {offForStudents && (
+        <span className="ml-auto" title={offLabel} aria-label={offLabel} data-testid="nav-feature-off">
+          <EyeOff className="w-4 h-4 opacity-70" aria-hidden />
+        </span>
+      )}
     </Link>
   );
 }
@@ -72,6 +83,7 @@ function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, bad
 export function Layout({ children }: LayoutProps) {
   const { profile, signOut, refreshProfile, isDocent, isAdmin } = useAuth();
   const { activeCourseId } = useActiveCourse();
+  const courseFeatures = useCourseFeatures();
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -99,11 +111,17 @@ export function Layout({ children }: LayoutProps) {
       { to: '/feedback', icon: BookText, label: t('nav.feedback'), color: SECTION_COLORS.journal.gradient },
       { to: '/resources', icon: Package, label: t('nav.resources'), color: SECTION_COLORS.resources.gradient },
     ];
+    // Onderdelen die in deze cursus uit staan: weg voor studenten, met een
+    // oogje voor docent/beheerder (src/lib/courseFeatures.ts).
+    const shown = items.filter(item => {
+      const f = featureForPath(item.to);
+      return !f || courseFeatures.visible(f);
+    });
     if (isDocent || isAdmin) {
-      items.push({ to: '/admin', icon: Settings, label: t('nav.admin'), color: SECTION_COLORS.admin.gradient });
+      shown.push({ to: '/admin', icon: Settings, label: t('nav.admin'), color: SECTION_COLORS.admin.gradient });
     }
-    return items;
-  }, [isDocent, isAdmin, t]);
+    return shown;
+  }, [isDocent, isAdmin, t, courseFeatures]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -230,6 +248,8 @@ export function Layout({ children }: LayoutProps) {
                   onClick={() => setMobileMenuOpen(false)}
                   badge={badge}
                   badgeTitle={badge > 0 ? t('studiecafe.unread.navTitle', { count: badge }) : undefined}
+                  offForStudents={(() => { const f = featureForPath(item.to); return !!f && courseFeatures.offForStudents(f); })()}
+                  offLabel={t('courseFeatures.offForStudents')}
                 />
               );
             })}

@@ -78,3 +78,32 @@ describe('buildLevelInstructionBlock', () => {
     expect(block).toContain(LEVEL_LABELS.nl[LEVEL_DEFAULT]);
   });
 });
+
+// Niveautabel (2026-10-15): elk niveau beschrijft zes concrete dimensies, en het
+// blok gaat bij taal/stapgrootte/lengte vóór de chat-instructie van de cursus.
+// Meting met het echte model: scripts/eval-level-language.mjs.
+describe('niveautabel', () => {
+  it('beschrijft taal, vaktermen, zinnen, abstractie, voorkennis, stap en lengte', () => {
+    for (const lvl of [1, 2, 3, 4, 5]) {
+      const b = buildLevelInstructionBlock(lvl, 'nl');
+      for (const d of ['Taal:', 'Vaktermen:', 'Zinnen:', 'Abstractie:', 'Voorkennis:', 'Moeilijkheid van je vraag', 'Lengte:']) expect(b).toContain(d);
+    }
+  });
+  it('loopt van begrijpelijke taal (1) naar taal tussen vakgenoten (5)', () => {
+    expect(buildLevelInstructionBlock(1, 'nl')).toMatch(/B1-niveau/);
+    expect(buildLevelInstructionBlock(1, 'nl')).toMatch(/hoogstens één vakterm/);
+    expect(buildLevelInstructionBlock(5, 'nl')).toMatch(/C2-niveau/);
+    expect(buildLevelInstructionBlock(5, 'nl')).toMatch(/verwante onderwerpen en de grotere samenhang van het vak/);
+    expect(buildLevelInstructionBlock(5, 'en')).toMatch(/CEFR C2/);
+  });
+  it('vult de docent aan: docent bepaalt het soort reactie, niveau hoe technisch', () => {
+    const b = buildLevelInstructionBlock(3, 'nl');
+    expect(b).toMatch(/geen van beide overrulet de ander/);
+    expect(b).toMatch(/De docent bepaalt het SOORT reactie/);
+    expect(b).toMatch(/Dit niveau bepaalt HOE technisch en complex/);
+    expect(b).toMatch(/gemiddeld binnen het kader van de docent/);
+    expect(b).not.toMatch(/overrides|gaat dit blok vóór/);
+    expect(buildLevelInstructionBlock(3, 'en')).toMatch(/neither overrules the other/);
+    expect(b).toMatch(/Cursusmateriaal is je bron, geen voorbeeldtaal/);
+  });
+});

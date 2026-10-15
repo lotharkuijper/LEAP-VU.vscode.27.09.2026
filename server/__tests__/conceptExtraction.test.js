@@ -27,17 +27,17 @@ describe('concept classification', () => {
 
   it('classificeert kernbegrippen als main_course_concept en laat alleen die door voor quiz-topics', () => {
     const concepts = [
-      { name: 'Misclassificatie', definition: 'Een fout waarbij een geval ten onrechte in een categorie wordt geplaatst.' },
+      { name: 'Classificatie', definition: 'Het indelen van gevallen in categorieën volgens vaste regels.' },
       { name: 'Chocolade', definition: 'Voorbeeld uit een casus, niet een vakbegrip.' },
       { name: 'Bias', definition: 'Systematische vertekening in een oordeel of model.' },
     ];
 
     const filtered = filterQuizReadyConcepts(concepts);
-    expect(filtered.map((c) => c.name)).toEqual(['Misclassificatie', 'Bias']);
+    expect(filtered.map((c) => c.name)).toEqual(['Classificatie', 'Bias']);
   });
 
   it('laat echte vaktermen niet wegvallen als er in de tekst een voorbeeld wordt genoemd', () => {
-    const role = classifyConceptRole('Misclassificatie', 'In het voorbeeld wordt misclassificatie duidelijk zichtbaar in een casus over een dataset.');
+    const role = classifyConceptRole('Classificatie', 'In het voorbeeld wordt classificatie duidelijk zichtbaar in een casus over een dataset.');
     expect(role).toBe('main_course_concept');
   });
 });
@@ -48,18 +48,22 @@ describe('classifyConceptDifficulty (tekstuele vangnet-heuristiek, GEEN embeddin
     expect(difficulty).toBe('easy');
   });
 
-  it('classificeert een begrip met methodologisch jargon als hard', () => {
+  it('vakneutraal: een begrip dat een onderscheid én een voorwaarde vraagt is hard', () => {
     const difficulty = classifyConceptDifficulty(
-      'Cross-over trial',
-      'Een studiedesign waarbij deelnemers na randomisatie beide interventies doorlopen, met een sensitiviteitsanalyse voor carry-over effecten.'
+      'Aspect',
+      'Het verschil tussen voltooid en onvoltooid, afhankelijk van de vorm van het werkwoord.'
     );
     expect(difficulty).toBe('hard');
   });
 
+  it('vakneutraal: geen vakgebonden woordenlijst meer (statistiekjargon telt niet extra)', () => {
+    expect(classifyConceptDifficulty('Regressie', 'Een statistische techniek.')).toBe('easy');
+  });
+
   it('classificeert een middellang begrip zonder zwaar jargon als medium', () => {
     const difficulty = classifyConceptDifficulty(
-      'Steekproef',
-      'Een deelverzameling van de populatie die wordt gebruikt om conclusies te trekken over die populatie.'
+      'Fotosynthese',
+      'Het proces waarbij planten met behulp van licht water en koolstofdioxide omzetten in suiker en zuurstof voor hun groei.'
     );
     expect(difficulty).toBe('medium');
   });

@@ -36,12 +36,13 @@ if (!EMAIL || !PASSWORD) {
   process.exit(2);
 }
 
-const ADMIN_TABS = ['material', 'users', 'add_users', 'documents', 'rag_beheer', 'concepts', 'imports', 'quiz_sources',
+const ADMIN_TABS = ['material', 'users', 'add_users', 'imports', 'quiz_sources', 'course_features', 'analytics',
   'prompts', 'rag_settings', 'settings', 'projects_admin', 'course_info', 'learning_levels'];
 export const PAGES = [
   '/dashboard', '/chat', '/explain', '/quiz', '/projects', '/studiecafe', '/feedback', '/feedback?tab=achievements',
-  '/resources', '/choose-course', '/admin/courses', '/admin/documenten',
+  '/resources', '/choose-course', '/admin/courses',
   ...ADMIN_TABS.map(t => `/admin?tab=${t}`), '/admin?tab=projects_admin&view=templates',
+  '/admin?tab=material&step=concepts', '/admin?tab=material&step=processing',
 ].filter(p => !ONLY || p.includes(ONLY));
 
 // ── In de pagina uitgevoerde meting ──────────────────────────────────────────

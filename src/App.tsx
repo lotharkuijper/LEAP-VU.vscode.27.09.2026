@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CourseAccessProvider } from './contexts/CourseAccessContext';
 import { ActiveCourseProvider, useActiveCourse } from './contexts/ActiveCourseContext';
 import { Layout } from './components/Layout';
+import { CourseFeatureGate } from './components/CourseFeatureGate';
 import { LoadingSpinner } from './components/LoadingSpinner';
 import { LanguageProvider } from './i18n';
 import { tStatic } from './i18n/translations';
@@ -31,7 +32,6 @@ const ResourcesPage = lazy(() => import('./pages/ResourcesPage').then(m => ({ de
 const CoursesAdminPage = lazy(() => import('./pages/CoursesAdminPage').then(m => ({ default: m.CoursesAdminPage })));
 const TestCourses = lazy(() => import('./pages/TestCourses'));
 const FileManager = lazy(() => import('./pages/FileManager'));
-const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
 
 class LazyChunkErrorBoundary extends Component<
   { children: ReactNode },
@@ -79,7 +79,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to="/login" replace />;
 
-  return <Layout>{children}</Layout>;
+  // CourseFeatureGate: onderdeel van deze pagina uit in de actieve cursus →
+  // melding voor studenten, balk "uit voor studenten" voor staf.
+  return <Layout><CourseFeatureGate>{children}</CourseFeatureGate></Layout>;
 }
 
 // Task #270: stuurt een student wiens actieve cursus niet (meer) beschikbaar is
@@ -242,14 +244,8 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/admin/documenten"
-        element={
-          <ProtectedRoute>
-            <DocumentsPage />
-          </ProtectedRoute>
-        }
-      />
+      {/* Het oude mappenscherm is op 2026-10-15 verwijderd; oude links gaan naar Cursusmateriaal. */}
+      <Route path="/admin/documenten" element={<Navigate to="/admin?tab=material&step=files" replace />} />
 
       <Route
         path="/admin/courses"

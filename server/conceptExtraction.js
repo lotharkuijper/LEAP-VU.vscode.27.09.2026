@@ -47,7 +47,7 @@ export function classifyConceptRole(name, definition = '', context = {}) {
   const text = `${name || ''} ${definition || ''} ${context?.documentTitle || ''} ${context?.definitionHint || ''}`.toLowerCase();
   if (!text.trim()) return 'module_concept';
 
-  const stronglyConceptualName = /\b(misclassificatie|classificatie|validiteit|bias|confounding|effect|variabele|criterium|analyse|method|procedure|model|definitie|score|outcome|assumptie|vergelijking|synthese|inferentie|sensitiviteit|specificiteit|toetsing|interventie|systeem|verklaring|kernconcept)\b/.test(String(name || '').toLowerCase());
+  const stronglyConceptualName = /\b(classificatie|effect|variabele|criterium|analyse|method|procedure|model|definitie|score|assumptie|vergelijking|synthese|theorie|principe|toetsing|systeem|verklaring|kernconcept)\b/.test(String(name || '').toLowerCase());
 
   const exampleSignals = [
     /\bvoorbeeld\b/, /\bcasus\b/, /\billustratie\b/, /\bscenario\b/, /\binstantie\b/, /\be\.g\./, /\bbv\./,
@@ -56,7 +56,7 @@ export function classifyConceptRole(name, definition = '', context = {}) {
   const definitionSignals = [
     /\bdefinitie\b/, /\bbetekent\b/, /\bhoudt in\b/, /\bwordt gedefinieerd\b/, /\bgericht op\b/, /\brefereert aan\b/,
     /\bconcept\b/, /\btheorie\b/, /\bmodel\b/, /\bmethode\b/, /\bprocedure\b/, /\bcriterium\b/, /\bkenmerk\b/,
-    /\bvaliditeit\b/, /\bmisclassificatie\b/, /\bbias\b/, /\bconfounding\b/, /\beffect\b/, /\bvariabele\b/,
+    /\beffect\b/, /\bvariabele\b/, /\bprincipe\b/, /\bbegrip\b/,
   ];
   const methodSignals = [/\bmethod\b/, /\bprocedure\b/, /\btechniek\b/, /\banalyse\b/, /\bmodel\b/, /\bframework\b/, /\bbenadering\b/, /\balgoritme\b/];
 
@@ -89,18 +89,19 @@ export function normalizeDifficulty(value) {
 // Tekstuele vangnet-heuristiek voor moeilijkheidsgraad — gebruikt wanneer de
 // LLM geen (geldige) `difficulty` meegaf (bv. handmatig toegevoegde begrippen,
 // of oudere begrippen van vóór dit veld bestond). Beoordeelt uitsluitend de
-// TEKST (definitielengte + methodologisch/statistisch jargon), NIET de
+// TEKST, vakneutraal (2026-10-15: LEAP is niet aan één vak gebonden): de lengte
+// van de definitie en woorden die een verband of onderscheid aangeven, NIET de
 // embedding-vector: er is geen gevalideerde manier om moeilijkheidsgraad uit
 // de rauwe vectorwiskunde af te leiden, dat zou schijnprecisie zijn.
 export function classifyConceptDifficulty(name, definition = '') {
   const text = `${name || ''} ${definition || ''}`.toLowerCase();
   const wordCount = String(definition || '').trim().split(/\s+/).filter(Boolean).length;
 
-  const hardSignals = /\b(interactie|confounding|effectmodificatie|multivariabel|multivariaat|regressie|standaardfout|betrouwbaarheidsinterval|hypothesetoetsing|steekproefkader|randomisatie|cross-?over|non-inferiority|intention-to-treat|per-protocol|sensitiviteitsanalyse|multicollineariteit|heterogeniteit|meta-analyse)\b/;
-  const mediumSignals = /\b(validiteit|betrouwbaarheid|bias|correlatie|associatie|steekproef|populatie|design|studieopzet|variabele|criterium|toetsing|schatting)\b/;
+  // Woorden die aangeven dat je begrippen moet combineren of onderscheiden.
+  const relationWords = text.match(/\b(verschil|onderscheid|in tegenstelling|afhankelijk|voorwaarde|wisselwerking|samenhang|combinatie|versus|terwijl|mits|tenzij|difference|distinction|unlike|depends|condition|interaction|whereas)\b/g) || [];
 
-  if (hardSignals.test(text) || wordCount > 35) return 'hard';
-  if (mediumSignals.test(text) || wordCount > 15) return 'medium';
+  if (wordCount > 35 || relationWords.length >= 2) return 'hard';
+  if (wordCount > 15 || relationWords.length === 1) return 'medium';
   return 'easy';
 }
 

@@ -3,7 +3,9 @@ import type { CSSProperties } from 'react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import { supabase } from '../lib/supabase';
-import { X, ChevronLeft, ChevronRight, Loader2, AlertCircle, Download, FileText, Languages, Maximize2, Minimize2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Loader2, AlertCircle, Download, FileText, Languages, Maximize2, Minimize2, ZoomIn, ZoomOut, MessageSquareQuote } from 'lucide-react';
+import { Tooltip } from './help/Tooltip';
+import { ZOOM_STEPS, nextZoom } from '../lib/viewerZoom';
 import { openRagDocument } from '../services/rag.service';
 import { TRANSLATION_LANGUAGES, TRANSLATION_LANGUAGE_CODES, nativeLangName } from '../lib/translationLanguages';
 import { MarkdownMessage } from './MarkdownMessage';
@@ -33,6 +35,8 @@ interface DocumentViewerProps {
   lang: 'nl' | 'en';
   onClose: () => void;
   onContextChange?: (ctx: ViewerContext | null) => void;
+  // Geselecteerde tekst als citaat naar de chat sturen (knop "Vraag in de chat").
+  onQuote?: (text: string) => void;
   // Pagina waarop de viewer moet openen (1-based; alleen zinvol voor PDF's).
   // Wordt geklemd op het paginabereik zodra het document geladen is.
   initialPage?: number;
@@ -63,7 +67,7 @@ function segmentText(text: string, max = 5000): string[] {
   return segs.length ? segs : [clean];
 }
 
-export function DocumentViewer({ documentId, title, lang, onClose, onContextChange, initialPage, openSeq }: DocumentViewerProps) {
+export function DocumentViewer({ documentId, title, lang, onClose, onContextChange, initialPage, openSeq, onQuote }: DocumentViewerProps) {
   const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,6 +84,9 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
   const [fullscreen, setFullscreen] = useState(false);
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [fontScale, setFontScale] = useState(1);
+  const [zoom, setZoom] = useState(1);
+  // Geselecteerde tekst in het document + plek voor de knop "Vraag in de chat".
+  const [quote, setQuote] = useState<{ text: string; x: number; y: number } | null>(null);
   const [wide, setWide] = useState(() => (typeof window !== 'undefined' ? window.innerWidth >= 900 : true));
   const [targetLang, setTargetLang] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -94,6 +101,10 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
   const [retryNonce, setRetryNonce] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Onzichtbare tekstlaag van pdf.js over het canvas: tekst selecteren en kopiëren.
+  const textLayerRef = useRef<HTMLDivElement | null>(null);
+  const textLayerTaskRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const splitRef = useRef<HTMLDivElement | null>(null);
   const pdfRef = useRef<any>(null);
@@ -139,10 +150,37 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  const toggleFullscreen = useCallback(async () => {
+    const el = rootRef.current;
+    if (!fullscreen) {
+      if (el && typeof el.requestFullscreen === 'function') {
+        try { await el.requestFullscreen(); return; } catch { /* val terug op de vaste weergave */ }
+      }
+      setFullscreen(true);
+    } else {
+      if (document.fullscreenElement) { try { await document.exitFullscreen(); } catch { /* ignore */ } }
+      setFullscreen(false);
+    }
+  }, [fullscreen]);
+
+  // Houd de stand bij als de browser zelf volledig scherm verlaat (Esc, F11).
+  useEffect(() => {
+    const onChange = () => setFullscreen(!!rootRef.current && document.fullscreenElement === rootRef.current);
+    document.addEventListener('fullscreenchange', onChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange);
+      if (rootRef.current && document.fullscreenElement === rootRef.current) document.exitFullscreen().catch(() => {});
+    };
+  }, []);
+
   // Escape verlaat de fullscreen-leesmodus.
   useEffect(() => {
     if (!fullscreen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setFullscreen(false); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      setFullscreen(false);
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [fullscreen]);
@@ -173,7 +211,7 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
       if (seq !== renderSeqRef.current) return;
       const unscaled = pdfPage.getViewport({ scale: 1 });
       const available = Math.max(240, container.clientWidth - 24);
-      const scale = available / unscaled.width;
+      const scale = (available / unscaled.width) * zoom;
       const viewport = pdfPage.getViewport({ scale });
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -186,11 +224,24 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
       const task = pdfPage.render({ canvasContext: ctx, viewport });
       renderTaskRef.current = task;
       await task.promise;
+      // Tekstlaag: dezelfde viewport, zodat de (onzichtbare) tekst precies over
+      // de getekende tekst ligt. Selecteren en kopiëren werkt dan gewoon.
+      const layer = textLayerRef.current;
+      if (layer && seq === renderSeqRef.current) {
+        try { textLayerTaskRef.current?.cancel(); } catch { /* ignore */ }
+        layer.replaceChildren();
+        layer.style.setProperty('--total-scale-factor', String(viewport.scale));
+        layer.style.setProperty('--scale-round-x', '1px');
+        layer.style.setProperty('--scale-round-y', '1px');
+        const tl = new (pdfjsLib as any).TextLayer({ textContentSource: pdfPage.streamTextContent(), container: layer, viewport });
+        textLayerTaskRef.current = tl;
+        try { await tl.render(); } catch { /* afgebroken: nieuwere render */ }
+      }
     } catch (err: any) {
       if (err?.name === 'RenderingCancelledException') return;
       setError(t('docViewer.errRenderPage'));
     }
-  }, [lang]);
+  }, [lang, zoom]);
 
   // Haal de bron-tekst van de huidige pagina/sectie op (pdf.js getTextContent
   // sluit exact aan op de weergegeven pagina; voor tekstbestanden uit de
@@ -230,6 +281,8 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
     setTranslatedText(null);
     setTranslateError(null);
     setTranslating(false);
+    setZoom(1);
+    setQuote(null);
     transCacheRef.current.clear();
     // Wis directe context bij een documentwissel zodat de chat nooit de vorige
     // bron/pagina meestuurt terwijl de nieuwe bron nog laadt.
@@ -397,6 +450,42 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
     })();
   }, [translateOpen, page, targetLang, loading, error, textPages, documentId, meta, getCurrentSourceText, lang, retryNonce]);
 
+  const zoomIn = () => setZoom((z) => nextZoom(z, 1));
+  const zoomOut = () => setZoom((z) => nextZoom(z, -1));
+
+  // Ctrl/Cmd + scrollwiel zoomt in het document (zoals in een pdf-lezer).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      setZoom((z) => nextZoom(z, e.deltaY < 0 ? 1 : -1));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Geselecteerde tekst in het document: knop "Vraag in de chat" bij de selectie.
+  const onPaneMouseUp = () => {
+    if (!onQuote) return;
+    const sel = window.getSelection();
+    const text = sel?.toString().replace(/\s+/g, ' ').trim() || '';
+    const pane = containerRef.current;
+    if (!sel || !text || !pane || sel.rangeCount === 0 || !pane.contains(sel.anchorNode)) { setQuote(null); return; }
+    const r = sel.getRangeAt(0).getBoundingClientRect();
+    const box = pane.getBoundingClientRect();
+    setQuote({ text: text.slice(0, 1500), x: r.left - box.left + pane.scrollLeft, y: r.bottom - box.top + pane.scrollTop + 6 });
+  };
+  const sendQuote = () => {
+    if (!quote || !onQuote) return;
+    onQuote(quote.text);
+    setQuote(null);
+    window.getSelection()?.removeAllRanges();
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    setFullscreen(false); // zodat de chat weer in beeld is
+  };
+
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages || 1, p + 1));
 
@@ -461,13 +550,46 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
     : 'flex h-full flex-col';
 
   return (
-    <div className={shellClass} data-testid="document-viewer">
+    <div ref={rootRef} className={shellClass} data-testid="document-viewer">
       {/* Titelbalk */}
-      <div className="flex items-center gap-2 border-b border-gray-200 px-3 py-2">
+      {/* Titelbalk: in een smal paneel gaan de knoppen naar een tweede regel,
+          zodat de titel leesbaar blijft en het sluitkruisje in beeld. */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-gray-200 px-3 py-2">
         <FileText className="h-4 w-4 shrink-0 text-blue-600" />
-        <span className="flex-1 truncate text-sm font-semibold text-gray-800" title={meta?.title || title} data-testid="text-viewer-title">
+        <span className="min-w-0 flex-1 basis-[9rem] truncate text-sm font-semibold text-gray-800" title={meta?.title || title} data-testid="text-viewer-title">
           {meta?.title || title}
         </span>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+        {!error && (
+          <div className="flex items-center rounded-md border border-gray-200" data-testid="viewer-zoom">
+            <Tooltip label={t('docViewer.zoomOut')} side="bottom">
+              <button type="button" onClick={zoomOut} disabled={zoom <= ZOOM_STEPS[0]} className="p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" data-testid="btn-viewer-zoom-out">
+                <ZoomOut className="h-4 w-4" />
+              </button>
+            </Tooltip>
+            <Tooltip label={t('docViewer.zoomReset')} side="bottom">
+              <button type="button" onClick={() => setZoom(1)} className="min-w-[3rem] px-1 text-xs tabular-nums text-gray-600 hover:bg-gray-100" data-testid="btn-viewer-zoom-reset">
+                {Math.round(zoom * 100)}%
+              </button>
+            </Tooltip>
+            <Tooltip label={t('docViewer.zoomIn')} side="bottom">
+              <button type="button" onClick={zoomIn} disabled={zoom >= ZOOM_STEPS[ZOOM_STEPS.length - 1]} className="p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" data-testid="btn-viewer-zoom-in">
+                <ZoomIn className="h-4 w-4" />
+              </button>
+            </Tooltip>
+          </div>
+        )}
+        <Tooltip label={fullscreen ? t('docViewer.exitFullscreen') : t('docViewer.fullscreen')} side="bottom">
+          <button
+            type="button"
+            onClick={() => { void toggleFullscreen(); }}
+            className={`rounded-md p-1.5 ${fullscreen ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'}`}
+            aria-pressed={fullscreen}
+            data-testid="btn-viewer-fullscreen"
+          >
+            {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          </button>
+        </Tooltip>
         <button
           type="button"
           onClick={toggleTranslate}
@@ -496,6 +618,7 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
         >
           <X className="h-4 w-4" />
         </button>
+        </div>
       </div>
 
       {textFallback && (
@@ -547,15 +670,6 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
           <span className="ml-auto inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700" data-testid="label-machine-translated">
             {t('docViewer.machineTranslated')}
           </span>
-          <button
-            type="button"
-            onClick={() => setFullscreen((f) => !f)}
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            title={fullscreen ? t('docViewer.shrink') : t('docViewer.expand')}
-            data-testid="btn-translate-fullscreen"
-          >
-            {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-          </button>
         </div>
       )}
 
@@ -611,16 +725,33 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
           ref={containerRef}
           className="relative overflow-auto bg-gray-50 p-3"
           style={originalPaneStyle}
+          onMouseUp={onPaneMouseUp}
+          onScroll={() => quote && setQuote(null)}
           data-testid="viewer-original-pane"
         >
+          {quote && onQuote && (
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={sendQuote}
+              className="absolute z-20 inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-medium text-white shadow-lg hover:bg-blue-700"
+              style={{ left: Math.max(4, quote.x), top: quote.y }}
+              data-testid="btn-viewer-quote"
+            >
+              <MessageSquareQuote className="h-3.5 w-3.5" />
+              {t('docViewer.quoteToChat')}
+            </button>
+          )}
           {!loading && !error && textPages !== null && (
-            <pre className="whitespace-pre-wrap break-words rounded-lg bg-white p-4 font-mono text-sm text-gray-800 shadow-sm" data-testid="text-viewer-content">
+            <pre className="whitespace-pre-wrap break-words rounded-lg bg-white p-4 font-mono text-gray-800 shadow-sm" style={{ fontSize: `${0.875 * zoom}rem` }} data-testid="text-viewer-content">
               {textPages[page - 1]}
             </pre>
           )}
           {!loading && !error && textPages === null && (
-            <div className="flex justify-center">
-              <canvas ref={canvasRef} className="rounded-lg bg-white shadow-sm" data-testid="canvas-viewer-page" />
+            <div className="relative mx-auto w-max">
+              {/* mx-auto + w-max: gecentreerd, en bij inzoomen te verschuiven met de schuifbalken. */}
+              <canvas ref={canvasRef} className="block rounded-lg bg-white shadow-sm" data-testid="canvas-viewer-page" />
+              <div ref={textLayerRef} className="textLayer" data-testid="viewer-text-layer" />
             </div>
           )}
         </div>

@@ -49,6 +49,8 @@ export const HELP_TOPICS = [
   'searchSensitivity.overview',
   'searchSensitivity.tryTerm',
   'learningLevels.overview',
+  // Onderdelen per cursus aan/uit
+  'courseFeatures.toggles',
   // Quiz (student)
   'quiz.progress',
   // Analyse (losse module: src/features/analytics)

@@ -17,7 +17,8 @@ import { PurposeReview } from './PurposeReview';
 import { ReadinessStep, WarningList, type MaterialStep } from './ReadinessStep';
 import { HelpTip } from '../help/HelpTip';
 import { ExtractionProgressText } from '../ExtractionProgressText';
-import { startConceptExtractionTask, CONCEPT_TASK_KIND } from '../../lib/conceptExtractionJob';
+import { startConceptExtractionTask, CONCEPT_TASK_KIND, extractionBody, DEFAULT_EXTRACTION_OPTIONS, type ExtractionOptions } from '../../lib/conceptExtractionJob';
+import { ExtractionOptionsPanel } from './ExtractionOptionsPanel';
 import { useTask } from '../../lib/backgroundTasks';
 import { AdminHint } from '../help/AdminHint';
 
@@ -37,6 +38,8 @@ export function CourseMaterialWorkspace({
   onGoToTab,
   onConceptsChanged,
   refreshKey = 0,
+  extractionOptions = DEFAULT_EXTRACTION_OPTIONS,
+  onExtractionOptionsChange,
 }: {
   step: MaterialStep;
   onStepChange: (s: MaterialStep) => void;
@@ -44,6 +47,9 @@ export function CourseMaterialWorkspace({
   onGoToTab: (tab: 'projects_admin' | 'quiz_sources') => void;
   onConceptsChanged?: () => void;
   refreshKey?: number;
+  /** Taal en documentkeuze voor de extractie (gedeeld met "Hergenereer" in AdminPage). */
+  extractionOptions?: ExtractionOptions;
+  onExtractionOptionsChange?: (next: ExtractionOptions) => void;
 }) {
   const { t } = useLanguage();
   const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
@@ -71,7 +77,7 @@ export function CourseMaterialWorkspace({
       // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
       const body = await startConceptExtractionTask({
         courseId: activeCourseId,
-        body: { courseId: activeCourseId, replace: false },
+        body: extractionBody(activeCourseId, false, extractionOptions),
         token: session?.access_token || '',
         title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
         resultLink: '/admin?tab=material&step=concepts',
@@ -231,6 +237,9 @@ export function CourseMaterialWorkspace({
               <span className={`text-sm ${findResult.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} data-testid="text-find-new-result">{findResult.text}</span>
             )}
           </div>
+          {files && onExtractionOptionsChange && (
+            <ExtractionOptionsPanel files={files} value={extractionOptions} onChange={onExtractionOptionsChange} />
+          )}
         </div>
       )}
 

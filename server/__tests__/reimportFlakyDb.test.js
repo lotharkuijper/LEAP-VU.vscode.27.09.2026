@@ -14,12 +14,8 @@ import http from 'http';
 //   • POST /api/admin/process-pptx — documents-by-id lookup geeft een error →
 //     500 (NIET 404) en er worden GEEN chunks verwerkt.
 //   • POST /api/admin/process-docx — idem voor .docx.
-//   • POST /api/admin/create-rag-folder (→ ensureCourseRagFolder):
-//       - de eerste course_folder_assignments-lookup faalt → 500, GEEN map/koppeling.
-//       - de "bestaande gekoppelde RAG-map"-lookup (document_folders) faalt → 500,
-//         GEEN nieuwe map/koppeling.
-//       - de "bestaande koppeling"-lookup (course_folder_assignments op folder_id)
-//         faalt → 500, GEEN koppeling aangemaakt.
+//   • ensureCourseRagFolder: zie server/__tests__/ragFolder.test.js (de route
+//     create-rag-folder is op 2026-10-15 met de klassieke weergave verdwenen).
 //
 // Aanpak: identiek aan importWebEndpoints.test.js — we mocken
 // `@supabase/supabase-js` met een in-memory query-builder-stub, maar breiden die
@@ -292,64 +288,5 @@ describe('POST /api/admin/process-docx — flaky documents-lookup', () => {
     expect(res.body.error).toMatch(/opzoeken/i);
     expect(harness.state.db.tables.document_chunks.length).toBe(0);
     expect(harness.state.db.tables.documents[0].processing_status).toBe('completed');
-  });
-});
-
-// ===========================================================================
-// ensureCourseRagFolder via /api/admin/create-rag-folder
-// ===========================================================================
-describe('POST /api/admin/create-rag-folder — flaky ensureCourseRagFolder-lookups', () => {
-  const PAYLOAD = { courseId: COURSE_ID, courseName: 'Statistiek 1' };
-
-  it('eerste cursuskoppeling-lookup faalt → 500, geen map/koppeling aangemaakt', async () => {
-    seedAdmin();
-    // De allereerste course_folder_assignments-lookup (heeft de cursus al een map?)
-    // faalt. Zonder de guard zou dit als "geen koppeling" gelezen worden en een
-    // tweede RAG-map aanmaken.
-    harness.failOn({ table: 'course_folder_assignments', op: 'select', message: 'transient timeout' });
-
-    const res = await post('/api/admin/create-rag-folder', PAYLOAD);
-
-    expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/cursuskoppelingen niet opzoeken/i);
-    expect(harness.state.db.tables.document_folders.length).toBe(0);
-    expect(harness.state.db.tables.course_folder_assignments.length).toBe(0);
-  });
-
-  it('bestaande-gekoppelde-RAG-map-lookup faalt → 500, geen nieuwe map/koppeling', async () => {
-    // Een bestaande koppeling zorgt dat assignedIds>0, zodat de document_folders-
-    // lookup (de bestaande gekoppelde RAG-map) wordt geraakt.
-    seedAdmin({
-      course_folder_assignments: [{ id: 'cfa-1', course_id: COURSE_ID, folder_id: 'folder-existing' }],
-    });
-    harness.failOn({ table: 'document_folders', op: 'select', message: 'transient timeout' });
-
-    const res = await post('/api/admin/create-rag-folder', PAYLOAD);
-
-    expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/gekoppelde RAG-map niet opzoeken/i);
-    // Geen NIEUWE map en geen NIEUWE koppeling (de bestaande blijft staan).
-    expect(harness.state.db.tables.document_folders.length).toBe(0);
-    expect(harness.state.db.tables.course_folder_assignments.length).toBe(1);
-  });
-
-  it('bestaande-koppeling-lookup faalt → 500, geen koppeling aangemaakt', async () => {
-    seedAdmin();
-    // Geen bestaande koppeling/naam-match → de flow maakt een nieuwe map en
-    // controleert dan op een bestaande koppeling (course_folder_assignments op
-    // course_id ÉN folder_id). Laat juist die lookup falen.
-    harness.failOn({
-      table: 'course_folder_assignments',
-      op: 'select',
-      match: (filters) => filters.some((f) => f.col === 'folder_id'),
-      message: 'transient timeout',
-    });
-
-    const res = await post('/api/admin/create-rag-folder', PAYLOAD);
-
-    expect(res.status).toBe(500);
-    expect(res.body.error).toMatch(/bestaande koppeling niet opzoeken/i);
-    // Cruciaal: GEEN koppeling aangemaakt (de duplicaat-koppeling-bug).
-    expect(harness.state.db.tables.course_folder_assignments.length).toBe(0);
   });
 });

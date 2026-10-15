@@ -48,17 +48,23 @@ describe('sendChatMessage learningLevel-bedrading', () => {
   });
 });
 
-describe('evaluateExplanation learningLevel-bedrading', () => {
-  it('stuurt het meegegeven learningLevel mee in de request-body', async () => {
-    await evaluateExplanation(
-      'Begrip', 'Mijn uitleg', 'Definitie', ['kernpunt 1'],
-      undefined, undefined, false, undefined, 5,
-    );
-    expect(lastBody().learningLevel).toBe(5);
+describe('evaluateExplanation (server beoordeelt en slaat op)', () => {
+  const okEvaluate = () => ({
+    ok: true,
+    json: async () => ({ id: 'e1', version: 1, content: 'tekst', sections: null, score: { total: 90, reason: 'goed' } }),
   });
 
-  it('laat learningLevel undefined wanneer het niet wordt meegegeven', async () => {
-    await evaluateExplanation('Begrip', 'Mijn uitleg', 'Definitie', ['kernpunt 1']);
+  it('roept /api/explain/evaluate aan met begrip en uitleg', async () => {
+    fetchMock.mockResolvedValueOnce(okEvaluate());
+    const r = await evaluateExplanation({ conceptId: 'c1', explanation: 'Mijn uitleg', courseId: 'k1' });
+    expect(fetchMock).toHaveBeenCalledWith('/api/explain/evaluate', expect.anything());
+    expect(lastBody()).toMatchObject({ conceptId: 'c1', explanation: 'Mijn uitleg', courseId: 'k1' });
+    expect(r.score?.total).toBe(90);
+  });
+
+  it('stuurt nooit een leerniveau mee (bij Ik leg uit beheers je een begrip of niet)', async () => {
+    fetchMock.mockResolvedValueOnce(okEvaluate());
+    await evaluateExplanation({ conceptId: 'c1', explanation: 'Mijn uitleg' });
     expect(lastBody()).not.toHaveProperty('learningLevel');
   });
 });

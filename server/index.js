@@ -71,7 +71,7 @@ import {
 import { validateReviewResponse, canRequestDocumentReview, badgeForGrade, normalizeBadgeAwardMode, feedbackRoundsState } from './documentReview.js';
 import { authorizeAvailabilityChange, parseStudentVisible, memberCanAccessCourse, canAccessCourseContent } from './courseAvailability.js';
 import { collectMemberUserIds, mergeCourseMembers } from './courseMembers.js';
-import { pickReusableRagFolder } from './ragFolder.js';
+import { ensureCourseRagFolderWith } from './ragFolder.js';
 import { buildLanguageInstruction, localizePrompt, languageEnglishName, normalizeLang } from './languages.js';
 import { buildLevelInstructionBlock, LEVEL_LABELS, LEVEL_MIN, LEVEL_MAX, LEVEL_DEFAULT } from './learningLevel.js';
 import { computeTeacherFolderScope } from './documentScope.js';
@@ -180,6 +180,8 @@ import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buil
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
 import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
 import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countVerifiedPriorStudentMessages, turnSignature, levelName, topicKey } from './readiness.js';
+import { cleanKeyPoints, rankRelatedConcepts, explainFormatInstruction, parseExplainFeedback, explainFeedbackMarkdown, buildExplainUserMessage } from './explainFeedback.js';
+import { normalizeCourseFeatures, parseCourseFeaturesPatch, mergeCourseFeatures, featureForChatRequest, featureAllowed, FEATURE_DISABLED_MSG } from './courseFeatures.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -421,7 +423,7 @@ async function searchChunksServerSide(queryText, threshold, matchCount, allowedF
   // definitie, key_points). Dit geeft het embedding-model meer signaal voor
   // korte Nederlandse vaktermen waar text-embedding-3-small anders laag scoort.
   const embedQuery = (expansion && expansion.enabled)
-    ? expandQuery(queryText, { definition: expansion.definition, keyPoints: expansion.keyPoints }, lang)
+    ? expandQuery(queryText, { definition: expansion.definition, keyPoints: expansion.keyPoints, aliases: expansion.aliases }, lang)
     : queryText;
 
   try {
@@ -638,6 +640,12 @@ app.post('/api/chat', async (req, res) => {
     courseId,
     readinessCheck = false,
   } = req.body;
+
+  // Onderdelen per cursus: chat, Ik leg uit en quiz delen dit adres; alleen
+  // het onderdeel waar de aanroep bij hoort telt (beheer-aanroepen niet).
+  const chatFeature = featureForChatRequest(req.body);
+  if (chatFeature && courseId
+      && (await rejectIfFeatureOff(res, auth.user, auth.profile, courseId, chatFeature))) return;
 
   // Readiness-vraag ("klaar voor een hoger niveau?"): onderwerpen + huidig niveau
   // uit de database, alleen voor een cursus waar de beller toegang toe heeft.
@@ -991,7 +999,10 @@ async function recordReadinessOutcome({ user, courseId, lang, outcome, answerTex
       .eq('topic_key', row.topic_key).eq('level', row.level).maybeSingle());
   }
   if (saved) result.achievement = { id: saved.id, isNew, earnedAt: saved.earned_at };
-  if (saved && isNew) void createReadinessJournalEntry({ user, courseId, lang, outcome, answerText, achievementId: saved.id });
+  // Dagboek uit in deze cursus: de prestatie telt wel, maar zonder dagboekregel.
+  if (saved && isNew && (await courseFeatureOnFor(user, null, courseId, 'journal'))) {
+    void createReadinessJournalEntry({ user, courseId, lang, outcome, answerText, achievementId: saved.id });
+  }
   return result;
 }
 
@@ -1081,7 +1092,9 @@ app.post(['/api/chat/delete', '/api/chat/archive'], async (req, res) => {
 
     let journalEntryId = null;
 
-    if (generateSummary) {
+    // Dagboek uit in deze cursus: geen reflectie maken (de browser biedt het
+    // dan ook niet aan).
+    if (generateSummary && (await courseFeatureOnFor(user, null, courseId, 'journal'))) {
       const apiKey = process.env.OPENAI_API_KEY;
 
       const { data: msgs, error: msgError } = await supabaseAdmin
@@ -1479,7 +1492,7 @@ app.post('/api/admin/test-rag-similarity', async (req, res) => {
   const authHeader = req.headers['authorization'];
   if (!authHeader) return res.status(401).json({ error: 'Authorization header vereist' });
 
-  const { courseId, query, expand, definition, keyPoints } = req.body;
+  const { courseId, query, expand, definition, keyPoints, aliases } = req.body;
   if (!query || typeof query !== 'string' || !query.trim()) {
     return res.status(400).json({ error: 'query (zoekterm) is vereist' });
   }
@@ -1531,7 +1544,7 @@ app.post('/api/admin/test-rag-similarity', async (req, res) => {
     }
 
     // Haal top-N kandidaten op zonder drempel. Wanneer `expand` is meegegeven,
-    // wordt de zoekterm verrijkt met synoniemen (en optioneel definition/keyPoints)
+    // wordt de zoekterm verrijkt met de andere namen, kernpunten en definitie van het begrip
     // voordat het embedding-model wordt aangeroepen — handig om de winst van
     // query-uitbreiding direct in de admin-UI te demonstreren.
     const expansion = expand
@@ -1539,6 +1552,7 @@ app.post('/api/admin/test-rag-similarity', async (req, res) => {
           enabled: true,
           definition: typeof definition === 'string' ? definition : undefined,
           keyPoints: Array.isArray(keyPoints) ? keyPoints : undefined,
+          aliases: Array.isArray(aliases) ? aliases : undefined,
         }
       : undefined;
     const result = await searchChunksServerSide(query.trim(), 0, 10, allowedFolderIds, expansion);
@@ -1764,7 +1778,7 @@ app.get('/api/course-rag-folder-ids', async (req, res) => {
   }
 });
 
-// ── Document-tree & CRUD endpoints ──────────────────────────────────────────
+// ── Documenten: toegang (beheer) ────────────────────────────────────────────
 
 async function resolveAdminUser(req) {
   const auth = await authUser(req);
@@ -1785,10 +1799,10 @@ function getFileMimeType(ext) {
   return map[ext] || 'application/octet-stream';
 }
 
-// Task #335: docenten beheren de mappen van HUN cursus(sen) in de Documenten-tab
-// (src/pages/DocumentsPage.tsx). Die tab draait volledig op de admin-endpoints,
-// die supabaseAdmin (service-role) gebruiken en dus RLS bypassen — daarom scopen
-// we hier expliciet op applicatieniveau. getTeacherDocumentScope levert de set
+// Task #335: docenten mogen alleen bij documenten van HUN cursus(sen). De admin-
+// endpoints gebruiken supabaseAdmin (service-role) en bypassen dus RLS — daarom
+// scopen we hier expliciet op applicatieniveau. (Het oude mappenscherm
+// /admin/documenten is op 2026-10-15 verwijderd; Cursusmateriaal werkt met doelen.) getTeacherDocumentScope levert de set
 // folder-ids binnen de eigen-cursus-subbomen van de docent.
 //
 // Beveiliging (zie architect-review): we breiden de scope NOOIT uit naar een
@@ -1833,128 +1847,6 @@ async function resolveDocFolderAccess(r, folderId) {
   const scope = await getTeacherDocumentScope(r.user.id);
   return scope.folderIds.has(folderId);
 }
-
-// GET /api/admin/document-tree — volledige mapboom met documentaantallen
-// (admin: alles; docent: alleen de mappen van de eigen cursus(sen))
-app.get('/api/admin/document-tree', async (req, res) => {
-  if (!supabaseAdmin) return res.status(503).json({ error: 'DB niet beschikbaar' });
-  const r = await resolveAdminUser(req);
-  if (r.error) return res.status(r.error.status).json(r.error.body);
-  if (!r.isAdmin && !r.isDocent) return res.status(403).json({ error: 'Admin- of docentrechten vereist' });
-  try {
-    // Docenten zien alleen de mappen van hun eigen cursus(sen); admins alles.
-    let scopeIds = null;
-    if (!r.isAdmin) {
-      const scope = await getTeacherDocumentScope(r.user.id);
-      scopeIds = scope.folderIds;
-      if (scopeIds.size === 0) return res.json({ folders: [] });
-    }
-    const { data: folders, error: fErr } = await supabaseAdmin
-      .from('document_folders').select('id, name, parent_folder_id, folder_type, is_root, description').order('name');
-    if (fErr) return res.status(500).json({ error: fErr.message });
-    const visibleFolders = scopeIds ? (folders || []).filter((f) => scopeIds.has(f.id)) : (folders || []);
-    const { data: docRows } = await supabaseAdmin.from('documents').select('folder_id');
-    const countMap = {};
-    for (const d of docRows || []) {
-      if (d.folder_id) countMap[d.folder_id] = (countMap[d.folder_id] || 0) + 1;
-    }
-    const nodeMap = {};
-    for (const f of visibleFolders) {
-      nodeMap[f.id] = { ...f, document_count: countMap[f.id] || 0, children: [] };
-    }
-    const roots = [];
-    for (const node of Object.values(nodeMap)) {
-      if (node.parent_folder_id && nodeMap[node.parent_folder_id]) {
-        nodeMap[node.parent_folder_id].children.push(node);
-      } else {
-        roots.push(node);
-      }
-    }
-    function sortTree(nodes) {
-      nodes.sort((a, b) => a.name.localeCompare(b.name, 'nl'));
-      nodes.forEach(n => sortTree(n.children));
-    }
-    sortTree(roots);
-    return res.json({ folders: roots });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// GET /api/admin/folders/:folderId/documents (admin only)
-app.get('/api/admin/folders/:folderId/documents', async (req, res) => {
-  if (!supabaseAdmin) return res.status(503).json({ error: 'DB niet beschikbaar' });
-  const r = await resolveAdminUser(req);
-  if (r.error) return res.status(r.error.status).json(r.error.body);
-  if (!(await resolveDocFolderAccess(r, req.params.folderId))) return res.status(403).json({ error: 'Geen toegang tot deze map' });
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('documents')
-      .select('id, title, filename, file_type, file_size, processing_status, created_at, bucket, file_path, mime_type')
-      .eq('folder_id', req.params.folderId)
-      .order('created_at', { ascending: false });
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json({ documents: data || [] });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /api/admin/folders — nieuwe map aanmaken
-app.post('/api/admin/folders', async (req, res) => {
-  if (!supabaseAdmin) return res.status(503).json({ error: 'DB niet beschikbaar' });
-  const r = await resolveAdminUser(req);
-  if (r.error) return res.status(r.error.status).json(r.error.body);
-  const { name, parent_folder_id, folder_type } = req.body || {};
-  if (!name || !parent_folder_id) return res.status(400).json({ error: 'name en parent_folder_id zijn verplicht' });
-  if (!(await resolveDocFolderAccess(r, parent_folder_id))) return res.status(403).json({ error: 'Geen toegang tot deze map' });
-  // Docenten mogen geen speciale maptypes (rag_sources/course/data) minten; forceer
-  // 'general'. Alleen admins bepalen het meegegeven type.
-  const resolvedFolderType = r.isAdmin ? (folder_type || 'general') : 'general';
-  try {
-    const { data, error } = await supabaseAdmin
-      .from('document_folders')
-      .insert({ name, parent_folder_id, folder_type: resolvedFolderType, is_root: false, created_by: r.user.id })
-      .select().single();
-    if (error) return res.status(500).json({ error: error.message });
-    await supabaseAdmin.from('folder_permissions').insert([
-      { folder_id: data.id, role: 'admin',   can_view: true, can_edit: true  },
-      { folder_id: data.id, role: 'docent',  can_view: true, can_edit: true  },
-      { folder_id: data.id, role: 'student', can_view: true, can_edit: false },
-    ]);
-    return res.json({ folder: data });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /api/admin/folders/:folderId — lege map verwijderen
-app.delete('/api/admin/folders/:folderId', async (req, res) => {
-  if (!supabaseAdmin) return res.status(503).json({ error: 'DB niet beschikbaar' });
-  const r = await resolveAdminUser(req);
-  if (r.error) return res.status(r.error.status).json(r.error.body);
-  const { folderId } = req.params;
-  if (!(await resolveDocFolderAccess(r, folderId))) return res.status(403).json({ error: 'Geen toegang tot deze map' });
-  try {
-    // Docenten mogen nooit een structurele container (root of cursus-map) verwijderen.
-    if (!r.isAdmin) {
-      const { data: f } = await supabaseAdmin.from('document_folders').select('is_root, folder_type').eq('id', folderId).maybeSingle();
-      if (!f) return res.status(404).json({ error: 'Map niet gevonden' });
-      if (f.is_root === true || f.folder_type === 'course') {
-        return res.status(403).json({ error: 'Deze map kan niet worden verwijderd' });
-      }
-    }
-    const { count: docCount } = await supabaseAdmin.from('documents').select('id', { count: 'exact', head: true }).eq('folder_id', folderId);
-    if (docCount > 0) return res.status(409).json({ error: 'Map bevat nog documenten. Verwijder de documenten eerst.' });
-    const { count: childCount } = await supabaseAdmin.from('document_folders').select('id', { count: 'exact', head: true }).eq('parent_folder_id', folderId);
-    if (childCount > 0) return res.status(409).json({ error: 'Map bevat nog submappen. Verwijder de submappen eerst.' });
-    const { error } = await supabaseAdmin.from('document_folders').delete().eq('id', folderId);
-    if (error) return res.status(500).json({ error: error.message });
-    return res.json({ ok: true });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
 
 // GET /api/rag/documents/:documentId/download — student/docent-vriendelijke
 // download van een RAG-bron. Toegang volgt dezelfde folder_permissions-regels
@@ -2950,238 +2842,11 @@ app.post('/api/admin/process-rag-document', async (req, res) => {
   }
 });
 
-// POST /api/admin/folders/:folderId/upload — upload als base64-JSON
-app.post('/api/admin/folders/:folderId/upload', async (req, res) => {
-  if (!supabaseAdmin) return res.status(503).json({ error: 'DB niet beschikbaar' });
-  const r = await resolveAdminUser(req);
-  if (r.error) return res.status(r.error.status).json(r.error.body);
-  const { folderId } = req.params;
-  if (!(await resolveDocFolderAccess(r, folderId))) return res.status(403).json({ error: 'Geen toegang tot deze map' });
-  // title/description/autoProcess zijn optioneel (default: autoProcess=true) zodat
-  // de Documenten-tab ongewijzigd blijft. De RAG-beheer-tab stuurt
-  // autoProcess=false mee: de server maakt dan alleen storage + documents-rij aan
-  // (service-role, dus niet onderworpen aan client-RLS of een verlopen sessie) en
-  // de client draait daarna zelf de synchrone verwerking via de bestaande
-  // verwerk-endpoints (met voortgangsbalk + fragment-totaal).
-  const { filename, mimeType, data: base64Data, title, description, autoProcess } = req.body || {};
-  if (!filename || !base64Data) return res.status(400).json({ error: 'filename en data zijn verplicht' });
-  try {
-    const { data: folder } = await supabaseAdmin.from('document_folders').select('folder_type').eq('id', folderId).maybeSingle();
-    const bucket = (folder?.folder_type === 'rag_sources') ? 'rag_sources' : 'documents';
-    const fileBuffer = Buffer.from(base64Data, 'base64');
-    const safeFilename = filename.replace(/[^a-zA-Z0-9._\- ]/g, '_');
-    const filePath = `${folderId}/${Date.now()}_${safeFilename}`;
-    const fileExt = (filename.split('.').pop() || '').toLowerCase();
-    const resolvedMime = mimeType || getFileMimeType(fileExt);
-    const { error: storageErr } = await supabaseAdmin.storage.from(bucket).upload(filePath, fileBuffer, { contentType: resolvedMime, upsert: false });
-    if (storageErr) return res.status(500).json({ error: `Storage upload mislukt: ${storageErr.message}` });
-    const isRag = bucket === 'rag_sources';
-    const cleanTitle = (typeof title === 'string' && title.trim()) ? title.trim() : filename;
-    const { data: doc, error: dbErr } = await supabaseAdmin.from('documents').insert({
-      title: cleanTitle, filename, file_path: filePath, file_type: fileExt,
-      file_size: fileBuffer.length, folder_id: folderId, bucket,
-      mime_type: resolvedMime, uploaded_by: r.user.id,
-      description: (typeof description === 'string' && description) ? description : null,
-      processing_status: isRag ? 'processing' : 'pending',
-    }).select().single();
-    if (dbErr) {
-      await supabaseAdmin.storage.from(bucket).remove([filePath]);
-      return res.status(500).json({ error: dbErr.message });
-    }
-    // RAG-bestanden meteen verwerken (chunks + embeddings) zodat ze niet op
-    // 'pending'/'processing' blijven hangen. Asynchroon zodat de upload-respons
-    // snel terugkomt; de verwerking zet de status zelf op completed/failed.
-    // Sla dit over als de client expliciet autoProcess=false stuurt (die draait de
-    // verwerking zelf synchroon zodat dubbele, gelijktijdige verwerking voorkomen
-    // wordt).
-    if (isRag && autoProcess !== false) {
-      processRagDocumentById(doc.id, 'nl').catch(async (err) => {
-        console.error(`[folder-upload] verwerking mislukt voor doc=${doc.id}:`, err?.message || err);
-        try {
-          await supabaseAdmin.from('documents')
-            .update({ processing_status: 'failed' }).eq('id', doc.id);
-        } catch { /* best effort */ }
-      });
-    }
-    return res.json({ document: doc });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/create-rag-folder', async (req, res) => {
-  if (!supabaseAdmin) {
-    return res.status(503).json({ error: 'Admin client not available — SUPABASE_SERVICE_ROLE_KEY missing' });
-  }
-
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) {
-    return res.status(401).json({ error: 'Authorization header required' });
-  }
-
-  const { courseId, courseName } = req.body;
-  if (!courseId || !courseName) {
-    return res.status(400).json({ error: 'courseId and courseName are required' });
-  }
-
-  try {
-    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-
-    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
-    if (userError || !user) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-
-    const { data: profile, error: profileError } = await profileCache.get(user.id, loadProfileRoleEmail);
-
-    if (profileError || !profile) {
-      return res.status(403).json({ error: 'Could not verify user role' });
-    }
-
-    // Task #334: admin OF docent van DEZE cursus mag de RAG-map aanmaken.
-    if (!(await isStaffForCourse(user, profile, courseId))) {
-      return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
-    }
-
-    // Beveiliging: vertrouw NOOIT de client-`courseName` voor mapnaam/hergebruik.
-    // Een docent van cursus A zou anders met een gemanipuleerde `courseName` een
-    // RAG-map van cursus B kunnen laten koppelen aan A. Leid de cursusnaam daarom
-    // server-side af uit `courseId` en negeer de meegestuurde `courseName`.
-    const { data: course, error: courseErr } = await supabaseAdmin
-      .from('courses')
-      .select('id, name')
-      .eq('id', courseId)
-      .maybeSingle();
-    if (courseErr) return res.status(500).json({ error: courseErr.message });
-    if (!course) return res.status(404).json({ error: 'Cursus niet gevonden' });
-
-    const { folderId, created } = await ensureCourseRagFolder(courseId, course.name, user.id);
-    console.log(`[create-rag-folder] folder ${folderId} for course ${courseId} (created=${created})`);
-    return res.json({ folderId, created });
-  } catch (err) {
-    console.error('[create-rag-folder] Unexpected error:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
-  }
-});
-
 // Zorgt dat er een RAG-map (`RAG - <cursusnaam>`) bestaat, met permissies en
-// een koppeling aan de cursus. Hergebruikt een bestaande map (idempotent).
-// Spiegelt de logica van /api/admin/create-rag-folder voor server-side gebruik
-// door de web-import. Retourneert { folderId, created }.
+// een koppeling aan de cursus (server/ragFolder.js). Gebruikt bij uploaden als
+// leerstof/cursusinformatie en bij de web-import. Retourneert { folderId, created }.
 async function ensureCourseRagFolder(courseId, courseName, userId) {
-  // 1) Heeft de cursus al een gekoppelde RAG-map? Hergebruik die dan, ook als de
-  //    cursusnaam intussen is gewijzigd. Dit voorkomt dubbele mappen.
-  const { data: assignments, error: assignmentsErr } = await supabaseAdmin
-    .from('course_folder_assignments')
-    .select('folder_id')
-    .eq('course_id', courseId);
-  // Een echte query-fout NIET als "geen koppeling" behandelen: anders zou een
-  // transiënte fout een tweede RAG-map laten aanmaken voor een cursus die er al
-  // één heeft (duplicaat). Surface de fout zodat de aanroep opnieuw kan draaien.
-  if (assignmentsErr) throw new Error(`Kon cursuskoppelingen niet opzoeken: ${assignmentsErr.message}`);
-  const assignedIds = (assignments || []).map((a) => a.folder_id).filter(Boolean);
-  if (assignedIds.length > 0) {
-    const { data: ragFolder, error: ragFolderErr } = await supabaseAdmin
-      .from('document_folders')
-      .select('id')
-      .in('id', assignedIds)
-      .eq('folder_type', 'rag_sources')
-      .limit(1)
-      .maybeSingle();
-    if (ragFolderErr) throw new Error(`Kon gekoppelde RAG-map niet opzoeken: ${ragFolderErr.message}`);
-    if (ragFolder) {
-      return { folderId: ragFolder.id, created: false };
-    }
-  }
-
-  // 2) Anders: zoek op naam (mogelijk al aangemaakt zonder koppeling), maar
-  //    hergebruik ALLEEN een map die nergens hangt of uitsluitend aan déze
-  //    cursus. Hangt een naam-match (ook) aan een ándere cursus, dan komt ze
-  //    NOOIT in aanmerking (anders zou een naam-botsing tot cross-course
-  //    koppeling leiden) → dan maken we een nieuwe map.
-  const { data: namedFolders, error: namedFoldersErr } = await supabaseAdmin
-    .from('document_folders')
-    .select('id')
-    .eq('name', `RAG - ${courseName}`)
-    .eq('folder_type', 'rag_sources');
-  // Transiënte fout niet als "geen naam-match" behandelen → zou een herbruikbare
-  // map missen en een duplicaat aanmaken. Surface de fout.
-  if (namedFoldersErr) throw new Error(`Kon mappen op naam niet opzoeken: ${namedFoldersErr.message}`);
-
-  const assignmentsByFolderId = {};
-  for (const f of namedFolders || []) {
-    const { data: asg, error: asgErr } = await supabaseAdmin
-      .from('course_folder_assignments')
-      .select('course_id')
-      .eq('folder_id', f.id);
-    // Fout niet negeren: een gemiste koppeling zou een map ten onrechte als
-    // herbruikbaar (of juist niet) kunnen markeren — surface in plaats van raden.
-    if (asgErr) throw new Error(`Kon mapkoppelingen niet opzoeken: ${asgErr.message}`);
-    assignmentsByFolderId[f.id] = (asg || []).map((a) => a.course_id).filter(Boolean);
-  }
-  const reusableFolderId = pickReusableRagFolder({
-    folders: namedFolders || [],
-    assignmentsByFolderId,
-    courseId,
-  });
-
-  let folderId;
-  let created = false;
-  if (reusableFolderId) {
-    folderId = reusableFolderId;
-  } else {
-    const { data: newFolder, error: folderError } = await supabaseAdmin
-      .from('document_folders')
-      .insert({
-        name: `RAG - ${courseName}`,
-        description: `RAG-bronnen voor cursus ${courseName}`,
-        parent_folder_id: null,
-        created_by: userId,
-        folder_type: 'rag_sources',
-        is_root: false,
-      })
-      .select()
-      .single();
-    if (folderError || !newFolder) {
-      throw new Error(`Kon RAG-map niet aanmaken: ${folderError?.message || 'onbekende fout'}`);
-    }
-    folderId = newFolder.id;
-    created = true;
-
-    const { error: permError } = await supabaseAdmin
-      .from('folder_permissions')
-      .insert([
-        { folder_id: folderId, role: 'admin', can_view: true, can_edit: true },
-        { folder_id: folderId, role: 'docent', can_view: true, can_edit: true },
-        { folder_id: folderId, role: 'student', can_view: true, can_edit: false },
-      ]);
-    if (permError) {
-      console.warn('[ensureCourseRagFolder] permissions insert error (non-fatal):', permError.message);
-    }
-  }
-
-  const { data: existingAssignment, error: existingAssignmentErr } = await supabaseAdmin
-    .from('course_folder_assignments')
-    .select('id')
-    .eq('course_id', courseId)
-    .eq('folder_id', folderId)
-    .maybeSingle();
-  // Fout niet als "nog niet gekoppeld" behandelen → zou een dubbele koppeling-insert
-  // forceren. Surface de fout.
-  if (existingAssignmentErr) throw new Error(`Kon bestaande koppeling niet opzoeken: ${existingAssignmentErr.message}`);
-  if (!existingAssignment) {
-    const { error: assignError } = await supabaseAdmin
-      .from('course_folder_assignments')
-      .insert({ course_id: courseId, folder_id: folderId });
-    if (assignError) {
-      throw new Error(`Kon map niet koppelen aan cursus: ${assignError.message}`);
-    }
-  }
-
-  return { folderId, created };
+  return ensureCourseRagFolderWith(supabaseAdmin, courseId, courseName, userId);
 }
 
 // POST /api/admin/import-web/discover — ontdek de pagina's van een webomgeving
@@ -4620,6 +4285,45 @@ app.patch('/api/courses/:id/availability', async (req, res) => {
   }
 });
 
+// Onderdelen per cursus aan/uit (server/courseFeatures.js). Zelfde rechten als
+// de beschikbaarheid: beheerder of docent van deze cursus. Body:
+// { features: { quiz: false, … } } — alleen de genoemde onderdelen veranderen.
+app.patch('/api/courses/:id/features', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  const courseId = req.params.id;
+  if (!courseId) return res.status(400).json({ error: 'Cursus-ID ontbreekt' });
+
+  const parsed = parseCourseFeaturesPatch(req.body);
+  if (!parsed.ok) return res.status(parsed.status).json(parsed.body);
+
+  const isAdmin = auth.profile?.role === 'admin' || auth.profile?.email === SUPERUSER_EMAIL;
+  const teacher = isAdmin ? false : await isCourseTeacher(auth.user.id, courseId);
+  const decision = authorizeAvailabilityChange({ isAdmin, isCourseTeacher: teacher });
+  if (!decision.allowed) return res.status(403).json({ error: 'Alleen admin of docent van deze cursus mag de onderdelen wijzigen' });
+
+  try {
+    const { data: current, error: readErr } = await supabaseAdmin
+      .from('courses').select('features').eq('id', courseId).maybeSingle();
+    if (readErr) {
+      if (readErr.code === '42703' || /features/.test(readErr.message || '')) {
+        return res.status(503).json({ error: 'De kolom courses.features ontbreekt — pas de migratie eerst toe.' });
+      }
+      return res.status(500).json({ error: readErr.message || 'Lezen mislukt' });
+    }
+    if (!current) return res.status(404).json({ error: 'Cursus niet gevonden' });
+    const stored = mergeCourseFeatures(current.features, parsed.value);
+    const { error } = await supabaseAdmin.from('courses').update({ features: stored }).eq('id', courseId);
+    if (error) return res.status(500).json({ error: error.message || 'Bijwerken mislukt' });
+    courseFeaturesCache.delete(courseId);
+    console.log(`[courses/features] Cursus ${courseId} uit: ${Object.keys(stored).join(', ') || '(niets)'}`);
+    return res.json({ features: normalizeCourseFeatures(stored) });
+  } catch (err) {
+    console.error('[courses/features PATCH] Unexpected error:', err);
+    return res.status(500).json({ error: err?.message || 'Internal server error' });
+  }
+});
+
 // DELETE /api/admin/courses/:id — verwijder een cursus definitief. Alleen
 // toegestaan als er geen gekoppelde leden, projecten of extra mappen/documenten
 // zijn. De drie standaard-stub-folders (course/RAG/Projectdata) en hun
@@ -5761,7 +5465,7 @@ async function extractConceptsHandler(req, res) {
 
     // Taal-instructie voor naam + definitie.
     const languageDirective = {
-      nl: '- name: de gangbare Nederlandse vakterm (internationale Engelse termen mogen als ze zo in het Nederlandse veld gebruikt worden, bv. "odds ratio")\n- definition: een heldere definitie van 1-2 zinnen in het NEDERLANDS',
+      nl: '- name: de gangbare Nederlandse vakterm (internationale Engelse termen mogen als ze zo in het Nederlandse veld gebruikt worden)\n- definition: een heldere definitie van 1-2 zinnen in het NEDERLANDS',
       en: '- name: the common English term for the concept\n- definition: a clear 1-2 sentence definition in ENGLISH',
       auto: '- name: the concept term in the SAME language as the course material below\n- definition: a clear 1-2 sentence definition in the SAME language as the course material below',
     }[conceptLanguage];
@@ -5797,7 +5501,7 @@ Geschikte begrippen zijn onder meer:
 Beoordeel ook hoe MOEILIJK het begrip is voor een bachelorstudent, uitsluitend op basis van wat de definitie/tekst zelf vereist om te begrijpen (niet op basis van hoe vaak het voorkomt):
 - easy: rechtstreeks af te leiden uit de naam/definitie zelf, geen voorkennis van andere begrippen nodig, één enkel idee
 - medium: vereist begrip van één onderliggend mechanisme of de relatie tussen twee elementen
-- hard: vereist het combineren van meerdere begrippen, methodologische/statistische redenering, of een precies onderscheid met een vergelijkbaar begrip
+- hard: vereist het combineren van meerdere begrippen, redeneren over meerdere stappen, of een precies onderscheid met een vergelijkbaar begrip
 
 Geef elk gevonden begrip de volgende velden:
 ${languageDirective}
@@ -6592,23 +6296,10 @@ app.get('/api/concepts', async (req, res) => {
           return res.status(500).json({ error: courseErr.message });
         }
 
-        if (courseConcepts && courseConcepts.length > 0) {
-          return res.json({ concepts: approvedOnly(courseConcepts), source: 'course' });
-        }
-
-        const { data: globalConcepts, error: globalErr } = await supabaseAdmin
-          .from('concepts')
-          .select('*')
-          .is('course_id', null)
-          .order('name');
-
-        if (globalErr) {
-          console.error('[concepts] global fallback query error:', globalErr);
-          return res.status(500).json({ error: globalErr.message });
-        }
-
-        const filteredGlobal = approvedOnly(globalConcepts);
-        return res.json({ concepts: filteredGlobal, source: filteredGlobal.length ? 'global' : 'empty' });
+        // Begrippen blijven binnen hun cursus (2026-10-15): geen terugval op
+        // begrippen zonder cursus of van andere cursussen.
+        const own = approvedOnly(courseConcepts || []);
+        return res.json({ concepts: own, source: own.length ? 'course' : 'empty' });
       } else {
         const courseMarker = `course_id:${courseId}`;
         const { data: courseConcepts, error: courseErr } = await supabaseAdmin
@@ -6622,28 +6313,14 @@ app.get('/api/concepts', async (req, res) => {
           return res.status(500).json({ error: courseErr.message });
         }
 
-        if (courseConcepts && courseConcepts.length > 0) {
-          return res.json({ concepts: approvedOnly(courseConcepts), source: 'course' });
-        }
-
-        const { data: globalConcepts, error: globalErr } = await supabaseAdmin
-          .from('concepts')
-          .select('*')
-          .order('name');
-
-        if (globalErr) {
-          console.error('[concepts] global fallback (key_points) query error:', globalErr);
-          return res.status(500).json({ error: globalErr.message });
-        }
-
-        const filtered = approvedOnly((globalConcepts || []).filter(
-          (c) => !(c.key_points || []).some((kp) => kp.startsWith('course_id:'))
-        ));
-
-        return res.json({ concepts: filtered, source: filtered.length ? 'global' : 'empty' });
+        const own = approvedOnly(courseConcepts || []);
+        return res.json({ concepts: own, source: own.length ? 'course' : 'empty' });
       }
     }
 
+    // Zonder cursus: alleen het beheer (scope=manage) ziet alle begrippen;
+    // studenten krijgen niets, zodat nooit begrippen van andere cursussen verschijnen.
+    if (!isManageView) return res.json({ concepts: [], source: 'empty' });
     const { data: allConcepts, error: allErr } = await supabaseAdmin
       .from('concepts')
       .select('*')
@@ -6654,7 +6331,7 @@ app.get('/api/concepts', async (req, res) => {
       return res.status(500).json({ error: allErr.message });
     }
 
-    return res.json({ concepts: approvedOnly(allConcepts), source: 'global' });
+    return res.json({ concepts: allConcepts || [], source: 'global' });
   } catch (err) {
     console.error('[concepts] Unexpected error:', err);
     return res.status(500).json({ error: err.message });
@@ -6761,7 +6438,11 @@ registerConceptEvidenceRoutes(app, {
 registerStudiecafeRoutes(app, {
   supabaseAdmin,
   requireAuthUser,
-  userHasCourseAccess,
+  // Studiecafé uit in deze cursus (server/courseFeatures.js) = geen toegang,
+  // behalve voor de docent en de beheerder.
+  userHasCourseAccess: async (user, profile, courseId) =>
+    (await userHasCourseAccess(user, profile, courseId))
+    && (await courseFeatureOnFor(user, profile, courseId, 'studiecafe')),
   isStaffForCourse,
   pgPool,
 });
@@ -6986,9 +6667,7 @@ app.get('/api/explain/history', async (req, res) => {
 
     let allowedConceptIds = null; // null = geen cursusfilter
     if (courseId) {
-      // Resolve cursus-begrippen exact zoals /api/concepts: begrippen mét
-      // cursus-koppeling tellen als cursus-begrippen; heeft de cursus geen eigen
-      // begrippen, dan val terug op globale begrippen (zonder cursus-koppeling).
+      // Alleen begrippen van deze cursus (begrippen blijven binnen hun cursus).
       if (conceptsHasCourseId) {
         const { data: courseConcepts, error: courseErr } = await supabaseAdmin
           .from('concepts').select('id').eq('course_id', courseId);
@@ -6996,17 +6675,7 @@ app.get('/api/explain/history', async (req, res) => {
           console.error('[explain/history] cursus-begrip-query fout:', courseErr);
           return res.status(500).json({ error: courseErr.message });
         }
-        if (courseConcepts && courseConcepts.length > 0) {
-          allowedConceptIds = courseConcepts.map((c) => c.id);
-        } else {
-          const { data: globalConcepts, error: globalErr } = await supabaseAdmin
-            .from('concepts').select('id').is('course_id', null);
-          if (globalErr) {
-            console.error('[explain/history] globale-begrip-query fout:', globalErr);
-            return res.status(500).json({ error: globalErr.message });
-          }
-          allowedConceptIds = (globalConcepts || []).map((c) => c.id);
-        }
+        allowedConceptIds = (courseConcepts || []).map((c) => c.id);
       } else {
         const { data: courseConcepts, error: courseErr } = await supabaseAdmin
           .from('concepts').select('id').contains('key_points', [`course_id:${courseId}`]);
@@ -7014,19 +6683,7 @@ app.get('/api/explain/history', async (req, res) => {
           console.error('[explain/history] cursus-begrip-query fout:', courseErr);
           return res.status(500).json({ error: courseErr.message });
         }
-        if (courseConcepts && courseConcepts.length > 0) {
-          allowedConceptIds = courseConcepts.map((c) => c.id);
-        } else {
-          const { data: allConcepts, error: allErr } = await supabaseAdmin
-            .from('concepts').select('id, key_points');
-          if (allErr) {
-            console.error('[explain/history] globale-begrip-query fout:', allErr);
-            return res.status(500).json({ error: allErr.message });
-          }
-          allowedConceptIds = (allConcepts || [])
-            .filter((c) => !(c.key_points || []).some((kp) => kp.startsWith('course_id:')))
-            .map((c) => c.id);
-        }
+        allowedConceptIds = (courseConcepts || []).map((c) => c.id);
       }
       // Geen begrippen in deze cursus ⇒ geen uitleg-geschiedenis.
       if (allowedConceptIds.length === 0) {
@@ -7036,7 +6693,7 @@ app.get('/api/explain/history', async (req, res) => {
 
     let query = supabaseAdmin
       .from('student_explanations')
-      .select('id, concept_id, version, created_at, concepts(id, name, category)')
+      .select('id, concept_id, version, created_at, score, concepts(id, name, category)')
       .eq('student_id', user.id);
     if (allowedConceptIds !== null) {
       query = query.in('concept_id', allowedConceptIds);
@@ -7055,6 +6712,7 @@ app.get('/api/explain/history', async (req, res) => {
       conceptCategory: r.concepts?.category || null,
       version: r.version || 1,
       createdAt: r.created_at,
+      score: typeof r.score?.total === 'number' ? r.score.total : null,
     }));
 
     return res.json({ items });
@@ -7079,7 +6737,7 @@ app.get('/api/explain/:id', async (req, res) => {
     const { id } = req.params;
     const { data, error } = await supabaseAdmin
       .from('student_explanations')
-      .select('id, concept_id, explanation_text, feedback, version, created_at, student_id, concepts(id, name, category, definition, key_points)')
+      .select('id, concept_id, explanation_text, feedback, score, version, created_at, student_id, concepts(id, name, category, definition, key_points)')
       .eq('id', id)
       .maybeSingle();
 
@@ -7092,6 +6750,9 @@ app.get('/api/explain/:id', async (req, res) => {
       conceptId: data.concept_id,
       explanationText: data.explanation_text,
       feedback: data.feedback?.content || (typeof data.feedback === 'string' ? data.feedback : null),
+      // Vier blokken + score (sinds 2026-10-15; oudere uitleg heeft alleen tekst).
+      sections: data.feedback?.sections || null,
+      score: typeof data.score?.total === 'number' ? data.score : null,
       version: data.version,
       createdAt: data.created_at,
       concept: data.concepts,
@@ -7102,72 +6763,114 @@ app.get('/api/explain/:id', async (req, res) => {
   }
 });
 
-app.post('/api/explain/save', async (req, res) => {
-  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'Authorization header vereist' });
-
-  const { conceptId, explanationText, feedback } = req.body;
-  if (!conceptId || !explanationText) {
-    return res.status(400).json({ error: 'conceptId en explanationText zijn vereist' });
+// (POST /api/explain/save is op 2026-10-15 vervangen door /api/explain/evaluate:
+// de server beoordeelt, scoort en slaat in één stap op.)
+// POST /api/explain/evaluate — "Ik leg uit" beoordelen, uitlezen en opslaan in
+// één stap (server/explainFeedback.js). De server bepaalt de instructie (toon
+// van de docent + vaste blokken en meetlat), de verwante begrippen (alleen
+// goedgekeurde cursusbegrippen uit hetzelfde materiaal) en de score; de browser
+// stuurt alleen de uitleg en de gevonden cursusfragmenten mee.
+app.post('/api/explain/evaluate', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
+  const {
+    conceptId, explanation, courseId = null, lang = 'nl',
+    context = '', sources = [], ragStrictMode = false,
+  } = req.body || {};
+  if (!conceptId || typeof explanation !== 'string' || !explanation.trim()) {
+    return res.status(400).json({ error: 'conceptId en explanation zijn vereist' });
   }
+  if (explanation.length > 8000) return res.status(400).json({ error: 'Uitleg is te lang (max 8000 tekens)' });
 
   try {
-    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
-    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
-    if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
+    const { data: concept, error: cErr } = await supabaseAdmin
+      .from('concepts')
+      .select('id, name, definition, key_points, course_id')
+      .eq('id', conceptId).maybeSingle();
+    if (cErr) return res.status(500).json({ error: cErr.message });
+    if (!concept) return res.status(404).json({ error: 'Begrip niet gevonden' });
+    const scopeCourseId = concept.course_id || courseId || null;
+    if (scopeCourseId && !(await userHasCourseAccess(auth.user, auth.profile, scopeCourseId))) {
+      return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
+    }
+    if (await rejectIfFeatureOff(res, auth.user, auth.profile, scopeCourseId, 'explain')) return;
 
-    // Bepaal nieuwe versie op basis van bestaande pogingen
-    const { data: existing } = await supabaseAdmin
-      .from('student_explanations')
-      .select('id, version')
-      .eq('concept_id', conceptId)
-      .eq('student_id', user.id);
-
-    const newVersion = existing && existing.length > 0
-      ? Math.max(...existing.map(r => r.version || 1)) + 1
-      : 1;
-
-    // Verwijder oudere uitleg voor dit begrip (oudere uitleg verdwijnt automatisch).
-    // Als dit mislukt MOETEN we stoppen — anders krijgen we duplicaten en blijft oude
-    // uitleg zichtbaar in de "Eerder uitgelegd"-zijbalk.
-    if (existing && existing.length > 0) {
-      const { error: delErr } = await supabaseAdmin
-        .from('student_explanations')
-        .delete()
-        .eq('concept_id', conceptId)
-        .eq('student_id', user.id);
-      if (delErr) {
-        console.error('[explain/save] kon oude uitleg niet verwijderen:', delErr);
-        return res.status(500).json({
-          error: `Kon oudere uitleg niet verwijderen: ${delErr.message}. Nieuwe uitleg niet opgeslagen om duplicaten te voorkomen.`,
-        });
+    // Verwante begrippen: goedgekeurde begrippen van dezelfde cursus die in
+    // dezelfde cursusfragmenten (of documenten) voorkomen.
+    let related = [];
+    if (concept.course_id) {
+      const [{ data: own }, { data: courseConcepts }] = await Promise.all([
+        supabaseAdmin.from('concept_evidence').select('chunk_id, document_id').eq('concept_id', concept.id),
+        supabaseAdmin.from('concepts').select('id, name').eq('course_id', concept.course_id).eq('review_status', 'approved'),
+      ]);
+      const conceptsById = new Map((courseConcepts || []).filter(c => c.id !== concept.id).map(c => [c.id, c]));
+      if ((own || []).length && conceptsById.size) {
+        const { data: other } = await supabaseAdmin
+          .from('concept_evidence').select('concept_id, chunk_id, document_id')
+          .eq('course_id', concept.course_id).neq('concept_id', concept.id);
+        related = rankRelatedConcepts({ ownEvidence: own, otherEvidence: other, conceptsById, conceptId: concept.id });
       }
     }
 
-    const { data: inserted, error: insertErr } = await supabaseAdmin
+    const teacherPrompt = await resolveChatPromptMode('explain', { user: auth.user, profile: auth.profile, courseId: scopeCourseId });
+    // Geen leerniveau: bij Ik leg uit beheers je een begrip of niet.
+    const system = `${teacherPrompt}${explainFormatInstruction(lang, related.map(r => r.name))}${buildLanguageInstruction(lang)}`;
+    const user = buildExplainUserMessage({
+      concept,
+      keyPoints: cleanKeyPoints(concept.key_points),
+      context: typeof context === 'string' ? context.slice(0, 24000) : '',
+      sources: Array.isArray(sources) ? sources.slice(0, 12) : [],
+      ragStrictMode: ragStrictMode === true,
+      explanation: explanation.trim(),
+    });
+
+    const r = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+      ...chatModelParams({ temperature: 0.2, maxTokens: 4000 }),
+    }, { timeoutMs: 90_000 });
+    if (!r.ok) {
+      const txt = await r.text().catch(() => '');
+      console.error('[explain/evaluate] taalmodel-fout', r.status, txt.slice(0, 300));
+      return res.status(502).json({ error: 'De feedback kon niet worden gemaakt. Probeer het opnieuw.' });
+    }
+    const raw = ((await r.json())?.choices?.[0]?.message?.content || '').trim();
+    if (!raw) return res.status(502).json({ error: 'De feedback kon niet worden gemaakt. Probeer het opnieuw.' });
+
+    const parsed = parseExplainFeedback(raw, related);
+    const content = parsed ? explainFeedbackMarkdown(parsed, lang) : raw;
+    const sections = parsed
+      ? { feedback: parsed.feedback, related: parsed.related, feedforward: parsed.feedforward }
+      : null;
+    const score = parsed && parsed.score != null ? { total: parsed.score, reason: parsed.scoreReason } : null;
+
+    // Opslaan: nieuwe versie, oudere uitleg voor dit begrip verdwijnt (zoals voorheen).
+    const { data: existing } = await supabaseAdmin
+      .from('student_explanations').select('id, version')
+      .eq('concept_id', concept.id).eq('student_id', auth.user.id);
+    const version = existing && existing.length ? Math.max(...existing.map(x => x.version || 1)) + 1 : 1;
+    if (existing && existing.length) {
+      const { error: delErr } = await supabaseAdmin
+        .from('student_explanations').delete().eq('concept_id', concept.id).eq('student_id', auth.user.id);
+      if (delErr) return res.status(500).json({ error: `Kon oudere uitleg niet verwijderen: ${delErr.message}` });
+    }
+    const { data: inserted, error: insErr } = await supabaseAdmin
       .from('student_explanations')
       .insert({
-        concept_id: conceptId,
-        student_id: user.id,
-        explanation_text: explanationText,
-        feedback: feedback ? { content: feedback } : null,
-        version: newVersion,
+        concept_id: concept.id,
+        student_id: auth.user.id,
+        explanation_text: explanation.trim(),
+        feedback: { content, sections },
+        score: score || {},
+        version,
       })
-      .select('id')
-      .single();
+      .select('id').single();
+    if (insErr) return res.status(500).json({ error: insErr.message });
 
-    if (insertErr) {
-      console.error('[explain/save] insert error:', insertErr);
-      return res.status(500).json({ error: insertErr.message });
-    }
-
-    return res.json({ success: true, id: inserted.id, version: newVersion });
+    return res.json({ id: inserted.id, version, content, sections, score });
   } catch (err) {
-    console.error('[explain/save] Onverwachte fout:', err);
+    console.error('[explain/evaluate] Onverwachte fout:', err);
     return res.status(500).json({ error: 'Interne fout' });
   }
 });
@@ -7241,7 +6944,7 @@ app.post(['/api/explain/delete', '/api/explain/archive'], async (req, res) => {
     let journalEntryId = null;
     let summaryFailed = false;
 
-    if (generateSummary) {
+    if (generateSummary && (await courseFeatureOnFor(user, null, courseId, 'journal'))) {
       const apiKey = process.env.OPENAI_API_KEY;
       const conceptName = row.concepts?.name || 'Onbekend begrip';
       const conceptDef = row.concepts?.definition || '';
@@ -7313,7 +7016,6 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`
                   ...journalFieldsFromModel(summaryContent, lang),
                   activity_type: 'explanation_reflection',
                   course_id: journalCourseId,
-                  learning_level: await currentLearningLevel(user.id, journalCourseId),
                 })
                 .select('id')
                 .single();
@@ -7524,6 +7226,10 @@ Write the report directly, without a greeting or closing. Be concrete, honest an
 // Roept OpenAI aan met de gegeven prompt en schrijft de notitie weg in
 // learning_journal_entries. Returnt {journalEntryId, summaryFailed, errorReason}.
 async function generateAndSaveQuizSummary({ user, summaryPrompt, topicsLabel, qType, maxLines, lang = 'nl', courseId = null }) {
+  // Leerdagboek uit in deze cursus: niets schrijven (de routes vangen dit ook al af).
+  if (!(await courseFeatureOnFor(user, null, courseId, 'journal'))) {
+    return { journalEntryId: null, summaryFailed: false, errorReason: null };
+  }
   const apiKey = process.env.OPENAI_API_KEY;
   if (!AZURE_CHAT_READY) {
     console.warn('[quiz/summary] Azure OpenAI niet geconfigureerd — samenvatting overgeslagen');
@@ -7633,6 +7339,7 @@ app.post('/api/quiz/save-summary', async (req, res) => {
     const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
     if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
 
+    if (await rejectIfFeatureOff(res, user, null, courseId, 'journal')) return;
     const params = buildQuizSummaryParams({ topics, difficulty, questionType, questions, answers, scorePercentage, lang });
     const journalCourseId = await resolveJournalCourseId(courseId, user);
     const result = await generateAndSaveQuizSummary({ user, lang, courseId: journalCourseId, ...params });
@@ -7688,7 +7395,7 @@ app.post(['/api/quiz/delete', '/api/quiz/archive'], async (req, res) => {
     let journalEntryId = null;
     let summaryFailed = false;
 
-    if (generateSummary) {
+    if (generateSummary && (await courseFeatureOnFor(user, null, courseId, 'journal'))) {
       const params = buildQuizSummaryParams({
         topics: row.topics,
         difficulty: row.difficulty,
@@ -7765,6 +7472,8 @@ app.post('/api/projects/save-summary', async (req, res) => {
     if (fetchErr) return res.status(500).json({ error: fetchErr.message });
     if (!row) return res.status(404).json({ error: 'Projectsessie niet gevonden' });
     if (row.student_id !== user.id) return res.status(403).json({ error: 'Geen toegang tot deze projectsessie' });
+    // Leerdagboek uit in de cursus van dit project: geen projectreflectie.
+    if (await rejectIfFeatureOff(res, user, null, await courseIdForProject(row.project_id), 'journal')) return;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) {
@@ -8614,7 +8323,7 @@ Wees constructief en moedigend, maar ook specifiek en nuttig. Pas je toon aan op
 // gebruikt geen placeholder-syntax — de server vouwt de runtime-velden
 // (persona-prompt, rubric, document-tekst, etc.) als losse blokken eronder
 // in zodat de prompt zelf-redactiebaar blijft zonder vaste sleutels.
-const DEFAULT_DOCUMENT_REVIEW_PROMPT = `Je bent een formatieve beoordelaar voor een groep VU-studenten epi/biostat. Geef een gestructureerd oordeel over het hieronder bijgevoegde studentdocument.
+const DEFAULT_DOCUMENT_REVIEW_PROMPT = `Je bent een formatieve beoordelaar voor een groep VU-studenten. Geef een gestructureerd oordeel over het hieronder bijgevoegde studentdocument.
 
 Aanspraakvorm: spreek de groep aan met "jullie". Wees concreet, vermijd derde-persoonsformuleringen ("de groep heeft …").
 
@@ -8754,7 +8463,7 @@ async function initChatbotPromptSection() {
       const { error: chatInsertErr } = await supabaseAdmin
         .from('chatbot_prompts')
         .insert({
-          name: 'Chat evaluatie prompt',
+          name: 'Sjabloon chat-instructie',
           content: FALLBACK_SYSTEM_PROMPT,
           is_active: true,
           section: 'chat',
@@ -8762,7 +8471,7 @@ async function initChatbotPromptSection() {
       if (chatInsertErr) {
         console.warn('[init] Standaard chat-prompt aanmaken mislukt:', chatInsertErr.message);
       } else {
-        console.log('[init] Standaard chat-prompt "Chat evaluatie prompt" aangemaakt');
+        console.log('[init] Sjabloon chat-instructie aangemaakt');
       }
     }
 
@@ -8776,7 +8485,7 @@ async function initChatbotPromptSection() {
       const { error: insertError } = await supabaseAdmin
         .from('chatbot_prompts')
         .insert({
-          name: 'Uitleg evaluatie prompt',
+          name: 'Sjabloon Ik leg uit',
           content: DEFAULT_EXPLAIN_PROMPT,
           is_active: true,
           section: 'explain',
@@ -9089,6 +8798,44 @@ async function userHasCourseAccess(user, profile, courseId) {
   } catch {
     return false;
   }
+}
+
+// ── Onderdelen per cursus (server/courseFeatures.js) ─────────────────────────
+// De schakelaars worden bij veel aanroepen gelezen; kort onthouden (15 s) en bij
+// een wijziging direct vergeten. Ontbrekende kolom of leesfout = alles aan
+// (een storing mag een cursus niet stilleggen).
+const COURSE_FEATURES_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 15_000;
+const courseFeaturesCache = new Map();
+async function loadCourseFeatures(courseId) {
+  if (!courseId || !supabaseAdmin) return normalizeCourseFeatures(null);
+  const hit = courseFeaturesCache.get(courseId);
+  if (hit && Date.now() - hit.at < COURSE_FEATURES_TTL_MS) return hit.features;
+  try {
+    const { data, error } = await supabaseAdmin.from('courses').select('features').eq('id', courseId).maybeSingle();
+    const features = normalizeCourseFeatures(error ? null : data?.features);
+    if (!error) courseFeaturesCache.set(courseId, { at: Date.now(), features });
+    return features;
+  } catch {
+    return normalizeCourseFeatures(null);
+  }
+}
+
+// Mag deze gebruiker dit onderdeel in deze cursus gebruiken? Docent van de
+// cursus en beheerder altijd (voorbereiden en testen). Zonder cursus: ja.
+async function courseFeatureOnFor(user, profile, courseId, feature) {
+  if (!courseId) return true;
+  const features = await loadCourseFeatures(courseId);
+  if (features[feature] !== false) return true;
+  let prof = profile;
+  if (!prof && user?.id) prof = (await profileCache.get(user.id, loadProfileRoleEmail))?.data || null;
+  return featureAllowed({ features, feature, isStaff: await isStaffForCourse(user, prof, courseId) });
+}
+
+// Stuurt 403 en geeft true terug als het onderdeel voor deze gebruiker uit staat.
+async function rejectIfFeatureOff(res, user, profile, courseId, feature) {
+  if (await courseFeatureOnFor(user, profile, courseId, feature)) return false;
+  res.status(403).json({ error: FEATURE_DISABLED_MSG, code: 'feature_disabled', feature });
+  return true;
 }
 
 // Helper: heeft de gebruiker een course_members-rij in deze cursus?
@@ -9730,6 +9477,7 @@ app.post('/api/quiz/itembank-questions', async (req, res) => {
   // (en admins/superuser) opgehaald worden.
   const hasAccess = await userHasCourseAccess(auth.user, auth.profile, courseId);
   if (!hasAccess) return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
+  if (await rejectIfFeatureOff(res, auth.user, auth.profile, courseId, 'quiz')) return;
   if (!quizSourcesSchemaReady) {
     return res.json({ questions: [], schema_ready: false });
   }
@@ -9922,6 +9670,7 @@ app.post('/api/quiz/concept-availability', async (req, res) => {
   // een cursus.
   const hasAccess = await userHasCourseAccess(auth.user, auth.profile, courseId);
   if (!hasAccess) return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
+  if (await rejectIfFeatureOff(res, auth.user, auth.profile, courseId, 'quiz')) return;
   if (!quizSourcesSchemaReady) {
     return res.json({ availability: {}, schema_ready: false });
   }
@@ -10184,7 +9933,7 @@ app.post('/api/admin/itembank-mapping-diagnose', async (req, res) => {
     // 1) Laad begrip (naam + definitie + key_points).
     const { data: concept, error: conceptErr } = await supabaseAdmin
       .from('concepts')
-      .select('id, name, definition, key_points')
+      .select('id, name, definition, key_points, aliases')
       .eq('id', conceptId)
       .maybeSingle();
     if (conceptErr) return res.status(500).json({ error: conceptErr.message });
@@ -10203,12 +9952,12 @@ app.post('/api/admin/itembank-mapping-diagnose', async (req, res) => {
         .filter(p => p && p.length > 0);
     }
 
-    // 3) Bouw zoek-tokens: begripsnaam + synoniemen (NL+EN) + key_points.
+    // 3) Bouw zoek-tokens: begripsnaam + andere namen + key_points + definitie.
     const keyPoints = Array.isArray(concept.key_points)
       ? concept.key_points.filter(kp => typeof kp === 'string' && !kp.startsWith('course_id:') && !kp.startsWith('['))
       : [];
-    const expandedNl = expandQuery(concept.name, { definition: concept.definition, keyPoints }, 'nl');
-    const expandedEn = expandQuery(concept.name, { definition: concept.definition, keyPoints }, 'en');
+    const expandedNl = expandQuery(concept.name, { definition: concept.definition, keyPoints, aliases: concept.aliases }, 'nl');
+    const expandedEn = expandedNl;
     const STOP = new Set(['de','het','een','en','of','in','op','van','met','voor','door','aan','bij','te','dat','dan','als','is','zijn','the','a','an','of','to','in','on','for','and','or','with','by','at','is','are','this','that']);
     const tokens = [...new Set(
       `${expandedNl} ${expandedEn}`
@@ -10290,7 +10039,7 @@ app.post('/api/admin/itembank-bulk-match', async (req, res) => {
     // 1) Begrippen van de cursus (zelfde filter als de admin-UI). Schema-bewust:
     // de kolom concepts.course_id bestaat niet in elke database — vraag haar
     // alleen op wanneer aanwezig (conceptsHasCourseId) en val anders terug op de
-    // course_id:<uuid>-markering in key_points + ongetagde globale begrippen.
+    // course_id:<uuid>-markering in key_points (nooit begrippen zonder cursus).
     const conceptSelect = conceptsHasCourseId
       ? 'id, name, definition, key_points, course_id'
       : 'id, name, definition, key_points';
@@ -10303,10 +10052,7 @@ app.post('/api/admin/itembank-bulk-match', async (req, res) => {
     const concepts = (conceptRows || []).filter(c => {
       if (conceptsHasCourseId && c.course_id === courseId) return true;
       if (Array.isArray(c.key_points) && c.key_points.includes(marker)) return true;
-      const hasCourseColValue = conceptsHasCourseId && c.course_id;
-      const hasKeyPointMarker = Array.isArray(c.key_points) && c.key_points.some(kp => typeof kp === 'string' && kp.startsWith('course_id:'));
-      if (!hasCourseColValue && !hasKeyPointMarker) return true;
-      return false;
+      return false; // begrippen blijven binnen hun cursus
     }).slice(0, MAX_CONCEPTS);
     if (concepts.length === 0) return res.json({ results: [], threshold: thr, sections_evaluated: 0, truncated: false });
 
@@ -10564,6 +10310,8 @@ async function userHasProjectAccess(user, profile, project) {
   if (!project) return false;
   const isStaff = await isStaffForCourse(user, profile, project.course_id);
   if (isStaff) return true;
+  // Projecten uit in deze cursus: ook groepsleden kunnen er niet meer in.
+  if (project.course_id && (await loadCourseFeatures(project.course_id)).projects === false) return false;
   if (project.course_id) {
     if (await userHasCourseAccess(user, profile, project.course_id)) return true;
   }
@@ -10601,6 +10349,7 @@ app.post('/api/projects/groups', async (req, res) => {
       if (!project.course_id || !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
         return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
       }
+      if (await rejectIfFeatureOff(res, auth.user, profile, project.course_id, 'projects')) return;
       if (project.allow_self_signup === false) {
         return res.status(403).json({ error: 'Self-signup voor dit project staat uit' });
       }
@@ -10672,6 +10421,7 @@ app.post('/api/projects/groups/join', async (req, res) => {
     if (!isStaff && project?.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
       return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
     }
+    if (!isStaff && (await rejectIfFeatureOff(res, auth.user, profile, project?.course_id, 'projects'))) return;
 
     // Idempotent — als je al lid bent, gewoon de groep teruggeven. Race-safe:
     // bij gelijktijdige join kan de unique-constraint (group_id, user_id) een
@@ -10806,7 +10556,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
         id: '__default__',
         name: 'Consultant',
         avatar_emoji: '🧑‍🏫',
-        system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten epi/biostat. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
+        system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
         rag_enabled: true,
         rag_folder_ids: [],
         _source: 'default',
@@ -10814,6 +10564,17 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
     }
 
     const checkpoints = cps || [];
+
+    // Rapporten van "Beoordeling opvragen" (staan ook in de projectruimte, los
+    // van het leerdagboek). Ontbrekende tabel = leeg.
+    let assessments = [];
+    if (group) {
+      const { data: aRows, error: aErr } = await supabaseAdmin
+        .from('project_group_assessments')
+        .select('id, persona_id, persona_name, persona_emoji, content, created_at')
+        .eq('group_id', group.id).order('created_at', { ascending: false });
+      if (!aErr) assessments = aRows || [];
+    }
 
     // Task #166: minimale evaluator-info voor non-staff zodat de
     // document-review UI per upload de avatars + "Vraag oordeel aan"-knop kan
@@ -10916,7 +10677,9 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
     }
 
     return res.json({
-      project, group, members, personas, checkpoints,
+      project, group, members, personas, checkpoints, assessments,
+      // Onderdelen van de cursus: de ruimte noemt het leerdagboek alleen als dat aan staat.
+      courseFeatures: await loadCourseFeatures(project?.course_id),
       projectDocuments: projectDocs || [],
       evaluators,
       hasEvaluator: evaluatorCount > 0,
@@ -10958,6 +10721,7 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       ? { id: group.projects.id, course_id: group.projects.course_id }
       : (await supabaseAdmin.from('projects').select('id, course_id').eq('id', group.project_id).maybeSingle()).data;
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
+    if (await rejectIfFeatureOff(res, auth.user, null, project.course_id, 'projects')) return;
 
     // Persona ophalen — moet uiteindelijk een project_persona zijn (FK op
     // group_persona_threads). Wanneer een course_persona-id binnenkomt,
@@ -10968,7 +10732,7 @@ app.post('/api/projects/persona-chat', async (req, res) => {
       persona = {
         id: '__default__',
         name: 'Consultant',
-        system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten epi/biostat. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
+        system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
         rag_enabled: true,
         rag_folder_ids: [],
       };
@@ -11859,7 +11623,7 @@ app.post('/api/projects/groups/:groupId/checkpoint', async (req, res) => {
 
     if (kind === 'final') {
       const prompt = (enMode
-        ? `You are a "critical friend" for a group of VU students (epi/biostat). The group has completed a research project and submits a joint final reflection below. Assess the work per rubric criterion — honestly, formatively and concretely. Address the group as "you" (plural).
+        ? `You are a "critical friend" for a group of VU students. The group has completed a research project and submits a joint final reflection below. Assess the work per rubric criterion — honestly, formatively and concretely. Address the group as "you" (plural).
 
 Project: ${project?.title || '(unnamed)'}
 Intended project deliverable: ${project?.research_question || '(none)'}
@@ -11878,7 +11642,7 @@ Return ONLY valid JSON with this structure:
 }
 
 No text outside the JSON.`
-        : (`Je bent een "critical friend" voor een groep VU-studenten epi/biostat. De groep heeft een onderzoeksproject afgerond en geeft hieronder een gezamenlijke eindreflectie. Beoordeel het werk per rubriekspunt — eerlijk, formatief en concreet. Spreek de groep aan met "jullie".
+        : (`Je bent een "critical friend" voor een groep VU-studenten. De groep heeft een onderzoeksproject afgerond en geeft hieronder een gezamenlijke eindreflectie. Beoordeel het werk per rubriekspunt — eerlijk, formatief en concreet. Spreek de groep aan met "jullie".
 
 Project: ${project?.title || '(naamloos)'}
 Beoogd projectresultaat: ${project?.research_question || '(geen)'}
@@ -11918,12 +11682,12 @@ Geen tekst buiten de JSON.`)) + buildLanguageInstruction(lang, { json: true });
     } else if (!hasPersonaSummaries) {
       // Geen AI-preview-samenvattingen: vat de handmatige reflectietekst samen.
       const prompt = (enMode
-        ? `You are a "critical friend" for a group of VU students (epi/biostat). Below, a group writes a mid-project reflection. In 6-10 lines, addressed to the group ("you"), write a formative report: what stands out about their approach, where is there still doubt or a gap, and what concrete next step is most obvious. No greeting, no closing.
+        ? `You are a "critical friend" for a group of VU students. Below, a group writes a mid-project reflection. In 6-10 lines, addressed to the group ("you"), write a formative report: what stands out about their approach, where is there still doubt or a gap, and what concrete next step is most obvious. No greeting, no closing.
 
 Project: ${project?.title || '(unnamed)'}
 Reflection:
 ${reflection}`
-        : `Je bent een "critical friend" voor een groep VU-studenten epi/biostat. Hieronder schrijft een groep een tussentijdse reflectie op hun project. Schrijf in 6-10 regels, in het Nederlands, gericht aan de groep ("jullie"), een formatief verslag: wat valt op aan jullie aanpak, waar zit nog twijfel of een gat, en welke concrete vervolgstap ligt voor de hand. Geen aanhef, geen afsluitende groet.
+        : `Je bent een "critical friend" voor een groep VU-studenten. Hieronder schrijft een groep een tussentijdse reflectie op hun project. Schrijf in 6-10 regels, in het Nederlands, gericht aan de groep ("jullie"), een formatief verslag: wat valt op aan jullie aanpak, waar zit nog twijfel of een gat, en welke concrete vervolgstap ligt voor de hand. Geen aanhef, geen afsluitende groet.
 
 Project: ${project?.title || '(naamloos)'}
 Reflectie:
@@ -11982,9 +11746,12 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
     }
     if (cpErr) return res.status(500).json({ error: cpErr.message });
 
-    // Journal-entry per lid.
-    const { data: members } = await supabaseAdmin
-      .from('project_group_members').select('user_id').eq('group_id', groupId);
+    // Journal-entry per lid. Dagboek uit in deze cursus: het checkpoint staat
+    // in de projectruimte, maar er komen geen dagboekregels bij.
+    const journalOn = (await loadCourseFeatures(checkpointCourseId)).journal !== false;
+    const { data: members } = journalOn
+      ? await supabaseAdmin.from('project_group_members').select('user_id').eq('group_id', groupId)
+      : { data: [] };
     const projectTitle = project?.title || '(naamloos project)';
     const titleLabel = kind === 'final' ? `Eindreflectie: ${projectTitle}` : `Projectreflectie: ${projectTitle}`;
     // Dezelfde drie blokken als chat, Ik leg uit en quiz (server/projectJournal.js).
@@ -12054,7 +11821,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
     // Pad A: personaSummaries meegestuurd (AI-preview-flow) → gebruik die direct.
     // Pad B: geen personaSummaries (handmatige reflectie-flow) → genereer 4-regels-samenvatting.
     let threadSummariesAdded = 0;
-    try {
+    if (journalOn) try {
       if (hasPersonaSummaries) {
         // Pad A: sla de door de student bewerkte samenvattingen op als journal-entries.
         // Haal de geldige thread-ids op voor deze groep zodat een kwaadaardige payload
@@ -12967,7 +12734,12 @@ app.get('/api/projects/student-overview', async (req, res) => {
       if (allowed) courseMap.set(c.id, { id: c.id, name: c.name });
     }
 
-    const courses = [...courseMap.values()];
+    // Cursussen waar Projecten uit staat vallen weg (behalve voor de docent).
+    const { data: ovProfile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
+    const courses = [];
+    for (const c of courseMap.values()) {
+      if (await courseFeatureOnFor(auth.user, ovProfile, c.id, 'projects')) courses.push(c);
+    }
     const courseIds = courses.map(c => c.id);
     if (courseIds.length === 0) return res.json({ courses: [] });
 
@@ -13071,6 +12843,7 @@ app.post('/api/projects/student-restart', async (req, res) => {
     if (!isStaff && project.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
       return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
     }
+    if (!isStaff && (await rejectIfFeatureOff(res, auth.user, profile, project.course_id, 'projects'))) return;
 
     // Markeer lopende sessies als afgerond zodat de student de oude voortgang
     // terug kan vinden in de Afgerond-lijst.
@@ -13803,7 +13576,8 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
       },
     };
   });
-  if (rows.length > 0) {
+  // Dagboek uit in deze cursus: het oordeel staat al bij het ingeleverde werk.
+  if (rows.length > 0 && (await loadCourseFeatures(docReviewCourseId)).journal !== false) {
     const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert(rows);
     if (jErr && jErr.code !== '23505') {
       console.warn('[document_review] journal-spiegeling mislukte:', jErr.message);
@@ -14022,7 +13796,7 @@ app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =
     if (!doc) return res.status(404).json({ error: 'Document niet gevonden' });
     if (BINARY_DOWNLOAD_EXT_RE.test(doc.filename || '')) {
       return res.status(400).json({
-        error: 'Dit bestand is binair (bv. Jamovi/SPSS) — daarover kan geen tekstueel oordeel worden gegeven.',
+        error: 'Dit bestand is geen tekstbestand — daarover kan geen tekstueel oordeel worden gegeven.',
       });
     }
     if (!doc.content_text || !doc.content_text.trim()) {
@@ -14794,6 +14568,9 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
     const { data: members } = await supabaseAdmin
       .from('project_group_members').select('user_id').eq('group_id', groupId);
     const evalCourseId = await courseIdForProject(group.project_id);
+    // Het rapport staat altijd bij de groep (projectruimte); in de leerdagboeken
+    // alleen als het dagboek in deze cursus aan staat.
+    const evalJournalOn = (await loadCourseFeatures(evalCourseId)).journal !== false;
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
@@ -14801,14 +14578,17 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
     const results = [];
     for (const evalPersona of evaluators) {
       // Idempotency: als deze (groep, persona, requestId)-combinatie al een
-      // journal-entry heeft, sla de OpenAI-call over — bespaart tokens en tijd
-      // bij netwerk-retries van dezelfde knopdruk.
+      // beoordeling (of oudere journal-entry) heeft, sla de OpenAI-call over —
+      // bespaart tokens en tijd bij netwerk-retries van dezelfde knopdruk.
       if (requestId) {
         const sourceRefCandidate = `group_evaluate:${groupId}:${evalPersona.id}:${requestId}`;
-        const { data: existingEntry } = await supabaseAdmin
-          .from('learning_journal_entries')
-          .select('id').eq('source_ref', sourceRefCandidate).limit(1);
-        if (existingEntry && existingEntry.length > 0) {
+        const [{ data: existingAssessment }, { data: existingEntry }] = await Promise.all([
+          supabaseAdmin.from('project_group_assessments').select('id')
+            .eq('group_id', groupId).eq('persona_id', evalPersona.id).eq('request_id', requestId).limit(1),
+          supabaseAdmin.from('learning_journal_entries')
+            .select('id').eq('source_ref', sourceRefCandidate).limit(1),
+        ]);
+        if (existingAssessment?.length || existingEntry?.length) {
           results.push({ persona: evalPersona.name, ok: true, alreadyExisted: true });
           continue;
         }
@@ -14828,8 +14608,8 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
         ? 'BELANGRIJK: Antwoord volledig in het Nederlands.'
         : `IMPORTANT: Respond entirely in ${languageEnglishName(lang)}.`;
       const defaultPersonaPrompt = enMode
-        ? 'You are a formative assessor for a group of VU students (epi/biostat).'
-        : 'Je bent een formatieve beoordelaar voor een groep VU-studenten epi/biostat.';
+        ? 'You are a formative assessor for a group of VU students.'
+        : 'Je bent een formatieve beoordelaar voor een groep VU-studenten.';
       const prompt = `${evalPersona.system_prompt || defaultPersonaPrompt}
 
 ${langInstruction}
@@ -14891,6 +14671,31 @@ Sluit af met een kort kopje "Vervolgstappen" met 2-3 suggesties. Noem GEEN exact
         continue;
       }
 
+      // Bij de groep (projectruimte). Ontbrekende tabel (migratie nog niet
+      // toegepast): alleen het dagboek, zoals voorheen.
+      const { error: aErr } = await supabaseAdmin.from('project_group_assessments').insert({
+        group_id: groupId,
+        persona_id: evalPersona.id,
+        persona_name: evalPersona.name || '',
+        persona_emoji: evalPersona.avatar_emoji || null,
+        request_id: requestId,
+        content: feedback,
+        requested_by: auth.user.id,
+      });
+      if (aErr && aErr.code === '23505') {
+        results.push({ persona: evalPersona.name, ok: true, alreadyExisted: true });
+        continue;
+      }
+      if (aErr) console.warn('[projects/groups/evaluate] beoordeling bij groep niet opgeslagen:', aErr.message);
+      if (!evalJournalOn) {
+        if (aErr) {
+          results.push({ persona: evalPersona.name, ok: false, error: aErr.message });
+        } else {
+          results.push({ persona: evalPersona.name, ok: true, length: feedback.length });
+        }
+        continue;
+      }
+
       const sourceRef = `group_evaluate:${groupId}:${evalPersona.id}${requestId ? ':' + requestId : ''}`;
       const titleLabel = `${evalPersona.avatar_emoji || '🎓'} ${lang === 'nl' ? 'Beoordeling' : 'Assessment'} — ${evalPersona.name}`;
       const rows = (members || []).map(m => ({
@@ -14927,7 +14732,7 @@ Sluit af met een kort kopje "Vervolgstappen" met 2-3 suggesties. Noem GEEN exact
       results.push({ persona: evalPersona.name, ok: true, length: feedback.length });
     }
 
-    return res.json({ ok: true, results });
+    return res.json({ ok: true, results, journal: evalJournalOn });
   } catch (err) {
     console.error('[projects/groups/evaluate]', err);
     return res.status(500).json({ error: err.message });

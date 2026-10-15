@@ -12,6 +12,8 @@ vi.mock('../../contexts/AuthContext', () => ({
 
 vi.mock('../../contexts/ActiveCourseContext', () => ({
   useActiveCourse: () => ({ activeCourseId: 'course-1', activeCourse: { name: 'Statistiek' } }),
+  // Onderdelen per cursus: geen context = alles aan.
+  useOptionalActiveCourse: () => undefined,
 }));
 
 vi.mock('../../lib/supabase', () => ({

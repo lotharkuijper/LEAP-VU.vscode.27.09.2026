@@ -144,13 +144,13 @@ export async function searchRelevantChunksWithStats(
   }
 
   // Verrijk de zoekterm wanneer expansion expliciet aanstaat. Voor korte
-  // Nederlandse vaktermen (bv. "cohort") geeft text-embedding-3-small zonder
-  // verrijking lage similarity-scores; door synoniemen + de definition mee te
+  // termen geeft text-embedding-3-small zonder verrijking lage similarity-
+  // scores; door de andere namen, kernpunten en definitie van het begrip mee te
   // geven scoren we meetbaar hoger zonder de drempel te verlagen.
   const _storedLang = localStorage.getItem('lair-vu-lang');
   const _ragLang = (_storedLang === 'nl' || _storedLang === 'en') ? _storedLang : 'nl';
   const embedQuery = expansion?.enabled
-    ? expandQuery(query, { definition: expansion.definition, keyPoints: expansion.keyPoints }, _ragLang)
+    ? expandQuery(query, { definition: expansion.definition, keyPoints: expansion.keyPoints, aliases: expansion.aliases }, _ragLang)
     : query;
   if (expansion?.enabled && embedQuery !== query) {
     console.log(`[RAG] Query expanded for embedding: "${query}" -> "${embedQuery.slice(0, 120)}${embedQuery.length > 120 ? '…' : ''}"`);

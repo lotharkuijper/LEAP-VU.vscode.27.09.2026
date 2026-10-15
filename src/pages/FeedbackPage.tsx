@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
+import type { CourseFeature } from '../lib/courseFeatures';
 import { useLanguage } from '../i18n';
 import { intlLocale } from '../i18n/languages';
 import { supabase } from '../lib/supabase';
@@ -115,6 +117,11 @@ const GROUPS: GroupDef[] = [
   },
 ];
 
+// Onderdeel per dagboekgroep (src/lib/courseFeatures.ts); 'other' heeft er geen.
+const GROUP_FEATURE: Partial<Record<GroupKey, CourseFeature>> = {
+  chat: 'chat', explain: 'explain', quiz: 'quiz', project: 'projects',
+};
+
 function classifyActivity(activityType: string): GroupKey {
   switch (activityType) {
     case 'chat_reflection':
@@ -134,6 +141,9 @@ export function FeedbackPage() {
   const { profile } = useAuth();
   const { activeCourseId } = useActiveCourse();
   const { t, lang } = useLanguage();
+  const courseFeatures = useCourseFeatures();
+  // Groep van een uitgezet onderdeel: alleen tonen als er nog oude regels in staan.
+  const groupOn = (key: GroupKey) => { const f = GROUP_FEATURE[key]; return !f || courseFeatures.visible(f); };
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
@@ -474,7 +484,7 @@ export function FeedbackPage() {
                 data-testid="select-activity-type"
                 className="w-full px-4 py-2 chic-input"
               >
-                {GROUPS.map(g => (
+                {GROUPS.filter(g => groupOn(g.key)).map(g => (
                   <option key={g.key} value={g.activityType} data-testid={`option-${g.key}`}>
                     {groupLabel(g.key)}
                   </option>
@@ -533,7 +543,7 @@ export function FeedbackPage() {
       )}
 
       <div className="space-y-4">
-          {GROUPS.map(group => {
+          {GROUPS.filter(group => groupOn(group.key) || entriesByGroup[group.key].length > 0).map(group => {
             const items = entriesByGroup[group.key];
             const isOpen = openGroups.has(group.key);
             const Icon = group.icon;

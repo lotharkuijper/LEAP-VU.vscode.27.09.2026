@@ -3,6 +3,7 @@ import { useLanguage } from '../i18n';
 import { translations } from '../i18n/translations';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { supabase } from '../lib/supabase';
 import {
   evaluateOpenAnswer,
@@ -144,6 +145,7 @@ export function QuizPage() {
   const QUESTION_TYPE_META = getQuestionTypeMeta(lang);
   const { profile } = useAuth();
   const { activeCourseId: activeCourse } = useActiveCourse();
+  const courseFeatures = useCourseFeatures();
 
   const [state, setState] = useState<QuizState>('setup');
 
@@ -1184,6 +1186,7 @@ export function QuizPage() {
         {deleteDialog && (
           <DeleteDialog
             label={deleteDialog.label}
+          allowSummary={courseFeatures.visible('journal')}
             deleting={deleting}
             lang={lang}
             onClose={() => !deleting && setDeleteDialog(null)}
@@ -1576,7 +1579,7 @@ export function QuizPage() {
           )}
 
           <div className="flex flex-wrap gap-3 justify-center">
-            {summaryStatus.kind !== 'saved' && (
+            {summaryStatus.kind !== 'saved' && courseFeatures.visible('journal') && (
               <button
                 onClick={handleSaveSummaryToJournal}
                 disabled={savingSummary}
@@ -1833,9 +1836,10 @@ function ResultsList({
 }
 
 function DeleteDialog({
-  label, deleting, lang, onClose, onConfirm,
+  label, deleting, lang, onClose, onConfirm, allowSummary = true,
 }: {
   label: string;
+  allowSummary?: boolean;
   deleting: boolean;
   lang: string;
   onClose: () => void;
@@ -1868,6 +1872,7 @@ function DeleteDialog({
         </p>
 
         <div className="flex flex-col gap-3">
+          {allowSummary && (
           <button
             data-testid="btn-quiz-delete-with-summary"
             onClick={() => onConfirm(true)}
@@ -1877,6 +1882,7 @@ function DeleteDialog({
             {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookText className="w-4 h-4" />}
             {t('quiz.deleteWithSummary')}
           </button>
+          )}
 
           <button
             data-testid="btn-quiz-delete-without-summary"

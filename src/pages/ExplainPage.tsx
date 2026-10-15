@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../i18n';
 import { intlLocale } from '../i18n/languages';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { supabase } from '../lib/supabase';
-import { evaluateExplanation, llmErrorToDutch } from '../services/llm.service';
+import { evaluateExplanation, llmErrorToDutch, type ExplainFeedbackSections } from '../services/llm.service';
 import { searchRelevantChunksWithStats, buildContextWithCap, dedupeSourcesByDocument, chunkToDisplaySource, ragDocumentDownloadUrl, openRagDocument, fetchConceptEvidence } from '../services/rag.service';
 import { BookOpen, Search, Send, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Trash2, BookText, X, Loader2, History } from 'lucide-react';
 import { SourceList } from '../components/SourceList';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
 import { PromptDebugBadge } from '../components/PromptDebugBadge';
-import { useLearningLevel } from '../hooks/useLearningLevel';
-import { LearningLevelSelector } from '../components/LearningLevelSelector';
 import type { Database } from '../lib/database.types';
 import { RAGStatusIndicator } from '../components/RAGStatusIndicator';
 import { NoticeBanner, useNotice } from '../components/Notice';
@@ -30,6 +30,8 @@ interface ExplanationHistoryItem {
   conceptCategory: string | null;
   version: number;
   createdAt: string;
+  /** Score 0–100 (alleen uitleg sinds 2026-10-15). */
+  score?: number | null;
 }
 
 interface RagModuleSettings {
@@ -46,6 +48,18 @@ interface RagSettings {
   project: RagModuleSettings;
 }
 
+/** concepts.key_points bevat ook technische labels (course_id:…, [RAG-…]); die zijn geen kernpunten. */
+export function realKeyPoints(kp: string[] | null | undefined): string[] {
+  return (kp || []).map(k => (k || '').trim()).filter(k => k && !/^course_id:/i.test(k) && !/^\[.*\]$/.test(k));
+}
+
+/** Kleur van de score: groen vanaf 85, amber vanaf 55, anders rood. */
+function scoreTone(score: number) {
+  if (score >= 85) return 'bg-emerald-50 text-emerald-800 ring-emerald-200';
+  if (score >= 55) return 'bg-amber-50 text-amber-800 ring-amber-200';
+  return 'bg-rose-50 text-rose-800 ring-rose-200';
+}
+
 const RAG_DEFAULTS: RagSettings = {
   chat:    { similarity_threshold: 0.70, match_count: 5, rag_strict_mode: false, query_expansion_enabled: false },
   explain: { similarity_threshold: 0.50, match_count: 5, rag_strict_mode: true,  query_expansion_enabled: true  },
@@ -55,6 +69,9 @@ const RAG_DEFAULTS: RagSettings = {
 
 function FeedbackBlock({
   feedback,
+  sections,
+  score,
+  onPickConcept,
   retrievedSources,
   retrievedStats,
   viewerRole,
@@ -62,6 +79,9 @@ function FeedbackBlock({
   lang,
 }: {
   feedback: string;
+  sections?: ExplainFeedbackSections | null;
+  score?: { total: number; reason: string } | null;
+  onPickConcept?: (conceptId: string) => void;
   retrievedSources: Array<{ title: string; similarity: number; documentId?: string; href?: string; slideStart?: number; slideEnd?: number; fromEvidence?: boolean; snippet?: string }>;
   retrievedStats: { threshold: number; maxSimilarity: number; candidatesConsidered: number; searchPerformed: boolean } | null;
   viewerRole?: string;
@@ -89,13 +109,65 @@ function FeedbackBlock({
   };
   return (
     <div className="chic-card p-6">
-      <h3 className="text-xl font-bold text-gray-900 mb-4">{t('explain.feedback')}</h3>
-      <MarkdownMessage
-        content={feedback}
-        sources={retrievedSources.map((s, i) => ({ index: i + 1, title: s.title, href: s.href, documentId: s.documentId }))}
-        onCitationClick={handleCitationClick}
-        onSourceOpen={handleOpenSource}
-      />
+      {(() => {
+        const citeSources = retrievedSources.map((s, i) => ({ index: i + 1, title: s.title, href: s.href, documentId: s.documentId }));
+        const md = (content: string) => (
+          <MarkdownMessage content={content} sources={citeSources} onCitationClick={handleCitationClick} onSourceOpen={handleOpenSource} />
+        );
+        // Oudere uitleg (vóór 2026-10-15) heeft alleen tekst.
+        if (!sections) {
+          return (
+            <>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{t('explain.feedback')}</h3>
+              {md(feedback)}
+            </>
+          );
+        }
+        return (
+          <div className="space-y-5" data-testid="explain-feedback-sections">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h3 className="text-xl font-bold text-gray-900">{t('explain.sections.feedback')}</h3>
+              {score && (
+                <div className={`flex items-baseline gap-1 rounded-xl px-3 py-1.5 ring-1 ${scoreTone(score.total)}`} data-testid="explain-score">
+                  <span className="text-2xl font-bold leading-none">{score.total}</span>
+                  <span className="text-xs font-medium">{t('explain.score.outOf')}</span>
+                </div>
+              )}
+            </div>
+            <div data-testid="explain-section-feedback">{md(sections.feedback)}</div>
+            {score?.reason && <p className="text-sm text-gray-600" data-testid="explain-score-reason">{score.reason}</p>}
+            {sections.related.length > 0 && (
+              <div data-testid="explain-section-related">
+                <h4 className="text-base font-semibold text-gray-900">{t('explain.sections.related')}</h4>
+                <p className="mb-2 text-xs text-gray-500">{t('explain.sections.relatedHint')}</p>
+                <ul className="space-y-1.5">
+                  {sections.related.map(r => (
+                    <li key={r.id} className="text-sm text-gray-700">
+                      <button
+                        type="button"
+                        onClick={() => onPickConcept?.(r.id)}
+                        className="font-medium text-amber-800 underline decoration-amber-300 hover:decoration-amber-600"
+                        data-testid={`button-related-${r.id}`}
+                      >
+                        {r.name}
+                      </button>
+                      {': '}{r.relation}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {sections.feedforward.length > 0 && (
+              <div data-testid="explain-section-feedforward">
+                <h4 className="text-base font-semibold text-gray-900 mb-1">{t('explain.sections.feedforward')}</h4>
+                <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
+                  {sections.feedforward.map((f, i) => <li key={i}>{md(f)}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        );
+      })()}
       {/\(buiten\s+(?:het\s+|dit\s+|de\s+)?cursusmateriaal\)/i.test(feedback) && (
         <div
           className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
@@ -157,12 +229,15 @@ export function ExplainPage() {
   const { t, lang } = useLanguage();
   const { profile, signOut } = useAuth();
   const { activeCourseId: activeCourse } = useActiveCourse();
-  const { level: learningLevel, setLevel: setLearningLevel } = useLearningLevel(activeCourse);
+  const courseFeatures = useCourseFeatures();
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [filteredConcepts, setFilteredConcepts] = useState<Concept[]>([]);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
   const [explanation, setExplanation] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedbackSections, setFeedbackSections] = useState<ExplainFeedbackSections | null>(null);
+  const [feedbackScore, setFeedbackScore] = useState<{ total: number; reason: string } | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAllConcepts, setShowAllConcepts] = useState(false);
@@ -287,6 +362,8 @@ export function ExplainPage() {
       }
       setExplanation(data.explanationText || '');
       setFeedback(data.feedback || null);
+      setFeedbackSections(data.sections || null);
+      setFeedbackScore(data.score || null);
       setFeedbackError(null);
       setRetrievedSources([]);
       setRetrievedStats(null);
@@ -316,7 +393,7 @@ export function ExplainPage() {
       if (activeExplanationId === id) {
         setActiveExplanationId(null);
         setExplanation('');
-        setFeedback(null);
+        setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
         setFeedbackError(null);
       }
       await loadHistory();
@@ -347,7 +424,7 @@ export function ExplainPage() {
       if (activeExplanationId === id) {
         setActiveExplanationId(null);
         setExplanation('');
-        setFeedback(null);
+        setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
         setFeedbackError(null);
       }
       await loadHistory();
@@ -406,6 +483,28 @@ export function ExplainPage() {
     setFilteredConcepts(filtered);
   };
 
+  const pickConcept = (conceptId: string) => {
+    const c = concepts.find(x => x.id === conceptId);
+    if (!c) return;
+    setSelectedConcept(c);
+    setExplanation('');
+    setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
+    setFeedbackError(null);
+    setActiveExplanationId(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // /explain?concept=<id>: dat begrip alvast kiezen (bv. vanuit een verwant begrip of een link).
+  useEffect(() => {
+    const id = searchParams.get('concept');
+    if (!id || !concepts.length) return;
+    if (concepts.some(c => c.id === id)) pickConcept(id);
+    const next = new URLSearchParams(searchParams);
+    next.delete('concept');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [concepts, searchParams]);
+
   const handleSubmitExplanation = async () => {
     if (!selectedConcept || !explanation.trim() || !profile) {
       console.log('[EXPLAIN] Missing required data for submission');
@@ -413,7 +512,7 @@ export function ExplainPage() {
     }
 
     setLoading(true);
-    setFeedback(null);
+    setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
     setFeedbackError(null);
     setRetrievedSources([]);
     setRetrievedStats(null);
@@ -421,9 +520,9 @@ export function ExplainPage() {
     try {
       console.log('[EXPLAIN] Searching for relevant RAG chunks for concept:', selectedConcept.name);
       // De begripsnaam is het primaire zoeksignaal. Wanneer query-uitbreiding
-      // aanstaat, voegen we een statische synoniemenlijst + de definition +
-      // key_points toe; voor korte Nederlandse vaktermen (bv. "cohort") tilt
-      // dat de top-similarity meetbaar omhoog zonder de drempel te verlagen.
+      // aanstaat, voegen we de andere namen, kernpunten en definitie van het
+      // begrip toe (alleen gegevens van deze cursus); voor korte termen tilt dat
+      // de top-similarity meetbaar omhoog zonder de drempel te verlagen.
       const expansionEnabled = ragSettings.explain.query_expansion_enabled;
       const ragResult = await searchRelevantChunksWithStats(
         selectedConcept.name,
@@ -436,7 +535,8 @@ export function ExplainPage() {
           ? {
               enabled: true,
               definition: selectedConcept.definition || undefined,
-              keyPoints: selectedConcept.key_points || undefined,
+              keyPoints: realKeyPoints(selectedConcept.key_points),
+              aliases: (selectedConcept as { aliases?: string[] | null }).aliases || undefined,
             }
           : undefined
       );
@@ -473,8 +573,11 @@ export function ExplainPage() {
           mergedMap.set(key, ch);
         }
       }
+      // Fragmenten die bij de extractie aan DIT begrip zijn gekoppeld gaan voorop;
+      // daarna de live zoekresultaten (die ook over buurbegrippen kunnen gaan).
+      const isEvidence = (ch: { id?: string }) => storedEvidence.some(e => e.id && e.id === ch.id);
       const chunks = Array.from(mergedMap.values()).sort(
-        (a, b) => (b.similarity || 0) - (a.similarity || 0)
+        (a, b) => Number(isEvidence(b)) - Number(isEvidence(a)) || (b.similarity || 0) - (a.similarity || 0)
       );
       setRetrievedStats({
         threshold: ragResult.threshold,
@@ -510,49 +613,26 @@ export function ExplainPage() {
       console.log('[EXPLAIN] Evaluating explanation for concept:', selectedConcept.name);
       let response;
       try {
-        response = await evaluateExplanation(
-          selectedConcept.name,
+        response = await evaluateExplanation({
+          conceptId: selectedConcept.id,
           explanation,
-          selectedConcept.definition || '',
-          selectedConcept.key_points || [],
+          courseId: activeCourse,
           context,
-          displaySources,
-          ragSettings.explain.rag_strict_mode,
-          activeCourse ?? undefined,
-          learningLevel
-        );
+          sources: displaySources,
+          ragStrictMode: ragSettings.explain.rag_strict_mode,
+        });
       } catch (llmErr) {
         console.error('[EXPLAIN] LLM evaluation failed:', llmErr);
         setFeedbackError(llmErrorToDutch(llmErr, lang));
-        // Bewust géén /api/explain/save aanroepen: we willen geen "fout-feedback"
-        // versies in de geschiedenis vervuilen.
         return;
       }
 
-      console.log('[EXPLAIN] Received feedback from LLM');
+      // De server heeft beoordeeld en opgeslagen (POST /api/explain/evaluate).
       setFeedback(response.content);
-
-      console.log('[EXPLAIN] Saving explanation via API');
-      const session = (await supabase.auth.getSession()).data.session;
-      if (session?.access_token) {
-        const saveRes = await fetch('/api/explain/save', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({
-            conceptId: selectedConcept.id,
-            explanationText: explanation,
-            feedback: response.content,
-          }),
-        });
-        if (saveRes.ok) {
-          const saved = await saveRes.json();
-          setActiveExplanationId(saved.id);
-          console.log('[EXPLAIN] Explanation saved successfully', saved.id, 'v' + saved.version);
-          await loadHistory();
-        } else {
-          console.error('[EXPLAIN] save fout:', saveRes.status);
-        }
-      }
+      setFeedbackSections(response.sections);
+      setFeedbackScore(response.score);
+      setActiveExplanationId(response.id);
+      await loadHistory();
     } catch (error) {
       console.error('[EXPLAIN] Error submitting explanation:', error);
       setFeedbackError({
@@ -663,7 +743,7 @@ export function ExplainPage() {
                   onClick={() => {
                     setSelectedConcept(concept);
                     setExplanation('');
-                    setFeedback(null);
+                    setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
                     setFeedbackError(null);
                   }}
                   className={`w-full text-left p-3 rounded-lg transition-all ${
@@ -852,6 +932,9 @@ export function ExplainPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-medium text-gray-900 truncate">{item.conceptName}</span>
+                          {typeof item.score === 'number' && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded font-semibold ring-1 ${scoreTone(item.score)}`} data-testid={`history-score-${item.id}`}>{item.score}</span>
+                          )}
                           {item.version > 1 && (
                             <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">v{item.version}</span>
                           )}
@@ -863,6 +946,7 @@ export function ExplainPage() {
                     </div>
                   </button>
                   <div className="absolute right-2 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {courseFeatures.visible('journal') && (
                     <button
                       data-testid={`btn-delete-explanation-journal-${item.id}`}
                       onClick={(e) => { e.stopPropagation(); setDeleteSummaryDialog({ id: item.id, conceptName: item.conceptName }); }}
@@ -871,6 +955,7 @@ export function ExplainPage() {
                     >
                       <BookText className="w-4 h-4" />
                     </button>
+                    )}
                     <button
                       data-testid={`btn-delete-explanation-${item.id}`}
                       onClick={(e) => { e.stopPropagation(); setDeleteConfirm(item.id); }}
@@ -951,12 +1036,6 @@ export function ExplainPage() {
                     </div>
                   </div>
 
-                  <LearningLevelSelector
-                    value={learningLevel}
-                    onChange={setLearningLevel}
-                    className="pt-1"
-                  />
-
                   <button
                     onClick={handleSubmitExplanation}
                     disabled={loading}
@@ -1034,6 +1113,9 @@ export function ExplainPage() {
               {feedback && (
                 <FeedbackBlock
                   feedback={feedback}
+                  sections={feedbackSections}
+                  score={feedbackScore}
+                  onPickConcept={pickConcept}
                   retrievedSources={retrievedSources}
                   retrievedStats={retrievedStats}
                   viewerRole={profile?.role}
@@ -1043,7 +1125,7 @@ export function ExplainPage() {
               )}
 
               {/* Volgende stap: oefen dit begrip met een korte quiz. */}
-              {feedback && selectedConcept && (
+              {feedback && selectedConcept && courseFeatures.visible('quiz') && (
                 <a
                   href={`/quiz?concept=${encodeURIComponent(selectedConcept.id)}&name=${encodeURIComponent(selectedConcept.name)}`}
                   className="mt-4 inline-flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
@@ -1083,6 +1165,7 @@ export function ExplainPage() {
             </p>
 
             <div className="flex flex-col gap-3">
+              {courseFeatures.visible('journal') && (
               <button
                 data-testid="btn-explain-delete-with-summary"
                 onClick={() => handleDeleteWithSummary(deleteSummaryDialog.id, true)}
@@ -1092,6 +1175,7 @@ export function ExplainPage() {
                 {deletingWithSummary ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookText className="w-4 h-4" />}
                 {t('explain.deleteWithSummaryBtn')}
               </button>
+              )}
 
               <button
                 data-testid="btn-explain-delete-without-summary"

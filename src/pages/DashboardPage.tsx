@@ -21,6 +21,9 @@ import { CourseBannerFrame, type CourseBanner } from '../components/CourseBanner
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { SECTION_COLORS, type SectionKey } from '../lib/sectionColors';
 import { useContentTranslation } from '../hooks/useContentTranslation';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
+import { featureForPath } from '../lib/courseFeatures';
+import { FeatureOffBadge } from '../components/CourseFeatureGate';
 
 type TileKey = 'chat' | 'explain' | 'quiz' | 'project';
 
@@ -128,6 +131,10 @@ export function DashboardPage() {
   const { profile, isAdmin, isDocent } = useAuth();
   const { activeCourse, activeCourseId } = useActiveCourse();
   const { t, lang } = useLanguage();
+  const courseFeatures = useCourseFeatures();
+  // Tegels van onderdelen die in deze cursus uit staan: weg voor studenten,
+  // met label voor docent/beheerder.
+  const tiles = TILES.filter(tile => { const f = featureForPath(tile.to); return !f || courseFeatures.visible(f); });
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LastActivities>({
@@ -468,7 +475,7 @@ export function DashboardPage() {
         className="grid grid-cols-1 md:grid-cols-2 gap-5"
         aria-label={t('dashboard.tilesAriaLabel')}
       >
-        {TILES.map((tile) => {
+        {tiles.map((tile) => {
           const last = data[tile.key];
           const Icon = tile.icon;
           const hasLast = !!last;
@@ -486,6 +493,7 @@ export function DashboardPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <h2 className="text-lg font-semibold text-slate-900">{t(tile.titleKey as never)}</h2>
+                  {(() => { const f = featureForPath(tile.to); return f && courseFeatures.offForStudents(f) ? <FeatureOffBadge className="mt-1" /> : null; })()}
                   {loading ? (
                     <div className="mt-2 h-4 w-3/4 rounded bg-slate-100 animate-pulse" />
                   ) : hasLast ? (
@@ -515,7 +523,8 @@ export function DashboardPage() {
         })}
       </section>
 
-      {/* Journal snippet */}
+      {/* Journal snippet (alleen als het leerdagboek in deze cursus aan staat) */}
+      {courseFeatures.visible('journal') && (
       <section
         className="rounded-2xl border border-teal-200/70 bg-white/70 backdrop-blur-md p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-16px_rgba(20,184,166,0.25)] ring-1 ring-teal-100/60"
         data-testid="section-journal-snippet"
@@ -566,6 +575,7 @@ export function DashboardPage() {
           </Link>
         </div>
       </section>
+      )}
 
       {/* Admin/docent compact block */}
       {(isAdmin || isDocent) && (

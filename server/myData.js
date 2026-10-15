@@ -43,7 +43,7 @@ export const EXPORT_SOURCES = [
 export const NOT_EXPORTED = [
   'chatbot_prompts', 'collaboration_sessions', 'concept_itembank_sections', 'concept_rag_sources',
   'concepts', 'course_info', 'course_personas', 'datasets', 'document_folders', 'documents',
-  'group_checkpoints', 'project_document_reviews', 'project_documents', 'project_groups',
+  'group_checkpoints', 'project_group_assessments', 'project_document_reviews', 'project_documents', 'project_groups',
   'project_persona_consultation_grants', 'projects', 'quiz_questions', 'quiz_sets', 'quiz_sources_mix',
   'quiz_validations', 'studiecafe_last_seen', 'studiecafe_notifications', 'studiecafe_thread_reads',
   'user_audit_log',

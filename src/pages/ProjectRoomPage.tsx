@@ -10,6 +10,8 @@ import { PersonaMessageBody, personaSourcesFrom, type PersonaSourceTarget } from
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { PersonaAvatar } from '../components/PersonaAvatar';
 import { ProductFeedbackPanel } from '../components/ProductFeedbackPanel';
+import { MarkdownMessage } from '../components/MarkdownMessage';
+import { appendQuote, focusAtEnd } from '../lib/chatQuote';
 import { RELATIONSHIP_BADGE, RELATIONSHIP_LEVELS, type RelationshipKey } from '../lib/relationshipLevels';
 // De viewer (met pdf.js) pas laden als een student een bron opent.
 const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m => ({ default: m.DocumentViewer })));
@@ -85,6 +87,14 @@ interface Checkpoint {
   reflection: string;
   ai_summary: string | null;
   rubric_feedback: any;
+  created_at: string;
+}
+/** Rapport van "Beoordeling opvragen" (project_group_assessments). */
+interface GroupAssessment {
+  id: string;
+  persona_name: string;
+  persona_emoji: string | null;
+  content: string;
   created_at: string;
 }
 interface PersonaDoc {
@@ -217,6 +227,9 @@ export function ProjectRoomPage() {
   const [chatMessages, setChatMessages] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+  const [assessments, setAssessments] = useState<GroupAssessment[]>([]);
+  // Leerdagboek aan in de cursus van dit project? Zo niet: niets "naar het dagboek".
+  const [journalOn, setJournalOn] = useState(true);
   const [showCheckpointModal, setShowCheckpointModal] = useState<null | 'checkpoint' | 'final'>(null);
   const [checkpointSaved, setCheckpointSaved] = useState(false);
   const [reflection, setReflection] = useState('');
@@ -302,6 +315,8 @@ export function ProjectRoomPage() {
       setMembers(data.members || []);
       setPersonas(data.personas || []);
       setCheckpoints(data.checkpoints || []);
+      setAssessments(data.assessments || []);
+      setJournalOn(data.courseFeatures?.journal !== false);
       setProjectMaterials(data.projectDocuments || []);
       setEvaluators(data.evaluators || []);
       setHasEvaluator(!!data.hasEvaluator);
@@ -868,10 +883,11 @@ export function ProjectRoomPage() {
       if (!r.ok) throw new Error(data.error || t('room.assessmentFailed'));
       const okCount = (data.results || []).filter((x: any) => x.ok).length;
       setInfo(okCount > 0
-        ? t('room.assessmentComplete', { count: String(okCount) })
+        ? t(journalOn ? 'room.assessmentComplete' : 'room.assessmentCompleteRoom', { count: String(okCount) })
         : t('room.assessmentNoFeedback'));
       setTimeout(() => setInfo(null), 7000);
       setEvaluateRequestId(null);
+      void loadRoom();
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -1814,10 +1830,42 @@ export function ProjectRoomPage() {
                 <ul className="space-y-1 text-xs">
                   {checkpoints.map(cp => (
                     <li key={cp.id} className="text-gray-600">
-                      <span className={`inline-block px-1.5 rounded text-[10px] ${cp.kind === 'final' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                        {cp.kind === 'final' ? t('room.finalCheckpointLabel') : t('room.interimCheckpointLabel')}
-                      </span>{' '}
-                      <span className="text-gray-400">{new Date(cp.created_at).toLocaleDateString(t('common.locale'))}</span>
+                      {/* Openklappen: de inhoud staat zo ook in de ruimte, los van het leerdagboek. */}
+                      <details data-testid={`checkpoint-${cp.id}`}>
+                        <summary className="cursor-pointer">
+                          <span className={`inline-block px-1.5 rounded text-[10px] ${cp.kind === 'final' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {cp.kind === 'final' ? t('room.finalCheckpointLabel') : t('room.interimCheckpointLabel')}
+                          </span>{' '}
+                          <span className="text-gray-400">{new Date(cp.created_at).toLocaleDateString(t('common.locale'))}</span>
+                        </summary>
+                        <MarkdownMessage
+                          content={cp.ai_summary || cp.reflection || ''}
+                          className="prose prose-sm max-w-none text-xs mt-1 pl-2 border-l-2 border-gray-100 text-gray-700"
+                        />
+                      </details>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {assessments.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-100" data-testid="section-assessments">
+                <div className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                  <BookOpen className="w-3 h-3" /> {t('room.assessmentsCount', { count: String(assessments.length) })}
+                </div>
+                <ul className="space-y-1 text-xs">
+                  {assessments.map(a => (
+                    <li key={a.id} className="text-gray-600">
+                      <details data-testid={`assessment-${a.id}`}>
+                        <summary className="cursor-pointer">
+                          <span className="font-medium text-gray-800">{a.persona_emoji || '🎓'} {a.persona_name}</span>{' '}
+                          <span className="text-gray-400">{new Date(a.created_at).toLocaleDateString(t('common.locale'))}</span>
+                        </summary>
+                        <MarkdownMessage
+                          content={a.content}
+                          className="prose prose-sm max-w-none text-xs mt-1 pl-2 border-l-2 border-gray-100 text-gray-700"
+                        />
+                      </details>
                     </li>
                   ))}
                 </ul>
@@ -2262,7 +2310,7 @@ export function ProjectRoomPage() {
                     className={`px-4 py-2 text-white rounded-lg text-sm disabled:opacity-40 ${showCheckpointModal === 'final' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                     data-testid="button-submit-checkpoint"
                   >
-                    {submittingCheckpoint ? t('room.pleaseWait') : (showCheckpointModal === 'final' ? t('room.finaliseAndSave') : t('room.saveToJournal'))}
+                    {submittingCheckpoint ? t('room.pleaseWait') : (showCheckpointModal === 'final' ? t('room.finaliseAndSave') : (journalOn ? t('room.saveToJournal') : t('room.saveCheckpoint')))}
                   </button>
                 )}
               </div>
@@ -2357,6 +2405,7 @@ export function ProjectRoomPage() {
                   initialPage={viewerDoc.page}
                   openSeq={viewerDoc.seq}
                   onClose={() => setViewerDoc(null)}
+                  onQuote={(text) => { setPersonaInput((prev) => appendQuote(prev, text)); focusAtEnd(personaInputRef.current); }}
                 />
               </Suspense>
             </ViewerErrorBoundary>

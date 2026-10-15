@@ -200,88 +200,64 @@ export async function sendChatMessage(
 
 const RAG_STRICT_INSTRUCTION_LLM = `\n\nSTRIKTE BRONBEPERKING: Gebruik UITSLUITEND de context die hierboven is meegegeven. Ga NIET buiten deze bronnen. Als iets niet in de meegeleverde context staat, zeg dan eerlijk: "Dit onderwerp staat niet in het beschikbare cursusmateriaal."`;
 
-export async function evaluateExplanation(
-  concept: string,
-  explanation: string,
-  definition: string,
-  keyPoints: string[],
-  ragContext?: string,
-  retrievedSources?: Array<{ title: string; similarity: number }>,
-  ragStrictMode?: boolean,
-  courseId?: string,
-  learningLevel?: number
-): Promise<LLMResponse> {
-  let evaluationPrompt: string;
+/** Feedback bij "Ik leg uit" in vier blokken (server/explainFeedback.js). */
+export interface ExplainFeedbackSections {
+  feedback: string;
+  related: Array<{ id: string; name: string; relation: string }>;
+  feedforward: string[];
+}
 
-  // Bouw bron-instructie blok: genummerde lijst met vast verwijsformaat
-  // [1]/[2]/[3] én een marker voor info buiten cursusmateriaal. Wordt ALTIJD
-  // toegevoegd, ook bij 0 bronnen — juist dan is het URL-verbod en de marker
-  // het belangrijkst om hallucinatie te beteugelen.
-  const buildSourcesBlock = (srcs: Array<{ title: string; similarity: number }>): string => {
-    if (!srcs || srcs.length === 0) {
-      return `\n\nBronnen uit het cursusmateriaal die je tot je beschikking hebt:
-(geen relevante cursusbronnen gevonden voor dit begrip)
+export interface ExplainEvaluation {
+  id: string;
+  version: number;
+  /** Leesbare tekst van alle blokken (ook voor oudere weergaven en het dagboek). */
+  content: string;
+  sections: ExplainFeedbackSections | null;
+  score: { total: number; reason: string } | null;
+}
 
-Verwijsregels (volg deze STRIKT):
-- Er zijn geen cursusbronnen waarnaar je kunt verwijzen — gebruik daarom GEEN [1], [2] of soortgelijke nummers.
-- Gebruik in je feedback géén URL's, weblinks, DOI's of verwijzingen naar externe boeken/artikelen.
-- Omdat je geen cursusmateriaal hebt, bestaat je feedback per definitie uit algemene kennis. Markeer iedere zin die op zo'n algemene kennis steunt met "(buiten cursusmateriaal)" aan het einde van die zin.`;
-    }
-    const numbered = srcs.map((s, i) => `[${i + 1}] ${s.title}`).join('\n');
-    return `\n\nBronnen uit het cursusmateriaal die je tot je beschikking hebt:
-${numbered}
-
-Verwijsregels (volg deze STRIKT):
-- Verwijs in je feedback naar een bron met exact de notatie [1], [2] of [3] direct na de zin waar je die bron gebruikt.
-- Gebruik géén andere verwijsvormen (geen titels, geen URL's, geen voetnoten, geen DOI's).
-- Als je in je feedback informatie noemt die NIET uit deze bronnen komt maar uit algemene kennis, markeer die zin dan met "(buiten cursusmateriaal)" aan het einde van die zin.`;
-  };
-
-  const sourcesBlock = buildSourcesBlock(retrievedSources ?? []);
-
-  // Task #412: de uitleg-system-prompt wordt server-side bepaald via
-  // promptMode:'explain' (cursus-override of globaal, met DEFAULT_EXPLAIN_PROMPT
-  // als bodem). De client stuurt geen vrije prompt-tekst meer mee; dit
-  // user-bericht bevat daarom alleen de te beoordelen inhoud — de
-  // feedback-instructies zitten in de vertrouwde server-prompt.
-  evaluationPrompt = `Begrip: "${concept}"
-
-Officiële definitie:
-${definition}
-
-Kernpunten die beoordeeld worden:
-${keyPoints.map((point, i) => `${i + 1}. ${point}`).join('\n')}`;
-
-  if (ragContext) {
-    evaluationPrompt += `\n\nRelevante informatie uit cursusmateriaal:\n${ragContext}`;
-    if (ragStrictMode) evaluationPrompt += RAG_STRICT_INSTRUCTION_LLM;
-  } else if (ragStrictMode) {
-    evaluationPrompt += `\n\n${RAG_STRICT_INSTRUCTION_LLM}\n\nEr zijn geen relevante cursusteksten gevonden voor dit begrip. Geef dit duidelijk aan in je feedback.`;
-  }
-
-  evaluationPrompt += `\n\nUitleg van de student:\n${explanation}`;
-  evaluationPrompt += sourcesBlock;
-  evaluationPrompt += `\n\nAanspraakvorm (volg STRIKT in jouw feedback): spreek de student direct aan met "je" / "jij" / "jouw". Gebruik NOOIT formuleringen als "de student", "deze student" of "de student heeft" — schrijf alsof je de feedback één-op-één tegen de student geeft.`;
-
-  const data = await callChatAPI({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: evaluationPrompt }],
-    temperature: 0.3,
-    // Ruim budget: reasoning-modellen (bv. gpt-5.2) verbruiken een deel van het
-    // tokenbudget aan 'reasoning'. Met een krap budget bleef er geen ruimte over
-    // voor de 4-delige gestructureerde feedback (lege/afgekapte respons).
-    max_tokens: 4000,
-    skipSystemPrompt: true,
-    promptMode: 'explain',
-    ...(courseId ? { courseId } : {}),
-    learningLevel,
+/**
+ * "Ik leg uit": de server bepaalt de instructie (toon van de docent + vaste
+ * blokken en meetlat), kiest verwante begrippen uit de cursus, beoordeelt en
+ * slaat de uitleg op (POST /api/explain/evaluate). De browser stuurt alleen de
+ * uitleg en de gevonden cursusfragmenten mee.
+ */
+export async function evaluateExplanation(opts: {
+  conceptId: string;
+  explanation: string;
+  courseId?: string | null;
+  context?: string;
+  sources?: Array<{ title: string }>;
+  ragStrictMode?: boolean;
+}): Promise<ExplainEvaluation> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+  } catch { /* zonder sessie weigert de server */ }
+  const response = await fetch('/api/explain/evaluate', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      lang: _getLang(),
+      conceptId: opts.conceptId,
+      explanation: opts.explanation,
+      ...(opts.courseId ? { courseId: opts.courseId } : {}),
+      ...(opts.context ? { context: opts.context } : {}),
+      sources: (opts.sources || []).map(s => ({ title: s.title })),
+      ragStrictMode: !!opts.ragStrictMode,
+    }),
   });
-
-  const content = data.choices[0]?.message?.content;
-  if (!content) {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const msg = (typeof data?.error === 'string' && data.error) || `API Error: ${response.status}`;
+    throw new LLMError(msg, response.status, undefined, msg);
+  }
+  if (!data?.content) {
     throw new LLMError(tStatic(_getLang(), 'llm.err.emptyReaction'), 502, 'empty_response', 'empty content');
   }
-  return { content };
+  return data as ExplainEvaluation;
 }
 
 export type QuestionType = 'mcq' | 'open' | 'casus';
@@ -595,7 +571,7 @@ Voor elke casus:
     "context": "Short case description of a few sentences.",
     "question": "The question for this case",
     "modelAnswer": "A worked-out example answer of a few sentences.",
-    "rubric": "- Identifies the study type\\n- Names possible confounders\\n- Gives a correct conclusion"
+    "rubric": "- Names the core of the case\\n- Applies the right course concept\\n- Gives a well-founded conclusion"
   }
 ]`
       : `[
@@ -604,7 +580,7 @@ Voor elke casus:
     "context": "Korte casusbeschrijving van enkele zinnen.",
     "question": "De vraag bij deze casus",
     "modelAnswer": "Een uitgewerkt voorbeeldantwoord van enkele zinnen.",
-    "rubric": "- Identificeert het type studie\\n- Benoemt mogelijke confounders\\n- Geeft een correcte conclusie"
+    "rubric": "- Benoemt de kern van de casus\\n- Past het juiste begrip uit de cursus toe\\n- Geeft een onderbouwde conclusie"
   }
 ]`;
     maxTokens = 3000;

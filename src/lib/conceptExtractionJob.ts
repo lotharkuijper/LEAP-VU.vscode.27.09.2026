@@ -21,6 +21,23 @@ export interface ExtractionResponse {
   json: () => Promise<any>;
 }
 
+/** Keuzes bij het extraheren (Cursusmateriaal → Begrippen → Meer opties). */
+export interface ExtractionOptions {
+  /** Taal van naam en definitie; 'auto' volgt de taal van het materiaal. */
+  language: 'auto' | 'nl' | 'en';
+  /** Alleen deze documenten lezen; leeg = alle verwerkte documenten. */
+  documentIds: string[];
+}
+
+export const DEFAULT_EXTRACTION_OPTIONS: ExtractionOptions = { language: 'auto', documentIds: [] };
+
+/** Pure: verzoek voor POST /api/admin/extract-concepts/jobs. */
+export function extractionBody(courseId: string, replace: boolean, opts: ExtractionOptions = DEFAULT_EXTRACTION_OPTIONS) {
+  const body: Record<string, unknown> = { courseId, replace };
+  if (opts.language !== 'auto') body.language = opts.language;
+  if (opts.documentIds.length > 0) body.documentIds = [...opts.documentIds];
+  return body;
+}
 const POLL_MS = 2500;
 export const CONCEPT_TASK_KIND = 'concepts';
 
@@ -90,7 +107,7 @@ export function startConceptExtractionTask(opts: {
     kind: CONCEPT_TASK_KIND,
     key: opts.courseId,
     title: opts.title,
-    resultLink: opts.resultLink ?? '/admin?tab=concepts',
+    resultLink: opts.resultLink ?? '/admin?tab=material&step=concepts',
     where: 'server',
     summarize,
     run: async (ctx) => {

@@ -1,5 +1,6 @@
 import { Coffee } from 'lucide-react';
 import { useLanguage } from '../i18n';
+import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { buildQuizFeedbackExcerpt, type QuizExcerptAnswer } from '../lib/quizFeedbackExcerpt';
 import type { QuizQuestion } from '../services/llm.service';
@@ -18,6 +19,7 @@ export function QuizCheckLLMButton(props: {
   testId?: string;
 }) {
   const { t } = useLanguage();
+  const courseFeatures = useCourseFeatures();
 
   const handleClick = () => {
     stashStudiecafeHandoff(
@@ -49,6 +51,9 @@ export function QuizCheckLLMButton(props: {
       { crossTab: true },
     );
   };
+
+  // Studiecafé uit in deze cursus: geen doorverwijzing.
+  if (!courseFeatures.visible('studiecafe')) return null;
 
   return (
     <a

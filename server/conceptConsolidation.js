@@ -126,18 +126,18 @@ export function buildSynonymPrompt(items) {
   const lines = items.map((it, i) => `${i + 1}. ${it.name}${it.definition ? ` — ${String(it.definition).replace(/\s+/g, ' ').slice(0, 160)}` : ''}`).join('\n');
   return `Below is a list of subject terms from one university course (with a short definition where available).
 Find terms that mean EXACTLY the same thing and should therefore be one concept:
-- synonyms (e.g. "standaardafwijking" and "standaarddeviatie"),
-- abbreviations and their full form (e.g. "RCT" and "Randomized Controlled Trial"),
-- translations (e.g. "nested case control" and "genest patiënt-controleonderzoek"),
+- synonyms (e.g. "klinker" and "vocaal"),
+- abbreviations and their full form (e.g. "VOC" and "Verenigde Oost-Indische Compagnie"),
+- translations (e.g. "supply and demand" and "vraag en aanbod"),
 - spelling or inflection variants.
 Do NOT group:
-- opposites or negations (e.g. "parametrische maten" vs "non-parametrische maten"),
-- a broader and a narrower term (e.g. "kwartiel" vs "eerste kwartiel", "cohort" vs "cohortonderzoek"),
-- related but different concepts (e.g. "gemiddelde" vs "mediaan", "populatie" vs "steekproef").
+- opposites or negations (e.g. "regelmatig werkwoord" vs "onregelmatig werkwoord"),
+- a broader and a narrower term (e.g. "revolutie" vs "Franse Revolutie", "cel" vs "zenuwcel"),
+- related but different concepts (e.g. "inflatie" vs "deflatie", "mitose" vs "meiose").
 When in doubt, do not group.
 
 Return ONLY JSON, no explanation: an array of groups, each with the preferred name (the common term in the course language, copied exactly from the list) and the other members copied exactly from the list. Only include groups with at least two members.
-[{"preferred": "Randomized Controlled Trial", "others": ["RCT"]}]
+[{"preferred": "Verenigde Oost-Indische Compagnie", "others": ["VOC"]}]
 
 TERMS:
 ${lines}`;
@@ -343,15 +343,15 @@ export function buildDuplicateSuggestionPrompt(items) {
 [C] = course concept (appears in several modules), [M] = module concept (one module), [E] = example.
 The list should contain every concept only ONCE. Find terms that a teacher would consider the same concept, so that they should be merged into one entry:
 - synonyms, abbreviations and their full form, translations, spelling or inflection variants;
-- the same concept with a qualifier, specification or wording variant (e.g. "95% betrouwbaarheidsinterval" and "betrouwbaarheidsinterval", "gemiddelde van de waarnemingen" and "gemiddelde", "prospectief cohort" and "prospectief cohortonderzoek", "ongestratificeerd effect" and "ruw effect").
+- the same concept with a qualifier, specification or wording variant (e.g. "klassieke conditionering volgens Pavlov" and "klassieke conditionering", "Franse Revolutie van 1789" and "Franse Revolutie", "geplande economie" and "planeconomie").
 Check EVERY [M] term against the [C] terms in particular: a module concept that is also listed as a course concept is a duplicate.
 Do NOT group:
-- opposites or negations (e.g. "parametrische maten" vs "non-parametrische maten", "eenzijdig toetsen" vs "tweezijdig toetsen");
-- related but clearly different concepts (e.g. "gemiddelde" vs "mediaan", "populatie" vs "steekproef", "sensitiviteit" vs "specificiteit");
-- a thing and a different thing that shares a word (e.g. "cohort" as a group of people vs "cohortonderzoek" as a study design, "likelihood" vs "log-likelihood").
+- opposites or negations (e.g. "regelmatig werkwoord" vs "onregelmatig werkwoord", "import" vs "export");
+- related but clearly different concepts (e.g. "inflatie" vs "deflatie", "mitose" vs "meiose", "metafoor" vs "metonymie");
+- a thing and a different thing that shares a word (e.g. "cel" in biology vs "cel" in a prison, "stam" of a word vs "stam" as a people).
 
 Return ONLY JSON, no explanation: an array of groups. "preferred" is the name to keep: the [C] term if the group has one, otherwise the most common term. Copy all names exactly from the list, without the tag. Only include groups with at least two members.
-[{"preferred": "betrouwbaarheidsinterval", "others": ["95% betrouwbaarheidsinterval"]}]
+[{"preferred": "Franse Revolutie", "others": ["Franse Revolutie van 1789"]}]
 
 TERMS:
 ${lines}`;
