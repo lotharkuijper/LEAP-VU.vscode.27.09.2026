@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Öğrenciler bir görsel yapıştırabilir veya bir dosya ekleyip bunun hakkında eğitmenle konuşabilir. Varsayılan olarak kapalıdır; açmak çift onay gerektirir. LEAP ekleri saklamaz. Yalnızca yönetici izin verirse çalışır.",
   "help.chatAttachments.platform.title": "Ekler için ana anahtar",
   "help.chatAttachments.platform.body": "LEAP genelinde sohbette eklere izin verilip verilmeyeceğini belirler. Kapalıysa, eğitmenlerin açtığı yerler de dahil hiçbir yerde kullanılamaz; onların seçimi saklı kalır. Burada ayrıca doğruluğu ve sınırları ayarlarsın.",
-  "myData.attachmentsNote": "Sohbete eklediğin görselleri ve dosyaları LEAP saklamaz: sohbeti kapattığın anda silinirler. Bu yüzden verilerinde de yer almazlar; yalnızca bir etiket ve bunlarla ilgili konuşma bulunur."
+  "myData.attachmentsNote": "Sohbete eklediğin görselleri ve dosyaları LEAP saklamaz: sohbeti kapattığın anda silinirler. Bu yüzden verilerinde de yer almazlar; yalnızca bir etiket ve bunlarla ilgili konuşma bulunur.",
+  "courseFeatures.attachments.toPlatformSwitch": "Yöneticisin: Yönetim → Ayarlar’da ana anahtarı aç."
 }

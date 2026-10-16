@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "學生可以貼上圖片或附加檔案，然後同導師傾。預設為關閉；開啟時需要雙重確認。LEAP 唔會儲存附件。只有管理員允許時先可以使用。",
   "help.chatAttachments.platform.title": "附件總開關",
   "help.chatAttachments.platform.body": "決定成個 LEAP 入面嘅聊天係咪可以使用附件。關閉即係任何地方都唔可以用，就算老師已經開啟咗都一樣；佢哋嘅選擇會保留。你亦可以喺呢度設定準確度同限制。",
-  "myData.attachmentsNote": "你喺聊天入面附加嘅圖片同檔案，LEAP 唔會儲存：一關閉聊天就會消失。所以佢哋亦都唔會出現喺你嘅資料入面；只會有一個標籤同埋關於佢哋嘅對話。"
+  "myData.attachmentsNote": "你喺聊天入面附加嘅圖片同檔案，LEAP 唔會儲存：一關閉聊天就會消失。所以佢哋亦都唔會出現喺你嘅資料入面；只會有一個標籤同埋關於佢哋嘅對話。",
+  "courseFeatures.attachments.toPlatformSwitch": "你係管理員：請喺 管理 → 設定 開啟主開關。"
 }

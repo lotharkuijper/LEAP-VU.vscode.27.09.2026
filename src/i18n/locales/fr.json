@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Les étudiants peuvent coller une image ou joindre un fichier et en discuter avec le tuteur. Désactivé par défaut ; l’activation demande une double confirmation. LEAP ne conserve pas les pièces jointes. Fonctionne uniquement si l’administrateur l’autorise.",
   "help.chatAttachments.platform.title": "Interrupteur principal pour les pièces jointes",
   "help.chatAttachments.platform.body": "Détermine si les pièces jointes dans le chat sont autorisées dans tout LEAP. Désactivé signifie nulle part, même là où les enseignants les ont activées ; leur choix reste conservé. Ici, tu règles aussi la précision et les limites.",
-  "myData.attachmentsNote": "Les images et fichiers que tu ajoutes dans le chat ne sont pas conservés par LEAP : ils disparaissent dès que tu fermes le chat. Ils ne figurent donc pas non plus dans tes données ; seuls une étiquette et la conversation à leur sujet y sont conservés."
+  "myData.attachmentsNote": "Les images et fichiers que tu ajoutes dans le chat ne sont pas conservés par LEAP : ils disparaissent dès que tu fermes le chat. Ils ne figurent donc pas non plus dans tes données ; seuls une étiquette et la conversation à leur sujet y sont conservés.",
+  "courseFeatures.attachments.toPlatformSwitch": "Tu es administrateur : active l’interrupteur principal dans Administration → Paramètres."
 }

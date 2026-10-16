@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Mahasiswa dapat menempelkan gambar atau menyertakan file dan membicarakannya dengan tutor. Nonaktif secara default; mengaktifkannya memerlukan konfirmasi ganda. LEAP tidak menyimpan lampiran. Hanya berfungsi jika admin mengizinkannya.",
   "help.chatAttachments.platform.title": "Sakelar utama untuk lampiran",
   "help.chatAttachments.platform.body": "Menentukan apakah lampiran di chat diizinkan di seluruh LEAP. Nonaktif berarti tidak di mana pun, termasuk tempat dosen telah mengaktifkannya; pilihan mereka tetap disimpan. Di sini kamu juga mengatur akurasi dan batasannya.",
-  "myData.attachmentsNote": "Gambar dan file yang kamu sertakan di chat tidak disimpan oleh LEAP: semuanya hilang begitu kamu menutup chat. Karena itu, gambar dan file tersebut juga tidak ada di datamu; hanya ada label dan percakapan tentangnya."
+  "myData.attachmentsNote": "Gambar dan file yang kamu sertakan di chat tidak disimpan oleh LEAP: semuanya hilang begitu kamu menutup chat. Karena itu, gambar dan file tersebut juga tidak ada di datamu; hanya ada label dan percakapan tentangnya.",
+  "courseFeatures.attachments.toPlatformSwitch": "Kamu adalah admin: aktifkan sakelar utama di Beheer → Instellingen."
 }

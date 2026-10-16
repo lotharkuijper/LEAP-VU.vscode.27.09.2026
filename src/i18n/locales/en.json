@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Students can paste an image or add a file and discuss it with the tutor. Off by default; switching on asks for a double confirmation. LEAP does not store attachments. Only works if the administrator allows it.",
   "help.chatAttachments.platform.title": "Master switch for attachments",
   "help.chatAttachments.platform.body": "Decides whether attachments in the chat are allowed anywhere in LEAP. Off means nowhere, not even where teachers switched them on; their choice is kept. You also set the accuracy and the limits here.",
-  "myData.attachmentsNote": "Images and files you add in the chat are not stored by LEAP: they are gone as soon as you close the chat. That is why they are not in your data; only a label and the conversation about them."
+  "myData.attachmentsNote": "Images and files you add in the chat are not stored by LEAP: they are gone as soon as you close the chat. That is why they are not in your data; only a label and the conversation about them.",
+  "courseFeatures.attachments.toPlatformSwitch": "You are an administrator: switch on the master switch under Admin → Settings."
 }

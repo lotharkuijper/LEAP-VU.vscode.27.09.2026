@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "学生可以粘贴一张图片或附加一个文件，并与导师讨论。默认关闭；开启需要双重确认。LEAP 不会保存附件。仅在管理员允许时可用。",
   "help.chatAttachments.platform.title": "附件总开关",
   "help.chatAttachments.platform.body": "决定整个 LEAP 是否允许在聊天中使用附件。关闭表示任何地方都不可用，即使教师已开启也不行；他们的选择会保留。你也可以在这里设置精度和限制。",
-  "myData.attachmentsNote": "你在聊天中附加的图片和文件，LEAP 不会保存：一旦你关闭聊天，它们就会消失。因此它们也不会出现在你的数据中；只会保留一个标签以及关于它们的对话。"
+  "myData.attachmentsNote": "你在聊天中附加的图片和文件，LEAP 不会保存：一旦你关闭聊天，它们就会消失。因此它们也不会出现在你的数据中；只会保留一个标签以及关于它们的对话。",
+  "courseFeatures.attachments.toPlatformSwitch": "你是管理员：请在“管理 → 设置”中打开总开关。"
 }

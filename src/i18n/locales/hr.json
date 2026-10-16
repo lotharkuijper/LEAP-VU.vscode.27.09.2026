@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Studenti mogu zalijepiti sliku ili priložiti datoteku i razgovarati o tome s tutorom. Zadano je isključeno; uključivanje traži dvostruku potvrdu. LEAP ne pohranjuje privitke. Radi samo ako administrator to dopusti.",
   "help.chatAttachments.platform.title": "Glavni prekidač za privitke",
   "help.chatAttachments.platform.body": "Određuje smiju li se privitci u chatu koristiti u cijelom LEAP-u. Isključeno znači nigdje, čak ni tamo gdje su ih nastavnici uključili; njihov odabir ostaje spremljen. Ovdje postavljaš i preciznost i ograničenja.",
-  "myData.attachmentsNote": "Slike i datoteke koje priložiš u chatu LEAP ne sprema: nestaju čim zatvoriš chat. Zato se ne nalaze ni u tvojim podacima; samo oznaka i razgovor o njima."
+  "myData.attachmentsNote": "Slike i datoteke koje priložiš u chatu LEAP ne sprema: nestaju čim zatvoriš chat. Zato se ne nalaze ni u tvojim podacima; samo oznaka i razgovor o njima.",
+  "courseFeatures.attachments.toPlatformSwitch": "Ti si administrator: uključi glavni prekidač u Upravljanje → Postavke."
 }

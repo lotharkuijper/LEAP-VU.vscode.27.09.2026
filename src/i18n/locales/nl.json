@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Studenten kunnen een afbeelding plakken of een bestand meegeven en er met de tutor over praten. Staat standaard uit; aanzetten vraagt een dubbele bevestiging. LEAP bewaart bijlagen niet. Werkt alleen als de beheerder het toestaat.",
   "help.chatAttachments.platform.title": "Hoofdschakelaar voor bijlagen",
   "help.chatAttachments.platform.body": "Bepaalt of bijlagen in de chat in heel LEAP mogen. Uit betekent nergens, ook niet waar docenten ze hebben aangezet; hun keuze blijft bewaard. Hier stel je ook de nauwkeurigheid en de grenzen in.",
-  "myData.attachmentsNote": "Afbeeldingen en bestanden die je in de chat meegeeft, bewaart LEAP niet: ze zijn weg zodra je de chat afsluit. Ze staan daarom ook niet in je gegevens; alleen een label en het gesprek erover."
+  "myData.attachmentsNote": "Afbeeldingen en bestanden die je in de chat meegeeft, bewaart LEAP niet: ze zijn weg zodra je de chat afsluit. Ze staan daarom ook niet in je gegevens; alleen een label en het gesprek erover.",
+  "courseFeatures.attachments.toPlatformSwitch": "Jij bent beheerder: zet de hoofdschakelaar aan bij Beheer → Instellingen."
 }

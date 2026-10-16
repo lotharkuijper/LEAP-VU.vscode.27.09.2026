@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Studenci mogą wkleić obraz lub dołączyć plik i omówić go z tutorem. Domyślnie wyłączone; włączenie wymaga podwójnego potwierdzenia. LEAP nie przechowuje załączników. Działa tylko wtedy, gdy zezwoli na to administrator.",
   "help.chatAttachments.platform.title": "Przełącznik główny załączników",
   "help.chatAttachments.platform.body": "Określa, czy załączniki na czacie są dozwolone w całym LEAP. Wyłączone oznacza nigdzie, także tam, gdzie prowadzący je włączyli; ich wybór zostaje zachowany. Tutaj ustawiasz też dokładność i limity.",
-  "myData.attachmentsNote": "Obrazy i pliki, które dodajesz w czacie, nie są przechowywane przez LEAP: znikają, gdy tylko zamkniesz czat. Dlatego nie ma ich też w Twoich danych; pozostaje tylko etykieta i rozmowa na ich temat."
+  "myData.attachmentsNote": "Obrazy i pliki, które dodajesz w czacie, nie są przechowywane przez LEAP: znikają, gdy tylko zamkniesz czat. Dlatego nie ma ich też w Twoich danych; pozostaje tylko etykieta i rozmowa na ich temat.",
+  "courseFeatures.attachments.toPlatformSwitch": "Jesteś administratorem: włącz główny przełącznik w sekcji Administracja → Ustawienia."
 }

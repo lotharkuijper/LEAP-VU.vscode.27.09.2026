@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Gli studenti possono incollare un'immagine o allegare un file e parlarne con il tutor. È disattivato per impostazione predefinita; l'attivazione richiede una doppia conferma. LEAP non conserva gli allegati. Funziona solo se l'amministratore lo consente.",
   "help.chatAttachments.platform.title": "Interruttore generale per gli allegati",
   "help.chatAttachments.platform.body": "Determina se gli allegati nella chat sono consentiti in tutto LEAP. Disattivato significa da nessuna parte, anche dove i docenti li hanno attivati; la loro scelta viene conservata. Qui imposti anche la precisione e i limiti.",
-  "myData.attachmentsNote": "Immagini e file che alleghi alla chat non vengono salvati da LEAP: spariscono appena chiudi la chat. Per questo non compaiono nemmeno nei tuoi dati; solo un'etichetta e la conversazione a riguardo."
+  "myData.attachmentsNote": "Immagini e file che alleghi alla chat non vengono salvati da LEAP: spariscono appena chiudi la chat. Per questo non compaiono nemmeno nei tuoi dati; solo un'etichetta e la conversazione a riguardo.",
+  "courseFeatures.attachments.toPlatformSwitch": "Sei amministratore: attiva l'interruttore principale in Amministrazione → Impostazioni."
 }

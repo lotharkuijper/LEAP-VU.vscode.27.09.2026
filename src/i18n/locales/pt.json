@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Os estudantes podem colar uma imagem ou anexar um ficheiro e falar sobre isso com o tutor. Está desligado por predefinição; ativar requer uma dupla confirmação. O LEAP não guarda anexos. Só funciona se o administrador o permitir.",
   "help.chatAttachments.platform.title": "Interruptor principal para anexos",
   "help.chatAttachments.platform.body": "Determina se os anexos no chat são permitidos em todo o LEAP. Desligado significa em lado nenhum, mesmo onde os docentes os ativaram; a escolha deles fica guardada. Aqui também defines a precisão e os limites.",
-  "myData.attachmentsNote": "Imagens e ficheiros que anexas ao chat não são guardados pelo LEAP: desaparecem assim que fechas o chat. Por isso, também não constam nos teus dados; apenas um rótulo e a conversa sobre eles."
+  "myData.attachmentsNote": "Imagens e ficheiros que anexas ao chat não são guardados pelo LEAP: desaparecem assim que fechas o chat. Por isso, também não constam nos teus dados; apenas um rótulo e a conversa sobre eles.",
+  "courseFeatures.attachments.toPlatformSwitch": "És administrador: liga o interruptor principal em Administração → Definições."
 }

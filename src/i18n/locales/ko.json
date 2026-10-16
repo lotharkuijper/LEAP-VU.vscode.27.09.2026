@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "학생들은 이미지를 붙여넣거나 파일을 첨부해서 튜터와 이야기할 수 있어. 기본값은 꺼짐이며, 켜려면 이중 확인이 필요해. LEAP는 첨부파일을 저장하지 않아. 관리자가 허용한 경우에만 작동해.",
   "help.chatAttachments.platform.title": "첨부파일 마스터 스위치",
   "help.chatAttachments.platform.body": "LEAP 전체에서 채팅 첨부파일을 허용할지 결정해. 꺼짐이면 교사가 켜둔 곳에서도 어디서나 사용할 수 없어. 교사의 선택은 저장된 상태로 유지돼. 여기에서 정확도와 한도도 설정해.",
-  "myData.attachmentsNote": "채팅에 첨부한 이미지와 파일은 LEAP이 저장하지 않아: 채팅을 종료하면 사라져. 그래서 네 데이터에도 포함되지 않고, 라벨과 그에 대한 대화만 남아."
+  "myData.attachmentsNote": "채팅에 첨부한 이미지와 파일은 LEAP이 저장하지 않아: 채팅을 종료하면 사라져. 그래서 네 데이터에도 포함되지 않고, 라벨과 그에 대한 대화만 남아.",
+  "courseFeatures.attachments.toPlatformSwitch": "너는 관리자야: 관리 → 설정에서 메인 스위치를 켜."
 }

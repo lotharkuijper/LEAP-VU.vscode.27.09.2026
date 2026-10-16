@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Studierende können ein Bild einfügen oder eine Datei anhängen und mit dem Tutor darüber sprechen. Standardmäßig ausgeschaltet; das Einschalten erfordert eine doppelte Bestätigung. LEAP speichert Anhänge nicht. Funktioniert nur, wenn die Administration es erlaubt.",
   "help.chatAttachments.platform.title": "Hauptschalter für Anhänge",
   "help.chatAttachments.platform.body": "Legt fest, ob Anhänge im Chat in ganz LEAP erlaubt sind. Aus bedeutet nirgends, auch nicht dort, wo Lehrende sie eingeschaltet haben; ihre Auswahl bleibt gespeichert. Hier stellst du auch die Genauigkeit und die Grenzen ein.",
-  "myData.attachmentsNote": "Bilder und Dateien, die du im Chat mitschickst, speichert LEAP nicht: Sie sind weg, sobald du den Chat schließt. Sie stehen daher auch nicht in deinen Daten; nur ein Label und das Gespräch darüber."
+  "myData.attachmentsNote": "Bilder und Dateien, die du im Chat mitschickst, speichert LEAP nicht: Sie sind weg, sobald du den Chat schließt. Sie stehen daher auch nicht in deinen Daten; nur ein Label und das Gespräch darüber.",
+  "courseFeatures.attachments.toPlatformSwitch": "Du bist Administrator: Schalte den Hauptschalter unter Verwaltung → Einstellungen ein."
 }

@@ -2844,5 +2844,6 @@
   "help.courseFeatures.attachments.body": "Studenții pot lipi o imagine sau atașa un fișier și pot discuta despre acesta cu tutorele. Este dezactivat implicit; activarea necesită o dublă confirmare. LEAP nu stochează atașamentele. Funcționează doar dacă administratorul permite acest lucru.",
   "help.chatAttachments.platform.title": "Comutator principal pentru atașamente",
   "help.chatAttachments.platform.body": "Stabilește dacă atașamentele în chat sunt permise în tot LEAP. Dezactivat înseamnă nicăieri, nici acolo unde profesorii le-au activat; alegerea lor rămâne salvată. Aici setezi și precizia și limitele.",
-  "myData.attachmentsNote": "Imaginile și fișierele pe care le trimiți în chat nu sunt păstrate de LEAP: dispar imediat ce închizi chatul. De aceea, nu apar nici în datele tale; doar o etichetă și conversația despre ele."
+  "myData.attachmentsNote": "Imaginile și fișierele pe care le trimiți în chat nu sunt păstrate de LEAP: dispar imediat ce închizi chatul. De aceea, nu apar nici în datele tale; doar o etichetă și conversația despre ele.",
+  "courseFeatures.attachments.toPlatformSwitch": "Ești administrator: activează comutatorul principal la Administrare → Setări."
 }

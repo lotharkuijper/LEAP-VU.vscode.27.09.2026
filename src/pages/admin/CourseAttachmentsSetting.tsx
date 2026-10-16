@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { Paperclip, Loader2, AlertTriangle } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { AdminHint } from '../../components/help/AdminHint';
@@ -28,6 +30,7 @@ const WARNINGS = [
 
 export function CourseAttachmentsSetting({ courseId, courseName, on, token, onChanged }: Props) {
   const { t } = useLanguage();
+  const { isAdmin } = useAuth();
   const [platformEnabled, setPlatformEnabled] = useState<boolean | null>(null);
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const [understood, setUnderstood] = useState(false);
@@ -107,6 +110,14 @@ export function CourseAttachmentsSetting({ courseId, courseName, on, token, onCh
       {platformEnabled === false && (
         <AdminHint variant="warning" className="mt-2" testId="hint-attachments-platform-off">
           {on ? t('courseFeatures.attachments.platformOffOn') : t('courseFeatures.attachments.platformOff')}
+          {isAdmin && (
+            <>
+              {' '}
+              <Link to="/admin?tab=settings" className="font-medium underline hover:no-underline" data-testid="link-attachments-platform">
+                {t('courseFeatures.attachments.toPlatformSwitch')}
+              </Link>
+            </>
+          )}
         </AdminHint>
       )}
       {error && <p className="mt-2 text-sm text-red-700" data-testid="text-attachments-error">{error}</p>}
