@@ -73,6 +73,7 @@ export const HELP_TOPICS = [
   'searchSensitivity.extraction',
   'chatInstructions.perCourse',
   'projects.submissions',
+  'projects.preassessment',
   'projects.docs',
   'personas.consultationLimits',
   'personas.hiddenRubric',

@@ -13,6 +13,8 @@ import { AdminHint } from '../../components/help/AdminHint';
 import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
 import { PersonaRoleFields, roleFieldsPayload, type ConductRules } from '../../components/PersonaRoleFields';
+import { ListRow } from '../../components/ui/ListRow';
+import { usePreassessments, PreassessorPicker, PreassessmentBadge, PreassessmentModal, DownloadAllButton } from './ProjectPreassessment';
 import type { AvatarConfig } from '../../lib/personaAvatar';
 import {
   AlertDialog,
@@ -38,6 +40,7 @@ interface ProjectRow {
   max_group_size: number | null;
   allow_self_signup: boolean | null;
   submissions_enabled: boolean | null;
+  preassessment_persona_id?: string | null;
   status: string | null;
   created_at: string;
 }
@@ -546,6 +549,12 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
     } catch (e: any) { setLocalError(e.message); }
   };
 
+  // Voorbeoordeling van het eindproduct (alleen voor docenten).
+  const pre = usePreassessments(project.id, token, !!project.submissions_enabled);
+  const [viewPre, setViewPre] = useState<SubmissionRow | null>(null);
+  useEffect(() => { void pre.reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [submissions]);
+  const preFail = (e: unknown) => setLocalError((e instanceof Error && e.message) || t('admin.projects.pre.downloadFailed'));
+
   const [confirmDeleteSub, setConfirmDeleteSub] = useState<SubmissionRow | null>(null);
   const performDeleteSubmission = async (s: SubmissionRow) => {
     try {
@@ -948,47 +957,65 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
               {t('admin.projects.subs.projectDesc')}
             </AdminHint>
           </div>
+          <div className="mb-3">
+            <PreassessorPicker
+              projectId={project.id}
+              token={token}
+              evaluators={personas.filter(p => p.persona_type === 'evaluator')}
+              value={pre.personaId}
+              rubricCount={pre.personaId ? rubricDocsMap[pre.personaId]?.length : undefined}
+              onChange={pre.setPersonaId}
+              onError={setLocalError}
+              onInfo={setLocalInfo}
+            />
+          </div>
           {loadingSubs ? (
             <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> {t('admin.projects.subs.loading')}</p>
           ) : submissions.length === 0 ? (
             <p className="text-xs text-gray-500">{t('admin.projects.subs.none')}</p>
           ) : (
-            <ul className="divide-y divide-gray-100">
-              {submissions.map(s => (
-                <li key={s.id} className="py-2 flex items-center gap-3" data-testid={`submission-row-${s.id}`}>
-                  <FileText className="w-4 h-4 text-gray-500" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm truncate">{s.filename}</div>
-                    <div className="text-[11px] text-gray-500">
-                      {s.group_name || s.group_id.slice(0, 8)}
-                      {s.uploaded_by_name || s.uploaded_by_email ? ` · ${t('admin.projects.subs.by', { name: String(s.uploaded_by_name || s.uploaded_by_email) })}` : ''}
-                      {' · '}{new Date(s.created_at).toLocaleString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
-                    </div>
-                  </div>
-                  <Tooltip label={t('admin.projects.subs.download')}>
-                    <button
-                      onClick={() => downloadSubmission(s)}
-                      className="p-1 text-blue-500 hover:bg-blue-50 rounded"
-                      data-testid={`button-download-submission-${s.id}`}
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </Tooltip>
-                  <Tooltip label={t('admin.projects.subs.delete')}>
-                    <button
-                      onClick={() => setConfirmDeleteSub(s)}
-                      className="p-1 text-red-500 hover:bg-red-50 rounded"
-                      data-testid={`button-delete-submission-${s.id}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </Tooltip>
-                </li>
-              ))}
-            </ul>
+            <>
+              <div className="mb-2 flex flex-wrap justify-end gap-2">
+                <DownloadAllButton onClick={() => pre.downloadAll().catch(preFail)} />
+              </div>
+              <ul className="divide-y divide-gray-100">
+                {submissions.map(s => {
+                  const a = pre.byId[s.id];
+                  return (
+                    <li key={s.id} className="py-2" data-testid={`submission-row-${s.id}`}>
+                      <ListRow
+                        title={<span className="flex min-w-0 items-center gap-2"><FileText className="w-4 h-4 shrink-0 text-gray-500" /><span className="min-w-0 truncate text-sm">{s.filename}</span></span>}
+                        badges={<PreassessmentBadge a={a} />}
+                        meta={<>
+                          {s.group_name || s.group_id.slice(0, 8)}
+                          {s.uploaded_by_name || s.uploaded_by_email ? ` · ${t('admin.projects.subs.by', { name: String(s.uploaded_by_name || s.uploaded_by_email) })}` : ''}
+                          {' · '}{new Date(s.created_at).toLocaleString(lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          {s.byte_size ? ` · ${Math.round(s.byte_size / 1024)} KB` : ''}
+                        </>}
+                        actions={[
+                          ...(a ? [{ key: 'view', label: t('admin.projects.pre.view'), icon: Eye, tone: 'primary' as const, onClick: () => setViewPre(s), testId: `button-view-preassessment-${s.id}` }] : []),
+                          { key: 'download', label: t('admin.projects.subs.download'), icon: Download, onClick: () => downloadSubmission(s), testId: `button-download-submission-${s.id}` },
+                          ...(a?.status === 'done' ? [{ key: 'word', label: t('admin.projects.pre.downloadWord'), icon: FileText, onClick: () => { pre.downloadWord(s.id).catch(preFail); }, testId: `button-word-preassessment-${s.id}` }] : []),
+                          ...(pre.personaId && a?.status !== 'pending' ? [{ key: 'rerun', label: a ? t('admin.projects.pre.rerun') : t('admin.projects.pre.run'), icon: Bot, inMenu: !!a && a.status === 'done', onClick: () => { pre.rerun(s.id).catch(preFail); }, testId: `button-run-preassessment-${s.id}` }] : []),
+                          { key: 'delete', label: t('admin.projects.subs.delete'), icon: Trash2, tone: 'danger' as const, inMenu: true, onClick: () => setConfirmDeleteSub(s), testId: `button-delete-submission-${s.id}` },
+                        ]}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </div>
+      )}
+      {viewPre && (
+        <PreassessmentModal
+          groupName={viewPre.group_name || ''}
+          a={pre.byId[viewPre.id]}
+          onClose={() => setViewPre(null)}
+          onRerun={() => { pre.rerun(viewPre.id).catch(preFail); }}
+          onDownload={() => { pre.downloadWord(viewPre.id).catch(preFail); }}
+        />
       )}
 
       {/* Groepen: alleen wie erin zit */}

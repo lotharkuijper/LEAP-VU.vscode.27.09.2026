@@ -89,6 +89,11 @@
   - The conduct rules are never put in the persona's chat prompt; it only gets its level and the matching behaviour.
   - Students see the level and the latest reason.
 - Groups submit work to an evaluator via `POST …/groups/:groupId/personas/:personaId/feedback` (stored in `project_group_products`, reviewed by `runEvaluatorReview`). A round only counts when a review was produced (`feedbackRoundsState`). Evaluator reviews do not change any relationship.
+- Pre-assessment of the final product (2026-10-16, `server/preassessment.js`, migration `20261016140000_project_preassessment` with rollback):
+  - A teacher designates one Evaluator per project as pre-assessor (`projects.preassessment_persona_id`, `PUT …/preassessment-persona`). After every submission (`project_submissions`) the server reads the WHOLE product (in parts of ~18k characters plus a synthesis call) and stores a pre-assessment per criterion of that evaluator's hidden rubric in `project_submission_assessments`: strengths, concerns, quotes and an indication (`strong|adequate|weak|unclear`). Never a grade; the teacher assesses.
+  - Grounded: quotes that do not literally occur in the product are dropped (`verifyQuotes`); instructions inside the product are ignored and reported under `attention`.
+  - Only course teachers and LEAP admins see it (submissions are deliberately shared work). Students only see a notice that it happens. The pre-assessor is excluded from student feedback rounds, the room's evaluator list and "Beoordeling opvragen", so its rubric stays with the teacher.
+  - Downloads: per submission a Word file (`…/preassessment.docx`), per project one zip (`…/submissions-export.zip`: per group the product + pre-assessment, plus an overview CSV). Check with `node --env-file=.env scripts/check-preassessment.mjs [--long]` (real model, test account, cleans up).
 - Admin modals that can grow taller than the screen are rendered with `createPortal(…, document.body)`. The sticky top bar is z-50, and a modal inside the page content would fall behind it.
 
 ## Privacy: what teachers may see (decided 2026-10-08)

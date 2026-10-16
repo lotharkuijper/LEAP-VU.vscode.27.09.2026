@@ -44,6 +44,7 @@ interface Project {
   rubric_criteria: any[];
   research_question: string;
   submissions_enabled?: boolean | null;
+  preassessment_persona_id?: string | null;
   course_id?: string | null;
 }
 interface Submission {
@@ -2329,6 +2330,11 @@ export function ProjectRoomPage() {
             <p className="text-sm text-gray-600 mb-3">
               {t('room.submission.modalIntro')}
             </p>
+            {project?.preassessment_persona_id && (
+              <p className="text-xs text-gray-600 mb-3 rounded-lg bg-blue-50 border border-blue-100 p-2" data-testid="text-preassessment-notice">
+                {t('room.submission.preassessmentNotice')}
+              </p>
+            )}
             {submissions.length > 0 && (
               <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg" data-testid="current-submission">
                 <div className="text-xs text-gray-500 mb-1">{t('room.submission.current')}</div>

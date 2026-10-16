@@ -133,6 +133,7 @@ import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
 import { registerSystemMessageRoutes } from './systemMessages.js';
 import { registerCourseUnitRoutes, loadLeerlijn, loadPracticedUnits, anchorUnit, buildLeerlijnBlock } from './courseUnits.js';
+import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
 import { installAnalytics } from './analytics/index.js';
@@ -10974,7 +10975,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       // Alleen project-eigen evaluators tellen mee voor hasEvaluator zodat de
       // UI-knop precies overeenkomt met wat /evaluate kan beoordelen
       // (course-fallback-personas zijn nooit evaluator-bronnen).
-      evaluatorCount = pp.filter(p => p.persona_type === 'evaluator').length;
+      evaluatorCount = pp.filter(p => p.persona_type === 'evaluator' && p.id !== project.preassessment_persona_id).length;
       const filtered = isStaff ? pp : pp.filter(p => p.persona_type !== 'evaluator');
       personas = filtered.map(p => ({ ...p, _source: 'project' }));
     } else if (project.course_id) {
@@ -11051,7 +11052,9 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
           rubricsByPersona.set(d.persona_id, list);
         });
       }
-      evaluators = (evRows || []).map(p => ({
+      // De voorbeoordelaar van het eindproduct is alleen voor de docent.
+      const hidePre = !isStaff && project.preassessment_persona_id;
+      evaluators = (evRows || []).filter(p => !hidePre || p.id !== project.preassessment_persona_id).map(p => ({
         id: p.id, name: p.name, avatar_emoji: p.avatar_emoji, avatar: p.avatar ?? null,
         rubrics: rubricsByPersona.get(p.id) || [],
       }));
@@ -14041,7 +14044,7 @@ async function loadFeedbackContext(req, res, { requirePersona = true } = {}) {
   if (auth.error) { res.status(auth.error.status).json(auth.error.body); return null; }
   const { projectId, groupId, personaId } = req.params;
   const { data: project } = await supabaseAdmin
-    .from('projects').select('id, course_id, title, research_question, goals, status').eq('id', projectId).maybeSingle();
+    .from('projects').select('id, course_id, title, research_question, goals, status, preassessment_persona_id').eq('id', projectId).maybeSingle();
   if (!project) { res.status(404).json({ error: 'Project niet gevonden' }); return null; }
   const { data: group } = await supabaseAdmin
     .from('project_groups').select('id, project_id, name, status').eq('id', groupId).maybeSingle();
@@ -14056,6 +14059,8 @@ async function loadFeedbackContext(req, res, { requirePersona = true } = {}) {
       .from('project_personas').select('*').eq('id', personaId).eq('project_id', projectId).maybeSingle();
     if (!p) { res.status(404).json({ error: 'Persona niet gevonden in dit project' }); return null; }
     if (p.persona_type !== 'evaluator') { res.status(400).json({ error: 'Alleen evaluator-persona\'s kunnen oordelen afgeven' }); return null; }
+    // De voorbeoordelaar van het eindproduct geeft geen feedbackrondes.
+    if (p.id === project.preassessment_persona_id) { res.status(400).json({ error: 'Deze beoordelaar maakt alleen de voorbeoordeling van het eindproduct voor de docent' }); return null; }
     persona = p;
   }
   return { auth, project, group, persona, isStaff, memberOfGroup };
@@ -14072,7 +14077,7 @@ app.get('/api/projects/:projectId/groups/:groupId/feedback', async (req, res) =>
     const { data: evaluators } = await supabaseAdmin
       .from('project_personas')
       .select('id, name, avatar_emoji, avatar, deliverable_label, max_reviews, sort_order')
-      .eq('project_id', project.id).eq('persona_type', 'evaluator').order('sort_order');
+      .eq('project_id', project.id).eq('persona_type', 'evaluator').neq('id', project.preassessment_persona_id || '00000000-0000-0000-0000-000000000000').order('sort_order');
     const evIds = (evaluators || []).map(e => e.id);
     if (evIds.length === 0) return res.json({ evaluators: [] });
     const { data: products } = await supabaseAdmin
@@ -14222,6 +14227,12 @@ app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =
     }
     if (persona.persona_type !== 'evaluator') {
       return res.status(400).json({ error: 'Alleen evaluator-persona\'s kunnen oordelen afgeven' });
+    }
+    {
+      const { data: pre } = await supabaseAdmin.from('projects').select('preassessment_persona_id').eq('id', projectId).maybeSingle();
+      if (pre?.preassessment_persona_id === persona.id) {
+        return res.status(400).json({ error: 'Deze beoordelaar maakt alleen de voorbeoordeling van het eindproduct voor de docent' });
+      }
     }
 
     // Document moet bij dit project horen en moet tekst-extraheerbaar zijn.
@@ -14385,6 +14396,26 @@ registerMyDataRoutes(app, {
 registerSystemMessageRoutes(app, { supabaseAdmin, requireAuthUser, isLeapAdmin });
 
 // Leerlijn: volgorde van de stof per cursus (server/courseUnits.js).
+// Voorbeoordeling van het ingeleverde eindproduct (server/preassessment.js).
+const preassessmentRunner = createPreassessmentRunner({
+  supabaseAdmin, pgPool,
+  extractText: extractTextFromUpload,
+  modelReady: () => AZURE_CHAT_READY,
+  callModel: async (messages, lang) => {
+    const withLang = messages.map((m, i) => (i === 0 ? { ...m, content: m.content + buildLanguageInstruction(lang, { json: true }) } : m));
+    const r = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages: withLang,
+      response_format: { type: 'json_object' },
+      ...chatModelParams({ temperature: 0.2, maxTokens: 4000 }),
+    }, { timeoutMs: 240000 });
+    if (!r.ok) throw new Error(`Taalmodel-fout (${r.status}): ${(await r.text()).slice(0, 200)}`);
+    const j = await r.json();
+    return (j.choices?.[0]?.message?.content || '').trim();
+  },
+});
+registerPreassessmentRoutes(app, { supabaseAdmin, pgPool, requireAuthUser, isStaffForCourse, runner: preassessmentRunner });
+
 registerCourseUnitRoutes(app, {
   supabaseAdmin, requireAuthUser, userHasCourseAccess, isStaffForCourse,
   courseMaterialDocuments, onChanged: (courseId) => leerlijnCache.delete(courseId),
@@ -14581,7 +14612,7 @@ async function uploadProjectSubmissionHandler(req, res) {
 
   try {
     const { data: project } = await supabaseAdmin
-      .from('projects').select('id, submissions_enabled, status').eq('id', projectId).maybeSingle();
+      .from('projects').select('id, submissions_enabled, status, preassessment_persona_id').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
     if (!project.submissions_enabled) {
       return res.status(403).json({ error: 'Inleveren is niet ingeschakeld voor dit project' });
@@ -14625,7 +14656,10 @@ async function uploadProjectSubmissionHandler(req, res) {
         [projectId, groupId, newId]
       );
       await client.query('COMMIT');
-      return res.json({ submission: insRes.rows[0] });
+      // Voorbeoordeling voor de docent (als er een voorbeoordelaar is
+      // aangewezen): op de achtergrond, de student wacht er niet op.
+      if (project.preassessment_persona_id) preassessmentRunner.start(newId);
+      return res.json({ submission: insRes.rows[0], preassessment: !!project.preassessment_persona_id });
     } catch (e) {
       try { await client.query('ROLLBACK'); } catch { /* ignore */ }
       throw e;
@@ -14973,12 +15007,15 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
       if (!access.ok) return res.status(access.status).json({ error: access.error || 'Geen toegang tot deze groep' });
     }
     const { data: project } = await supabaseAdmin
-      .from('projects').select('id, title, research_question, goals, briefing_markdown')
+      .from('projects').select('id, title, research_question, goals, briefing_markdown, preassessment_persona_id')
       .eq('id', group.project_id).maybeSingle();
 
+    // De voorbeoordelaar van het eindproduct doet hier niet aan mee: zijn
+    // verborgen rubric is voor de docent.
     const { data: evaluators } = await supabaseAdmin
       .from('project_personas').select('*')
-      .eq('project_id', group.project_id).eq('persona_type', 'evaluator');
+      .eq('project_id', group.project_id).eq('persona_type', 'evaluator')
+      .neq('id', project?.preassessment_persona_id || '00000000-0000-0000-0000-000000000000');
     if (!evaluators || evaluators.length === 0) {
       return res.status(400).json({ error: 'Dit project heeft geen beoordelaar-persona' });
     }
