@@ -6724,6 +6724,41 @@ app.post('/api/admin/concepts/set-approval', async (req, res) => {
   }
 });
 
+// POST /api/admin/concepts/visibility { courseId, ids, visible } — zet ALLEEN
+// de genoemde begrippen van deze cursus op zichtbaar ('approved') of verborgen
+// ('rejected') voor studenten (2026-10-16, keuzelijst "Begrippen kiezen").
+// Anders dan set-approval raakt dit nooit begrippen die niet in beeld waren.
+app.post('/api/admin/concepts/visibility', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  const { courseId, ids, visible } = req.body || {};
+  if (!courseId) return res.status(400).json({ error: 'courseId is required' });
+  if (!Array.isArray(ids) || ids.length === 0 || typeof visible !== 'boolean') {
+    return res.status(400).json({ error: 'Geef begrippen (ids) en zichtbaar ja/nee (visible) op' });
+  }
+  const isAdmin = auth.profile?.role === 'admin' || auth.profile?.email === SUPERUSER_EMAIL;
+  if (!isAdmin && !(await isCourseTeacher(auth.user.id, courseId))) {
+    return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
+  }
+  try {
+    let query = supabaseAdmin.from('concepts').select('id').in('id', ids.slice(0, 1000));
+    query = conceptsHasCourseId ? query.eq('course_id', courseId) : query.contains('key_points', [`course_id:${courseId}`]);
+    const { data, error } = await query;
+    if (error) return res.status(500).json({ error: error.message });
+    const inCourse = (data || []).map((c) => c.id);
+    if (inCourse.length > 0) {
+      const { error: upErr } = await supabaseAdmin.from('concepts')
+        .update({ review_status: visible ? 'approved' : 'rejected' }).in('id', inCourse);
+      if (upErr) return res.status(500).json({ error: upErr.message });
+    }
+    console.log(`[concepts/visibility] course=${courseId} ${visible ? 'zichtbaar' : 'verborgen'}=${inCourse.length} door ${auth.user.id}`);
+    return res.json({ updated: inCourse.length, visible });
+  } catch (err) {
+    console.error('[concepts/visibility] Unexpected error:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
 // Task #243: opgeslagen bewijsfragmenten per begrip. Wordt door "Ik leg uit"
 // gebruikt als gegarandeerde basis-context uit het cursusmateriaal, los van de
 // live RAG-zoekopdracht. Geeft een lege lijst terug als de migratie nog niet is

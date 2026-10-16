@@ -31,6 +31,7 @@ export const HELP_TOPICS = [
   'concepts.coverage',
   'concepts.merge',
   'concepts.minMax',
+  'concepts.picker',
   // Projecten en persona's
   'projects.overview',
   'projects.templates',

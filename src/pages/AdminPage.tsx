@@ -19,7 +19,7 @@ import { ChatAttachmentsPlatformPanel } from './admin/ChatAttachmentsPlatformPan
 import { AnalyticsAdminTab } from '../features/analytics/AnalyticsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
-import { classifyConceptForTeacher, getDifficultyTier, type ConceptClass, type DifficultyTier } from '../lib/conceptClassification';
+import { ConceptPicker } from '../components/material/ConceptPicker';
 
 import { CourseMaterialWorkspace, MATERIAL_STEPS } from '../components/material/CourseMaterialWorkspace';
 import { extractionBody, DEFAULT_EXTRACTION_OPTIONS, type ExtractionOptions } from '../lib/conceptExtractionJob';
@@ -355,14 +355,6 @@ export function AdminPage() {
   const conceptTaskRunning = conceptTask?.status === 'running';
   const [regenerateResult, setRegenerateResult] = useState<{ message: string } | null>(null);
   const [regenerateError, setRegenerateError] = useState<string | null>(null);
-  const [selectedConceptIds, setSelectedConceptIds] = useState<Set<string>>(new Set());
-  const [bulkDeleting, setBulkDeleting] = useState(false);
-  const [bulkDeleteError, setBulkDeleteError] = useState<string | null>(null);
-  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
-  const [approving, setApproving] = useState(false);
-  const [approveError, setApproveError] = useState<string | null>(null);
-  const [approveConfirm, setApproveConfirm] = useState(false);
-  const [approveResult, setApproveResult] = useState<{ approved: number; rejected: number } | null>(null);
   const [conceptsMeta, setConceptsMeta] = useState<{ ragCount: number; manualCount: number; lastExtraction: string | null; lastDocumentChange: string | null; lastSuccessfulRegeneration: string | null } | null>(null);
   // Aantal DISTINCT documenten met bewijs per begrip-id (uit concept_evidence),
   // gebruikt om te bepalen of een begrip cursusbreed (meerdere modules) of
@@ -1322,69 +1314,6 @@ export function AdminPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
-    if (!bulkDeleteConfirm) {
-      setBulkDeleteConfirm(true);
-      return;
-    }
-    if (!session?.access_token || selectedConceptIds.size === 0) return;
-    setBulkDeleting(true);
-    setBulkDeleteError(null);
-    setBulkDeleteConfirm(false);
-    const ids = Array.from(selectedConceptIds);
-    const results = await Promise.allSettled(
-      ids.map(id =>
-        fetch(`/api/admin/concepts/${id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        })
-      )
-    );
-    const failed = results.filter(r => r.status === 'rejected').length;
-    if (failed > 0) {
-      setBulkDeleteError(t('admin.concepts.bulkDeleteError', { failed: String(failed), total: String(ids.length) }));
-    }
-    setSelectedConceptIds(new Set());
-    setBulkDeleting(false);
-    await loadConcepts();
-    await loadConceptsMeta();
-  };
-
-  // Docent-curatie: PRECIES de geselecteerde cursusbegrippen worden 'approved'
-  // (en dus zichtbaar voor Quiz/"Ik leg uit" via GET /api/concepts), alle
-  // overige begrippen van deze cursus worden 'rejected'. Vereist een expliciete
-  // bevestiging omdat dit niet-geselecteerde begrippen voor studenten verbergt.
-  const handleApproveSelected = async () => {
-    if (!approveConfirm) {
-      setApproveConfirm(true);
-      return;
-    }
-    if (!session?.access_token || !activeCourseId) return;
-    setApproving(true);
-    setApproveError(null);
-    setApproveConfirm(false);
-    try {
-      const res = await fetch('/api/admin/concepts/set-approval', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ courseId: activeCourseId, approvedIds: Array.from(selectedConceptIds) }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || t('admin.concepts.errorStatus', { status: String(res.status) }));
-      }
-      setApproveResult({ approved: data.approved ?? 0, rejected: data.rejected ?? 0 });
-      await loadConcepts();
-    } catch (err) {
-      setApproveError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
-    } finally {
-      setApproving(false);
-    }
-  };
-
   const handleSavePrompt = async () => {
     if (!editingPrompt || !profile) return;
     setLoading(true);
@@ -2008,6 +1937,17 @@ const tabGroups = [
 
           {activeTab === 'material' && materialStep === 'concepts' && (
             <div className="space-y-4 mt-4">
+              {/* Begrippen kiezen: bovenaan, want dit is de hoofdtaak van deze stap. */}
+              {activeCourseId && session?.access_token && courseConcepts.length > 0 && (
+                <ConceptPicker
+                  courseId={activeCourseId}
+                  token={session.access_token}
+                  concepts={courseConcepts}
+                  moduleCounts={conceptModuleCounts}
+                  onChanged={async () => { await loadConcepts(); await loadConceptsMeta(); }}
+                  onOpenDetails={setConceptDrawerId}
+                />
+              )}
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-[min(100%,16rem)] flex-1">
                   <AdminHint variant="intro">{t('admin.concepts.subtitle')}</AdminHint>
@@ -2075,7 +2015,16 @@ const tabGroups = [
                 </div>
               </div>
 
-              {activeCourseId && session?.access_token && (
+              {activeCourseId && (
+              <details className="group rounded-xl border border-gray-200 bg-white" data-testid="details-concept-settings">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                  <SlidersHorizontal className="h-4 w-4 text-gray-500" aria-hidden />
+                  {t('admin.conceptPicker.moreSettings')}
+                  <span className="min-w-0 text-xs font-normal text-gray-500">{t('admin.conceptPicker.moreSettingsHint')}</span>
+                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden />
+                </summary>
+                <div className="space-y-4 border-t border-gray-100 p-4">
+              {session?.access_token && (
                 <ConceptQualityPanel
                   courseId={activeCourseId}
                   token={session.access_token}
@@ -2131,6 +2080,9 @@ const tabGroups = [
                   {maxConceptsSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                   {maxConceptsError && <span className="text-xs text-red-600">{maxConceptsError}</span>}
                 </div>
+              )}
+                </div>
+              </details>
               )}
 
               {activeCourse && conceptsMeta && conceptsMeta.lastDocumentChange && (() => {
@@ -2243,268 +2195,6 @@ const tabGroups = [
                 <strong>{t('admin.tip')}</strong> {t('admin.concepts.tip')}
               </AdminHint>
 
-              {/* ── Selectie-toolbar ── */}
-              {(courseConcepts.length > 0 || globalConcepts.length > 0) && (() => {
-                const allIds = [...courseConcepts, ...globalConcepts].map(c => c.id);
-                const allSelected = allIds.length > 0 && allIds.every(id => selectedConceptIds.has(id));
-                const noneSelected = selectedConceptIds.size === 0;
-                return (
-                  <div className="flex flex-wrap items-center gap-3 py-2 border-t border-gray-100 pt-3">
-                    <button
-                      onClick={() => {
-                        setBulkDeleteConfirm(false);
-                        setSelectedConceptIds(allSelected ? new Set() : new Set(allIds));
-                      }}
-                      className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                      data-testid="button-toggle-select-all"
-                    >
-                      <input
-                        type="checkbox"
-                        readOnly
-                        checked={allSelected}
-                        className="w-4 h-4 rounded border-gray-300 accent-blue-600 pointer-events-none"
-                      />
-                      {allSelected ? t('admin.concepts.deselectAll') : t('admin.concepts.selectAll')}
-                    </button>
-
-                    {!noneSelected && (
-                      <span className="text-sm text-gray-500">{selectedConceptIds.size} {t('admin.concepts.selected')}</span>
-                    )}
-
-                    {!noneSelected && (
-                      bulkDeleteConfirm ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-red-700 font-medium">
-                            {t('admin.concepts.bulkDeleteConfirm', { count: String(selectedConceptIds.size) })}
-                          </span>
-                          <button
-                            onClick={handleBulkDelete}
-                            disabled={bulkDeleting}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                            data-testid="button-confirm-bulk-delete"
-                          >
-                            {bulkDeleting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
-                            {t('admin.concepts.yesDelete')}
-                          </button>
-                          <button
-                            onClick={() => setBulkDeleteConfirm(false)}
-                            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                          >
-                            {t('common.cancelAction')}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleBulkDelete}
-                          disabled={bulkDeleting}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50 transition-colors"
-                          data-testid="button-bulk-delete"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          {t('admin.concepts.deleteSelected', { count: String(selectedConceptIds.size) })}
-                        </button>
-                      )
-                    )}
-
-                    {bulkDeleteError && (
-                      <span className="text-sm text-red-600">{bulkDeleteError}</span>
-                    )}
-
-                    {activeCourse && courseConcepts.length > 0 && (
-                      approveConfirm ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-emerald-700 font-medium">
-                            {t('admin.concepts.approveConfirm', { count: String(selectedConceptIds.size), total: String(courseConcepts.length) })}
-                          </span>
-                          <button
-                            onClick={handleApproveSelected}
-                            disabled={approving}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                            data-testid="button-confirm-approve-selected"
-                          >
-                            {approving ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                            {t('admin.concepts.approveYes')}
-                          </button>
-                          <button
-                            onClick={() => setApproveConfirm(false)}
-                            className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                          >
-                            {t('common.cancelAction')}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleApproveSelected}
-                          disabled={approving}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-50 transition-colors"
-                          data-testid="button-approve-selected"
-                        >
-                          <CheckCircle className="w-3 h-3" />
-                          {t('admin.concepts.approveSelected')}
-                        </button>
-                      )
-                    )}
-
-                    {approveError && (
-                      <span className="text-sm text-red-600">{approveError}</span>
-                    )}
-                    {approveResult && !approveError && (
-                      <span className="text-sm text-emerald-700">
-                        {t('admin.concepts.approveResult', { approved: String(approveResult.approved), rejected: String(approveResult.rejected) })}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {activeCourse && (
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-purple-600" />
-                    {t('admin.concepts.courseLabel')} {activeCourse.name}
-                    <span className="text-sm font-normal text-gray-500">({courseConcepts.length})</span>
-                  </h3>
-                  {courseConcepts.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500 border border-dashed border-gray-200 rounded-lg">
-                      <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                      <p className="text-sm">{t('admin.concepts.noCourseConcepts')}</p>
-                    </div>
-                  ) : (() => {
-                    // Groepeer op teacher-facing classificatie zodat een docent
-                    // voorbeelden/casussen niet meer als kernbegrip tegenkomt en
-                    // per klasse in bulk kan selecteren (bv. alle voorbeelden
-                    // wegselecteren vóór "Verwijder geselecteerde").
-                    const classDefs: Array<{ key: ConceptClass; title: string; hint: string; badgeBg: string }> = [
-                      { key: 'course', title: t('admin.concepts.classCourse'), hint: t('admin.concepts.classCourseHint'), badgeBg: 'bg-purple-50 text-purple-700 border-purple-200' },
-                      { key: 'module', title: t('admin.concepts.classModule'), hint: t('admin.concepts.classModuleHint'), badgeBg: 'bg-blue-50 text-blue-700 border-blue-200' },
-                      { key: 'example', title: t('admin.concepts.classExample'), hint: t('admin.concepts.classExampleHint'), badgeBg: 'bg-amber-50 text-amber-700 border-amber-200' },
-                    ];
-                    // Tweede hiërarchie-niveau binnen elke klasse: moeilijkheidsgraad
-                    // (beoordeeld door de LLM op basis van de definitietekst, zie
-                    // classifyConceptDifficulty in server/conceptExtraction.js — NIET
-                    // afgeleid uit de embedding-vector). Moeilijk eerst, zodat een
-                    // docent die kwaliteit checkt de complexere begrippen als eerste ziet.
-                    const difficultyDefs: Array<{ key: DifficultyTier; title: string; dotColor: string }> = [
-                      { key: 'hard', title: t('admin.concepts.difficultyHard'), dotColor: 'bg-red-500' },
-                      { key: 'medium', title: t('admin.concepts.difficultyMedium'), dotColor: 'bg-yellow-500' },
-                      { key: 'easy', title: t('admin.concepts.difficultyEasy'), dotColor: 'bg-green-500' },
-                    ];
-                    const grouped = new Map<ConceptClass, Concept[]>([['course', []], ['module', []], ['example', []]]);
-                    for (const concept of courseConcepts) {
-                      grouped.get(classifyConceptForTeacher(concept, conceptModuleCounts))!.push(concept);
-                    }
-                    return (
-                      <div className="space-y-6">
-                        {classDefs.map(({ key, title, hint, badgeBg }) => {
-                          const items = grouped.get(key) || [];
-                          if (items.length === 0) return null;
-                          const ids = items.map((c) => c.id);
-                          const allSelected = ids.every((id) => selectedConceptIds.has(id));
-                          return (
-                            <div key={key}>
-                              <div className="flex flex-wrap items-center gap-3 mb-3">
-                                <span className={`text-sm font-semibold px-2.5 py-1 rounded-lg border ${badgeBg}`}>
-                                  {title} ({items.length})
-                                </span>
-                                <span className="text-xs text-gray-500">{hint}</span>
-                                <button
-                                  onClick={() => setSelectedConceptIds((prev) => {
-                                    const next = new Set(prev);
-                                    if (allSelected) ids.forEach((id) => next.delete(id));
-                                    else ids.forEach((id) => next.add(id));
-                                    return next;
-                                  })}
-                                  className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-gray-900 transition-colors ml-auto"
-                                  data-testid={`button-toggle-select-all-${key}`}
-                                >
-                                  <input
-                                    type="checkbox"
-                                    readOnly
-                                    checked={allSelected}
-                                    className="w-3.5 h-3.5 rounded border-gray-300 accent-blue-600 pointer-events-none"
-                                  />
-                                  {allSelected ? t('admin.concepts.deselectAll') : t('admin.concepts.selectAll')}
-                                </button>
-                              </div>
-                              {(() => {
-                                const byDifficulty = new Map<DifficultyTier, Concept[]>([['hard', []], ['medium', []], ['easy', []]]);
-                                for (const concept of items) byDifficulty.get(getDifficultyTier(concept))!.push(concept);
-                                return (
-                                  <div className="space-y-4 pl-1">
-                                    {difficultyDefs.map(({ key: diffKey, title: diffTitle, dotColor }) => {
-                                      const diffItems = byDifficulty.get(diffKey) || [];
-                                      if (diffItems.length === 0) return null;
-                                      const diffIds = diffItems.map((c) => c.id);
-                                      const diffAllSelected = diffIds.every((id) => selectedConceptIds.has(id));
-                                      return (
-                                        <div key={diffKey}>
-                                          <div className="flex flex-wrap items-center gap-2 mb-2">
-                                            <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                                            <span className="text-xs font-medium text-gray-600">
-                                              {diffTitle} ({diffItems.length})
-                                            </span>
-                                            <button
-                                              onClick={() => setSelectedConceptIds((prev) => {
-                                                const next = new Set(prev);
-                                                if (diffAllSelected) diffIds.forEach((id) => next.delete(id));
-                                                else diffIds.forEach((id) => next.add(id));
-                                                return next;
-                                              })}
-                                              className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-900 transition-colors ml-auto"
-                                              data-testid={`button-toggle-select-all-${key}-${diffKey}`}
-                                            >
-                                              <input
-                                                type="checkbox"
-                                                readOnly
-                                                checked={diffAllSelected}
-                                                className="w-3 h-3 rounded border-gray-300 accent-blue-600 pointer-events-none"
-                                              />
-                                              {diffAllSelected ? t('admin.concepts.deselectAll') : t('admin.concepts.selectAll')}
-                                            </button>
-                                          </div>
-                                          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(18rem,100%),1fr))] gap-3">
-                                            {diffItems.map((concept) => {
-                                              const isRagExtracted = (concept.key_points || []).includes('[RAG-geëxtraheerd uit cursusmateriaal]');
-                                              const sourceLabel = isRagExtracted ? t('admin.concepts.sourceAI') : t('admin.concepts.sourceCourse');
-                                              const sourceBg = isRagExtracted ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700';
-                                              return (
-                                                <ConceptCard
-                                                  key={concept.id}
-                                                  concept={concept}
-                                                  sourceLabel={sourceLabel}
-                                                  sourceBg={sourceBg}
-                                                  deleteConfirmId={deleteConfirmId}
-                                                  deletingConceptId={deletingConceptId}
-                                                  onDeleteRequest={(id) => { setDeleteConfirmId(id); setDeleteError(null); }}
-                                                  onDeleteConfirm={handleDeleteConcept}
-                                                  onDeleteCancel={() => setDeleteConfirmId(null)}
-                                                  onOpenDetails={activeCourseId ? setConceptDrawerId : undefined}
-                                                  isSelected={selectedConceptIds.has(concept.id)}
-                                                  onToggleSelect={(id) => setSelectedConceptIds(prev => {
-                                                    const next = new Set(prev);
-                                                    next.has(id) ? next.delete(id) : next.add(id);
-                                                    return next;
-                                                  })}
-                                                  lang={lang}
-                                                />
-                                              );
-                                            })}
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-
               <div>
                 <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Globe className="w-4 h-4 text-gray-500" />
@@ -2529,12 +2219,6 @@ const tabGroups = [
                         onDeleteRequest={(id) => { setDeleteConfirmId(id); setDeleteError(null); }}
                         onDeleteConfirm={handleDeleteConcept}
                         onDeleteCancel={() => setDeleteConfirmId(null)}
-                        isSelected={selectedConceptIds.has(concept.id)}
-                        onToggleSelect={(id) => setSelectedConceptIds(prev => {
-                          const next = new Set(prev);
-                          next.has(id) ? next.delete(id) : next.add(id);
-                          return next;
-                        })}
                         lang={lang}
                       />
                     ))}
