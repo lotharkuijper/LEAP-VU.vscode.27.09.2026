@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Für Studierende verborgen",
   "admin.concepts.maxConceptsLabel": "Maximale Anzahl an Begriffen:",
   "admin.concepts.maxConceptsUnlimited": "kein Limit",
-  "admin.concepts.maxConceptsHint": "Bei Überschreitung bleiben die Begriffe mit der besten RAG-Übereinstimmung erhalten.",
   "admin.ragSettings.saving": "Speichern...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Hauptschalter für Anhänge",
   "help.chatAttachments.platform.body": "Legt fest, ob Anhänge im Chat in ganz LEAP erlaubt sind. Aus bedeutet nirgends, auch nicht dort, wo Lehrende sie eingeschaltet haben; ihre Auswahl bleibt gespeichert. Hier stellst du auch die Genauigkeit und die Grenzen ein.",
   "myData.attachmentsNote": "Bilder und Dateien, die du im Chat mitschickst, speichert LEAP nicht: Sie sind weg, sobald du den Chat schließt. Sie stehen daher auch nicht in deinen Daten; nur ein Label und das Gespräch darüber.",
-  "courseFeatures.attachments.toPlatformSwitch": "Du bist Administrator: Schalte den Hauptschalter unter Verwaltung → Einstellungen ein."
+  "courseFeatures.attachments.toPlatformSwitch": "Du bist Administrator: Schalte den Hauptschalter unter Verwaltung → Einstellungen ein.",
+  "admin.concepts.minConceptsLabel": "Mindestanzahl an Begriffen:",
+  "admin.concepts.minConceptsNone": "kein Minimum",
+  "admin.concepts.minMaxHint": "Oberhalb des Maximums haben Begriffe mit starker Übereinstimmung und wenig Überschneidung Vorrang. Unterhalb des Minimums ergänzt LEAP nur mit Begriffen, die in deinem Material zu finden sind.",
+  "help.concepts.minMax.title": "Mindest- und Höchstanzahl an Begriffen",
+  "help.concepts.minMax.body": "Gibt es mehr Begriffe als das Maximum, behält LEAP die Begriffe, die in deinem Material stark vertreten sind und anderen wenig ähneln. Gibt es weniger als das Minimum, ergänzt LEAP mit schwächer belegten Begriffen (zu prüfen), niemals ohne Nachweis."
 }

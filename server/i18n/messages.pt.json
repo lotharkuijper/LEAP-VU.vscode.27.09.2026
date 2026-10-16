@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "{0} conceitos no total para este curso ({1} novos/atualizados, {2} já existentes){3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "{0} conceitos no total para este curso ({1} novos/atualizados, {2} já existentes){3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "Conta criada, mas a inscrição falhou:",
   "Admin client niet beschikbaar": "Cliente admin não disponível",
   "Admin client not available": "Cliente admin not available",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "groupId, personaId, message obrigatórios",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "A resposta foi truncada: havia pouco espaço de tokens para a resposta completa.",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "O ficheiro não é uma imagem válida (PNG, JPG, WEBP, GIF ou AVIF).",
+  "Het minimum aantal begrippen is groter dan het maximum": "O número mínimo de conceitos é maior que o máximo",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "O modelo de linguagem devolveu uma resposta vazia: havia pouco espaço de tokens para a resposta.",
   "Het taalmodel kon geen voorstellen maken.": "O modelo de linguagem não conseguiu gerar sugestões.",
   "Het taalmodel kon het gesprek niet beoordelen.": "O modelo de linguagem não conseguiu avaliar a conversa.",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "A migração 20260529100000_project_persona_relationships.sql ainda não foi aplicada no Supabase.",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "A migração 20260608120000_persona_consultation_limits.sql ainda não foi aplicada no Supabase.",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "A migração 20260608130000_evaluator_grading_badges.sql ainda não foi aplicada no Supabase.",
+  "min_concepts is geen geldig getal": "min_concepts não é um número válido",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks não é um número válido",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "O tamanho mínimo do grupo não pode ser maior que o máximo",
   "Naam is al in gebruik door een andere cursus": "O nome já está a ser usado por outro curso",

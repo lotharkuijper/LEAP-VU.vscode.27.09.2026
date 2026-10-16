@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "對學生隱藏",
   "admin.concepts.maxConceptsLabel": "概念數量上限：",
   "admin.concepts.maxConceptsUnlimited": "無限制",
-  "admin.concepts.maxConceptsHint": "超出上限時，會保留 RAG 配對最佳嘅概念。",
   "admin.ragSettings.saving": "儲存緊...",
   "admin.ragSettings.modules.chat": "聊天",
   "admin.ragSettings.modules.quiz": "測驗",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "附件總開關",
   "help.chatAttachments.platform.body": "決定成個 LEAP 入面嘅聊天係咪可以使用附件。關閉即係任何地方都唔可以用，就算老師已經開啟咗都一樣；佢哋嘅選擇會保留。你亦可以喺呢度設定準確度同限制。",
   "myData.attachmentsNote": "你喺聊天入面附加嘅圖片同檔案，LEAP 唔會儲存：一關閉聊天就會消失。所以佢哋亦都唔會出現喺你嘅資料入面；只會有一個標籤同埋關於佢哋嘅對話。",
-  "courseFeatures.attachments.toPlatformSwitch": "你係管理員：請喺 管理 → 設定 開啟主開關。"
+  "courseFeatures.attachments.toPlatformSwitch": "你係管理員：請喺 管理 → 設定 開啟主開關。",
+  "admin.concepts.minConceptsLabel": "最少概念數量：",
+  "admin.concepts.minConceptsNone": "無最低限制",
+  "admin.concepts.minMaxHint": "超過最高限制時，會優先保留匹配度高而重疊少嘅概念。低過最低限制時，LEAP 只會用喺你教材入面搵到嘅概念補足。",
+  "help.concepts.minMax.title": "最少同最多概念數量",
+  "help.concepts.minMax.body": "如果概念多過最高限制，LEAP 會保留喺你教材入面支持度高，而且同其他概念相似度低嘅概念。如果少過最低限制，LEAP 會用證據較弱嘅概念補足（需要審核），但絕不會無證據就加入。"
 }

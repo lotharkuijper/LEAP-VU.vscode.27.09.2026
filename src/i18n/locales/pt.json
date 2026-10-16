@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Oculto para estudantes",
   "admin.concepts.maxConceptsLabel": "Número máximo de conceitos:",
   "admin.concepts.maxConceptsUnlimited": "sem limite",
-  "admin.concepts.maxConceptsHint": "Ao exceder o limite, permanecem os conceitos com a melhor correspondência RAG.",
   "admin.ragSettings.saving": "A guardar...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Interruptor principal para anexos",
   "help.chatAttachments.platform.body": "Determina se os anexos no chat são permitidos em todo o LEAP. Desligado significa em lado nenhum, mesmo onde os docentes os ativaram; a escolha deles fica guardada. Aqui também defines a precisão e os limites.",
   "myData.attachmentsNote": "Imagens e ficheiros que anexas ao chat não são guardados pelo LEAP: desaparecem assim que fechas o chat. Por isso, também não constam nos teus dados; apenas um rótulo e a conversa sobre eles.",
-  "courseFeatures.attachments.toPlatformSwitch": "És administrador: liga o interruptor principal em Administração → Definições."
+  "courseFeatures.attachments.toPlatformSwitch": "És administrador: liga o interruptor principal em Administração → Definições.",
+  "admin.concepts.minConceptsLabel": "Número mínimo de conceitos:",
+  "admin.concepts.minConceptsNone": "sem mínimo",
+  "admin.concepts.minMaxHint": "Acima do máximo, têm prioridade os conceitos com uma correspondência forte e pouca sobreposição. Abaixo do mínimo, o LEAP só completa com conceitos que se encontrem no teu material.",
+  "help.concepts.minMax.title": "Número mínimo e máximo de conceitos",
+  "help.concepts.minMax.body": "Se houver mais conceitos do que o máximo, o LEAP mantém os conceitos que estão fortemente presentes no teu material e que se parecem pouco com os outros. Se houver menos do que o mínimo, o LEAP completa com conceitos com fundamentação mais fraca (a avaliar), nunca sem evidências."
 }

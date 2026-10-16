@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Nascosto agli studenti",
   "admin.concepts.maxConceptsLabel": "Numero massimo di concetti:",
   "admin.concepts.maxConceptsUnlimited": "nessun limite",
-  "admin.concepts.maxConceptsHint": "In caso di superamento, restano i concetti con la migliore corrispondenza RAG.",
   "admin.ragSettings.saving": "Salvataggio...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Interruttore generale per gli allegati",
   "help.chatAttachments.platform.body": "Determina se gli allegati nella chat sono consentiti in tutto LEAP. Disattivato significa da nessuna parte, anche dove i docenti li hanno attivati; la loro scelta viene conservata. Qui imposti anche la precisione e i limiti.",
   "myData.attachmentsNote": "Immagini e file che alleghi alla chat non vengono salvati da LEAP: spariscono appena chiudi la chat. Per questo non compaiono nemmeno nei tuoi dati; solo un'etichetta e la conversazione a riguardo.",
-  "courseFeatures.attachments.toPlatformSwitch": "Sei amministratore: attiva l'interruttore principale in Amministrazione → Impostazioni."
+  "courseFeatures.attachments.toPlatformSwitch": "Sei amministratore: attiva l'interruttore principale in Amministrazione → Impostazioni.",
+  "admin.concepts.minConceptsLabel": "Numero minimo di concetti:",
+  "admin.concepts.minConceptsNone": "nessun minimo",
+  "admin.concepts.minMaxHint": "Oltre il massimo, hanno la precedenza i concetti con una corrispondenza forte e poca sovrapposizione. Sotto il minimo, LEAP integra solo con concetti che si possono ritrovare nel tuo materiale.",
+  "help.concepts.minMax.title": "Numero minimo e massimo di concetti",
+  "help.concepts.minMax.body": "Se ci sono più concetti del massimo, LEAP mantiene quelli che sono ben presenti nel tuo materiale e assomigliano poco agli altri. Se ce ne sono meno del minimo, LEAP integra con concetti supportati da prove più deboli (da valutare), mai senza prove."
 }

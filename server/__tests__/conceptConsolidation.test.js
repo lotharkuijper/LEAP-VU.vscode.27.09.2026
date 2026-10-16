@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   buildDocumentWindows, conceptKey, mergeByKey, parseSynonymGroups, applySynonymGroups,
-  capFairly, planSureMerges, mapLimit, WINDOW_CHARS, isUsableConceptName,
+  selectConcepts, overlapPenalty, planSureMerges, mapLimit, WINDOW_CHARS, isUsableConceptName,
   buildMergeSuggestions, buildDuplicateSuggestionPrompt,
 } from '../conceptConsolidation.js';
 
@@ -87,22 +89,79 @@ describe('synoniemen via het taalmodel', () => {
   });
 });
 
-describe('capFairly — kernbegrippen eerst, daarna eerlijk per document', () => {
-  const r = (name, docs, score, role = 'module_concept') => ({ concept: { name, documentIds: docs, concept_role: role }, maxScore: score });
+describe('selectConcepts — hoge match en lage overlap, binnen minimum en maximum', () => {
+  // Embeddings als eenheidsvectoren: gelijke richting = zelfde betekenis.
+  const v = (deg) => [Math.cos((deg * Math.PI) / 180), Math.sin((deg * Math.PI) / 180)];
+  const r = (name, { docs = ['A'], score = 0.7, n = 3, role = 'module_concept', emb = v(0) } = {}) => ({
+    concept: { name, documentIds: docs, concept_role: role }, maxScore: score, matchedCount: n, embedding: emb,
+  });
+
+  it('geen maximum: alles blijft staan', () => {
+    const list = [r('a'), r('b'), r('c')];
+    const out = selectConcepts(list, {});
+    expect(out.kept).toHaveLength(3);
+    expect(out.cutOff).toEqual([]);
+    expect(out.shortBy).toBe(0);
+  });
+
+  it('een goed onderbouwd begrip dat iets nieuws toevoegt gaat voor een variant van wat er al is', () => {
+    const list = [
+      r('toets A', { score: 0.9, emb: v(0) }),
+      r('toets A, variant', { score: 0.88, emb: v(3) }),   // hoge match, maar bijna dezelfde betekenis
+      r('ander begrip', { score: 0.8, emb: v(80) }),       // iets lagere match, wel nieuw
+    ];
+    const { kept, cutOff } = selectConcepts(list, { max: 2 });
+    expect(kept.map((x) => x.concept.name)).toEqual(['toets A', 'ander begrip']);
+    expect(cutOff.map((x) => x.concept.name)).toEqual(['toets A, variant']);
+  });
+
+  it('bij gelijke overlap wint de sterkere match (score en aantal bewijsfragmenten)', () => {
+    const list = [
+      r('zwak', { score: 0.6, n: 1, emb: v(0) }),
+      r('sterk', { score: 0.85, n: 5, emb: v(90) }),
+      r('middel', { score: 0.7, n: 3, emb: v(180) }),
+    ];
+    expect(selectConcepts(list, { max: 2 }).kept.map((x) => x.concept.name)).toEqual(['sterk', 'middel']);
+  });
+
   it('één groot document eist niet alle plekken op', () => {
     const list = [
-      r('a1', ['A'], 0.9), r('a2', ['A'], 0.89), r('a3', ['A'], 0.88), r('a4', ['A'], 0.87),
-      r('b1', ['B'], 0.7), r('c1', ['C'], 0.6),
-      r('kern', ['A', 'B', 'C'], 0.5, 'main_course_concept'),
-      r('effect', ['A', 'B', 'C'], 0.95, 'module_concept'),
+      // Begrippen uit hetzelfde document liggen in betekenis dicht bij elkaar.
+      r('a1', { docs: ['A'], score: 0.9, emb: v(0) }), r('a2', { docs: ['A'], score: 0.89, emb: v(25) }),
+      r('a3', { docs: ['A'], score: 0.88, emb: v(35) }), r('b1', { docs: ['B'], score: 0.85, emb: v(120) }),
+      r('c1', { docs: ['C'], score: 0.84, emb: v(220) }),
     ];
-    const { kept, cutOff } = capFairly(list, 4);
-    // 'kern' (vakbegrip in 3 documenten) krijgt voorrang; 'effect' (algemeen woord, ook in 3 documenten) niet.
-    expect(kept.map((x) => x.concept.name)).toEqual(['kern', 'effect', 'b1', 'c1']);
-    expect(cutOff).toHaveLength(4);
+    const names = selectConcepts(list, { max: 3 }).kept.map((x) => x.concept.name);
+    expect(names).toContain('b1');
+    expect(names).toContain('c1');
   });
-  it('geen limiet → alles', () => {
-    expect(capFairly([r('x', ['A'], 1)], 0).kept).toHaveLength(1);
+
+  it('voorbeelden uit casussen komen achteraan', () => {
+    const list = [r('casus', { role: 'example_instance', score: 0.72, emb: v(0) }), r('term', { score: 0.7, emb: v(90) })];
+    expect(selectConcepts(list, { max: 1 }).kept[0].concept.name).toBe('term');
+  });
+
+  it('onder het minimum: aanvullen alleen met kandidaten MET bewijs, gemarkeerd als topUp', () => {
+    const accepted = [r('a', { emb: v(0) })];
+    const reserve = [r('dun bewijs', { n: 1, emb: v(90) }), r('geen bewijs', { n: 0, emb: v(180) })];
+    const out = selectConcepts(accepted, { min: 3, reserve });
+    expect(out.kept.map((x) => x.concept.name)).toEqual(['a', 'dun bewijs']);
+    expect(out.toppedUp.map((x) => x.concept.name)).toEqual(['dun bewijs']);
+    expect(out.kept[1].topUp).toBe(true);
+    expect(out.shortBy).toBe(1);
+  });
+
+  it('minimum gehaald zonder reserve: niets aangevuld', () => {
+    const out = selectConcepts([r('a'), r('b', { emb: v(90) })], { min: 2, reserve: [r('x', { n: 2 })] });
+    expect(out.toppedUp).toEqual([]);
+    expect(out.shortBy).toBe(0);
+  });
+
+  it('overlap telt pas boven cosine 0,5 en volledig vanaf 0,95', () => {
+    expect(overlapPenalty(0.4)).toBe(0);
+    expect(overlapPenalty(0.95)).toBeCloseTo(1, 9);
+    expect(overlapPenalty(0.99)).toBe(1);
+    expect(overlapPenalty(0.725)).toBeCloseTo(0.5, 5);
   });
 });
 
@@ -211,5 +270,18 @@ describe('mapLimit', () => {
     });
     expect(out).toEqual([2, 4, 6, 8, 10, 12]);
     expect(peak).toBe(2);
+  });
+});
+
+describe('extract-concepts: minimum en maximum in de route (server/index.js)', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
+  it('de reserve bevat alleen kandidaten met bewijs, en aangevulde begrippen worden "te beoordelen"', () => {
+    expect(src).toMatch(/if \(r\.matchedCount >= 1\) reserveResults\.push\(r\)/);
+    expect(src).toMatch(/c\.__topUp \? \{ review_status: 'needs_review' \}/);
+    expect(src).toMatch(/selectConcepts\(dedupedResults, \{\s*min: extractionSettings\.min_concepts,\s*max: extractionSettings\.max_concepts,/);
+  });
+  it('een minimum boven het maximum wordt geweigerd; een tekort wordt gemeld', () => {
+    expect(src).toMatch(/minC > maxC[\s\S]{0,200}min_above_max/);
+    expect(src).toMatch(/shortBy: selection\.shortBy/);
   });
 });

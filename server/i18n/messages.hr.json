@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "Ukupno {0} pojmova za ovaj kolegij ({1} novo/ažurirano, {2} već prisutno){3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "Ukupno {0} pojmova za ovaj kolegij ({1} novo/ažurirano, {2} već prisutno){3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "Račun je stvoren, ali upis nije uspio:",
   "Admin client niet beschikbaar": "Admin client nije dostupan",
   "Admin client not available": "Admin client nije dostupan",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "groupId, personaId, message obavezni",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "Odgovor je skraćen: nije bilo dovoljno token prostora za puni odgovor.",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "Datoteka nije valjana slika (PNG, JPG, WEBP, GIF ili AVIF).",
+  "Het minimum aantal begrippen is groter dan het maximum": "Minimalni broj pojmova veći je od maksimalnog",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "Jezični model vratio je prazan odgovor: nije bilo dovoljno token prostora za odgovor.",
   "Het taalmodel kon geen voorstellen maken.": "Jezični model nije mogao napraviti prijedloge.",
   "Het taalmodel kon het gesprek niet beoordelen.": "Jezični model nije mogao ocijeniti razgovor.",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "Migracija 20260529100000_project_persona_relationships.sql još nije primijenjena u Supabase.",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "Migracija 20260608120000_persona_consultation_limits.sql još nije primijenjena u Supabase.",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "Migracija 20260608130000_evaluator_grading_badges.sql još nije primijenjena u Supabase.",
+  "min_concepts is geen geldig getal": "min_concepts nije valjan broj",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks nije valjan broj",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Minimalna veličina grupe ne smije biti veća od maksimalne",
   "Naam is al in gebruik door een andere cursus": "Naziv već koristi drugi kolegij",

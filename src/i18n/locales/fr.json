@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Masqué pour les étudiants",
   "admin.concepts.maxConceptsLabel": "Nombre maximal de notions :",
   "admin.concepts.maxConceptsUnlimited": "aucune limite",
-  "admin.concepts.maxConceptsHint": "En cas de dépassement, les notions avec la meilleure correspondance RAG sont conservées.",
   "admin.ragSettings.saving": "Enregistrement...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Interrupteur principal pour les pièces jointes",
   "help.chatAttachments.platform.body": "Détermine si les pièces jointes dans le chat sont autorisées dans tout LEAP. Désactivé signifie nulle part, même là où les enseignants les ont activées ; leur choix reste conservé. Ici, tu règles aussi la précision et les limites.",
   "myData.attachmentsNote": "Les images et fichiers que tu ajoutes dans le chat ne sont pas conservés par LEAP : ils disparaissent dès que tu fermes le chat. Ils ne figurent donc pas non plus dans tes données ; seuls une étiquette et la conversation à leur sujet y sont conservés.",
-  "courseFeatures.attachments.toPlatformSwitch": "Tu es administrateur : active l’interrupteur principal dans Administration → Paramètres."
+  "courseFeatures.attachments.toPlatformSwitch": "Tu es administrateur : active l’interrupteur principal dans Administration → Paramètres.",
+  "admin.concepts.minConceptsLabel": "Nombre minimum de concepts :",
+  "admin.concepts.minConceptsNone": "aucun minimum",
+  "admin.concepts.minMaxHint": "Au-delà du maximum, les concepts avec une forte correspondance et peu de chevauchement sont prioritaires. En dessous du minimum, LEAP complète uniquement avec des concepts présents dans ton matériel.",
+  "help.concepts.minMax.title": "Nombre minimum et maximum de concepts",
+  "help.concepts.minMax.body": "S’il y a plus de concepts que le maximum, LEAP conserve les concepts bien représentés dans ton matériel et qui ressemblent peu aux autres. S’il y en a moins que le minimum, LEAP complète avec des concepts moins solidement étayés (à évaluer), jamais sans preuve."
 }

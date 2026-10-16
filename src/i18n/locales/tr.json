@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Öğrencilerden gizli",
   "admin.concepts.maxConceptsLabel": "Maksimum kavram sayısı:",
   "admin.concepts.maxConceptsUnlimited": "sınır yok",
-  "admin.concepts.maxConceptsHint": "Sınır aşıldığında en iyi RAG eşleşmesine sahip kavramlar kalır.",
   "admin.ragSettings.saving": "Kaydediliyor...",
   "admin.ragSettings.modules.chat": "Sohbet",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Ekler için ana anahtar",
   "help.chatAttachments.platform.body": "LEAP genelinde sohbette eklere izin verilip verilmeyeceğini belirler. Kapalıysa, eğitmenlerin açtığı yerler de dahil hiçbir yerde kullanılamaz; onların seçimi saklı kalır. Burada ayrıca doğruluğu ve sınırları ayarlarsın.",
   "myData.attachmentsNote": "Sohbete eklediğin görselleri ve dosyaları LEAP saklamaz: sohbeti kapattığın anda silinirler. Bu yüzden verilerinde de yer almazlar; yalnızca bir etiket ve bunlarla ilgili konuşma bulunur.",
-  "courseFeatures.attachments.toPlatformSwitch": "Yöneticisin: Yönetim → Ayarlar’da ana anahtarı aç."
+  "courseFeatures.attachments.toPlatformSwitch": "Yöneticisin: Yönetim → Ayarlar’da ana anahtarı aç.",
+  "admin.concepts.minConceptsLabel": "Minimum kavram sayısı:",
+  "admin.concepts.minConceptsNone": "minimum yok",
+  "admin.concepts.minMaxHint": "Maksimumun üstünde, güçlü eşleşmesi olan ve az örtüşen kavramlara öncelik verilir. Minimumun altında LEAP yalnızca materyalinde bulunabilen kavramlarla tamamlar.",
+  "help.concepts.minMax.title": "Minimum ve maksimum kavram sayısı",
+  "help.concepts.minMax.body": "Maksimumdan fazla kavram varsa LEAP, materyalinde güçlü biçimde yer alan ve diğerlerine az benzeyen kavramları tutar. Minimumdan az kavram varsa LEAP, daha zayıf dayanaklı kavramlarla (değerlendirmen için) tamamlar; asla kanıtsız eklemez."
 }

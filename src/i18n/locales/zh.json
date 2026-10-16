@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "对学生隐藏",
   "admin.concepts.maxConceptsLabel": "最大概念数量：",
   "admin.concepts.maxConceptsUnlimited": "无限制",
-  "admin.concepts.maxConceptsHint": "超出限制时，将保留 RAG 匹配度最高的概念。",
   "admin.ragSettings.saving": "正在保存...",
   "admin.ragSettings.modules.chat": "聊天",
   "admin.ragSettings.modules.quiz": "测验",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "附件总开关",
   "help.chatAttachments.platform.body": "决定整个 LEAP 是否允许在聊天中使用附件。关闭表示任何地方都不可用，即使教师已开启也不行；他们的选择会保留。你也可以在这里设置精度和限制。",
   "myData.attachmentsNote": "你在聊天中附加的图片和文件，LEAP 不会保存：一旦你关闭聊天，它们就会消失。因此它们也不会出现在你的数据中；只会保留一个标签以及关于它们的对话。",
-  "courseFeatures.attachments.toPlatformSwitch": "你是管理员：请在“管理 → 设置”中打开总开关。"
+  "courseFeatures.attachments.toPlatformSwitch": "你是管理员：请在“管理 → 设置”中打开总开关。",
+  "admin.concepts.minConceptsLabel": "最少概念数：",
+  "admin.concepts.minConceptsNone": "无最低限制",
+  "admin.concepts.minMaxHint": "超过最大值时，优先保留匹配度高且重叠较少的概念。低于最小值时，LEAP 只会补充能在你的材料中找到依据的概念。",
+  "help.concepts.minMax.title": "最少和最多概念数",
+  "help.concepts.minMax.body": "如果概念数量超过最大值，LEAP 会保留在你的材料中依据充分且与其他概念相似度较低的概念。如果少于最小值，LEAP 会补充依据较弱的概念（需评估），绝不会添加没有依据的概念。"
 }

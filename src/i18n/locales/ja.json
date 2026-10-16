@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "学生には非表示",
   "admin.concepts.maxConceptsLabel": "用語の最大数:",
   "admin.concepts.maxConceptsUnlimited": "制限なし",
-  "admin.concepts.maxConceptsHint": "上限を超えた場合、RAG の一致度が最も高い用語が残ります。",
   "admin.ragSettings.saving": "保存中...",
   "admin.ragSettings.modules.chat": "チャット",
   "admin.ragSettings.modules.quiz": "クイズ",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "添付ファイルのメインスイッチ",
   "help.chatAttachments.platform.body": "LEAP 全体でチャット内の添付ファイルを許可するかどうかを決めます。オフにすると、教員がオンにしている場所でもどこでも使えません。教員の選択は保存されたままです。ここでは精度と上限も設定できます。",
   "myData.attachmentsNote": "チャットで添付した画像やファイルは、LEAP では保存されません。チャットを閉じると消えます。そのため、あなたのデータにも含まれません。残るのはラベルと、それについての会話だけです。",
-  "courseFeatures.attachments.toPlatformSwitch": "あなたは管理者です: 管理 → 設定でメインスイッチをオンにしてください。"
+  "courseFeatures.attachments.toPlatformSwitch": "あなたは管理者です: 管理 → 設定でメインスイッチをオンにしてください。",
+  "admin.concepts.minConceptsLabel": "概念の最小数:",
+  "admin.concepts.minConceptsNone": "最小値なし",
+  "admin.concepts.minMaxHint": "最大数を超える場合は、一致度が高く重複の少ない概念が優先される。最小数を下回る場合、LEAPは教材内で見つかる概念だけを補う。",
+  "help.concepts.minMax.title": "概念の最小数と最大数",
+  "help.concepts.minMax.body": "概念が最大数より多い場合、LEAPは教材内で根拠が強く、他とあまり似ていない概念を残す。概念が最小数より少ない場合、LEAPは根拠が弱い概念（確認が必要）で補うが、根拠なしで追加することはない。"
 }

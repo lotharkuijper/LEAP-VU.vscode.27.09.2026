@@ -375,6 +375,7 @@ export function AdminPage() {
   // gescoped op de actieve cursus i.p.v. de los te selecteren cursus in die
   // andere tab — vandaar een eigen state/fetch i.p.v. ragSettingsState delen.
   const [maxConceptsSetting, setMaxConceptsSetting] = useState<number | null>(null);
+  const [minConceptsSetting, setMinConceptsSetting] = useState<number | null>(null);
   const [maxConceptsSaving, setMaxConceptsSaving] = useState(false);
   const [maxConceptsError, setMaxConceptsError] = useState<string | null>(null);
   const [roleMsg, setRoleMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -662,13 +663,18 @@ export function AdminPage() {
       if (!res.ok) return;
       const data = await res.json();
       setMaxConceptsSetting(data?.extraction?.max_concepts ?? null);
+      setMinConceptsSetting(data?.extraction?.min_concepts ?? null);
     } catch (err) {
       console.warn('[admin] max_concepts laden mislukt:', err);
     }
   };
 
-  const handleSaveMaxConcepts = async (value: number | null) => {
-    setMaxConceptsSetting(value);
+  // Minimum en maximum aantal begrippen (extraction.min_concepts / max_concepts).
+  // De server weigert een minimum boven het maximum.
+  const handleSaveMaxConcepts = (value: number | null) => saveConceptBound('max_concepts', value);
+  const handleSaveMinConcepts = (value: number | null) => saveConceptBound('min_concepts', value);
+  const saveConceptBound = async (field: 'min_concepts' | 'max_concepts', value: number | null) => {
+    if (field === 'max_concepts') setMaxConceptsSetting(value); else setMinConceptsSetting(value);
     if (!session?.access_token || !activeCourseId) return;
     setMaxConceptsSaving(true);
     setMaxConceptsError(null);
@@ -679,7 +685,7 @@ export function AdminPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ courseId: activeCourseId, settings: { extraction: { max_concepts: value } } }),
+        body: JSON.stringify({ courseId: activeCourseId, settings: { extraction: { [field]: value } } }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -687,6 +693,8 @@ export function AdminPage() {
       }
     } catch (err) {
       setMaxConceptsError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
+      // Geweigerd (bv. minimum boven maximum): toon weer wat er echt is opgeslagen.
+      void loadMaxConceptsSetting();
     } finally {
       setMaxConceptsSaving(false);
     }
@@ -2078,6 +2086,26 @@ const tabGroups = [
 
               {activeCourseId && (
                 <div className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                  <label htmlFor="input-min-concepts" className="text-gray-700 font-medium">
+                    {t('admin.concepts.minConceptsLabel')}
+                  </label>
+                  <input
+                    id="input-min-concepts"
+                    type="number"
+                    min={1}
+                    max={500}
+                    placeholder={t('admin.concepts.minConceptsNone')}
+                    value={minConceptsSetting ?? ''}
+                    onChange={(e) => setMinConceptsSetting(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                    onBlur={(e) => {
+                      const raw = e.target.value;
+                      if (raw === '') { handleSaveMinConcepts(null); return; }
+                      const parsed = parseInt(raw, 10);
+                      handleSaveMinConcepts(Number.isFinite(parsed) ? Math.max(1, Math.min(500, parsed)) : null);
+                    }}
+                    className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                    data-testid="input-min-concepts"
+                  />
                   <label htmlFor="input-max-concepts" className="text-gray-700 font-medium">
                     {t('admin.concepts.maxConceptsLabel')}
                   </label>
@@ -2095,10 +2123,11 @@ const tabGroups = [
                       const parsed = parseInt(raw, 10);
                       handleSaveMaxConcepts(Number.isFinite(parsed) ? Math.max(5, Math.min(500, parsed)) : null);
                     }}
-                    className="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+                    className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
                     data-testid="input-max-concepts"
                   />
-                  <span className="text-xs text-gray-500">{t('admin.concepts.maxConceptsHint')}</span>
+                  <HelpTip id="concepts.minMax" />
+                  <span className="min-w-0 text-xs text-gray-500">{t('admin.concepts.minMaxHint')}</span>
                   {maxConceptsSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                   {maxConceptsError && <span className="text-xs text-red-600">{maxConceptsError}</span>}
                 </div>

@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "학생에게 숨김",
   "admin.concepts.maxConceptsLabel": "최대 개념 수:",
   "admin.concepts.maxConceptsUnlimited": "제한 없음",
-  "admin.concepts.maxConceptsHint": "초과하면 RAG 매칭이 가장 좋은 개념만 남습니다.",
   "admin.ragSettings.saving": "저장 중...",
   "admin.ragSettings.modules.chat": "채팅",
   "admin.ragSettings.modules.quiz": "퀴즈",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "첨부파일 마스터 스위치",
   "help.chatAttachments.platform.body": "LEAP 전체에서 채팅 첨부파일을 허용할지 결정해. 꺼짐이면 교사가 켜둔 곳에서도 어디서나 사용할 수 없어. 교사의 선택은 저장된 상태로 유지돼. 여기에서 정확도와 한도도 설정해.",
   "myData.attachmentsNote": "채팅에 첨부한 이미지와 파일은 LEAP이 저장하지 않아: 채팅을 종료하면 사라져. 그래서 네 데이터에도 포함되지 않고, 라벨과 그에 대한 대화만 남아.",
-  "courseFeatures.attachments.toPlatformSwitch": "너는 관리자야: 관리 → 설정에서 메인 스위치를 켜."
+  "courseFeatures.attachments.toPlatformSwitch": "너는 관리자야: 관리 → 설정에서 메인 스위치를 켜.",
+  "admin.concepts.minConceptsLabel": "최소 개념 수:",
+  "admin.concepts.minConceptsNone": "최소 없음",
+  "admin.concepts.minMaxHint": "최대값을 넘으면 강하게 일치하고 겹침이 적은 개념이 우선돼. 최소값보다 적으면 LEAP은 네 자료에서 찾을 수 있는 개념으로만 보충해.",
+  "help.concepts.minMax.title": "최소 및 최대 개념 수",
+  "help.concepts.minMax.body": "개념이 최대값보다 많으면, LEAP은 네 자료에서 근거가 강하고 다른 개념과 유사성이 적은 개념을 유지해. 개념이 최소값보다 적으면, LEAP은 근거가 약한 개념(검토 필요)으로 보충하지만, 증거 없이 추가하지는 않아."
 }

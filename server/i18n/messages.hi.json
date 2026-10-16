@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "इस कोर्स के लिए कुल {0} अवधारणाएँ ({1} नई/अपडेट की गई, {2} पहले से मौजूद){3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "इस कोर्स के लिए कुल {0} अवधारणाएँ ({1} नई/अपडेट की गईं, {2} पहले से मौजूद){3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "अकाउंट बन गया, लेकिन नामांकन विफल रहा:",
   "Admin client niet beschikbaar": "Admin client उपलब्ध नहीं है",
   "Admin client not available": "Admin client उपलब्ध नहीं है",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "groupId, personaId, message आवश्यक हैं",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "उत्तर काट दिया गया: पूरे उत्तर के लिए token जगह बहुत कम थी।",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "फ़ाइल वैध इमेज नहीं है (PNG, JPG, WEBP, GIF या AVIF)।",
+  "Het minimum aantal begrippen is groter dan het maximum": "अवधारणाओं की न्यूनतम संख्या अधिकतम से अधिक है",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "भाषा मॉडल ने खाली प्रतिक्रिया लौटाई: उत्तर के लिए token जगह बहुत कम थी।",
   "Het taalmodel kon geen voorstellen maken.": "भाषा मॉडल सुझाव नहीं बना सका।",
   "Het taalmodel kon het gesprek niet beoordelen.": "भाषा मॉडल बातचीत का मूल्यांकन नहीं कर सका।",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "माइग्रेशन 20260529100000_project_persona_relationships.sql अभी Supabase में लागू नहीं किया गया है।",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "माइग्रेशन 20260608120000_persona_consultation_limits.sql अभी Supabase में लागू नहीं किया गया है।",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "माइग्रेशन 20260608130000_evaluator_grading_badges.sql अभी Supabase में लागू नहीं किया गया है।",
+  "min_concepts is geen geldig getal": "min_concepts मान्य संख्या नहीं है",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks मान्य संख्या नहीं है",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "न्यूनतम समूह आकार अधिकतम से बड़ा नहीं हो सकता",
   "Naam is al in gebruik door een andere cursus": "नाम पहले से किसी दूसरे कोर्स द्वारा इस्तेमाल हो रहा है",

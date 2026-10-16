@@ -177,7 +177,7 @@ import {
 import { setRelationshipLevelImpl, applyConversationJudgement, precomputeJudgement } from './threadClose.js';
 import { createClosePrep, generateThreadSummary } from './threadClosePrep.js';
 import { randomUUID, createHmac } from 'node:crypto';
-import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, capFairly, planSureMerges, buildDuplicateSuggestionPrompt, buildMergeSuggestions, mapLimit } from './conceptConsolidation.js';
+import { buildDocumentWindows, isUsableConceptName, conceptKey, mergeByKey, buildSynonymPrompt, parseSynonymGroups, applySynonymGroups, selectConcepts, planSureMerges, buildDuplicateSuggestionPrompt, buildMergeSuggestions, mapLimit } from './conceptConsolidation.js';
 import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from './personaAvatar.js';
 import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
 import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countVerifiedPriorStudentMessages, turnSignature, levelName, topicKey } from './readiness.js';
@@ -406,9 +406,13 @@ const RAG_EXTRACTION_DEFAULTS = {
   similarity_threshold: 0.55,
   min_evidence_chunks: 1,
   // null = geen limiet (bestaand gedrag ongewijzigd totdat een docent dit
-  // expliciet instelt). Bij een limiet: de beste RAG-matches (hoogste
-  // similarity-score) blijven staan, zie POST /api/admin/extract-concepts.
+  // expliciet instelt). Bij een limiet: hoge match en lage overlap gaan
+  // voor (selectConcepts), zie POST /api/admin/extract-concepts.
   max_concepts: null,
+  // Minimum (2026-10-16): onder het minimum vult LEAP aan met kandidaten die
+  // wél bewijs hebben maar onder de bewijsdrempel bleven (te beoordelen), en
+  // meldt het anders. Nooit begrippen zonder bewijs. null = geen minimum.
+  min_concepts: null,
 };
 
 // allowedFolderIds semantiek:
@@ -1378,6 +1382,15 @@ app.put('/api/rag-settings', async (req, res) => {
           e.max_concepts = Math.max(5, Math.min(500, parsed));
         }
       }
+      if (e.min_concepts !== undefined) {
+        if (e.min_concepts === null || e.min_concepts === '') {
+          e.min_concepts = null;
+        } else {
+          const parsed = parseInt(e.min_concepts);
+          if (isNaN(parsed)) return res.status(400).json({ error: 'min_concepts is geen geldig getal' });
+          e.min_concepts = Math.max(1, Math.min(500, parsed));
+        }
+      }
     }
 
     const settingsKey = courseId ? `__rag_settings_${courseId}__` : '__rag_settings_global__';
@@ -1405,6 +1418,10 @@ app.put('/api/rag-settings', async (req, res) => {
     // Schrijf inkomende extractie-instellingen over de bestaande heen
     if (settings.extraction) {
       mergedSettings.extraction = { ...mergedSettings.extraction, ...settings.extraction };
+      const { min_concepts: minC, max_concepts: maxC } = mergedSettings.extraction;
+      if (minC != null && maxC != null && minC > maxC) {
+        return res.status(400).json({ error: 'Het minimum aantal begrippen is groter dan het maximum', code: 'min_above_max' });
+      }
     }
 
     const content = JSON.stringify(mergedSettings);
@@ -5985,11 +6002,15 @@ ${combinedText}`;
 
     const rejectedConcepts = [...metaRejected];
     const acceptedResults = [];
+    // Reserve voor een minimum: wél bewijs (≥ 1 fragment), maar onder de
+    // ingestelde minimale bewijsdrempel. Nooit kandidaten zonder bewijs.
+    const reserveResults = [];
     for (const r of verificationResults) {
       if (r.matchedCount >= minEvidence) {
         acceptedResults.push(r);
       } else {
         rejectedConcepts.push(r);
+        if (r.matchedCount >= 1) reserveResults.push(r);
       }
     }
 
@@ -6058,10 +6079,34 @@ ${combinedText}`;
     // dat er nu buiten valt, wordt door de bestaande keep-aware opruimstap
     // verwijderd als het al bestond (net als een gewone RAG-verificatie-
     // afwijzing) — géén apart opruimpad nodig.
-    const { kept: keptResults, cutOff: cappedOut } = capFairly(dedupedResults, extractionSettings.max_concepts);
+    // Minimum en maximum (docent-instelbaar in de Begrippen-stap):
+    // selectConcepts geeft voorrang aan hoge match + lage overlap, en vult
+    // onder het minimum aan uit de reserve (wél bewijs, gemarkeerd als topUp).
+    // De reserve wordt eerst tegen bestaande begrippen en de selectie
+    // ontdubbeld, zodat aanvullen nooit een duplicaat oplevert.
+    let reserveDeduped = [];
+    if (reserveResults.length > 0 && extractionSettings.min_concepts) {
+      const { kept: rKept } = mergeNearDuplicateConcepts([
+        ...dedupInput.filter((r) => r.__existing),
+        ...dedupedResults.map((r) => ({ ...r, maxScore: Infinity, __accepted: true })),
+        ...reserveResults,
+      ]);
+      reserveDeduped = rKept.filter((r) => !r.__existing && !r.__accepted);
+    }
+    const selection = selectConcepts(dedupedResults, {
+      min: extractionSettings.min_concepts,
+      max: extractionSettings.max_concepts,
+      reserve: reserveDeduped,
+    });
+    const keptResults = selection.kept;
+    const cappedOut = selection.cutOff;
+    const toppedUpNames = new Set(selection.toppedUp.map((r) => r.concept.name.toLowerCase().trim()));
 
     for (const r of cappedOut) {
       rejectedConcepts.push({ ...r, reason: 'max_concepts_cap' });
+    }
+    if (selection.toppedUp.length > 0 || selection.shortBy > 0) {
+      console.log(`[extract-concepts] Minimum ${extractionSettings.min_concepts}: ${selection.toppedUp.length} aangevuld (te beoordelen), ${selection.shortBy} tekort`);
     }
 
     const validConcepts = [];
@@ -6069,7 +6114,7 @@ ${combinedText}`;
     // de insert/update gebruikt om de koppeling in concept_evidence te schrijven.
     const evidenceByName = new Map();
     for (const r of keptResults) {
-      validConcepts.push(r.concept);
+      validConcepts.push(r.topUp ? { ...r.concept, __topUp: true } : r.concept);
       evidenceByName.set(r.concept.name.toLowerCase().trim(), r.matched);
     }
 
@@ -6173,6 +6218,8 @@ ${combinedText}`;
           aliases: (c.aliases || []).filter((a) => a && a !== c.name),
           source_document_ids: c.documentIds || [],
           source_document_id: (c.documentIds || [])[0] || null,
+          // Aangevuld om het minimum te halen (minder bewijs): docent beoordeelt.
+          ...(c.__topUp ? { review_status: 'needs_review' } : {}),
         });
       }
 
@@ -6402,6 +6449,13 @@ ${combinedText}`;
     if (mergedDuplicates.length > 0) reasonParts.push(`${mergedDuplicates.length} samengevoegd als duplicaat`);
     if (cappedOut.length > 0) reasonParts.push(`${cappedOut.length} boven het maximum`);
     const verifMsg = reasonParts.length > 0 ? ` — ${reasonParts.join(', ')} afgewezen` : '';
+    // Minimum: aangevuld en/of niet gehaald. Niet gehaald = er zijn te weinig
+    // begrippen MET bewijs; dat wijst op dun materiaal of een mislukte
+    // verwerking, niet op een reden om zonder bewijs aan te vullen.
+    const minParts = [];
+    if (selection.toppedUp.length > 0) minParts.push(`${selection.toppedUp.length} aangevuld om het minimum te halen (minder bewijs, te beoordelen)`);
+    if (selection.shortBy > 0) minParts.push(`minimum van ${extractionSettings.min_concepts} niet gehaald: er zijn te weinig begrippen met bewijs in het materiaal; controleer of alle documenten goed verwerkt zijn`);
+    const minMsg = minParts.length > 0 ? `. ${minParts.join('; ')}` : '';
 
     return res.json({
       concepts: inserted,
@@ -6421,7 +6475,11 @@ ${combinedText}`;
       synonymsMerged: synonymMerged.length + sureExisting.length,
       sureMerged,
       documentCoverage,
-      message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}`,
+      minConcepts: extractionSettings.min_concepts ?? null,
+      maxConcepts: extractionSettings.max_concepts ?? null,
+      toppedUp: [...toppedUpNames],
+      shortBy: selection.shortBy,
+      message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}${minMsg}`,
     });
   } catch (err) {
     console.error('[extract-concepts] Unexpected error:', err);

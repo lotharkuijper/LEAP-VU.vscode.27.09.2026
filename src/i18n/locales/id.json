@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Disembunyikan dari mahasiswa",
   "admin.concepts.maxConceptsLabel": "Jumlah maksimum konsep:",
   "admin.concepts.maxConceptsUnlimited": "tanpa batas",
-  "admin.concepts.maxConceptsHint": "Jika batas terlampaui, konsep dengan kecocokan RAG terbaik akan tetap dipertahankan.",
   "admin.ragSettings.saving": "Menyimpan...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Kuis",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Sakelar utama untuk lampiran",
   "help.chatAttachments.platform.body": "Menentukan apakah lampiran di chat diizinkan di seluruh LEAP. Nonaktif berarti tidak di mana pun, termasuk tempat dosen telah mengaktifkannya; pilihan mereka tetap disimpan. Di sini kamu juga mengatur akurasi dan batasannya.",
   "myData.attachmentsNote": "Gambar dan file yang kamu sertakan di chat tidak disimpan oleh LEAP: semuanya hilang begitu kamu menutup chat. Karena itu, gambar dan file tersebut juga tidak ada di datamu; hanya ada label dan percakapan tentangnya.",
-  "courseFeatures.attachments.toPlatformSwitch": "Kamu adalah admin: aktifkan sakelar utama di Beheer → Instellingen."
+  "courseFeatures.attachments.toPlatformSwitch": "Kamu adalah admin: aktifkan sakelar utama di Beheer → Instellingen.",
+  "admin.concepts.minConceptsLabel": "Jumlah minimum konsep:",
+  "admin.concepts.minConceptsNone": "tidak ada minimum",
+  "admin.concepts.minMaxHint": "Di atas jumlah maksimum, konsep dengan kecocokan kuat dan sedikit tumpang tindih akan diprioritaskan. Di bawah jumlah minimum, LEAP hanya menambahkan konsep yang dapat ditemukan dalam materimu.",
+  "help.concepts.minMax.title": "Jumlah minimum dan maksimum konsep",
+  "help.concepts.minMax.body": "Jika ada lebih banyak konsep daripada jumlah maksimum, LEAP mempertahankan konsep yang kuat dalam materimu dan tidak terlalu mirip dengan yang lain. Jika ada lebih sedikit daripada jumlah minimum, LEAP menambahkan konsep dengan dukungan lebih lemah (untuk dinilai), tidak pernah tanpa bukti."
 }

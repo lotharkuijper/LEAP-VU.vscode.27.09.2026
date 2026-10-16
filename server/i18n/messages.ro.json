@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "{0} termeni în total pentru acest curs ({1} noi/actualizați, {2} deja existenți){3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "{0} termeni în total pentru acest curs ({1} noi/actualizați, {2} deja existenți){3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "Cont creat, dar înscrierea a eșuat:",
   "Admin client niet beschikbaar": "Clientul admin nu este disponibil",
   "Admin client not available": "Clientul admin nu este disponibil",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "groupId, personaId, message sunt obligatorii",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "Răspunsul a fost trunchiat: nu era suficient spațiu de tokenuri pentru răspunsul complet.",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "Fișierul nu este o imagine validă (PNG, JPG, WEBP, GIF sau AVIF).",
+  "Het minimum aantal begrippen is groter dan het maximum": "Numărul minim de termeni este mai mare decât maximul",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "Modelul lingvistic a returnat un răspuns gol: nu era suficient spațiu de tokenuri pentru răspuns.",
   "Het taalmodel kon geen voorstellen maken.": "Modelul lingvistic nu a putut face propuneri.",
   "Het taalmodel kon het gesprek niet beoordelen.": "Modelul lingvistic nu a putut evalua conversația.",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "Migrarea 20260529100000_project_persona_relationships.sql nu a fost încă aplicată în Supabase.",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "Migrarea 20260608120000_persona_consultation_limits.sql nu a fost încă aplicată în Supabase.",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "Migrarea 20260608130000_evaluator_grading_badges.sql nu a fost încă aplicată în Supabase.",
+  "min_concepts is geen geldig getal": "min_concepts nu este un număr valid",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks nu este un număr valid",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Dimensiunea minimă a grupului nu poate fi mai mare decât maximul",
   "Naam is al in gebruik door een andere cursus": "Numele este deja folosit de un alt curs",

@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Ascuns pentru studenți",
   "admin.concepts.maxConceptsLabel": "Număr maxim de concepte:",
   "admin.concepts.maxConceptsUnlimited": "fără limită",
-  "admin.concepts.maxConceptsHint": "La depășire, rămân conceptele cu cea mai bună potrivire RAG.",
   "admin.ragSettings.saving": "Se salvează...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Comutator principal pentru atașamente",
   "help.chatAttachments.platform.body": "Stabilește dacă atașamentele în chat sunt permise în tot LEAP. Dezactivat înseamnă nicăieri, nici acolo unde profesorii le-au activat; alegerea lor rămâne salvată. Aici setezi și precizia și limitele.",
   "myData.attachmentsNote": "Imaginile și fișierele pe care le trimiți în chat nu sunt păstrate de LEAP: dispar imediat ce închizi chatul. De aceea, nu apar nici în datele tale; doar o etichetă și conversația despre ele.",
-  "courseFeatures.attachments.toPlatformSwitch": "Ești administrator: activează comutatorul principal la Administrare → Setări."
+  "courseFeatures.attachments.toPlatformSwitch": "Ești administrator: activează comutatorul principal la Administrare → Setări.",
+  "admin.concepts.minConceptsLabel": "Număr minim de concepte:",
+  "admin.concepts.minConceptsNone": "fără minim",
+  "admin.concepts.minMaxHint": "Peste maxim, au prioritate conceptele cu o potrivire puternică și puțină suprapunere. Sub minim, LEAP completează doar cu concepte care se regăsesc în materialul tău.",
+  "help.concepts.minMax.title": "Numărul minim și maxim de concepte",
+  "help.concepts.minMax.body": "Dacă există mai multe concepte decât maximul, LEAP păstrează conceptele care sunt bine reprezentate în materialul tău și seamănă puțin cu celelalte. Dacă sunt mai puține decât minimul, LEAP completează cu concepte susținute mai slab (de evaluat), niciodată fără dovezi."
 }

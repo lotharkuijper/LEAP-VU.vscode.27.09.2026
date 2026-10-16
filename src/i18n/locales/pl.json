@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Ukryte przed studentami",
   "admin.concepts.maxConceptsLabel": "Maksymalna liczba pojęć:",
   "admin.concepts.maxConceptsUnlimited": "bez limitu",
-  "admin.concepts.maxConceptsHint": "Po przekroczeniu limitu zostaną pojęcia z najlepszym dopasowaniem RAG.",
   "admin.ragSettings.saving": "Zapisywanie...",
   "admin.ragSettings.modules.chat": "Czat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Przełącznik główny załączników",
   "help.chatAttachments.platform.body": "Określa, czy załączniki na czacie są dozwolone w całym LEAP. Wyłączone oznacza nigdzie, także tam, gdzie prowadzący je włączyli; ich wybór zostaje zachowany. Tutaj ustawiasz też dokładność i limity.",
   "myData.attachmentsNote": "Obrazy i pliki, które dodajesz w czacie, nie są przechowywane przez LEAP: znikają, gdy tylko zamkniesz czat. Dlatego nie ma ich też w Twoich danych; pozostaje tylko etykieta i rozmowa na ich temat.",
-  "courseFeatures.attachments.toPlatformSwitch": "Jesteś administratorem: włącz główny przełącznik w sekcji Administracja → Ustawienia."
+  "courseFeatures.attachments.toPlatformSwitch": "Jesteś administratorem: włącz główny przełącznik w sekcji Administracja → Ustawienia.",
+  "admin.concepts.minConceptsLabel": "Minimalna liczba pojęć:",
+  "admin.concepts.minConceptsNone": "brak minimum",
+  "admin.concepts.minMaxHint": "Powyżej maksimum pierwszeństwo mają pojęcia z silnym dopasowaniem i niewielkim nakładaniem się. Poniżej minimum LEAP uzupełnia tylko pojęciami, które można znaleźć w twoich materiałach.",
+  "help.concepts.minMax.title": "Minimalna i maksymalna liczba pojęć",
+  "help.concepts.minMax.body": "Jeśli pojęć jest więcej niż maksimum, LEAP zachowuje te, które są mocno obecne w twoich materiałach i mało podobne do innych. Jeśli pojęć jest mniej niż minimum, LEAP uzupełnia je słabiej uzasadnionymi pojęciami (do oceny), nigdy bez dowodów."
 }

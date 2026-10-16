@@ -17,8 +17,9 @@
 //  3. Synoniemen, afkortingen en vertalingen: een samenvoegstap met het
 //     taalmodel (buildSynonymPrompt / parseSynonymGroups / applySynonymGroups);
 //     de andere namen blijven bewaard als alias.
-//  4. capFairly — kernbegrippen (in ≥2 documenten) eerst, daarna eerlijk
-//     per document, zodat één groot document niet alle plekken opeist.
+//  4. selectConcepts — minimum en maximum: hoge match en lage overlap gaan
+//     voor (één voor één gekozen), met een kleine bonus voor documenten die
+//     nog geen begrip hebben; onder het minimum alleen aanvullen met bewijs.
 
 export const WINDOW_CHARS = 12000;
 
@@ -233,42 +234,104 @@ export function applySynonymGroups(candidates, existingNames, groups) {
   return { kept, toExisting: toExistingPlain, mergedAway };
 }
 
+// ── Selectie: hoge match, lage overlap (2026-10-16) ──────────────────────────
+// De docent stelt in de Begrippen-stap een minimum en een maximum in. Boven het
+// maximum kiest LEAP de begrippen één voor één (greedy, "maximal marginal
+// relevance"): steeds het begrip met de beste combinatie van
+//   match   = hoe sterk het in het cursusmateriaal is teruggevonden
+//             (hoogste overeenkomst, aantal bewijsfragmenten, en of het een
+//             vakbegrip is dat in meerdere documenten terugkomt), min
+//   overlap = hoe sterk het in betekenis lijkt op een al gekozen begrip
+//             (cosine van de naam-embeddings).
+// Zo krijgen goed onderbouwde begrippen die iets NIEUWS toevoegen voorrang
+// boven varianten van wat er al is. Een kleine bonus voor een document dat nog
+// geen begrip heeft houdt elke module vertegenwoordigd; voorbeelden uit
+// casussen (example_instance) komen achteraan.
+
+export const SELECTION_WEIGHTS = Object.freeze({
+  relevance: 0.6, evidence: 0.25, breadth: 0.15, overlap: 0.5, newDocument: 0.1, example: 0.1,
+});
+const CORE_ROLES_SELECT = new Set(['main_course_concept', 'method_term', 'definition_term']);
+
+function cosine(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length === 0 || a.length !== b.length) return 0;
+  let dot = 0, ma = 0, mb = 0;
+  for (let i = 0; i < a.length; i++) { dot += a[i] * b[i]; ma += a[i] * a[i]; mb += b[i] * b[i]; }
+  return ma && mb ? dot / (Math.sqrt(ma) * Math.sqrt(mb)) : 0;
+}
+
 /**
- * Pure: maximum aantal begrippen, eerlijk verdeeld. Eerst kernbegrippen (in
- * ≥2 documenten), daarna om-en-om per document de sterkste match, zodat elke
- * module vertegenwoordigd is. Invoer: verificatie-resultaten
- * [{ concept: { documentIds }, maxScore }]. max ≤ 0 of leeg = geen limiet.
+ * Match-score 0..1 per kandidaat. De RAG-overeenkomst op een vaste schaal
+ * (0,40 → 0, 0,90 → 1): relatief binnen de lijst rekenen zou kleine
+ * verschillen (0,90 tegen 0,84) opblazen tot 1 tegen 0.
  */
-export function capFairly(results, max) {
-  const list = Array.isArray(results) ? results : [];
-  if (!max || max <= 0 || list.length <= max) return { kept: list, cutOff: [] };
-  const byScore = (a, b) => (b.maxScore || 0) - (a.maxScore || 0);
-  // Voorrang alleen voor ECHTE vakbegrippen die in meerdere documenten
-  // terugkomen: algemene woorden ("effect", "metingen") staan ook overal,
-  // dus het aantal documenten alleen is geen bewijs van "kern".
-  const CORE_ROLES = new Set(['main_course_concept', 'method_term', 'definition_term']);
-  const isCore = (r) => (r.concept?.documentIds || []).length >= 2 && CORE_ROLES.has(r.concept?.concept_role);
-  const core = list.filter(isCore).sort(byScore);
-  const rest = list.filter((r) => !isCore(r));
-  const queues = new Map();
-  for (const r of rest) {
-    const d = (r.concept?.documentIds || [])[0] || '(onbekend)';
-    if (!queues.has(d)) queues.set(d, []);
-    queues.get(d).push(r);
-  }
-  // Binnen een document: eerst vakbegrippen, voorbeelden uit casussen als laatste.
-  const weak = (r) => (r.concept?.concept_role === 'example_instance' ? 1 : 0);
-  for (const q of queues.values()) q.sort((a, b) => weak(a) - weak(b) || byScore(a, b));
-  const kept = core.slice(0, max);
-  const docs = [...queues.keys()];
-  while (kept.length < max && docs.some((d) => queues.get(d).length)) {
-    for (const d of docs) {
-      const q = queues.get(d);
-      if (q.length && kept.length < max) kept.push(q.shift());
+export function matchScores(list, w = SELECTION_WEIGHTS) {
+  return list.map((r) => {
+    const relevance = Math.min(1, Math.max(0, ((Number(r?.maxScore) || 0) - 0.4) / 0.5));
+    const evidence = Math.min(1, (Number(r?.matchedCount) || 0) / 5);
+    const docs = (r?.concept?.documentIds || []).length;
+    const breadth = CORE_ROLES_SELECT.has(r?.concept?.concept_role) ? Math.min(1, Math.max(0, docs - 1) / 2) : 0;
+    return w.relevance * relevance + w.evidence * evidence + w.breadth * breadth;
+  });
+}
+
+/** Overlap-straf 0..1: cosine 0,5 of lager telt niet, 0,95 of hoger telt volledig. */
+export function overlapPenalty(cos) {
+  return Math.min(1, Math.max(0, (cos - 0.5) / 0.45));
+}
+
+/**
+ * Pure: kies begrippen met hoge match en lage overlap, binnen [min, max].
+ *   accepted — kandidaten die de RAG-verificatie haalden
+ *   reserve  — kandidaten met WEL bewijs (≥1 fragment) maar minder dan de
+ *              ingestelde minimale bewijsdrempel; alleen gebruikt om een
+ *              minimum te halen, en dan gemarkeerd als topUp (te beoordelen).
+ *              Nooit begrippen zonder bewijs.
+ * Zonder max blijven alle geaccepteerde begrippen staan (in selectievolgorde).
+ * Retour: { kept, cutOff, toppedUp, shortBy }.
+ */
+export function selectConcepts(accepted, { min = null, max = null, reserve = [], weights = SELECTION_WEIGHTS } = {}) {
+  const list = Array.isArray(accepted) ? accepted : [];
+  const maxN = Number(max) > 0 ? Number(max) : Infinity;
+  const minN = Number(min) > 0 ? Math.min(Number(min), maxN) : 0;
+  const selected = [];
+  const usedDocs = new Set();
+
+  const pick = (pool, limit) => {
+    const match = matchScores(pool, weights);
+    const open = pool.map((r, i) => ({ r, match: match[i] }));
+    while (selected.length < limit && open.length > 0) {
+      let best = -1;
+      let bestValue = -Infinity;
+      for (let i = 0; i < open.length; i++) {
+        const { r, match: m } = open[i];
+        let maxCos = 0;
+        for (const s of selected) maxCos = Math.max(maxCos, cosine(r.embedding, s.embedding));
+        const docs = r?.concept?.documentIds || [];
+        const newDoc = docs.length > 0 && !docs.some((d) => usedDocs.has(d));
+        const value = m
+          - weights.overlap * overlapPenalty(maxCos)
+          + (newDoc ? weights.newDocument : 0)
+          - (r?.concept?.concept_role === 'example_instance' ? weights.example : 0);
+        if (value > bestValue) { bestValue = value; best = i; }
+      }
+      const [{ r }] = open.splice(best, 1);
+      selected.push(r);
+      for (const d of r?.concept?.documentIds || []) usedDocs.add(d);
     }
+    return open.map((o) => o.r);
+  };
+
+  const cutOff = pick(list, maxN);
+  let toppedUp = [];
+  if (selected.length < minN && Array.isArray(reserve) && reserve.length > 0) {
+    const grounded = reserve.filter((r) => (Number(r?.matchedCount) || 0) >= 1);
+    const before = selected.length;
+    pick(grounded, minN);
+    toppedUp = selected.slice(before).map((r) => ({ ...r, topUp: true }));
+    selected.splice(before, toppedUp.length, ...toppedUp);
   }
-  const keptSet = new Set(kept);
-  return { kept, cutOff: list.filter((r) => !keptSet.has(r)) };
+  return { kept: selected, cutOff, toppedUp, shortBy: Math.max(0, minN - selected.length) };
 }
 
 const STATUS_RANK = { approved: 3, needs_review: 2, rejected: 1 };

@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "呢個課程共有 {0} 個概念（{1} 個新增/更新，{2} 個已存在）{3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "呢個課程共有 {0} 個概念（{1} 個新增／已更新，{2} 個已存在）{3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "帳戶已建立，但註冊失敗：",
   "Admin client niet beschikbaar": "Admin client 不可用",
   "Admin client not available": "Admin client not available",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "需要 groupId、personaId、message",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "答案已被截斷：冇足夠 token 空間容納完整答案。",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "檔案唔係有效圖片（PNG、JPG、WEBP、GIF 或 AVIF）。",
+  "Het minimum aantal begrippen is groter dan het maximum": "最少概念數量大過最多概念數量",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "語言模型傳回空白回應：冇足夠 token 空間回覆。",
   "Het taalmodel kon geen voorstellen maken.": "語言模型無法提出建議。",
   "Het taalmodel kon het gesprek niet beoordelen.": "語言模型無法評估對話。",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "遷移 20260529100000_project_persona_relationships.sql 尚未套用到 Supabase。",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "遷移 20260608120000_persona_consultation_limits.sql 尚未套用到 Supabase。",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "遷移 20260608130000_evaluator_grading_badges.sql 尚未套用到 Supabase。",
+  "min_concepts is geen geldig getal": "min_concepts 唔係有效數字",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks 唔係有效數字",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "最小群組大小唔可以大過最大值",
   "Naam is al in gebruik door een andere cursus": "名稱已被另一個課程使用",

@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Oculto para estudiantes",
   "admin.concepts.maxConceptsLabel": "Número máximo de conceptos:",
   "admin.concepts.maxConceptsUnlimited": "sin límite",
-  "admin.concepts.maxConceptsHint": "Si se supera, se mantienen los conceptos con la mejor coincidencia RAG.",
   "admin.ragSettings.saving": "Guardando...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Cuestionario",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Interruptor principal para archivos adjuntos",
   "help.chatAttachments.platform.body": "Determina si se permiten archivos adjuntos en el chat en todo LEAP. Desactivado significa en ninguna parte, incluso donde los docentes los hayan activado; su elección se conserva. Aquí también configuras la precisión y los límites.",
   "myData.attachmentsNote": "Las imágenes y los archivos que adjuntas en el chat no los guarda LEAP: desaparecen en cuanto cierras el chat. Por eso tampoco aparecen en tus datos; solo se conserva una etiqueta y la conversación sobre ellos.",
-  "courseFeatures.attachments.toPlatformSwitch": "Eres administrador: activa el interruptor principal en Administración → Configuración."
+  "courseFeatures.attachments.toPlatformSwitch": "Eres administrador: activa el interruptor principal en Administración → Configuración.",
+  "admin.concepts.minConceptsLabel": "Número mínimo de conceptos:",
+  "admin.concepts.minConceptsNone": "sin mínimo",
+  "admin.concepts.minMaxHint": "Por encima del máximo, tienen prioridad los conceptos con una coincidencia fuerte y poco solapamiento. Por debajo del mínimo, LEAP solo completa con conceptos que se pueden encontrar en tu material.",
+  "help.concepts.minMax.title": "Número mínimo y máximo de conceptos",
+  "help.concepts.minMax.body": "Si hay más conceptos que el máximo, LEAP conserva los conceptos que aparecen con fuerza en tu material y se parecen poco a otros. Si hay menos que el mínimo, LEAP completa con conceptos con una justificación más débil (para revisar), nunca sin pruebas."
 }

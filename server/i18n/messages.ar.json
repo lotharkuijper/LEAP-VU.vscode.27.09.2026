@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "{0} مصطلحًا إجمالًا لهذه الدورة ({1} جديد/محدّث، {2} موجود مسبقًا){3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "إجمالي {0} مصطلحًا لهذه الدورة ({1} جديد/محدّث، {2} موجود بالفعل){3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "تم إنشاء الحساب لكن فشل التسجيل:",
   "Admin client niet beschikbaar": "عميل Admin غير متاح",
   "Admin client not available": "عميل Admin غير متاح",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "groupId و personaId و message مطلوبة",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "تم اقتطاع الإجابة: لم تكن هناك مساحة tokens كافية للإجابة الكاملة.",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "الملف ليس صورة صالحة (PNG أو JPG أو WEBP أو GIF أو AVIF).",
+  "Het minimum aantal begrippen is groter dan het maximum": "الحد الأدنى لعدد المصطلحات أكبر من الحد الأقصى",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "أرجع نموذج اللغة ردًا فارغًا: لم تكن هناك مساحة tokens كافية للإجابة.",
   "Het taalmodel kon geen voorstellen maken.": "لم يتمكن نموذج اللغة من إنشاء اقتراحات.",
   "Het taalmodel kon het gesprek niet beoordelen.": "تعذّر على نموذج اللغة تقييم المحادثة.",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "لم يتم تطبيق الترحيل 20260529100000_project_persona_relationships.sql بعد في Supabase.",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "لم يتم تطبيق الترحيل 20260608120000_persona_consultation_limits.sql بعد في Supabase.",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "لم يتم تطبيق الترحيل 20260608130000_evaluator_grading_badges.sql بعد في Supabase.",
+  "min_concepts is geen geldig getal": "min_concepts ليس رقمًا صالحًا",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks ليس رقمًا صالحًا",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "لا يجوز أن يكون الحد الأدنى لحجم المجموعة أكبر من الحد الأقصى",
   "Naam is al in gebruik door een andere cursus": "الاسم مستخدم بالفعل من قبل مقرر آخر",

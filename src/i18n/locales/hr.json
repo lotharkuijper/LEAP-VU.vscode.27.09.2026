@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Skriveno za studente",
   "admin.concepts.maxConceptsLabel": "Maksimalan broj pojmova:",
   "admin.concepts.maxConceptsUnlimited": "bez ograničenja",
-  "admin.concepts.maxConceptsHint": "Pri prekoračenju ostaju pojmovi s najboljim RAG-podudaranjem.",
   "admin.ragSettings.saving": "Spremanje...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Kviz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Glavni prekidač za privitke",
   "help.chatAttachments.platform.body": "Određuje smiju li se privitci u chatu koristiti u cijelom LEAP-u. Isključeno znači nigdje, čak ni tamo gdje su ih nastavnici uključili; njihov odabir ostaje spremljen. Ovdje postavljaš i preciznost i ograničenja.",
   "myData.attachmentsNote": "Slike i datoteke koje priložiš u chatu LEAP ne sprema: nestaju čim zatvoriš chat. Zato se ne nalaze ni u tvojim podacima; samo oznaka i razgovor o njima.",
-  "courseFeatures.attachments.toPlatformSwitch": "Ti si administrator: uključi glavni prekidač u Upravljanje → Postavke."
+  "courseFeatures.attachments.toPlatformSwitch": "Ti si administrator: uključi glavni prekidač u Upravljanje → Postavke.",
+  "admin.concepts.minConceptsLabel": "Minimalni broj pojmova:",
+  "admin.concepts.minConceptsNone": "nema minimuma",
+  "admin.concepts.minMaxHint": "Iznad maksimuma prednost imaju pojmovi s jakim podudaranjem i malo preklapanja. Ispod minimuma LEAP nadopunjuje samo pojmovima koji se mogu pronaći u tvojem materijalu.",
+  "help.concepts.minMax.title": "Minimalni i maksimalni broj pojmova",
+  "help.concepts.minMax.body": "Ako ima više pojmova od maksimuma, LEAP zadržava pojmove koji su snažno zastupljeni u tvojem materijalu i malo sliče drugima. Ako ih ima manje od minimuma, LEAP nadopunjuje slabije potkrijepljenim pojmovima (za procjenu), nikad bez dokaza."
 }

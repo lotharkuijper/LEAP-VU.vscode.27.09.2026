@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "Hidden from students",
   "admin.concepts.maxConceptsLabel": "Maximum number of concepts:",
   "admin.concepts.maxConceptsUnlimited": "no limit",
-  "admin.concepts.maxConceptsHint": "If exceeded, the concepts with the best RAG match will remain.",
   "admin.ragSettings.saving": "Saving...",
   "admin.ragSettings.modules.chat": "Chat",
   "admin.ragSettings.modules.quiz": "Quiz",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "Master switch for attachments",
   "help.chatAttachments.platform.body": "Decides whether attachments in the chat are allowed anywhere in LEAP. Off means nowhere, not even where teachers switched them on; their choice is kept. You also set the accuracy and the limits here.",
   "myData.attachmentsNote": "Images and files you add in the chat are not stored by LEAP: they are gone as soon as you close the chat. That is why they are not in your data; only a label and the conversation about them.",
-  "courseFeatures.attachments.toPlatformSwitch": "You are an administrator: switch on the master switch under Admin → Settings."
+  "courseFeatures.attachments.toPlatformSwitch": "You are an administrator: switch on the master switch under Admin → Settings.",
+  "admin.concepts.minConceptsLabel": "Minimum number of concepts:",
+  "admin.concepts.minConceptsNone": "no minimum",
+  "admin.concepts.minMaxHint": "Above the maximum, concepts with a strong match and little overlap take priority. Below the minimum, LEAP only adds concepts that can be found in your material.",
+  "help.concepts.minMax.title": "Minimum and maximum number of concepts",
+  "help.concepts.minMax.body": "If there are more concepts than the maximum, LEAP keeps those that are strongly present in your material and differ most from the others. If there are fewer than the minimum, LEAP adds less strongly supported concepts (to be reviewed), never without evidence."
 }

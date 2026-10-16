@@ -24,6 +24,7 @@
   - Synonyms, abbreviations and translations go through the LLM synonym step (narrow, automatic); the other names are stored as `aliases`.
   - Doubtful cases are shown to the teacher as suggestions (`/api/admin/concepts/merge-suggestions`, broad prompt `buildDuplicateSuggestionPrompt`, including variants with a qualifier). Every concept should appear only once: a module concept that also exists as a course concept is listed first (`kind: 'crossClass'`), and the course concept is kept.
 - Merging always goes through the DB function `merge_concepts`, which moves all references along.
+- Minimum and maximum number of concepts are set per course on the Concepts step (`extraction.min_concepts` / `max_concepts`). Selection is `selectConcepts` (`server/conceptConsolidation.js`): one by one, highest match (RAG score on a fixed 0.40–0.90 scale, evidence count, multi-document core term) minus overlap (cosine to already chosen), with a small bonus for an unrepresented document. Below the minimum, top up only from candidates WITH evidence (≥1 chunk) under the evidence threshold, stored as `needs_review`; never without evidence. A shortfall is reported, not padded.
 - The frontend runs extraction as a background job (`runConceptExtraction`), because a request of several minutes gets cut off by proxies.
 - Verify chunking before concept extraction.
 - A document that collapses into a single giant chunk is a failure mode and must be diagnosed.

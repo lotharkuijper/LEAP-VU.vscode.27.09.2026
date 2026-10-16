@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "छात्रों से छिपा हुआ",
   "admin.concepts.maxConceptsLabel": "अवधारणाओं की अधिकतम संख्या:",
   "admin.concepts.maxConceptsUnlimited": "कोई सीमा नहीं",
-  "admin.concepts.maxConceptsHint": "सीमा से अधिक होने पर सबसे अच्छे RAG-match वाली अवधारणाएँ बनी रहेंगी।",
   "admin.ragSettings.saving": "सहेजा जा रहा है...",
   "admin.ragSettings.modules.chat": "चैट",
   "admin.ragSettings.modules.quiz": "क्विज़",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "अटैचमेंट के लिए मुख्य स्विच",
   "help.chatAttachments.platform.body": "यह तय करता है कि पूरे LEAP में चैट में अटैचमेंट की अनुमति हो या नहीं। बंद का मतलब है कहीं भी नहीं, वहाँ भी नहीं जहाँ शिक्षकों ने उन्हें चालू किया है; उनकी पसंद सहेजी रहती है। यहाँ तुम सटीकता और सीमाएँ भी सेट करते हो।",
   "myData.attachmentsNote": "चैट में तुम्हारे द्वारा भेजी गई तस्वीरें और फ़ाइलें LEAP सहेजता नहीं है: चैट बंद करते ही वे हट जाती हैं। इसलिए वे तुम्हारे डेटा में भी नहीं होतीं; केवल एक लेबल और उनके बारे में हुई बातचीत होती है।",
-  "courseFeatures.attachments.toPlatformSwitch": "तुम व्यवस्थापक हो: प्रशासन → सेटिंग्स में मुख्य स्विच चालू करो।"
+  "courseFeatures.attachments.toPlatformSwitch": "तुम व्यवस्थापक हो: प्रशासन → सेटिंग्स में मुख्य स्विच चालू करो।",
+  "admin.concepts.minConceptsLabel": "न्यूनतम अवधारणाओं की संख्या:",
+  "admin.concepts.minConceptsNone": "कोई न्यूनतम नहीं",
+  "admin.concepts.minMaxHint": "अधिकतम से ऊपर, मजबूत मेल और कम ओवरलैप वाली अवधारणाओं को प्राथमिकता मिलती है। न्यूनतम से नीचे, LEAP केवल उन अवधारणाओं से पूर्ति करता है जो तुम्हारी सामग्री में मिलती हैं।",
+  "help.concepts.minMax.title": "न्यूनतम और अधिकतम अवधारणाओं की संख्या",
+  "help.concepts.minMax.body": "अगर अवधारणाएँ अधिकतम से ज़्यादा हैं, तो LEAP उन अवधारणाओं को रखता है जो तुम्हारी सामग्री में मज़बूती से मौजूद हैं और अन्य से कम मिलती-जुलती हैं। अगर अवधारणाएँ न्यूनतम से कम हैं, तो LEAP कमज़ोर आधार वाली अवधारणाओं (जिनकी समीक्षा करनी है) से पूर्ति करता है, कभी भी बिना प्रमाण के नहीं।"
 }

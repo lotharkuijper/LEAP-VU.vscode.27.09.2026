@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}": "Bu ders için toplam {0} kavram ({1} yeni/güncellendi, {2} zaten mevcut){3}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "Bu kurs için toplam {0} terim ({1} yeni/güncellendi, {2} zaten mevcut){3}{4}",
   "Account aangemaakt maar inschrijven mislukte:": "Hesap oluşturuldu ama kaydolma başarısız oldu:",
   "Admin client niet beschikbaar": "Admin client kullanılamıyor",
   "Admin client not available": "Admin client kullanılamıyor",
@@ -249,6 +249,7 @@
   "groupId, personaId, message vereist": "groupId, personaId, message gerekli",
   "Het antwoord werd afgekapt: er was te weinig tokenruimte voor het volledige antwoord.": "Yanıt kısaltıldı: tam yanıt için token alanı yetersizdi.",
   "Het bestand is geen geldige afbeelding (PNG, JPG, WEBP, GIF of AVIF).": "Dosya geçerli bir görsel değil (PNG, JPG, WEBP, GIF veya AVIF).",
+  "Het minimum aantal begrippen is groter dan het maximum": "Minimum terim sayısı maksimumdan büyük",
   "Het taalmodel gaf een lege reactie terug: er was te weinig tokenruimte voor het antwoord.": "Dil modeli boş bir yanıt döndürdü: yanıt için token alanı yetersizdi.",
   "Het taalmodel kon geen voorstellen maken.": "Dil modeli öneri oluşturamadı.",
   "Het taalmodel kon het gesprek niet beoordelen.": "Dil modeli konuşmayı değerlendiremedi.",
@@ -339,6 +340,7 @@
   "Migratie 20260529100000_project_persona_relationships.sql is nog niet toegepast in Supabase.": "20260529100000_project_persona_relationships.sql migrasyonu Supabase'te henüz uygulanmadı.",
   "Migratie 20260608120000_persona_consultation_limits.sql is nog niet toegepast in Supabase.": "20260608120000_persona_consultation_limits.sql migrasyonu Supabase'te henüz uygulanmadı.",
   "Migratie 20260608130000_evaluator_grading_badges.sql is nog niet toegepast in Supabase.": "20260608130000_evaluator_grading_badges.sql migrasyonu Supabase'te henüz uygulanmadı.",
+  "min_concepts is geen geldig getal": "min_concepts geçerli bir sayı değil",
   "min_evidence_chunks is geen geldig getal": "min_evidence_chunks geçerli bir sayı değil",
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Minimum grup boyutu maksimumdan büyük olamaz",
   "Naam is al in gebruik door een andere cursus": "Ad başka bir kurs tarafından zaten kullanılıyor",

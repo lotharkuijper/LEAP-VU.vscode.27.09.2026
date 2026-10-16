@@ -1225,7 +1225,6 @@
   "admin.concepts.notApprovedBadge": "مخفي عن الطلاب",
   "admin.concepts.maxConceptsLabel": "الحد الأقصى لعدد المفاهيم:",
   "admin.concepts.maxConceptsUnlimited": "بلا حد",
-  "admin.concepts.maxConceptsHint": "عند تجاوز الحد، تبقى المفاهيم ذات أفضل تطابق RAG.",
   "admin.ragSettings.saving": "جارٍ الحفظ...",
   "admin.ragSettings.modules.chat": "الدردشة",
   "admin.ragSettings.modules.quiz": "اختبار",
@@ -2845,5 +2844,10 @@
   "help.chatAttachments.platform.title": "المفتاح الرئيسي للمرفقات",
   "help.chatAttachments.platform.body": "يحدد ما إذا كان مسموحًا بالمرفقات في الدردشة في LEAP بالكامل. إيقاف يعني أنها غير متاحة في أي مكان، حتى في الأماكن التي فعّلها فيها المدرسون؛ ويبقى اختيارهم محفوظًا. هنا تحدد أيضًا الدقة والحدود.",
   "myData.attachmentsNote": "الصور والملفات التي تُرسلها في الدردشة لا يحتفظ بها LEAP: فهي تختفي بمجرد إغلاق الدردشة. لذلك لا تظهر أيضًا في بياناتك؛ يظهر فقط تصنيف والمحادثة المتعلقة بها.",
-  "courseFeatures.attachments.toPlatformSwitch": "أنت مشرف: فعّل المفتاح الرئيسي عبر الإدارة ← الإعدادات."
+  "courseFeatures.attachments.toPlatformSwitch": "أنت مشرف: فعّل المفتاح الرئيسي عبر الإدارة ← الإعدادات.",
+  "admin.concepts.minConceptsLabel": "الحد الأدنى لعدد المفاهيم:",
+  "admin.concepts.minConceptsNone": "لا يوجد حد أدنى",
+  "admin.concepts.minMaxHint": "فوق الحد الأقصى، تكون الأولوية للمفاهيم ذات التطابق القوي والتداخل القليل. تحت الحد الأدنى، يضيف LEAP فقط مفاهيم يمكن العثور عليها في موادك.",
+  "help.concepts.minMax.title": "الحد الأدنى والحد الأقصى لعدد المفاهيم",
+  "help.concepts.minMax.body": "إذا كان عدد المفاهيم أكبر من الحد الأقصى، يحتفظ LEAP بالمفاهيم الراسخة بقوة في موادك والتي لا تشبه كثيرًا غيرها. وإذا كان العدد أقل من الحد الأدنى، يضيف LEAP مفاهيم مدعومة بأدلة أضعف (لتقييمها)، ولا يفعل ذلك أبدًا دون دليل."
 }
