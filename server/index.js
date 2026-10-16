@@ -67,6 +67,7 @@ import {
   authorizeMemberRoleChange,
   checkLastTeacherProtection,
   parseForceFlag,
+  profileRoleForCourseTeacher,
 } from './memberRoleAuth.js';
 import { validateReviewResponse, canRequestDocumentReview, badgeForGrade, normalizeBadgeAwardMode, feedbackRoundsState } from './documentReview.js';
 import { authorizeAvailabilityChange, parseStudentVisible, memberCanAccessCourse, canAccessCourseContent } from './courseAvailability.js';
@@ -3464,6 +3465,32 @@ app.post('/api/admin/courses', async (req, res) => {
   }
 });
 
+// Wie in een cursus docent wordt, krijgt het profiel 'docent' (memberRoleAuth.js:
+// profileRoleForCourseTeacher). Databaseregels voor projecten, opslag en quiz
+// kijken naar profiles.role; zonder dit liep een docent met een studentprofiel
+// vast op "new row violates row-level security policy" (Rodenburg, 2026-10-16).
+// Vastgelegd in user_audit_log. Mislukt dit, dan blijft de cursusrol staan.
+async function promoteCourseTeacherProfile(userId, changedBy, courseId) {
+  try {
+    const { data: prof } = await supabaseAdmin.from('profiles').select('role').eq('id', userId).maybeSingle();
+    const next = prof ? profileRoleForCourseTeacher(prof.role) : null;
+    if (!next) return null;
+    const { error } = await supabaseAdmin.from('profiles').update({ role: next }).eq('id', userId).eq('role', prof.role);
+    if (error) throw error;
+    profileCache.invalidate(userId);
+    const { error: logErr } = await supabaseAdmin.from('user_audit_log').insert({
+      user_id: userId, changed_by: changedBy || null, old_role: prof.role, new_role: next,
+      reason: `Docent in cursus ${courseId} (course_members.member_role = teacher)`,
+    });
+    if (logErr) console.warn('[members] auditlog schrijven mislukt:', logErr.message);
+    console.log(`[members] Profielrol ${userId}: ${prof.role} → ${next} (docent in cursus ${courseId})`);
+    return next;
+  } catch (err) {
+    console.warn('[members] profielrol naar docent mislukt:', err?.message || err);
+    return null;
+  }
+}
+
 // DELETE /api/admin/courses/:id/members — verwijder in één keer alle leden van
 // een cursus. Alleen voor admins. Bedoeld om de "cursus verwijderen"-flow te
 // deblokkeren wanneer er nog gekoppelde leden zijn.
@@ -3649,7 +3676,8 @@ app.put('/api/admin/courses/:id/members/:userId', async (req, res) => {
     .eq('course_id', courseId)
     .eq('user_id', userId);
   if (updErr) return res.status(500).json({ error: updErr.message });
-  return res.json({ ok: true, user_id: userId, course_id: courseId, member_role });
+  const profileRole = member_role === 'teacher' ? await promoteCourseTeacherProfile(userId, r.user?.id, courseId) : null;
+  return res.json({ ok: true, user_id: userId, course_id: courseId, member_role, ...(profileRole ? { profileRole } : {}) });
 });
 
 // DELETE /api/admin/courses/:id/members/:userId — verwijder één lid uit een
@@ -3809,7 +3837,8 @@ app.post('/api/admin/courses/:id/members/:userId', async (req, res) => {
         { onConflict: 'course_id,user_id' }
       );
     if (upErr) return res.status(500).json({ error: upErr.message });
-    return res.json({ ok: true, user_id: userId, course_id: courseId, member_role });
+    const profileRole = member_role === 'teacher' ? await promoteCourseTeacherProfile(userId, r.user?.id, courseId) : null;
+    return res.json({ ok: true, user_id: userId, course_id: courseId, member_role, ...(profileRole ? { profileRole } : {}) });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }

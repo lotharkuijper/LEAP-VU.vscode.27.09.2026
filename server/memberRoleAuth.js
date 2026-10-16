@@ -57,3 +57,18 @@ export function parseForceFlag(value) {
   const s = String(value).toLowerCase();
   return s === '1' || s === 'true';
 }
+
+/**
+ * Profielrol na docent worden in een cursus (2026-10-16). Veel databaseregels
+ * (o.a. projecten via pr_is_course_teacher, opslag, quizvalidaties) kijken naar
+ * profiles.role = 'docent'. Wie in een cursus docent wordt, krijgt daarom het
+ * profiel 'docent'; een student zou anders in het beheer vastlopen op "new row
+ * violates row-level security policy". Andere rollen (docent, admin) blijven
+ * staan, en terugzetten gebeurt nooit automatisch.
+ *
+ * @param {string|null|undefined} currentRole — huidige profiles.role
+ * @returns {'docent' | null} — nieuwe rol, of null als er niets verandert
+ */
+export function profileRoleForCourseTeacher(currentRole) {
+  return (currentRole ?? 'student') === 'student' ? 'docent' : null;
+}
