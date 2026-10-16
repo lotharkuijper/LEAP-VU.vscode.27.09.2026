@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { LeerlijnPanel } from './LeerlijnPanel';
 import { Loader2, RefreshCw, CheckCircle2, ChevronRight, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../i18n';
@@ -208,6 +209,7 @@ export function CourseMaterialWorkspace({
         <>
           <WarningList warnings={warningsFor('files').filter(w => w.code !== 'unconfirmedPurposes')} onGoTo={onStepChange} />
           <FilesStep courseId={activeCourseId} files={files} projects={projects} webSources={webSources} onChanged={() => void load()} onGoToProjects={() => onGoToTab('projects_admin')} />
+          <LeerlijnPanel courseId={activeCourseId} files={files} />
         </>
       )}
 

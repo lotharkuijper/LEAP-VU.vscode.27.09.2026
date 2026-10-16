@@ -27,6 +27,7 @@ import { LearningLevelSelector } from '../components/LearningLevelSelector';
 import { useChatAttachments, type SendAttachments } from '../hooks/useChatAttachments';
 import { AttachButton, PendingAttachments, SentAttachments } from '../components/chat/ChatAttachmentBar';
 import { hasInlineFile, metaFromStored, type AttachmentMeta } from '../lib/chatAttachments';
+import { useLeerlijn } from '../hooks/useLeerlijn';
 
 
 // Handtekening van een opgeslagen tutorantwoord (staat in retrieved_context).
@@ -225,6 +226,8 @@ export function ChatPage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   // Bijlagen in de chat: alleen in het geheugen van deze pagina (src/lib/chatAttachments.ts).
   const att = useChatAttachments(activeCourse, currentConversationId);
+  // Leerlijn: onderdeel bij de bronnen en de keuze "Ik werk aan …" (server/courseUnits.js).
+  const leerlijn = useLeerlijn(activeCourse);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const splitRef = useRef<HTMLDivElement>(null);
@@ -635,6 +638,7 @@ export function ChatPage() {
         chunks.map((c) => ({
           ...chunkToDisplaySource(c),
           href: ragDocumentDownloadUrl(c.documentId),
+          ...(leerlijn.unitTitleOf(c.documentId) ? { unitTitle: leerlijn.unitTitleOf(c.documentId) } : {}),
         })),
         5
       );
@@ -649,7 +653,7 @@ export function ChatPage() {
           displaySources.length > 0 ? displaySources : undefined,
           learningLevel,
           activeCourse || undefined,
-          { readinessCheck, ...(attachments?.payload.length ? { attachments: attachments.payload } : {}) }
+          { readinessCheck, ...(attachments?.payload.length ? { attachments: attachments.payload } : {}), ...(leerlijn.workingOn ? { leerlijnUnitId: leerlijn.workingOn } : {}) }
         );
       } catch (llmErr) {
         console.error('[CHAT] LLM call failed:', llmErr);
@@ -1034,6 +1038,20 @@ export function ChatPage() {
               <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
                 <RAGStatusIndicator strictMode={ragSettings.chat.rag_strict_mode} />
                 <div className="flex flex-wrap items-end gap-2 ml-auto">
+                  {leerlijn.units.length > 0 && (
+                    <label className="flex flex-col text-xs text-gray-600">
+                      <span className="mb-1">{t('chat.leerlijn.workingOn')}</span>
+                      <select
+                        value={leerlijn.workingOn ?? ''}
+                        onChange={(e) => leerlijn.setWorkingOn(e.target.value || null)}
+                        className="max-w-[16rem] rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-800"
+                        data-testid="select-leerlijn-working-on"
+                      >
+                        <option value="">{t('chat.leerlijn.auto')}</option>
+                        {leerlijn.units.map((u) => <option key={u.id} value={u.id}>{u.position}. {u.title}</option>)}
+                      </select>
+                    </label>
+                  )}
                   <LearningLevelSelector
                     value={learningLevel}
                     onChange={setLearningLevel}

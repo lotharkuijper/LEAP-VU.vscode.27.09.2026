@@ -132,6 +132,7 @@ import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
 import { registerSystemMessageRoutes } from './systemMessages.js';
+import { registerCourseUnitRoutes, loadLeerlijn, loadPracticedUnits, anchorUnit, buildLeerlijnBlock } from './courseUnits.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
 import { installAnalytics } from './analytics/index.js';
@@ -801,6 +802,11 @@ app.post('/api/chat', async (req, res) => {
     if (chatSourcesBlock) systemContent += chatSourcesBlock;
     // Bijlagen: instructie + bestandstekst, vóór het taal-/niveaublok.
     systemContent += attachmentSystemBlock(attachmentParts);
+    // Leerlijn (server/courseUnits.js): terugverwijzen naar voorafgaande
+    // onderdelen, spaarzaam vooruit, behalve naar wat de student al oefende.
+    if (req.body?.purpose === 'tutor_chat' && courseId) {
+      systemContent += await leerlijnBlockFor(auth.user.id, courseId, sources, req.body?.leerlijnUnitId);
+    }
     systemContent += langSuffix;
     finalMessages = [{ role: 'system', content: systemContent }, ...userMessages];
   }
@@ -9182,6 +9188,52 @@ async function rejectIfFeatureOff(res, user, profile, courseId, feature) {
   return true;
 }
 
+// ── Leerlijn (server/courseUnits.js) ─────────────────────────────────────────
+// Leerlijn per cursus 30 s en geoefende onderdelen per student 2 min onthouden:
+// de tutorchat vraagt ze bij elke beurt op. Een storing laat de chat gewoon
+// doorgaan zonder leerlijnblok.
+const LEERLIJN_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 30_000;
+const PRACTICED_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 120_000;
+const leerlijnCache = new Map();
+const practicedCache = new Map();
+async function cachedLeerlijn(courseId) {
+  const hit = leerlijnCache.get(courseId);
+  if (hit && Date.now() - hit.at < LEERLIJN_TTL_MS) return hit.value;
+  const value = await loadLeerlijn(supabaseAdmin, courseId);
+  leerlijnCache.set(courseId, { at: Date.now(), value });
+  return value;
+}
+async function leerlijnBlockFor(userId, courseId, sources, explicitUnitId) {
+  try {
+    if (!supabaseAdmin) return '';
+    const leerlijn = await cachedLeerlijn(courseId);
+    if (leerlijn.units.length === 0) return '';
+    const srcs = Array.isArray(sources) ? sources : [];
+    const anchor = anchorUnit({ sources: srcs, explicitUnitId: typeof explicitUnitId === 'string' ? explicitUnitId : null, docUnit: leerlijn.docUnit, unitById: leerlijn.unitById });
+    if (!anchor) return '';
+    const key = `${userId}|${courseId}`;
+    let practiced = practicedCache.get(key);
+    if (!practiced || Date.now() - practiced.at > PRACTICED_TTL_MS) {
+      practiced = { at: Date.now(), value: await loadPracticedUnits(supabaseAdmin, { userId, courseId, leerlijn }) };
+      practicedCache.set(key, practiced);
+    }
+    return buildLeerlijnBlock({ units: leerlijn.units, anchor, practiced: practiced.value, sources: srcs, docUnit: leerlijn.docUnit });
+  } catch (err) {
+    console.warn('[leerlijn] blok overgeslagen:', err?.message || err);
+    return '';
+  }
+}
+
+/** Leerstofbestanden van een cursus (voor het voorstel en de controle bij opslaan). */
+async function courseMaterialDocuments(courseId) {
+  const { data: assigns } = await supabaseAdmin.from('course_folder_assignments').select('folder_id').eq('course_id', courseId);
+  const folderIds = (assigns || []).map((a) => a.folder_id);
+  if (folderIds.length === 0) return [];
+  const { data: docs } = await supabaseAdmin.from('documents')
+    .select('id, title, filename, purpose, bucket').in('folder_id', folderIds);
+  return (docs || []).filter((d) => d.purpose === 'course_material' || (d.purpose == null && d.bucket === 'rag_sources'));
+}
+
 // ── Bijlagen in de chat (server/chatAttachments.js) ──────────────────────────
 // Platforminstelling van de beheerder (chatbot_prompts-rij, standaard UIT), 15 s
 // onthouden. Leesfout = uit: een storing mag bijlagen nooit per ongeluk aanzetten.
@@ -14331,6 +14383,12 @@ registerMyDataRoutes(app, {
 // Ontwerphulp: optionele chatbot voor docenten in het beheer (server/designAssistant.js).
 // Systeemberichten van de beheerder op het Dashboard (server/systemMessages.js).
 registerSystemMessageRoutes(app, { supabaseAdmin, requireAuthUser, isLeapAdmin });
+
+// Leerlijn: volgorde van de stof per cursus (server/courseUnits.js).
+registerCourseUnitRoutes(app, {
+  supabaseAdmin, requireAuthUser, userHasCourseAccess, isStaffForCourse,
+  courseMaterialDocuments, onChanged: (courseId) => leerlijnCache.delete(courseId),
+});
 
 registerDesignAssistantRoutes(app, {
   supabaseAdmin,

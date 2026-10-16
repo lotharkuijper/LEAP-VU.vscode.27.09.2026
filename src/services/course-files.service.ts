@@ -208,3 +208,17 @@ export async function downloadCourseFile(docId: string, filename: string) {
 export async function deleteCourseFile(docId: string) {
   return request<unknown>(`/api/admin/documents/${docId}`, { method: 'DELETE' });
 }
+
+// ── Leerlijn: volgorde van de stof (server/courseUnits.js) ──────────────────
+export interface LeerlijnUnit { id: string; title: string; position: number }
+export interface Leerlijn { available: boolean; units: LeerlijnUnit[]; documents: Array<{ documentId: string; unitId: string }> }
+export interface LeerlijnProposal { units: Array<{ title: string; position: number; documentIds: string[] }>; unplaced: string[] }
+
+export const fetchLeerlijn = (courseId: string) =>
+  request<Leerlijn>(`/api/courses/${courseId}/leerlijn`);
+
+export const fetchLeerlijnProposal = (courseId: string) =>
+  request<LeerlijnProposal>(`/api/admin/courses/${courseId}/leerlijn/proposal`);
+
+export const saveLeerlijn = (courseId: string, body: { units: Array<{ key: string; title: string; position: number }>; assignments: Array<{ documentId: string; unitKey: string }> }) =>
+  request<{ ok: true }>(`/api/admin/courses/${courseId}/leerlijn`, { method: 'PUT', body: JSON.stringify(body) });

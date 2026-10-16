@@ -154,7 +154,7 @@ export async function sendChatMessage(
   sources?: Array<{ title: string; similarity: number }>,
   learningLevel?: number,
   courseId?: string,
-  options?: { readinessCheck?: boolean; attachments?: AttachmentPayload[] }
+  options?: { readinessCheck?: boolean; attachments?: AttachmentPayload[]; leerlijnUnitId?: string }
 ): Promise<LLMResponse> {
   try {
     const userMessages = messages.filter(m => m.role !== 'system');
@@ -175,6 +175,8 @@ export async function sendChatMessage(
       ...(options?.readinessCheck ? { readinessCheck: true } : {}),
       // Bijlagen (alleen in het geheugen; de server bewaart ze niet).
       ...(options?.attachments?.length ? { attachments: options.attachments } : {}),
+      // Leerlijn: het onderdeel waar de student zelf voor koos (anders bepaalt de vraag het).
+      ...(options?.leerlijnUnitId ? { leerlijnUnitId: options.leerlijnUnitId } : {}),
     });
 
     const content = data.choices[0]?.message?.content;

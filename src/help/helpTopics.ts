@@ -20,6 +20,7 @@ export const HELP_TOPICS = [
   // Cursusmateriaal
   'material.overview',
   'material.step.files',
+  'material.leerlijn',
   'material.step.processing',
   'material.step.concepts',
   'material.step.ready',
