@@ -6,7 +6,7 @@ import { getActiveLang } from '../i18n/activeLang';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, ToggleRight } from 'lucide-react';
+import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, BookText, Library, ToggleRight, Megaphone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Database } from '../lib/database.types';
 import { ImportsHubPanel } from '../components/ImportsHubPanel';
@@ -16,6 +16,7 @@ import { ProjectsAdminTab } from './admin/ProjectsAdminTab';
 import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
 import { CourseFeaturesAdminTab } from './admin/CourseFeaturesAdminTab';
 import { ChatAttachmentsPlatformPanel } from './admin/ChatAttachmentsPlatformPanel';
+import { SystemMessagesAdminTab } from './admin/SystemMessagesAdminTab';
 import { AnalyticsAdminTab } from '../features/analytics/AnalyticsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
@@ -67,7 +68,7 @@ interface ChatbotPrompt {
 // oude links gaan naar de bijbehorende stap in Cursusmateriaal.
 const LEGACY_MATERIAL_TABS: Record<string, MaterialStep> = { documents: 'files', rag_beheer: 'processing', concepts: 'concepts' };
 
-type TabType = 'material' | 'users' | 'add_users' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels' | 'analytics' | 'course_features';
+type TabType = 'material' | 'users' | 'add_users' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'course_info' | 'learning_levels' | 'analytics' | 'course_features' | 'messages';
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -264,7 +265,7 @@ export function AdminPage() {
       t = 'material';
     }
     if (t && LEGACY_MATERIAL_TABS[t as string]) t = 'material';
-    const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics','course_features'];
+    const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics','course_features','messages'];
     if (t && allowed.includes(t)) return t;
     return isAdmin ? 'users' : 'material';
   })();
@@ -331,7 +332,7 @@ export function AdminPage() {
     }
     const t = raw as TabType | null;
     if (t && t !== activeTab) {
-      const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics','course_features'];
+      const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','course_info','learning_levels','analytics','course_features','messages'];
       if (allowed.includes(t)) setActiveTabState(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1434,6 +1435,7 @@ const tabs = [
   { id: 'course_features' as TabType, label: t('admin.tabs.courseFeatures'), icon: ToggleRight, show: isAdmin || isDocent },
   { id: 'learning_levels' as TabType, label: t('admin.tabs.learningLevels'), icon: GraduationCap, show: isAdmin || isDocent },
   { id: 'analytics' as TabType, label: t('admin.tabs.analytics'), icon: BarChart3, show: isAdmin || isDocent },
+  { id: 'messages' as TabType, label: t('admin.tabs.messages'), icon: Megaphone, show: isAdmin },
   { id: 'settings' as TabType, label: t('admin.tabs.settings'), icon: Settings, show: isAdmin },
 ].filter(tab => tab.show);
 
@@ -1441,7 +1443,7 @@ const tabs = [
 // Cursusmateriaal voorop; systeemzaken apart (admin).
 const tabGroups = [
   { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'course_features', 'quiz_sources', 'projects_admin', 'course_info', 'learning_levels', 'analytics', 'prompts', 'rag_settings', 'imports', 'add_users'] },
-  { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'settings'] },
+  { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'messages', 'settings'] },
 ].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
  .filter(g => g.items.length > 0);
 
@@ -2238,6 +2240,7 @@ const tabGroups = [
           {activeTab === 'quiz_sources' && <QuizSourcesAdminPanel />}
           {activeTab === 'course_info' && <CursusInfoTab />}
           {activeTab === 'course_features' && <CourseFeaturesAdminTab />}
+          {activeTab === 'messages' && isAdmin && <SystemMessagesAdminTab />}
           {activeTab === 'learning_levels' && <LearningLevelsAdminTab />}
           {activeTab === 'analytics' && <AnalyticsAdminTab onOpenMaterial={() => setActiveTab('material')} />}
 

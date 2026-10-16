@@ -131,6 +131,7 @@ import {
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { registerDesignAssistantRoutes } from './designAssistant.js';
+import { registerSystemMessageRoutes } from './systemMessages.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
 import { installAnalytics } from './analytics/index.js';
@@ -14328,6 +14329,9 @@ registerMyDataRoutes(app, {
 });
 
 // Ontwerphulp: optionele chatbot voor docenten in het beheer (server/designAssistant.js).
+// Systeemberichten van de beheerder op het Dashboard (server/systemMessages.js).
+registerSystemMessageRoutes(app, { supabaseAdmin, requireAuthUser, isLeapAdmin });
+
 registerDesignAssistantRoutes(app, {
   supabaseAdmin,
   authUser,

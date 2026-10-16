@@ -1,3 +1,5 @@
+import { SystemMessages } from '../components/SystemMessages';
+import { useSystemMessages } from '../lib/systemMessages';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -128,6 +130,8 @@ function firstName(full: string | null | undefined): string {
 }
 
 export function DashboardPage() {
+  // Systeemberichten van de beheerder: bovenaan, tot de gebruiker ze wegklikt.
+  const systemMessages = useSystemMessages();
   const { profile, isAdmin, isDocent } = useAuth();
   const { activeCourse, activeCourseId } = useActiveCourse();
   const { t, lang } = useLanguage();
@@ -396,6 +400,7 @@ export function DashboardPage() {
       className="space-y-8"
       data-testid="page-dashboard"
     >
+      <SystemMessages messages={systemMessages} />
       {/* Welcome hero */}
       <section
         className="rounded-3xl p-8 md:p-10 bg-white/70 backdrop-blur-md border border-white/60 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(56,189,248,0.25)] ring-1 ring-sky-100/60"

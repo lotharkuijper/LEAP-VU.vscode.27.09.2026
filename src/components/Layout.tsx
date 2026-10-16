@@ -25,6 +25,7 @@ import { useLanguage } from '../i18n';
 import { LanguageSelector } from './LanguageSelector';
 import { SECTION_COLORS } from '../lib/sectionColors';
 import { useStudiecafeUnread } from '../hooks/useStudiecafeUnread';
+import { useSystemMessages } from '../lib/systemMessages';
 import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { featureForPath } from '../lib/courseFeatures';
 
@@ -41,12 +42,15 @@ interface NavItemProps {
   onClick?: () => void;
   badge?: number;
   badgeTitle?: string;
+  /** Rood uitroepteken (bv. een openstaand systeembericht) in plaats van een getal. */
+  alert?: boolean;
+  badgeTestId?: string;
   // Onderdeel staat uit voor studenten (alleen staf ziet het nog).
   offForStudents?: boolean;
   offLabel?: string;
 }
 
-function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, badgeTitle, offForStudents = false, offLabel }: NavItemProps) {
+function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, badgeTitle, alert = false, badgeTestId = 'badge-studiecafe-unread', offForStudents = false, offLabel }: NavItemProps) {
   const baseClass = "flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium";
   const activeClass = active
     ? `bg-gradient-to-r ${color} text-white shadow-md ring-1 ring-white/30`
@@ -60,13 +64,14 @@ function NavItem({ to, icon: Icon, label, active, color, onClick, badge = 0, bad
     >
       <span className="relative inline-flex">
         <Icon className="w-5 h-5" />
-        {badge > 0 && (
+        {(badge > 0 || alert) && (
           <span
             className={`absolute -top-1.5 -right-1.5 min-w-[1.05rem] h-[1.05rem] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold leading-none ring-2 ${active ? 'bg-white text-rose-600 ring-white/40' : 'bg-rose-500 text-white ring-white'}`}
             title={badgeTitle}
-            data-testid="badge-studiecafe-unread"
+            aria-label={badgeTitle}
+            data-testid={badgeTestId}
           >
-            {badge > 99 ? '99+' : badge}
+            {badge > 0 ? (badge > 99 ? '99+' : badge) : '!'}
           </span>
         )}
       </span>
@@ -99,6 +104,7 @@ export function Layout({ children }: LayoutProps) {
 
   // Ongelezen-indicator voor het Studiecafé van de actieve cursus.
   const studiecafeUnread = useStudiecafeUnread(activeCourseId);
+  const systemMessages = useSystemMessages();
 
   const navItems = useMemo(() => {
     const items = [
@@ -237,6 +243,9 @@ export function Layout({ children }: LayoutProps) {
             {navItems.map((item) => {
               const isStudiecafe = item.to === '/studiecafe';
               const badge = isStudiecafe ? studiecafeUnread.count : 0;
+              // Openstaand systeembericht: rood uitroepteken bij "Dashboard",
+              // behalve als je daar al bent (dan staat het bericht in beeld).
+              const messageAlert = item.to === '/dashboard' && systemMessages.length > 0 && location.pathname !== '/dashboard';
               return (
                 <NavItem
                   key={item.to}
@@ -247,7 +256,9 @@ export function Layout({ children }: LayoutProps) {
                   color={item.color}
                   onClick={() => setMobileMenuOpen(false)}
                   badge={badge}
-                  badgeTitle={badge > 0 ? t('studiecafe.unread.navTitle', { count: badge }) : undefined}
+                  badgeTitle={badge > 0 ? t('studiecafe.unread.navTitle', { count: String(badge) }) : messageAlert ? t('systemMessages.navTitle', { count: String(systemMessages.length) }) : undefined}
+                  alert={messageAlert}
+                  badgeTestId={messageAlert ? 'badge-dashboard-messages' : 'badge-studiecafe-unread'}
                   offForStudents={(() => { const f = featureForPath(item.to); return !!f && courseFeatures.offForStudents(f); })()}
                   offLabel={t('courseFeatures.offForStudents')}
                 />

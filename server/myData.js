@@ -15,6 +15,7 @@
 export const EXPORT_SOURCES = [
   { table: 'profiles', column: 'id', label: 'profiel' },
   { table: 'course_members', column: 'user_id', label: 'cursussen' },
+  { table: 'system_message_dismissals', column: 'user_id', label: 'weggeklikte systeemberichten' },
   { table: 'student_course_levels', column: 'user_id', label: 'leerniveaus' },
   { table: 'student_achievements', column: 'user_id', label: 'prestaties' },
   { table: 'learning_journal_entries', column: 'user_id', label: 'leerdagboek' },
@@ -49,6 +50,9 @@ export const NOT_EXPORTED = [
   'user_audit_log',
   // Schakelaar-logboek (wie zette bijlagen in de chat aan/uit): beheergegeven.
   'leap_setting_changes',
+  // Systeemberichten zijn van de beheerder (created_by), niet van de ontvanger;
+  // wat de gebruiker wegklikte, staat wel in de export.
+  'system_messages',
 ];
 
 const PAGE = 1000;

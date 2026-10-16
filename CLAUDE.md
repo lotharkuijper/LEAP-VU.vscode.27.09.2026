@@ -168,6 +168,11 @@
 - An image is sent to the model once (the tutor starts with "Dit zie ik:"); file text is sent with every turn (capped). The attachment block goes BEFORE the language/level block in the system prompt. A typed explanation is required with every attachment.
 - Default detail level is HIGH: in the 16-10 test, low detail invented content on a full page of small text. Re-check with `node --env-file=.env scripts/eval-chat-attachments.mjs <dir>`, `scripts/check-chat-attachments.mjs` (API) and `scripts/check-chat-attachments-ui.mjs` (browser). The daily limit counter is held in process memory (single replica).
 
+## System messages (2026-10-16)
+- The admin sends one-way messages (Beheer → Berichten, admin only) to all users, all students (profile role student), all teachers (profile role docent), or one course (students only, or everyone in it). Optional start and end time; kind info or warning. Code: `server/systemMessages.js` (one `registerSystemMessageRoutes` call in `server/index.js`), migration `20261016120000_system_messages` (+ rollback).
+- Messages show at the top of the Dashboard until dismissed; while one is open, "Dashboard" in the menu shows a red exclamation mark (not on the Dashboard itself). One shared store, `src/lib/systemMessages.ts`, polls every 2 minutes and on tab focus (no Realtime on Azure). Text is translated on display (`useContentTranslation`), not in the admin preview.
+- Privacy: only the fact that a user dismissed a message is stored (`system_message_dismissals`, in My data export); the admin sees totals only (recipients, dismissed), never names.
+
 ## "Ik leg uit" feedback (2026-10-15)
 - `POST /api/explain/evaluate` assesses, scores and saves in one step; the browser only sends the explanation plus the course fragments it found. There is no browser-side save of feedback or score.
 - The server always appends `explainFormatInstruction` (`server/explainFeedback.js`) to the teacher's explain prompt. The prompt sets the tone; the block fixes the structure:
