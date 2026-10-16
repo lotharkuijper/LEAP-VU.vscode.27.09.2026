@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   authorizeMemberRoleChange,
   checkLastTeacherProtection,
   parseForceFlag,
+  profileRoleForCourseTeacher,
 } from '../memberRoleAuth.js';
 
 describe('authorizeMemberRoleChange', () => {
@@ -87,5 +90,31 @@ describe('parseForceFlag', () => {
     expect(parseForceFlag('0')).toBe(false);
     expect(parseForceFlag('false')).toBe(false);
     expect(parseForceFlag('yes')).toBe(false);
+  });
+});
+
+
+// Regressie 2026-10-16: een docent in een cursus met een studentprofiel kon geen
+// project aanmaken ("new row violates row-level security policy for table projects"),
+// omdat pr_is_course_teacher profiles.role = 'docent' eist.
+describe('profielrol bij docent worden in een cursus', () => {
+  it('student wordt docent; andere rollen blijven', () => {
+    expect(profileRoleForCourseTeacher('student')).toBe('docent');
+    expect(profileRoleForCourseTeacher(null)).toBe('docent');
+    expect(profileRoleForCourseTeacher('docent')).toBe(null);
+    expect(profileRoleForCourseTeacher('admin')).toBe(null);
+  });
+  it('beide routes die iemand docent maken, zetten het profiel mee', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
+    for (const route of ["app.put('/api/admin/courses/:id/members/:userId'", "app.post('/api/admin/courses/:id/members/:userId'"]) {
+      const start = src.indexOf(route);
+      expect(start).toBeGreaterThan(0);
+      const body = src.slice(start, src.indexOf('\napp.', start + 10));
+      expect(body).toMatch(/member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);
+    }
+  });
+  it('de databaseregel voor projecten kijkt naar het docentprofiel', () => {
+    const sql = fs.readFileSync(path.resolve(__dirname, '..', '..', 'supabase/migrations/20260605120000_projects_strict_course_scope.sql'), 'utf8');
+    expect(sql).toMatch(/projects_course_teacher_manage[\s\S]*pr_is_course_teacher\(course_id\)/);
   });
 });
