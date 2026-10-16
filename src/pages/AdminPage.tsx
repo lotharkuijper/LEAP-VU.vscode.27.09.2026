@@ -1923,6 +1923,16 @@ const tabGroups = [
               refreshKey={materialRefresh}
               extractionOptions={extractionOptions}
               onExtractionOptionsChange={setExtractionOptions}
+              conceptPicker={activeCourseId && session?.access_token && courseConcepts.length > 0 ? (
+                <ConceptPicker
+                  courseId={activeCourseId}
+                  token={session.access_token}
+                  concepts={courseConcepts}
+                  moduleCounts={conceptModuleCounts}
+                  onChanged={async () => { await loadConcepts(); await loadConceptsMeta(); }}
+                  onOpenDetails={setConceptDrawerId}
+                />
+              ) : undefined}
             />
           )}
           {conceptDrawerId && activeCourseId && (
@@ -1937,17 +1947,6 @@ const tabGroups = [
 
           {activeTab === 'material' && materialStep === 'concepts' && (
             <div className="space-y-4 mt-4">
-              {/* Begrippen kiezen: bovenaan, want dit is de hoofdtaak van deze stap. */}
-              {activeCourseId && session?.access_token && courseConcepts.length > 0 && (
-                <ConceptPicker
-                  courseId={activeCourseId}
-                  token={session.access_token}
-                  concepts={courseConcepts}
-                  moduleCounts={conceptModuleCounts}
-                  onChanged={async () => { await loadConcepts(); await loadConceptsMeta(); }}
-                  onOpenDetails={setConceptDrawerId}
-                />
-              )}
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-[min(100%,16rem)] flex-1">
                   <AdminHint variant="intro">{t('admin.concepts.subtitle')}</AdminHint>

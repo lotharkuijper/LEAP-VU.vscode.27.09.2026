@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Loader2, RefreshCw, CheckCircle2, ChevronRight, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useLanguage } from '../../i18n';
@@ -40,6 +40,7 @@ export function CourseMaterialWorkspace({
   refreshKey = 0,
   extractionOptions = DEFAULT_EXTRACTION_OPTIONS,
   onExtractionOptionsChange,
+  conceptPicker,
 }: {
   step: MaterialStep;
   onStepChange: (s: MaterialStep) => void;
@@ -50,6 +51,8 @@ export function CourseMaterialWorkspace({
   /** Taal en documentkeuze voor de extractie (gedeeld met "Hergenereer" in AdminPage). */
   extractionOptions?: ExtractionOptions;
   onExtractionOptionsChange?: (next: ExtractionOptions) => void;
+  /** "Begrippen kiezen" (ConceptPicker): direct onder de uitleg van stap 3, vóór de waarschuwingen. */
+  conceptPicker?: ReactNode;
 }) {
   const { t } = useLanguage();
   const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
@@ -219,6 +222,7 @@ export function CourseMaterialWorkspace({
       {step === 'concepts' && (
         <div className="space-y-3">
           <AdminHint variant="intro">{t('material.concepts.intro')}</AdminHint>
+          {conceptPicker}
           <WarningList warnings={warningsFor('concepts')} onGoTo={onStepChange} />
           <div className="flex flex-wrap items-center gap-3">
             <button
