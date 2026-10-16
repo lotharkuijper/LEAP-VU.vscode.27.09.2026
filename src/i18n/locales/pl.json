@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubryka: {files}",
   "room.submission.preassessmentNotice": "Twój prowadzący najpierw zleca AI wstępną ocenę oddanych produktów na podstawie rubryki. Tę wstępną ocenę widzi tylko twój prowadzący; to on dokonuje oceny.",
   "help.projects.preassessment.title": "Wstępna ocena produktu końcowego",
-  "help.projects.preassessment.body": "Wybierz Oceniającego z rubryką produktu końcowego. Po każdym oddaniu LEAP przygotowuje dla każdego kryterium materiał z cytatami, bez oceny liczbowej. Widzą go tylko prowadzący; studenci wiedzą, że to się dzieje. Pobierz wszystko w jednym pliku zip."
+  "help.projects.preassessment.body": "Wybierz Oceniającego z rubryką produktu końcowego. Po każdym oddaniu LEAP przygotowuje dla każdego kryterium materiał z cytatami, bez oceny liczbowej. Widzą go tylko prowadzący; studenci wiedzą, że to się dzieje. Pobierz wszystko w jednym pliku zip.",
+  "material.files.retry": "Wczytaj ponownie",
+  "material.files.retryAll": "Wczytaj ponownie wszystkie {n}",
+  "material.files.failedBanner": "Nie wczytano {n} plików. Często dzieje się tak, gdy przetwarzano zbyt wiele naraz; same pliki nadal są w LEAP. Wczytaj je ponownie: LEAP zrobi to teraz po kolei.",
+  "material.files.retryQueued": "{n} plików zostanie wczytanych ponownie. To może chwilę potrwać; w tym czasie możesz pracować dalej."
 }

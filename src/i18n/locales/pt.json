@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrica: {files}",
   "room.submission.preassessmentNotice": "O teu docente manda primeiro a IA avaliar preliminarmente os produtos entregues com base na rubrica. Só o teu docente vê essa avaliação preliminar; é o teu docente que avalia.",
   "help.projects.preassessment.title": "Avaliação preliminar do produto final",
-  "help.projects.preassessment.body": "Escolhe um Avaliador com a rubrica do produto final. Após cada entrega, o LEAP prepara, por critério, uma análise com citações, sem nota. Só os docentes a veem; os estudantes sabem que isso acontece. Transfere tudo num único zip."
+  "help.projects.preassessment.body": "Escolhe um Avaliador com a rubrica do produto final. Após cada entrega, o LEAP prepara, por critério, uma análise com citações, sem nota. Só os docentes a veem; os estudantes sabem que isso acontece. Transfere tudo num único zip.",
+  "material.files.retry": "Reler",
+  "material.files.retryAll": "Reler todos os {n}",
+  "material.files.failedBanner": "{n} ficheiros não foram relidos. Muitas vezes, isto acontece porque foram processados demasiados ao mesmo tempo; os próprios ficheiros continuam no LEAP. Manda relê-los: o LEAP vai agora processá-los um a um.",
+  "material.files.retryQueued": "{n} ficheiros estão a ser relidos. Isto pode demorar um pouco; podes continuar a trabalhar entretanto."
 }

@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
-import { Upload, Loader2, Download, Trash2, ArrowRightLeft, X, Globe, AlertTriangle, EyeOff } from 'lucide-react';
+import { Upload, Loader2, Download, Trash2, ArrowRightLeft, X, Globe, AlertTriangle, EyeOff, RotateCcw } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import {
   uploadCourseFile,
   changePurpose,
+  reprocessFailedFiles,
   downloadCourseFile,
   deleteCourseFile,
   CourseFilesError,
@@ -184,12 +185,39 @@ export function FilesStep({
     }
   };
 
+  // Mislukt inlezen (bv. door de snelheidslimiet bij een grote upload): opnieuw
+  // in de wachtrij zetten. Het bestand zelf staat nog in LEAP.
+  const failedRag = files.filter(f => f.processing_status === 'failed' && !f.isWeb && (f.purpose === 'course_material' || f.purpose === 'course_info'));
+  const [retrying, setRetrying] = useState(false);
+  const retry = async (docIds?: string[]) => {
+    setRetrying(true);
+    try {
+      const r = await reprocessFailedFiles(courseId, docIds);
+      setNotice({ kind: 'ok', text: t('material.files.retryQueued', { n: String(r.queued) }) });
+      onChanged();
+    } catch (err) {
+      setNotice({ kind: 'error', text: errorText(err) });
+    } finally {
+      setRetrying(false);
+    }
+  };
+
   const statusBadge = (f: CourseFile) => {
     if (f.processing_status === 'processing' || f.processing_status === 'pending') {
       return <span className="inline-flex items-center gap-1 text-xs text-sky-700"><Loader2 className="w-3 h-3 animate-spin" />{t('material.files.status.processing')}</span>;
     }
     if (f.processing_status === 'failed') {
-      return <span className="inline-flex items-center gap-1 text-xs text-red-700"><AlertTriangle className="w-3 h-3" />{t('material.files.status.failed')}</span>;
+      const canRetry = failedRag.some(x => x.id === f.id);
+      return (
+        <span className="inline-flex flex-wrap items-center gap-2 text-xs text-red-700">
+          <span className="inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" />{t('material.files.status.failed')}</span>
+          {canRetry && (
+            <button type="button" onClick={() => retry([f.id])} disabled={retrying} className="inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-sky-700 hover:bg-sky-50 disabled:opacity-50" data-testid={`button-retry-file-${f.id}`}>
+              <RotateCcw className="w-3 h-3" />{t('material.files.retry')}
+            </button>
+          )}
+        </span>
+      );
     }
     if ((f.purpose === 'course_material' || f.purpose === 'course_info') && f.total_chunks) {
       return <span className="text-xs text-gray-500">{t('material.files.chunks', { n: String(f.total_chunks) })}</span>;
@@ -282,6 +310,18 @@ export function FilesStep({
           </p>
         )}
       </section>
+
+      {failedRag.length > 0 && (
+        <AdminHint variant="warning" testId="hint-files-failed">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="min-w-0">{t('material.files.failedBanner', { n: String(failedRag.length) })}</span>
+            <button type="button" onClick={() => retry()} disabled={retrying} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-amber-300 bg-white px-2.5 py-1 text-sm font-medium text-amber-900 hover:bg-amber-50 disabled:opacity-50" data-testid="button-retry-all-files">
+              {retrying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCcw className="w-3.5 h-3.5" />}
+              {t('material.files.retryAll', { n: String(failedRag.length) })}
+            </button>
+          </span>
+        </AdminHint>
+      )}
 
       {/* Bestanden per doel */}
       {PURPOSE_ORDER.map(p => {

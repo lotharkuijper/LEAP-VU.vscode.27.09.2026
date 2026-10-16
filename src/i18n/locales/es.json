@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rúbrica: {files}",
   "room.submission.preassessmentNotice": "Tu docente deja que la IA preevalúe primero los productos entregados según la rúbrica. Solo tu docente ve esa preevaluación; tu docente evalúa.",
   "help.projects.preassessment.title": "Preevaluación del producto final",
-  "help.projects.preassessment.body": "Elige un Evaluador con la rúbrica del producto final. Después de cada entrega, LEAP prepara por criterio una preparación con citas, sin nota. Solo los docentes la ven; los estudiantes saben que ocurre. Descarga todo en un único zip."
+  "help.projects.preassessment.body": "Elige un Evaluador con la rúbrica del producto final. Después de cada entrega, LEAP prepara por criterio una preparación con citas, sin nota. Solo los docentes la ven; los estudiantes saben que ocurre. Descarga todo en un único zip.",
+  "material.files.retry": "Volver a cargar",
+  "material.files.retryAll": "Volver a cargar los {n}",
+  "material.files.failedBanner": "No se han cargado {n} archivos. A menudo esto ocurre porque se procesaron demasiados a la vez; los archivos siguen estando en LEAP. Vuelve a cargarlos: LEAP los procesará ahora uno por uno.",
+  "material.files.retryQueued": "Se están volviendo a cargar {n} archivos. Esto puede tardar un poco; mientras tanto, puedes seguir trabajando."
 }

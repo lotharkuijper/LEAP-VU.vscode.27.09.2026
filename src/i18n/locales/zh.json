@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "评分量规：{files}",
   "room.submission.preassessmentNotice": "你的教师会先让 AI 根据评分量规对提交的成果进行预评估。只有你的教师能看到该预评估；由你的教师进行评分。",
   "help.projects.preassessment.title": "最终成果的预评估",
-  "help.projects.preassessment.body": "选择一位带有最终成果评分量规的评估者。每次提交后，LEAP 会按每项标准生成一份带引用的准备材料，不含分数。只有教师能看到；学生知道这会发生。将全部内容下载为一个 zip 文件。"
+  "help.projects.preassessment.body": "选择一位带有最终成果评分量规的评估者。每次提交后，LEAP 会按每项标准生成一份带引用的准备材料，不含分数。只有教师能看到；学生知道这会发生。将全部内容下载为一个 zip 文件。",
+  "material.files.retry": "重新读取",
+  "material.files.retryAll": "重新读取全部 {n} 个",
+  "material.files.failedBanner": "{n} 个文件未能读取。这通常是因为同时处理的文件太多；文件本身仍在 LEAP 中。请让它们重新读取：LEAP 现在会逐个处理。",
+  "material.files.retryQueued": "{n} 个文件正在重新读取。这可能需要一点时间；你可以先继续工作。"
 }

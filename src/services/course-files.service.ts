@@ -137,6 +137,13 @@ export const changePurpose = (courseId: string, docId: string, d: Omit<PurposeDe
     body: JSON.stringify(d),
   });
 
+/** Mislukt ingelezen leerstof opnieuw in de wachtrij; zonder docIds alle mislukte van de cursus. */
+export const reprocessFailedFiles = (courseId: string, docIds?: string[]) =>
+  request<{ queued: number }>(`/api/admin/course-files/${courseId}/reprocess`, {
+    method: 'POST',
+    body: JSON.stringify(docIds ? { docIds } : {}),
+  });
+
 export const changeWebSourcePurpose = (courseId: string, sourceId: string, purpose: WebSource['purpose']) =>
   request<{ purpose: WebSource['purpose']; pages: number; failed: number }>(`/api/admin/course-files/${courseId}/web-sources/${sourceId}`, {
     method: 'PATCH',

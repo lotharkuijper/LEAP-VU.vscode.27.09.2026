@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "ルーブリック: {files}",
   "room.submission.preassessmentNotice": "あなたの教員は、提出された成果物をまずAIにルーブリックに基づいて事前評価させます。その事前評価を見るのは教員だけです。評価を行うのは教員です。",
   "help.projects.preassessment.title": "最終成果物の事前評価",
-  "help.projects.preassessment.body": "最終成果物のルーブリックを持つ評価者を選択して。各提出後、LEAPは基準ごとに引用付きの準備資料を作成します（点数なし）。それを見るのは教員だけで、学生には実施されることが知らされます。すべてを1つのzipでダウンロードできます。"
+  "help.projects.preassessment.body": "最終成果物のルーブリックを持つ評価者を選択して。各提出後、LEAPは基準ごとに引用付きの準備資料を作成します（点数なし）。それを見るのは教員だけで、学生には実施されることが知らされます。すべてを1つのzipでダウンロードできます。",
+  "material.files.retry": "再読み込み",
+  "material.files.retryAll": "{n}件すべてを再読み込み",
+  "material.files.failedBanner": "{n}件のファイルが読み込まれませんでした。多くの場合、一度に処理された数が多すぎたことが原因です。ファイル自体はまだLEAPにあります。再読み込みしてください。LEAPが今度は1件ずつ処理します。",
+  "material.files.retryQueued": "{n}件のファイルを再読み込みしています。少し時間がかかる場合があります。その間も作業を続けられます。"
 }

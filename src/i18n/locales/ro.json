@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrică: {files}",
   "room.submission.preassessmentNotice": "Profesorul tău lasă produsele predate să fie preevaluate mai întâi de AI pe baza rubricii. Doar profesorul tău vede această preevaluare; profesorul tău evaluează.",
   "help.projects.preassessment.title": "Preevaluarea produsului final",
-  "help.projects.preassessment.body": "Alege un Evaluator cu rubrica produsului final. După fiecare predare, LEAP creează pentru fiecare criteriu o pregătire cu citate, fără notă. Doar profesorii o văd; studenții știu că se întâmplă. Descarcă totul într-un singur fișier zip."
+  "help.projects.preassessment.body": "Alege un Evaluator cu rubrica produsului final. După fiecare predare, LEAP creează pentru fiecare criteriu o pregătire cu citate, fără notă. Doar profesorii o văd; studenții știu că se întâmplă. Descarcă totul într-un singur fișier zip.",
+  "material.files.retry": "Reîncarcă",
+  "material.files.retryAll": "Reîncarcă toate cele {n}",
+  "material.files.failedBanner": "{n} fișiere nu au fost încărcate. De obicei, acest lucru se întâmplă deoarece au fost procesate prea multe simultan; fișierele propriu-zise sunt încă în LEAP. Cere reîncărcarea lor: LEAP le procesează acum pe rând.",
+  "material.files.retryQueued": "{n} fișiere sunt reîncărcate. Poate dura puțin; între timp poți continua să lucrezi."
 }

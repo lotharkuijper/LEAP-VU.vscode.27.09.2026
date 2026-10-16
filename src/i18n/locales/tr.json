@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrik: {files}",
   "room.submission.preassessmentNotice": "Öğretmenin, teslim edilen ürünleri önce rubriğe göre AI ile ön değerlendirmeden geçirir. Bu ön değerlendirmeyi yalnızca öğretmenin görür; değerlendirmeyi öğretmenin yapar.",
   "help.projects.preassessment.title": "Nihai ürünün ön değerlendirmesi",
-  "help.projects.preassessment.body": "Nihai ürünün rubriğiyle bir Değerlendirici seç. Her teslimden sonra LEAP, her ölçüt için alıntılarla birlikte puansız bir hazırlık oluşturur. Bunu yalnızca öğretmenler görür; öğrenciler bunun yapıldığını bilir. Her şeyi tek bir zip dosyasında indir."
+  "help.projects.preassessment.body": "Nihai ürünün rubriğiyle bir Değerlendirici seç. Her teslimden sonra LEAP, her ölçüt için alıntılarla birlikte puansız bir hazırlık oluşturur. Bunu yalnızca öğretmenler görür; öğrenciler bunun yapıldığını bilir. Her şeyi tek bir zip dosyasında indir.",
+  "material.files.retry": "Yeniden içe aktar",
+  "material.files.retryAll": "Tüm {n} öğeyi yeniden içe aktar",
+  "material.files.failedBanner": "{n} dosya içe aktarılamadı. Bu genellikle aynı anda çok fazla dosya işlendiğinde olur; dosyaların kendisi hâlâ LEAP’te duruyor. Yeniden içe aktarılmalarını başlat: LEAP şimdi bunları tek tek işleyecek.",
+  "material.files.retryQueued": "{n} dosya yeniden içe aktarılıyor. Bu biraz sürebilir; bu arada çalışmaya devam edebilirsin."
 }

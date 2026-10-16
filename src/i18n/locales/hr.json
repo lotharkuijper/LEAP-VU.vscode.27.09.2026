@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrika: {files}",
   "room.submission.preassessmentNotice": "Tvoj nastavnik najprije daje AI-ju da predocijeni predane proizvode prema rubrici. Tu predocjenu vidi samo tvoj nastavnik; tvoj nastavnik ocjenjuje.",
   "help.projects.preassessment.title": "Predocjena završnog proizvoda",
-  "help.projects.preassessment.body": "Odaberi ocjenjivača s rubrikom završnog proizvoda. Nakon svake predaje LEAP za svaki kriterij izrađuje pripremu s citatima, bez ocjene. Vide je samo nastavnici; studenti znaju da se to događa. Preuzmi sve u jednom zipu."
+  "help.projects.preassessment.body": "Odaberi ocjenjivača s rubrikom završnog proizvoda. Nakon svake predaje LEAP za svaki kriterij izrađuje pripremu s citatima, bez ocjene. Vide je samo nastavnici; studenti znaju da se to događa. Preuzmi sve u jednom zipu.",
+  "material.files.retry": "Ponovno učitaj",
+  "material.files.retryAll": "Ponovno učitaj svih {n}",
+  "material.files.failedBanner": "{n} datoteka nije učitano. To se često događa jer se previše njih obrađivalo odjednom; same datoteke i dalje su u LEAP-u. Pusti ih da se ponovno učitaju: LEAP će ih sada obraditi jednu po jednu.",
+  "material.files.retryQueued": "{n} datoteka ponovno se učitava. To može potrajati; u međuvremenu možeš nastaviti raditi."
 }

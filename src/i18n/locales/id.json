@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrik: {files}",
   "room.submission.preassessmentNotice": "Dosenmu membiarkan produk yang dikumpulkan dinilai awal terlebih dahulu oleh AI berdasarkan rubrik. Penilaian awal itu hanya dilihat dosenmu; dosenmulah yang menilai.",
   "help.projects.preassessment.title": "Penilaian awal produk akhir",
-  "help.projects.preassessment.body": "Pilih Penilai dengan rubrik produk akhir. Setelah setiap pengumpulan, LEAP membuat persiapan per kriteria dengan kutipan, tanpa nilai. Hanya dosen yang melihatnya; mahasiswa tahu bahwa itu dilakukan. Unduh semuanya dalam satu zip."
+  "help.projects.preassessment.body": "Pilih Penilai dengan rubrik produk akhir. Setelah setiap pengumpulan, LEAP membuat persiapan per kriteria dengan kutipan, tanpa nilai. Hanya dosen yang melihatnya; mahasiswa tahu bahwa itu dilakukan. Unduh semuanya dalam satu zip.",
+  "material.files.retry": "Muat ulang",
+  "material.files.retryAll": "Muat ulang semua {n}",
+  "material.files.failedBanner": "{n} file tidak berhasil dimuat. Sering kali ini terjadi karena terlalu banyak file diproses sekaligus; file itu sendiri masih ada di LEAP. Minta untuk dimuat ulang: LEAP kini memprosesnya satu per satu.",
+  "material.files.retryQueued": "{n} file sedang dimuat ulang. Ini bisa memakan waktu; sementara itu kamu bisa lanjut bekerja."
 }

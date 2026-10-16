@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "評分準則：{files}",
   "room.submission.preassessmentNotice": "你嘅老師會先用 AI 按評分準則對已提交嘅作品做預先評估。呢份預先評估只有你嘅老師睇到；由你嘅老師評分。",
   "help.projects.preassessment.title": "最終作品嘅預先評估",
-  "help.projects.preassessment.body": "揀一位評審者，並使用最終作品嘅評分準則。每次提交後，LEAP 會按每項準則製作一份附有引用句嘅準備資料，唔會有分數。只有老師睇到；學生會知道呢個程序。可以一次過下載做一個 zip。"
+  "help.projects.preassessment.body": "揀一位評審者，並使用最終作品嘅評分準則。每次提交後，LEAP 會按每項準則製作一份附有引用句嘅準備資料，唔會有分數。只有老師睇到；學生會知道呢個程序。可以一次過下載做一個 zip。",
+  "material.files.retry": "重新讀取",
+  "material.files.retryAll": "重新讀取全部 {n} 個",
+  "material.files.failedBanner": "{n} 個檔案未能讀取。通常係因為同時處理太多；檔案本身仍然喺 LEAP 入面。請重新讀取：LEAP 而家會逐個處理。",
+  "material.files.retryQueued": "{n} 個檔案正重新讀取。可能需要少少時間；你可以同時繼續工作。"
 }

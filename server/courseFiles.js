@@ -27,6 +27,13 @@ import {
   MATERIAL_KINDS,
 } from './filePurpose.js';
 import { computeTeacherFolderScope } from './documentScope.js';
+import { createProcessingQueue } from './processingQueue.js';
+import { EMBEDDINGS_RATE_LIMIT_MSG } from './embeddingsRetry.js';
+
+/** Tijdelijke fout van de embeddings-dienst (snelheidslimiet): later opnieuw proberen. */
+export function isRateLimitError(err) {
+  return !!(err && (err.isRateLimit || err.status === 429 || err.message === EMBEDDINGS_RATE_LIMIT_MSG));
+}
 
 export const PURPOSE_FOLDERS = {
   shared: { name: 'Gedeeld met studenten', marker: 'purpose:shared', studentView: true },
@@ -261,11 +268,26 @@ export function registerCourseFilesRoutes(app, deps) {
     await supabaseAdmin.from('document_chunks').delete().eq('document_id', docId);
   }
 
-  function startProcessing(docId) {
-    processRagDocumentById(docId, 'nl').catch(async (err) => {
+  // Eén wachtrij voor alle uploads: hoogstens een paar documenten tegelijk,
+  // zodat een grote upload de snelheidslimiet van Azure niet overschrijdt
+  // (server/processingQueue.js).
+  const processingQueue = createProcessingQueue({
+    run: (docId) => processRagDocumentById(docId, 'nl'),
+    concurrency: 2,
+    isRetryable: isRateLimitError,
+    onRetry: async (docId, _err, attempt) => {
+      console.warn(`[course-files] snelheidslimiet bij doc=${docId}; later opnieuw (poging ${attempt})`);
+      // De verwerking zet bij een fout zelf 'failed'; het document wacht nog.
+      await supabaseAdmin.from('documents').update({ processing_status: 'processing' }).eq('id', docId);
+    },
+    onGiveUp: async (docId, err) => {
       console.error(`[course-files] verwerking mislukt voor doc=${docId}:`, err?.message || err);
-      try { await supabaseAdmin.from('documents').update({ processing_status: 'failed' }).eq('id', docId); } catch { /* best effort */ }
-    });
+      await supabaseAdmin.from('documents').update({ processing_status: 'failed' }).eq('id', docId);
+    },
+  });
+
+  function startProcessing(docId) {
+    processingQueue.enqueue(docId);
   }
 
   async function loadDoc(docId) {
@@ -520,6 +542,36 @@ export function registerCourseFilesRoutes(app, deps) {
     if (!doc || !scope.ids.has(doc.folder_id)) return null;
     return { doc, folder: scope.byId.get(doc.folder_id) };
   }
+
+  // ── POST: mislukte bestanden opnieuw inlezen ───────────────────────────────
+  // Body { docIds?: string[] }: zonder lijst alle mislukte leerstof van deze
+  // cursus. Alleen leerstof/cursusinformatie; het bestand zelf staat nog in LEAP.
+  app.post('/api/admin/course-files/:courseId/reprocess', async (req, res) => {
+    const auth = await requireStaff(req, res);
+    if (!auth) return;
+    const { courseId } = req.params;
+    try {
+      const scope = await courseScope(courseId);
+      const wanted = Array.isArray(req.body?.docIds) ? new Set(req.body.docIds.map(String)) : null;
+      const { data: docs, error } = await supabaseAdmin.from('documents')
+        .select('id, folder_id, purpose, processing_status, file_type')
+        .in('folder_id', [...scope.ids])
+        .eq('processing_status', 'failed');
+      if (error) throw new Error(error.message);
+      const ids = (docs || [])
+        .filter((d) => d.file_type !== 'web' && isRagPurpose(effectivePurpose(d, scope.byId.get(d.folder_id))))
+        .filter((d) => !wanted || wanted.has(d.id))
+        .map((d) => d.id);
+      if (ids.length) {
+        const { error: uErr } = await supabaseAdmin.from('documents').update({ processing_status: 'processing' }).in('id', ids);
+        if (uErr) throw new Error(uErr.message);
+      }
+      for (const id of ids) processingQueue.enqueue(id);
+      return res.json({ queued: ids.length });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
 
   // ── PATCH: doel van één bestand wijzigen ────────────────────────────────────
   app.patch('/api/admin/course-files/:courseId/documents/:docId', async (req, res) => {

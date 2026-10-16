@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubric: {files}",
   "room.submission.preassessmentNotice": "Je docent laat ingeleverde producten eerst door AI voorbeoordelen aan de hand van de rubric. Die voorbeoordeling ziet alleen je docent; je docent beoordeelt.",
   "help.projects.preassessment.title": "Voorbeoordeling van het eindproduct",
-  "help.projects.preassessment.body": "Kies een Beoordelaar met de rubric van het eindproduct. Na elke inlevering maakt LEAP per criterium een voorbereiding met citaten, zonder cijfer. Alleen docenten zien die; studenten weten dat het gebeurt. Download alles in één zip."
+  "help.projects.preassessment.body": "Kies een Beoordelaar met de rubric van het eindproduct. Na elke inlevering maakt LEAP per criterium een voorbereiding met citaten, zonder cijfer. Alleen docenten zien die; studenten weten dat het gebeurt. Download alles in één zip.",
+  "material.files.retry": "Opnieuw inlezen",
+  "material.files.retryAll": "Alle {n} opnieuw inlezen",
+  "material.files.failedBanner": "{n} bestanden zijn niet ingelezen. Vaak komt dat doordat er te veel tegelijk werd verwerkt; de bestanden zelf staan nog in LEAP. Laat ze opnieuw inlezen: LEAP doet ze nu een voor een.",
+  "material.files.retryQueued": "{n} bestanden worden opnieuw ingelezen. Dat kan even duren; je kunt intussen verder werken."
 }

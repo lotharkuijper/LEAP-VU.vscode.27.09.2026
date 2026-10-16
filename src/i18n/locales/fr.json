@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrique : {files}",
   "room.submission.preassessmentNotice": "Ton enseignant fait d’abord préévaluer les produits remis par l’IA à l’aide de la rubrique. Seul ton enseignant voit cette préévaluation ; c’est ton enseignant qui évalue.",
   "help.projects.preassessment.title": "Préévaluation du produit final",
-  "help.projects.preassessment.body": "Choisis un évaluateur avec la rubrique du produit final. Après chaque remise, LEAP prépare, pour chaque critère, une base avec des citations, sans note. Seuls les enseignants la voient ; les étudiants savent que cela a lieu. Télécharge tout dans un seul zip."
+  "help.projects.preassessment.body": "Choisis un évaluateur avec la rubrique du produit final. Après chaque remise, LEAP prépare, pour chaque critère, une base avec des citations, sans note. Seuls les enseignants la voient ; les étudiants savent que cela a lieu. Télécharge tout dans un seul zip.",
+  "material.files.retry": "Relire",
+  "material.files.retryAll": "Relire les {n}",
+  "material.files.failedBanner": "{n} fichiers n’ont pas été lus. Cela arrive souvent parce qu’un trop grand nombre a été traité en même temps ; les fichiers eux-mêmes sont toujours dans LEAP. Fais-les relire : LEAP les traite maintenant un par un.",
+  "material.files.retryQueued": "{n} fichiers sont en cours de relecture. Cela peut prendre un moment ; tu peux continuer à travailler entre-temps."
 }

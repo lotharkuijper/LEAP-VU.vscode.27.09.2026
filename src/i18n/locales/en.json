@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubric: {files}",
   "room.submission.preassessmentNotice": "Your teacher has submitted products pre-assessed by AI using the rubric first. Only your teacher sees that pre-assessment; your teacher does the assessing.",
   "help.projects.preassessment.title": "Pre-assessment of the final product",
-  "help.projects.preassessment.body": "Choose an Evaluator with the rubric of the final product. After each submission LEAP prepares notes per criterion with quotes, without a grade. Only teachers see them; students know it happens. Download everything in one zip."
+  "help.projects.preassessment.body": "Choose an Evaluator with the rubric of the final product. After each submission LEAP prepares notes per criterion with quotes, without a grade. Only teachers see them; students know it happens. Download everything in one zip.",
+  "material.files.retry": "Read in again",
+  "material.files.retryAll": "Read in all {n} again",
+  "material.files.failedBanner": "{n} files were not read in. This usually happens when too many were processed at once; the files themselves are still in LEAP. Have them read in again: LEAP now does them one by one.",
+  "material.files.retryQueued": "{n} files are being read in again. This can take a while; you can keep working in the meantime."
 }

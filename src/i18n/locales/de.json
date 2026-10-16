@@ -2993,5 +2993,9 @@
   "admin.projects.pre.rubricFiles": "Rubrik: {files}",
   "room.submission.preassessmentNotice": "Dein Dozent lässt eingereichte Produkte zuerst von KI anhand der Rubrik vorbewerten. Diese Vorbewertung sieht nur dein Dozent; dein Dozent bewertet.",
   "help.projects.preassessment.title": "Vorbewertung des Endprodukts",
-  "help.projects.preassessment.body": "Wähle einen Bewerter mit der Rubrik des Endprodukts. Nach jeder Einreichung erstellt LEAP pro Kriterium eine Vorbereitung mit Zitaten, ohne Note. Nur Dozenten sehen sie; Studierende wissen, dass es passiert. Lade alles in einer ZIP-Datei herunter."
+  "help.projects.preassessment.body": "Wähle einen Bewerter mit der Rubrik des Endprodukts. Nach jeder Einreichung erstellt LEAP pro Kriterium eine Vorbereitung mit Zitaten, ohne Note. Nur Dozenten sehen sie; Studierende wissen, dass es passiert. Lade alles in einer ZIP-Datei herunter.",
+  "material.files.retry": "Erneut einlesen",
+  "material.files.retryAll": "Alle {n} erneut einlesen",
+  "material.files.failedBanner": "{n} Dateien wurden nicht eingelesen. Das liegt oft daran, dass zu viele gleichzeitig verarbeitet wurden; die Dateien selbst sind noch in LEAP. Lass sie erneut einlesen: LEAP verarbeitet sie jetzt nacheinander.",
+  "material.files.retryQueued": "{n} Dateien werden erneut eingelesen. Das kann eine Weile dauern; du kannst inzwischen weiterarbeiten."
 }
