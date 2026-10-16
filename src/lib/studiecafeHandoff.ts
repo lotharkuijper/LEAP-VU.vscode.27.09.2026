@@ -1,4 +1,5 @@
 import { type ChatExcerptAttachment } from '../components/ChatExcerptCard';
+import { hasInlineFile } from './chatAttachments';
 
 // Overdracht chat → Studiecafé (Task #351). De chat stalt een momentopname van
 // het AI-antwoord in sessionStorage; StudiecafePage leest die bij binnenkomst
@@ -31,6 +32,9 @@ export interface StudiecafeHandoff {
 }
 
 export function stashStudiecafeHandoff(h: StudiecafeHandoff, opts: { crossTab?: boolean } = {}): void {
+  // Bijlagen uit de chat (afbeeldingen, bestanden) gaan nooit naar het
+  // Studiecafé; alleen de tekst van het tutorantwoord mag mee.
+  if (hasInlineFile(h)) return;
   try {
     if (opts.crossTab) {
       localStorage.setItem(CROSS_TAB_KEY, JSON.stringify({ at: Date.now(), handoff: h }));

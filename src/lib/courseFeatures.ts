@@ -5,12 +5,17 @@
 
 export const COURSE_FEATURES = ['chat', 'explain', 'quiz', 'projects', 'journal', 'studiecafe'] as const;
 export type CourseFeature = (typeof COURSE_FEATURES)[number];
-export type CourseFeatures = Record<CourseFeature, boolean>;
+// Opt-in: alleen aan als de docent het bewust aanzette ({ attachments: true }).
+// 'attachments' = bijlagen in de chat (server/chatAttachments.js).
+export const OPT_IN_FEATURES = ['attachments'] as const;
+export type OptInFeature = (typeof OPT_IN_FEATURES)[number];
+export type CourseFeatures = Record<CourseFeature | OptInFeature, boolean>;
 
 export function normalizeCourseFeatures(raw: unknown): CourseFeatures {
   const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const out = {} as CourseFeatures;
   for (const key of COURSE_FEATURES) out[key] = src[key] !== false;
+  for (const key of OPT_IN_FEATURES) out[key] = src[key] === true;
   return out;
 }
 

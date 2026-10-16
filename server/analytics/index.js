@@ -106,11 +106,14 @@ export function installAnalytics(app, deps) {
           .eq('course_id', courseId).gte('created_at', since).order('created_at')),
         counterRows(() => db().from('analytics_counters')
           .select('kind, key, n, week').eq('course_id', courseId).gte('week', since)
-          .in('kind', ['chat_evidence', 'chat_concept_hit', 'chat_concept_miss'])),
+          .in('kind', ['chat_evidence', 'chat_concept_hit', 'chat_concept_miss', 'chat_attachment'])),
       ]);
       const result = buildConceptThermometer({ attempts, concepts, chatRows: counters.rows, k: K_MIN });
       const measuredSince = counters.rows.map(r => r.week).sort()[0] || null;
-      return res.json({ since, measuredSince, countersAvailable: counters.available, ...result, weekly: weeklyQuizSeries(attempts, K_MIN) });
+      // Bijlagen in de chat: alleen aantallen per soort (geen namen, geen inhoud).
+      const attachments = { image: 0, file: 0 };
+      for (const r of counters.rows) if (r.kind === 'chat_attachment' && r.key in attachments) attachments[r.key] += Number(r.n || 0);
+      return res.json({ since, measuredSince, countersAvailable: counters.available, ...result, attachments, weekly: weeklyQuizSeries(attempts, K_MIN) });
     } catch (err) {
       return res.status(500).json({ error: err?.message || String(err) });
     }

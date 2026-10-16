@@ -1,4 +1,5 @@
 import type { ReadinessResult } from '../lib/readiness';
+import type { AttachmentPayload } from '../lib/chatAttachments';
 import { getLanguageMeta, type Lang } from '../i18n/languages';
 import { getActiveLang } from '../i18n/activeLang';
 import { tStatic } from '../i18n/translations';
@@ -138,7 +139,8 @@ export async function callChatAPI(body: object): Promise<any> {
     const errorData = await response.json().catch(() => ({}));
     const errObj = errorData?.error;
     const rawMsg = (errObj && (errObj.message || errObj)) || errorData?.message || `API Error: ${response.status}`;
-    const code = errObj && typeof errObj === 'object' ? errObj.code : undefined;
+    // Code staat bij Azure-fouten in error.code, bij eigen servermeldingen naast error.
+    const code = errObj && typeof errObj === 'object' ? errObj.code : (typeof errorData?.code === 'string' ? errorData.code : undefined);
     throw new LLMError(typeof rawMsg === 'string' ? rawMsg : JSON.stringify(rawMsg), response.status, code, typeof rawMsg === 'string' ? rawMsg : JSON.stringify(rawMsg));
   }
 
@@ -152,7 +154,7 @@ export async function sendChatMessage(
   sources?: Array<{ title: string; similarity: number }>,
   learningLevel?: number,
   courseId?: string,
-  options?: { readinessCheck?: boolean }
+  options?: { readinessCheck?: boolean; attachments?: AttachmentPayload[] }
 ): Promise<LLMResponse> {
   try {
     const userMessages = messages.filter(m => m.role !== 'system');
@@ -171,6 +173,8 @@ export async function sendChatMessage(
       // Alleen voor de (losse) analytics-module: telt of de tutorchat bewijs vond.
       purpose: 'tutor_chat',
       ...(options?.readinessCheck ? { readinessCheck: true } : {}),
+      // Bijlagen (alleen in het geheugen; de server bewaart ze niet).
+      ...(options?.attachments?.length ? { attachments: options.attachments } : {}),
     });
 
     const content = data.choices[0]?.message?.content;

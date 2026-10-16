@@ -158,6 +158,15 @@
   - server: `rejectIfFeatureOff` / `courseFeatureOnFor`. `/api/chat` serves chat, explain and quiz, so only the part named by `featureForChatRequest` is blocked;
   - database: `leap_course_feature_on` in the insert policies of conversations, quiz_attempts and learning_journal_entries (migration `20261015100000_course_features`, rollback next to it).
 - Every server write to `learning_journal_entries` must first check the journal switch; `server/__tests__/courseFeatures.test.js` fails otherwise. Evaluator reports ("Beoordeling opvragen") are always stored in `project_group_assessments` and shown in the project room, and in the journal only when it is on.
+## Attachments in the chat (2026-10-16)
+- Students can paste an image (Windows+Shift+S), pick one via the paperclip, drag one in, or add a file (PDF, DOCX, PPTX, ODT/ODP, TXT, MD) in the tutor chat. Plan and test results: `docs/plans/chat-bijlagen-plan.html`, `docs/plans/chat-bijlagen-fase0.md`.
+- Two switches, both needed:
+  - the admin's master switch (chatbot_prompts row `__chat_attachments__`, admin → Instellingen; OFF by default, the emergency brake for everyone; switching off keeps each course's choice);
+  - the course switch `attachments`, an OPT-IN feature (`OPT_IN_FEATURES` in `server/courseFeatures.js` and `src/lib/courseFeatures.ts`): on only with `{"attachments": true}`. Switching on needs the warning + second confirmation (`confirmAttachments: true`). Changes go to `leap_setting_changes`.
+- NOTHING is stored. Attachments live in browser memory only (`useChatAttachments`) and are forgotten when the chat is closed. Messages store only a label (`retrieved_context.attachments`: kind, name, size, pages). The database rejects inline files (`data:…;base64,`) in `messages` and the Studiecafé tables (migration `20261016100000_chat_attachments`); `stashStudiecafeHandoff` refuses them too. Never log attachment content.
+- An image is sent to the model once (the tutor starts with "Dit zie ik:"); file text is sent with every turn (capped). The attachment block goes BEFORE the language/level block in the system prompt. A typed explanation is required with every attachment.
+- Default detail level is HIGH: in the 16-10 test, low detail invented content on a full page of small text. Re-check with `node --env-file=.env scripts/eval-chat-attachments.mjs <dir>`, `scripts/check-chat-attachments.mjs` (API) and `scripts/check-chat-attachments-ui.mjs` (browser). The daily limit counter is held in process memory (single replica).
+
 ## "Ik leg uit" feedback (2026-10-15)
 - `POST /api/explain/evaluate` assesses, scores and saves in one step; the browser only sends the explanation plus the course fragments it found. There is no browser-side save of feedback or score.
 - The server always appends `explainFormatInstruction` (`server/explainFeedback.js`) to the teacher's explain prompt. The prompt sets the tone; the block fixes the structure:

@@ -12,18 +12,25 @@
 
 export const COURSE_FEATURES = Object.freeze(['chat', 'explain', 'quiz', 'projects', 'journal', 'studiecafe']);
 
+// Opt-in-onderdelen (2026-10-16): staan alleen aan als de docent ze bewust heeft
+// aangezet ({"attachments": true}); een ontbrekende sleutel betekent UIT.
+// 'attachments' = bijlagen in de chat (server/chatAttachments.js). In de
+// database doet leap_course_feature_on hetzelfde (migratie 20261016100000).
+export const OPT_IN_FEATURES = Object.freeze(['attachments']);
+
 export const FEATURE_DISABLED_MSG = 'Dit onderdeel wordt in deze cursus niet gebruikt';
 
-/** Volledige kaart { chat: true, … } uit de opgeslagen waarde (null/rommel = alles aan). */
+/** Volledige kaart { chat: true, …, attachments: false } uit de opgeslagen waarde (null/rommel = standaard). */
 export function normalizeCourseFeatures(raw) {
   const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
   const out = {};
   for (const key of COURSE_FEATURES) out[key] = src[key] !== false;
+  for (const key of OPT_IN_FEATURES) out[key] = src[key] === true;
   return out;
 }
 
 export function isFeatureOn(features, feature) {
-  if (!COURSE_FEATURES.includes(feature)) return true;
+  if (!COURSE_FEATURES.includes(feature) && !OPT_IN_FEATURES.includes(feature)) return true;
   return normalizeCourseFeatures(features)[feature];
 }
 
@@ -41,17 +48,21 @@ export function parseCourseFeaturesPatch(body) {
     return { ok: false, status: 400, body: { error: 'Veld "features" (object) is verplicht' } };
   }
   for (const k of keys) {
-    if (!COURSE_FEATURES.includes(k) || typeof f[k] !== 'boolean') {
+    if ((!COURSE_FEATURES.includes(k) && !OPT_IN_FEATURES.includes(k)) || typeof f[k] !== 'boolean') {
       return { ok: false, status: 400, body: { error: `Onbekend onderdeel of geen ja/nee-waarde: ${k}` } };
     }
   }
   return { ok: true, value: Object.fromEntries(keys.map(k => [k, f[k]])) };
 }
 
-/** Wat er opgeslagen wordt: de oude kaart met de wijziging erover, alleen de uitgezette sleutels. */
+/** Wat er opgeslagen wordt: de oude kaart met de wijziging erover; alleen de uitgezette
+ *  gewone onderdelen en de aangezette opt-in-onderdelen. */
 export function mergeCourseFeatures(stored, patch) {
   const merged = { ...normalizeCourseFeatures(stored), ...patch };
-  return Object.fromEntries(COURSE_FEATURES.filter(k => merged[k] === false).map(k => [k, false]));
+  return Object.fromEntries([
+    ...COURSE_FEATURES.filter(k => merged[k] === false).map(k => [k, false]),
+    ...OPT_IN_FEATURES.filter(k => merged[k] === true).map(k => [k, true]),
+  ]);
 }
 
 const QUIZ_PROMPT_MODES = new Set([

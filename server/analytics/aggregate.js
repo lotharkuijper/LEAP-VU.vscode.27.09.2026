@@ -211,7 +211,10 @@ export function summarizePlatform(rows = [], courseNames = {}) {
 export function featureOf(pathname, body) {
   const seg = String(pathname || '').split('?')[0].split('/').filter(Boolean);
   if (seg[0] !== 'api' || !seg[1]) return null;
-  if (seg[1] === 'chat' && body && body.purpose === 'tutor_chat') return 'chat';
+  if (seg[1] === 'chat' && body && body.purpose === 'tutor_chat') {
+    // Met bijlagen (afbeelding/bestand) apart, zodat de kosten zichtbaar zijn.
+    return Array.isArray(body.attachments) && body.attachments.length > 0 ? 'chat-attachments' : 'chat';
+  }
   if (seg[1] === 'chat') return 'ai-calls';
   if (seg[1] === 'admin' && seg[2]) return `admin/${seg[2]}`;
   if (seg[1] === 'analytics') return null; // zichzelf niet meten

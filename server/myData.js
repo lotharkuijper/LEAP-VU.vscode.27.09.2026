@@ -47,6 +47,8 @@ export const NOT_EXPORTED = [
   'project_persona_consultation_grants', 'projects', 'quiz_questions', 'quiz_sets', 'quiz_sources_mix',
   'quiz_validations', 'studiecafe_last_seen', 'studiecafe_notifications', 'studiecafe_thread_reads',
   'user_audit_log',
+  // Schakelaar-logboek (wie zette bijlagen in de chat aan/uit): beheergegeven.
+  'leap_setting_changes',
 ];
 
 const PAGE = 1000;

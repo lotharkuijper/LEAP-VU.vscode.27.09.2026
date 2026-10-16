@@ -38,7 +38,7 @@ export const ADMIN_SECTIONS = [
   { tab: 'projects_admin', labelKey: 'admin.tabs.projects', audience: 'all', helpGroups: ['projects', 'personas'],
     what: 'Groepsprojecten met persona\'s in drie rollen: begeleider, beoordelaar (rubric, feedbackrondes per product) en rolspeler (simulatie, eventueel met verstandhouding en gedragsregels). Ook persona-sjablonen en inleveren.' },
   { tab: 'course_features', labelKey: 'admin.tabs.courseFeatures', audience: 'all', helpGroups: ['courseFeatures'],
-    what: 'Onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte.' },
+    what: 'Onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte. Apart: bijlagen in de chat (afbeeldingen plakken, bestanden meegeven) staan standaard UIT en gaan pas aan na een waarschuwing en een dubbele bevestiging; alleen als de beheerder het platformbreed toestaat. Bijlagen worden niet bewaard.' },
   { tab: 'course_info', labelKey: 'admin.tabs.courseInfo', audience: 'all', helpGroups: [],
     what: 'Praktische cursusinformatie (rooster, deadlines) die de chat mag gebruiken voor praktische vragen.' },
   { tab: 'learning_levels', labelKey: 'admin.tabs.learningLevels', audience: 'all', helpGroups: ['learningLevels'],
@@ -55,8 +55,8 @@ export const ADMIN_SECTIONS = [
     what: 'Studenten en docenten aan de cursus toevoegen, ook in bulk.' },
   { tab: 'users', labelKey: 'admin.tabs.users', audience: 'admin', helpGroups: [],
     what: 'Alle gebruikers van LEAP en hun rol.' },
-  { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: [],
-    what: 'Systeeminstellingen van LEAP.' },
+  { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: ['chatAttachments'],
+    what: 'Systeeminstellingen van LEAP, waaronder de hoofdschakelaar voor bijlagen in de chat (afbeeldingen en bestanden; standaard uit, noodrem voor alle cursussen).' },
 ];
 
 /** Buiten de tabbladen van /admin, maar wel relevant voor het inrichten. */

@@ -108,6 +108,7 @@ export function MyDataPage() {
           {t('myData.title')}
         </h1>
         <p className="text-gray-600">{t('myData.intro')}</p>
+        <p className="mt-1 text-sm text-gray-500">{t('myData.attachmentsNote')}</p>
       </div>
 
       {error && (

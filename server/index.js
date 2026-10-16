@@ -182,6 +182,11 @@ import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePr
 import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countVerifiedPriorStudentMessages, turnSignature, levelName, topicKey } from './readiness.js';
 import { cleanKeyPoints, rankRelatedConcepts, explainFormatInstruction, parseExplainFeedback, explainFeedbackMarkdown, buildExplainUserMessage } from './explainFeedback.js';
 import { normalizeCourseFeatures, parseCourseFeaturesPatch, mergeCourseFeatures, featureForChatRequest, featureAllowed, FEATURE_DISABLED_MSG } from './courseFeatures.js';
+import {
+  PLATFORM_KEY as ATTACHMENTS_PLATFORM_KEY, normalizePlatformSettings, parsePlatformPatch, mergePlatformSettings,
+  attachmentsAvailability, parseChatAttachments, createDailyCounter, attachmentSystemBlock, attachImagesToLastUser,
+  sniffFileKind, safeName,
+} from './chatAttachments.js';
 
 // Directe Postgres-verbinding voor operaties die PostgREST niet kan
 // uitvoeren, zoals bytea-inserts van binaire bestanden.
@@ -647,6 +652,29 @@ app.post('/api/chat', async (req, res) => {
   if (chatFeature && courseId
       && (await rejectIfFeatureOff(res, auth.user, auth.profile, courseId, chatFeature))) return;
 
+  // Bijlagen in de chat (server/chatAttachments.js): alleen in de tutorchat van
+  // een cursus, alleen als de beheerder én de cursus het toestaan. LEAP bewaart
+  // ze niet en logt nooit de inhoud; ze gaan alleen mee in dit ene verzoek.
+  let attachmentParts = { images: [], files: [] };
+  let attachmentDetail = 'high';
+  if (Array.isArray(req.body?.attachments) && req.body.attachments.length > 0) {
+    if (req.body?.purpose !== 'tutor_chat' || !courseId) {
+      return res.status(400).json({ error: 'Bijlagen kunnen alleen in de chat van een cursus worden meegegeven', code: 'attachments_invalid' });
+    }
+    const gate = await chatAttachmentsGate(auth.user, auth.profile, courseId);
+    if (!gate.available) {
+      return res.status(403).json({ error: ATTACHMENTS_OFF_MSG, code: 'attachments_disabled', reason: gate.reason });
+    }
+    const parsedAttachments = parseChatAttachments(req.body.attachments, gate.platform.limits);
+    if (!parsedAttachments.ok) return res.status(parsedAttachments.status).json(parsedAttachments.body);
+    if (!attachmentDailyCounter.tryConsume(auth.user.id, courseId, parsedAttachments.newCount, gate.platform.limits.perDay)) {
+      return res.status(429).json({ error: `Je hebt vandaag het maximum van ${gate.platform.limits.perDay} bijlagen in deze cursus bereikt`, code: 'attachments_limit' });
+    }
+    attachmentParts = parsedAttachments;
+    attachmentDetail = gate.platform.detail;
+  }
+  const hasAttachments = attachmentParts.images.length > 0 || attachmentParts.files.length > 0;
+
   // Readiness-vraag ("klaar voor een hoger niveau?"): onderwerpen + huidig niveau
   // uit de database, alleen voor een cursus waar de beller toegang toe heeft.
   let readinessCtx = null;
@@ -765,9 +793,13 @@ app.post('/api/chat', async (req, res) => {
         : `${systemPromptContent}`;
     }
     if (chatSourcesBlock) systemContent += chatSourcesBlock;
+    // Bijlagen: instructie + bestandstekst, vóór het taal-/niveaublok.
+    systemContent += attachmentSystemBlock(attachmentParts);
     systemContent += langSuffix;
     finalMessages = [{ role: 'system', content: systemContent }, ...userMessages];
   }
+  // Afbeeldingen gaan alleen mee met het laatste studentbericht (één keer).
+  finalMessages = attachImagesToLastUser(finalMessages, attachmentParts.images, attachmentDetail);
 
   if (readinessCtx) {
     const readinessBlock = buildReadinessInstruction({ ...readinessCtx, lang });
@@ -781,7 +813,8 @@ app.post('/api/chat', async (req, res) => {
   const chatBody = {
     model: OPENAI_MODEL,
     messages: finalMessages,
-    [MAX_TOKENS_PARAM]: max_tokens ?? 512,
+    // Met een bijlage beschrijft het model eerst wat het ziet: meer ruimte.
+    [MAX_TOKENS_PARAM]: hasAttachments ? Math.max(max_tokens ?? 512, 1500) : (max_tokens ?? 512),
     stream,
   };
   if (IS_REASONING_MODEL) {
@@ -4301,6 +4334,11 @@ app.patch('/api/courses/:id/features', async (req, res) => {
   const teacher = isAdmin ? false : await isCourseTeacher(auth.user.id, courseId);
   const decision = authorizeAvailabilityChange({ isAdmin, isCourseTeacher: teacher });
   if (!decision.allowed) return res.status(403).json({ error: 'Alleen admin of docent van deze cursus mag de onderdelen wijzigen' });
+  // Bijlagen in de chat aanzetten kan alleen na de dubbele bevestiging in het
+  // beheer (waarschuwing gelezen + cursusnaam bevestigd).
+  if (parsed.value.attachments === true && req.body?.confirmAttachments !== true) {
+    return res.status(400).json({ error: 'Bevestig eerst dat je de waarschuwing over bijlagen hebt gelezen', code: 'confirm_required' });
+  }
 
   try {
     const { data: current, error: readErr } = await supabaseAdmin
@@ -4316,11 +4354,194 @@ app.patch('/api/courses/:id/features', async (req, res) => {
     const { error } = await supabaseAdmin.from('courses').update({ features: stored }).eq('id', courseId);
     if (error) return res.status(500).json({ error: error.message || 'Bijwerken mislukt' });
     courseFeaturesCache.delete(courseId);
-    console.log(`[courses/features] Cursus ${courseId} uit: ${Object.keys(stored).join(', ') || '(niets)'}`);
+    console.log(`[courses/features] Cursus ${courseId} opgeslagen: ${JSON.stringify(stored)}`);
+    if ('attachments' in parsed.value
+        && normalizeCourseFeatures(current.features).attachments !== parsed.value.attachments) {
+      await logSettingChange({ courseId, setting: 'chat_attachments', value: { on: parsed.value.attachments }, changedBy: auth.user.id });
+    }
     return res.json({ features: normalizeCourseFeatures(stored) });
   } catch (err) {
     console.error('[courses/features PATCH] Unexpected error:', err);
     return res.status(500).json({ error: err?.message || 'Internal server error' });
+  }
+});
+
+// ── Bijlagen in de chat: routes (server/chatAttachments.js) ──────────────────
+// GET /api/chat/attachments/config?courseId=… — mag ik hier bijlagen meegeven?
+app.get('/api/chat/attachments/config', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  const courseId = typeof req.query.courseId === 'string' ? req.query.courseId : null;
+  try {
+    if (courseId && !(await userHasCourseAccess(auth.user, auth.profile, courseId))) {
+      return res.json({ available: false, reason: 'course_off', platformEnabled: false, courseOn: false, isStaff: false });
+    }
+    const gate = await chatAttachmentsGate(auth.user, auth.profile, courseId);
+    const { limits, enabled } = gate.platform;
+    return res.json({
+      available: gate.available && !!courseId,
+      reason: courseId ? gate.reason : 'course_off',
+      platformEnabled: enabled,
+      courseOn: gate.courseOn,
+      isStaff: gate.isStaff,
+      limits,
+      usedToday: courseId ? attachmentDailyCounter.used(auth.user.id, courseId) : 0,
+    });
+  } catch (err) {
+    console.error('[chat/attachments/config] fout:', err?.message || err);
+    return res.status(500).json({ error: 'Instelling voor bijlagen kon niet worden gelezen' });
+  }
+});
+
+// POST /api/chat/attachments/extract { courseId, name, data (base64) } → tekst
+// uit een bestand (PDF, Word, PowerPoint, OpenDocument, tekst). Alles in het
+// geheugen: niets naar schijf of opslag, en de inhoud wordt nooit gelogd.
+app.post('/api/chat/attachments/extract', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  const { courseId, name, data } = req.body || {};
+  if (!courseId || typeof name !== 'string' || typeof data !== 'string') {
+    return res.status(400).json({ error: 'Bestand ontbreekt', code: 'attachments_invalid' });
+  }
+  const gate = await chatAttachmentsGate(auth.user, auth.profile, courseId);
+  if (!gate.available || !(await userHasCourseAccess(auth.user, auth.profile, courseId))) {
+    return res.status(403).json({ error: ATTACHMENTS_OFF_MSG, code: 'attachments_disabled', reason: gate.reason });
+  }
+  const limits = gate.platform.limits;
+  let buf;
+  try { buf = Buffer.from(data, 'base64'); } catch { buf = null; }
+  if (!buf || buf.length === 0) return res.status(400).json({ error: 'Bestand ontbreekt', code: 'attachments_invalid' });
+  if (buf.length > limits.fileMb * 1024 * 1024) {
+    return res.status(413).json({ error: `Dit bestand is groter dan ${limits.fileMb} MB`, code: 'attachments_too_large' });
+  }
+  const kind = sniffFileKind(name, buf);
+  if (!kind) return res.status(400).json({ error: 'Dit soort bestand wordt niet ondersteund', code: 'attachments_type' });
+  try {
+    let text = '';
+    let pages = null;
+    if (kind === 'pdf') {
+      const pageTexts = await extractPdfPageTexts(buf);
+      pages = pageTexts.length;
+      text = pageTexts.join('\n\n');
+    } else if (kind === 'pptx') {
+      const deck = extractPptxStructured(buf);
+      pages = Array.isArray(deck) ? deck.length : null;
+      text = Array.isArray(deck) ? buildDeckText(deck) : '';
+      if (!text.trim()) text = await parseOfficeAsync(buf);
+    } else if (['docx', 'odt', 'odp'].includes(kind)) {
+      text = await parseOfficeAsync(buf);
+    } else {
+      text = buf.toString('utf8');
+    }
+    text = String(text || '').replace(/\u0000/g, '').trim();
+    // Een PDF zonder (bijna) tekst is gescand: de browser maakt er dan
+    // afbeeldingen van de eerste pagina's van.
+    const scanned = kind === 'pdf' && text.length < 200;
+    const truncated = text.length > limits.fileChars;
+    return res.json({
+      name: safeName(name, 'bestand'),
+      kind,
+      pages,
+      chars: text.length,
+      truncated,
+      scanned,
+      text: scanned ? '' : text.slice(0, limits.fileChars),
+    });
+  } catch (err) {
+    console.warn(`[chat/attachments/extract] ${kind} kon niet worden gelezen (${buf.length} bytes): ${err?.message || err}`);
+    return res.status(422).json({ error: 'Uit dit bestand kon geen tekst worden gehaald', code: 'attachments_unreadable' });
+  }
+});
+
+// GET /api/admin/chat-attachments — platforminstelling, cursussen met bijlagen
+// aan en de laatste wijzigingen. Alleen beheerder.
+app.get('/api/admin/chat-attachments', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  if (!isLeapAdmin(auth.profile)) return res.status(403).json({ error: 'Alleen de beheerder' });
+  try {
+    attachmentsPlatformCache = null;
+    const platform = await loadAttachmentsPlatform();
+    const { data: courses } = await supabaseAdmin.from('courses').select('id, name, features').order('name');
+    const coursesOn = (courses || [])
+      .filter(c => normalizeCourseFeatures(c.features).attachments)
+      .map(c => ({ id: c.id, name: c.name }));
+    let changes = [];
+    try {
+      const { data } = await supabaseAdmin.from('leap_setting_changes')
+        .select('course_id, setting, value, created_at, changed_by')
+        .in('setting', ['chat_attachments', 'chat_attachments_platform'])
+        .order('created_at', { ascending: false }).limit(20);
+      const ids = [...new Set((data || []).map(r => r.changed_by).filter(Boolean))];
+      const { data: people } = ids.length
+        ? await supabaseAdmin.from('profiles').select('id, full_name, email').in('id', ids)
+        : { data: [] };
+      const who = new Map((people || []).map(p => [p.id, p.full_name || p.email]));
+      const courseName = new Map((courses || []).map(c => [c.id, c.name]));
+      changes = (data || []).map(r => ({
+        at: r.created_at,
+        setting: r.setting,
+        value: r.value,
+        course: r.course_id ? courseName.get(r.course_id) || null : null,
+        by: r.changed_by ? who.get(r.changed_by) || null : null,
+      }));
+    } catch { /* logboek ontbreekt: alleen geen geschiedenis */ }
+    return res.json({ settings: platform, coursesOn, changes });
+  } catch (err) {
+    console.error('[admin/chat-attachments GET] fout:', err?.message || err);
+    return res.status(500).json({ error: 'Instelling voor bijlagen kon niet worden gelezen' });
+  }
+});
+
+// PUT /api/admin/chat-attachments { enabled?, detail?, limits?, resetCourses? }
+// Uitzetten is de noodrem voor iedereen; de keuze per cursus blijft bewaard,
+// tenzij resetCourses: dan gaan alle cursussen terug naar uit.
+app.put('/api/admin/chat-attachments', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  if (!isLeapAdmin(auth.profile)) return res.status(403).json({ error: 'Alleen de beheerder' });
+  const parsed = parsePlatformPatch(req.body);
+  if (!parsed.ok) return res.status(parsed.status).json(parsed.body);
+  try {
+    const { data: row } = await supabaseAdmin.from('chatbot_prompts')
+      .select('id, content').eq('name', ATTACHMENTS_PLATFORM_KEY).maybeSingle();
+    const before = normalizePlatformSettings(row?.content);
+    const next = mergePlatformSettings(before, parsed.value);
+    const content = JSON.stringify(next);
+    if (row) {
+      const { error } = await supabaseAdmin.from('chatbot_prompts').update({ content, updated_at: new Date().toISOString() }).eq('id', row.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabaseAdmin.from('chatbot_prompts').insert({ name: ATTACHMENTS_PLATFORM_KEY, content, is_active: false });
+      if (error) throw error;
+    }
+    attachmentsPlatformCache = null;
+
+    // Welke cursussen raakt dit? Vastgelegd voor later (berichten aan de
+    // getroffen docenten en studenten, plan H12).
+    const { data: courses } = await supabaseAdmin.from('courses').select('id, features');
+    const affected = (courses || []).filter(c => normalizeCourseFeatures(c.features).attachments).map(c => c.id);
+    let reset = 0;
+    if (parsed.value.resetCourses) {
+      for (const c of (courses || []).filter(x => affected.includes(x.id))) {
+        const stored = mergeCourseFeatures(c.features, { attachments: false });
+        const { error } = await supabaseAdmin.from('courses').update({ features: stored }).eq('id', c.id);
+        if (!error) { reset += 1; courseFeaturesCache.delete(c.id); }
+      }
+    }
+    if (before.enabled !== next.enabled || before.detail !== next.detail
+        || JSON.stringify(before.limits) !== JSON.stringify(next.limits) || reset > 0) {
+      await logSettingChange({
+        setting: 'chat_attachments_platform',
+        value: { enabled: next.enabled, detail: next.detail, limits: next.limits, affectedCourses: affected, resetCourses: reset },
+        changedBy: auth.user.id,
+      });
+    }
+    console.log(`[admin/chat-attachments] platform ${next.enabled ? 'aan' : 'uit'}, detail=${next.detail}, cursussen aan: ${affected.length}, teruggezet: ${reset}`);
+    return res.json({ settings: next, affectedCourses: affected.length, resetCourses: reset });
+  } catch (err) {
+    console.error('[admin/chat-attachments PUT] fout:', err?.message || err);
+    return res.status(500).json({ error: 'Instelling voor bijlagen kon niet worden opgeslagen' });
   }
 });
 
@@ -8836,6 +9057,46 @@ async function rejectIfFeatureOff(res, user, profile, courseId, feature) {
   if (await courseFeatureOnFor(user, profile, courseId, feature)) return false;
   res.status(403).json({ error: FEATURE_DISABLED_MSG, code: 'feature_disabled', feature });
   return true;
+}
+
+// ── Bijlagen in de chat (server/chatAttachments.js) ──────────────────────────
+// Platforminstelling van de beheerder (chatbot_prompts-rij, standaard UIT), 15 s
+// onthouden. Leesfout = uit: een storing mag bijlagen nooit per ongeluk aanzetten.
+const ATTACHMENTS_OFF_MSG = 'Bijlagen zijn in deze chat niet beschikbaar';
+const ATTACHMENTS_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 15_000;
+let attachmentsPlatformCache = null;
+const attachmentDailyCounter = createDailyCounter();
+async function loadAttachmentsPlatform() {
+  if (attachmentsPlatformCache && Date.now() - attachmentsPlatformCache.at < ATTACHMENTS_TTL_MS) return attachmentsPlatformCache.value;
+  if (!supabaseAdmin) return normalizePlatformSettings(null);
+  try {
+    const { data, error } = await supabaseAdmin.from('chatbot_prompts')
+      .select('content').eq('name', ATTACHMENTS_PLATFORM_KEY).maybeSingle();
+    const value = normalizePlatformSettings(error ? null : data?.content);
+    if (!error) attachmentsPlatformCache = { at: Date.now(), value };
+    return value;
+  } catch {
+    return normalizePlatformSettings(null);
+  }
+}
+
+/** Mag deze gebruiker in deze cursus bijlagen meegeven? { available, reason, platform, courseOn, isStaff } */
+async function chatAttachmentsGate(user, profile, courseId) {
+  const platform = await loadAttachmentsPlatform();
+  const courseOn = courseId ? (await loadCourseFeatures(courseId)).attachments === true : false;
+  let prof = profile;
+  if (!prof && user?.id) prof = (await profileCache.get(user.id, loadProfileRoleEmail))?.data || null;
+  const isStaff = courseId ? await isStaffForCourse(user, prof, courseId) : false;
+  return { ...attachmentsAvailability({ platform, courseOn, isStaff }), platform, courseOn, isStaff };
+}
+
+/** Schakelaar-logboek (migratie 20261016100000); ontbrekende tabel = niet loggen. */
+async function logSettingChange({ courseId = null, setting, value, changedBy }) {
+  try {
+    await supabaseAdmin.from('leap_setting_changes').insert({ course_id: courseId, setting, value, changed_by: changedBy || null });
+  } catch (err) {
+    console.warn('[settings-log] schrijven mislukt:', err?.message || err);
+  }
 }
 
 // Helper: heeft de gebruiker een course_members-rij in deze cursus?

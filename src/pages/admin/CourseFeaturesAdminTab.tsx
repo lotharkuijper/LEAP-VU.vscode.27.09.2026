@@ -6,6 +6,7 @@ import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { AdminHint } from '../../components/help/AdminHint';
 import { HelpTip } from '../../components/help/HelpTip';
 import { COURSE_FEATURES, type CourseFeature, type CourseFeatures } from '../../lib/courseFeatures';
+import { CourseAttachmentsSetting } from './CourseAttachmentsSetting';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
@@ -119,6 +120,14 @@ export function CourseFeaturesAdminTab() {
           );
         })}
       </ul>
+
+      <CourseAttachmentsSetting
+        courseId={activeCourseId}
+        courseName={activeCourse?.name || ''}
+        on={courseFeatures.attachments}
+        token={session?.access_token}
+        onChanged={refreshActiveCourse}
+      />
 
       {consequences.length > 0 && (
         <AdminHint variant="warning" testId="course-features-consequences">

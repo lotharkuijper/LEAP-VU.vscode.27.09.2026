@@ -218,8 +218,8 @@
     <div class="icon" style="background:var(--cafe)">7</div>
     <div>
       <h3>Kritisch leren omgaan met AI</h3>
-      <p>AI maakt fouten. LEAP leert studenten daar bewust mee omgaan: bronnen zijn zichtbaar, en met <strong>“Check de LLM”</strong> zet een student een AI-antwoord in het studiecafé, zodat medestudenten en docenten het kunnen controleren. Zo wordt kritisch lezen van AI-output een vaardigheid, geen bijzaak.</p>
-      <div class="seen"><b>In LEAP:</b> de knop “Check de LLM” onder elk antwoord; de categorie “check-llm” in het studiecafé.</div>
+      <p>AI maakt fouten. LEAP leert studenten daar bewust mee omgaan: bronnen zijn zichtbaar, en met <strong>“Klopt dit wel?”</strong> zet een student een AI-antwoord in het studiecafé, zodat medestudenten en docenten het kunnen controleren. Zo wordt kritisch lezen van AI-output een vaardigheid, geen bijzaak.</p>
+      <div class="seen"><b>In LEAP:</b> de knop “Klopt dit wel?” onder elk antwoord en bij elke quizvraag; de categorie “Klopt dit wel?” in het studiecafé.</div>
     </div>
   </div>
 
@@ -242,7 +242,7 @@
   <p>De student stelt een vraag; de tutor zoekt in je materiaal en antwoordt, vaak met een wedervraag om de student zelf te laten nadenken. Onder de chat kiest de student zijn leerniveau en kan hij vragen of hij klaar is voor een hoger niveau. Een afgerond gesprek kan de student naar het leerdagboek verplaatsen; LEAP maakt er dan een reflectie van.</p>
   <figure>
     <img src="img/chat.png" alt="">
-    <figcaption><b>Een echte vraag over E&amp;B1.</b> De tutor geeft niet meteen het antwoord, maar vraagt eerst wat de student zelf denkt. Onderaan: het leerniveau en “Klaar voor een hoger niveau?”; onder het antwoord: “Check de LLM”.</figcaption>
+    <figcaption><b>Een echte vraag over E&amp;B1.</b> De tutor geeft niet meteen het antwoord, maar vraagt eerst wat de student zelf denkt. Onderaan: het leerniveau en “Klaar voor een hoger niveau?”; onder het antwoord: “Klopt dit wel?”.</figcaption>
   </figure>
 
   <h2 style="color:var(--explain)">Ik leg uit — leren door uitleggen</h2>
@@ -263,7 +263,7 @@
   <p>In de projectruimte werkt een groep aan een opdracht. De groep kiest een persona om mee te praten; elke persona heeft een eigen gezicht, rol en toon, en verwijst naar de stof. Hoe vaak een groep een persona mag raadplegen, stel jij in. Onder <i>Feedback op jullie werk</i> levert de groep een tussen- of eindproduct in bij een beoordelaar en krijgt meteen feedback en een volgende stap, eventueel met een medaille; de groep ziet hoeveel rondes er nog over zijn. Houdt een rolspeler een verstandhouding bij, dan ziet de groep het niveau (van koud tot warm) en de laatste aanleiding. Na afronding komen samenvattingen van de gesprekken in het leerdagboek van alle groepsleden.</p>
 
   <h2 style="color:var(--cafe)">Studiecafé — van en met elkaar leren</h2>
-  <p>Een forum per cursus, met de categorieën <i>vraag</i>, <i>discussie</i>, <i>samenwerken</i> en <i>check-llm</i>. Studenten reageren op elkaar, geven kudos en kunnen een stukje uit de chat of een quiz meesturen. Jij kunt aankondigingen plaatsen en berichten vastzetten of sluiten. Studenten krijgen desgewenst een e-mail bij reacties.</p>
+  <p>Een forum per cursus, met de categorieën <i>vraag</i>, <i>discussie</i>, <i>samenwerken</i> en <i>Klopt dit wel?</i>. Studenten reageren op elkaar, geven kudos en kunnen een stukje uit de chat of een quiz meesturen. Jij kunt aankondigingen plaatsen en berichten vastzetten of sluiten. Studenten krijgen desgewenst een e-mail bij reacties.</p>
 
   <h2 style="color:var(--journal)">Leerdagboek en achievements</h2>
   <p>Hier komt alles samen. Na een chat, uitleg, quiz of project maakt LEAP een reflectie in drie blokken, met het leerniveau van dat moment erbij. Studenten kunnen ook eigen notities schrijven. In het tabblad <b>Achievements</b> staat de prijzenkast: verdiende medailles per onderwerp en niveau, en wat er nog te verdienen valt.</p>
@@ -374,6 +374,17 @@
 
   <h2>Stap 8 — Cursus-info en leerniveaus</h2>
   <p>Bij <b>Cursus-info</b> zet je praktische informatie die de chat mag gebruiken voor vragen als “wanneer is de deadline?”. Bij <b>Leerniveaus</b> zie je hoeveel studenten op welk niveau werken. Welk niveau een individuele student kiest, zie je bewust niet: de student blijft de baas over zijn niveau.</p>
+
+  <h2>Extra — Bijlagen in de chat (optioneel)</h2>
+  <p>Bij <b>Onderdelen</b> kun je <b>Bijlagen in de chat</b> aanzetten. Studenten kunnen dan in de chat een afbeelding plakken (bijvoorbeeld een schermafbeelding gemaakt met Windows+Shift+S), via het paperclipje een afbeelding of bestand kiezen (PDF, Word, PowerPoint, tekst), of iets naar het chatvenster slepen. Ze vertellen erbij wat ze willen weten. De tutor beschrijft eerst wat hij ziet (“Dit zie ik: …”) en vraagt of dat klopt; daarna gaat het gesprek verder vanuit je cursusmateriaal, zoals bij elke vraag.</p>
+  <p>De optie staat standaard <b>uit</b>. Aanzetten gaat pas na een waarschuwing en een tweede bevestiging, omdat bijlagen gevolgen hebben:</p>
+  <ul>
+    <li><b>Kosten:</b> elke afbeelding en elk bestand kost extra rekenwerk; de tekst van een bestand gaat bij elke vraag opnieuw mee.</li>
+    <li><b>Auteursrecht en privacy:</b> studenten kunnen materiaal van anderen uploaden, en op schermafbeeldingen staan soms namen of gegevens van anderen.</li>
+    <li><b>Verlezen:</b> de tutor kan zich vergissen in wat hij ziet; daarom laat hij eerst zien wat hij leest.</li>
+  </ul>
+  <div class="box"><h4>Niet bewaard</h4><p>LEAP bewaart bijlagen niet. Ze staan alleen in de browser van de student zolang de chat open is; sluit de student de chat (ander of nieuw gesprek, pagina verlaten), dan zijn ze weg. In het gesprek blijft alleen een label staan, plus wat de tutor erover zei. Bijlagen gaan nooit mee naar het Studiecafé. Het taalmodel op de Azure-omgeving van de VU verwerkt ze wel om te antwoorden.</p></div>
+  <p>De beheerder van LEAP kan bijlagen voor heel LEAP uitzetten, bijvoorbeeld als de kosten te hoog worden. Je ziet dan bij Onderdelen “uitgezet door de beheerder”; je eigen keuze blijft bewaard. Bij <b>Analyse</b> zie je hoeveel bijlagen er in je cursus zijn meegegeven (alleen aantallen).</p>
 </section>
 
 <!-- ═══════════════════════════ 5. HANDIG ═══════════════════════════ -->
@@ -400,6 +411,7 @@
     <li>Bestanden met het doel <b>Alleen voor docenten</b> zijn in de database afgeschermd: studenten zien ze nooit en de AI gebruikt ze niet.</li>
     <li><b>Wat studenten doen, is van de student.</b> Als docent zie je wie er in je cursus zit en wie in welke projectgroep. Chats, uitleg, quizresultaten, het leerdagboek, de projectruimte van een groep en de feedback van beoordelaars zie je niet. Alleen wat een student zelf bewust deelt, zoals een bericht in het studiecafé of een ingeleverd projectproduct, bereikt jou.</li>
     <li>Voeg alleen materiaal en websites toe waarvan je het gebruik mag toestaan.</li>
+    <li><b>Bijlagen in de chat</b> (als je die aanzet) worden niet bewaard en gaan nooit naar het studiecafé; de database weigert ze zelfs als iets per ongeluk zou proberen ze op te slaan.</li>
   </ul>
 </section>
 

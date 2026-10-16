@@ -22,6 +22,8 @@ export interface ThermometerData {
   k: number;
   quiz: { attempts: number | null; avgScore: number | null; suppressed: boolean };
   chat: { hit: number; miss: number };
+  /** Bijlagen in de chat (aantallen per soort; geen namen of inhoud). */
+  attachments?: { image: number; file: number };
   concepts: ConceptRow[];
   weekly: Array<{ week: string; avgScore: number | null; attempts: number | null; suppressed?: boolean }>;
 }
@@ -135,6 +137,11 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
               sub={t('analytics.thermometer.chatQuestions', { n: fmt(chatTotal, lang) })} />
             <Tile testId="tile-chat-miss" label={t('analytics.thermometer.chatWithoutEvidence')}
               value={fmt(data.chat.miss, lang)} />
+            {(data.attachments?.image || 0) + (data.attachments?.file || 0) > 0 && (
+              <Tile testId="tile-chat-attachments" label={t('analytics.thermometer.attachments')}
+                value={fmt((data.attachments?.image || 0) + (data.attachments?.file || 0), lang)}
+                sub={t('analytics.thermometer.attachmentsSplit', { images: fmt(data.attachments?.image || 0, lang), files: fmt(data.attachments?.file || 0, lang) })} />
+            )}
           </div>
 
           {gaps.length > 0 && (

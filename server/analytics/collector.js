@@ -92,11 +92,21 @@ export function analyticsMiddleware(collector, { conceptsFor } = {}) {
         if (res.statusCode >= 500) collector.bump('api_error', feature, { courseId });
         if (ms > SLOW_MS) collector.bump('api_slow', feature, { courseId });
         if (store.calls) collector.bump('tokens', feature, { courseId, n: store.calls, total: store.tokens });
-        if (feature === 'chat' && courseId && res.statusCode < 400) recordChatEvidence(collector, req.body, courseId, conceptsFor);
+        if ((feature === 'chat' || feature === 'chat-attachments') && courseId && res.statusCode < 400) {
+          recordChatEvidence(collector, req.body, courseId, conceptsFor);
+          if (feature === 'chat-attachments') recordAttachments(collector, req.body, courseId);
+        }
       } catch { /* meten mag nooit iets breken */ }
     });
     als.run(store, next);
   };
+}
+
+// Bijlagen in de chat: alleen het aantal per soort, nooit naam of inhoud.
+function recordAttachments(collector, body, courseId) {
+  for (const a of body.attachments) {
+    if (a?.kind === 'image' || (a?.kind === 'file' && a.isNew === true)) collector.bump('chat_attachment', a.kind, { courseId });
+  }
 }
 
 function recordChatEvidence(collector, body, courseId, conceptsFor) {

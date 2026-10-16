@@ -24,6 +24,9 @@ import { useRefocusAfterLoading } from '../hooks/useRefocusAfterLoading';
 import { LevelUpCelebration, ReadinessNotice } from '../components/LevelUpCelebration';
 import { shouldCelebrate, type ReadinessResult } from '../lib/readiness';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
+import { useChatAttachments, type SendAttachments } from '../hooks/useChatAttachments';
+import { AttachButton, PendingAttachments, SentAttachments } from '../components/chat/ChatAttachmentBar';
+import { hasInlineFile, metaFromStored, type AttachmentMeta } from '../lib/chatAttachments';
 
 
 // Handtekening van een opgeslagen tutorantwoord (staat in retrieved_context).
@@ -36,6 +39,8 @@ interface ChatMessage extends Message {
   id: string;
   timestamp: string;
   retrievedContext?: any;
+  /** Bijlagen bij een studentbericht: alleen het label (de bijlage zelf wordt niet bewaard). */
+  attachments?: AttachmentMeta[];
 }
 
 interface Conversation {
@@ -210,7 +215,7 @@ export function ChatPage() {
   const [ragSettings, setRagSettings] = useState<RagSettings>(RAG_DEFAULTS);
   const [feedbackError, setFeedbackError] = useState<{ title: string; detail?: string } | null>(null);
   const [contextStats, setContextStats] = useState<{ used: number; total: number; charTrimmed: boolean } | null>(null);
-  const [pendingRetry, setPendingRetry] = useState<{ history: Message[]; isFirstMessage: boolean; readinessCheck?: boolean } | null>(null);
+  const [pendingRetry, setPendingRetry] = useState<{ history: Message[]; isFirstMessage: boolean; readinessCheck?: boolean; attachments?: SendAttachments } | null>(null);
   // Oordeel op "klaar voor een hoger niveau?": feest (positief) of korte melding.
   const [readinessResult, setReadinessResult] = useState<ReadinessResult | null>(null);
   const [sourceChoice, setSourceChoice] = useState<{ documentId: string; title: string; page?: number } | null>(null);
@@ -218,6 +223,8 @@ export function ChatPage() {
   const viewerSeqRef = useRef(0);
   const [viewerContext, setViewerContext] = useState<ViewerContext | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  // Bijlagen in de chat: alleen in het geheugen van deze pagina (src/lib/chatAttachments.ts).
+  const att = useChatAttachments(activeCourse, currentConversationId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const splitRef = useRef<HTMLDivElement>(null);
@@ -422,6 +429,7 @@ export function ChatPage() {
       content: msg.content,
       timestamp: msg.created_at,
       retrievedContext: msg.retrieved_context,
+      ...(msg.role === 'user' ? { attachments: metaFromStored(msg.retrieved_context) } : {}),
       ...turnSigOf(msg),
     })));
   };
@@ -557,7 +565,7 @@ export function ChatPage() {
     return `\n\nDe student bekijkt op dit moment ${unit} ${ctx.page} van ${ctx.totalPages} van de bron "${ctx.title}". Betrek dit waar relevant in je antwoord.`;
   };
 
-  const sendToAssistant = async (history: Message[], isFirstMessage: boolean, readinessCheck = false) => {
+  const sendToAssistant = async (history: Message[], isFirstMessage: boolean, readinessCheck = false, attachments?: SendAttachments) => {
     if (!currentConversationId || !profile) return;
 
     setLoading(true);
@@ -581,8 +589,11 @@ export function ChatPage() {
         searchPerformed: false,
       };
       try {
+        // Met een bijlage zoeken we ook op het begin van de bestandstekst of op
+        // de beschrijving die de tutor eerder van een afbeelding gaf.
+        const searchText = attachments?.extra ? `${userContent}\n${attachments.extra}` : userContent;
         const stats = await searchRelevantChunksWithStats(
-          userContent,
+          searchText,
           ragSettings.chat.similarity_threshold,
           ragSettings.chat.match_count,
           'general',
@@ -638,12 +649,12 @@ export function ChatPage() {
           displaySources.length > 0 ? displaySources : undefined,
           learningLevel,
           activeCourse || undefined,
-          { readinessCheck }
+          { readinessCheck, ...(attachments?.payload.length ? { attachments: attachments.payload } : {}) }
         );
       } catch (llmErr) {
         console.error('[CHAT] LLM call failed:', llmErr);
         setFeedbackError(llmErrorToDutch(llmErr, lang));
-        setPendingRetry({ history, isFirstMessage, readinessCheck });
+        setPendingRetry({ history, isFirstMessage, readinessCheck, attachments });
         return;
       }
 
@@ -693,7 +704,7 @@ export function ChatPage() {
         title: t('chat.sendMessageError'),
         detail: error?.message || undefined,
       });
-      setPendingRetry({ history, isFirstMessage, readinessCheck });
+      setPendingRetry({ history, isFirstMessage, readinessCheck, attachments });
     } finally {
       setLoading(false);
     }
@@ -701,13 +712,23 @@ export function ChatPage() {
 
   const handleSendMessage = async (overrideText?: string, readinessCheck = false) => {
     const text = (typeof overrideText === 'string' ? overrideText : input).trim();
-    if (!text || !currentConversationId || !profile) return;
+    if (!text || !currentConversationId || !profile || att.busy) return;
+
+    const messageId = crypto.randomUUID();
+    // Bijlagen gaan mee met een gewone vraag, niet met "klaar voor een hoger
+    // niveau?". Na een afbeelding zoeken we ook op de beschrijving van de tutor.
+    const lastUser = [...messages].reverse().find(m => m.role === 'user');
+    const lastAssistant = messages[messages.length - 1]?.role === 'assistant' ? messages[messages.length - 1] : undefined;
+    const previousDescription = lastUser?.attachments?.some(a => a.kind === 'image' || a.scanned) ? lastAssistant?.content : undefined;
+    const sendAtt = readinessCheck ? undefined : att.takeForSend(messageId, previousDescription);
+    const meta = sendAtt?.meta ?? [];
 
     const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
+      id: messageId,
       role: 'user',
       content: text,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      ...(meta.length ? { attachments: meta } : {}),
     };
 
     const isFirstMessage = messages.length === 0;
@@ -720,21 +741,26 @@ export function ChatPage() {
     setInput('');
 
     try {
+      // Alleen het label van een bijlage wordt bewaard, nooit de inhoud (de
+      // database weigert ingebedde bestanden ook zelf).
+      const stored = meta.length ? { attachments: meta } : undefined;
+      if (hasInlineFile(userMessage.content) || hasInlineFile(stored)) throw new Error('inline file');
       await supabase.from('messages').insert({
         conversation_id: currentConversationId,
         role: 'user',
-        content: userMessage.content
+        content: userMessage.content,
+        ...(stored ? { retrieved_context: stored } : {}),
       });
     } catch (e) {
       console.error('[CHAT] insert user message failed:', e);
     }
 
-    await sendToAssistant(history, isFirstMessage, readinessCheck);
+    await sendToAssistant(history, isFirstMessage, readinessCheck, sendAtt);
   };
 
   const handleRetry = () => {
     if (pendingRetry) {
-      sendToAssistant(pendingRetry.history, pendingRetry.isFirstMessage, pendingRetry.readinessCheck);
+      sendToAssistant(pendingRetry.history, pendingRetry.isFirstMessage, pendingRetry.readinessCheck, pendingRetry.attachments);
     }
   };
 
@@ -843,7 +869,7 @@ export function ChatPage() {
         </div>
       </div>
 
-      <div className="min-w-[20rem] flex-1 chic-card flex flex-col">
+      <div className="min-w-[20rem] flex-1 chic-card flex flex-col" onDragOver={att.onDragOver} onDrop={att.onDrop}>
         {!currentConversationId ? (
           <div className="flex-1 flex items-center justify-center text-gray-500">
             <div className="text-center">
@@ -882,7 +908,10 @@ export function ChatPage() {
                         onRequestSource={handleRequestSource}
                       />
                     ) : (
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <>
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        <SentAttachments meta={msg.attachments ?? []} previews={att.previews[msg.id]} />
+                      </>
                     )}
                     {msg.role === 'assistant' && (() => {
                       const stats = msg.retrievedContext?.stats as
@@ -1024,11 +1053,23 @@ export function ChatPage() {
                   </button>
                 </div>
               </div>
+              <PendingAttachments
+                pending={att.pending}
+                busy={att.busy}
+                error={att.error}
+                showNotice={att.showNotice}
+                onRemove={att.remove}
+                onClearError={att.clearError}
+              />
               <div className="flex gap-3 items-end">
+                {att.showClip && (
+                  <AttachButton available={att.available} disabled={loading} onFiles={(files) => { void att.add(files); }} />
+                )}
                 <textarea
                   ref={chatInputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onPaste={att.onPaste}
                   onKeyDown={(e) => {
                     if (e.nativeEvent.isComposing) return;
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1036,7 +1077,7 @@ export function ChatPage() {
                       if (!loading) handleSendMessage();
                     }
                   }}
-                  placeholder={t('chat.inputPlaceholder')}
+                  placeholder={att.pending.length ? t('chat.attachments.inputPlaceholder') : t('chat.inputPlaceholder')}
                   aria-label={t('chat.inputPlaceholder')}
                   rows={3}
                   className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-none leading-relaxed min-h-[88px] max-h-[200px] overflow-y-auto"
@@ -1045,7 +1086,7 @@ export function ChatPage() {
                 />
                 <button
                   onClick={() => handleSendMessage()}
-                  disabled={loading || !input.trim()}
+                  disabled={loading || !input.trim() || att.busy}
                   className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Send className="w-5 h-5" />

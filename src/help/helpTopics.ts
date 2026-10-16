@@ -51,6 +51,9 @@ export const HELP_TOPICS = [
   'learningLevels.overview',
   // Onderdelen per cursus aan/uit
   'courseFeatures.toggles',
+  'courseFeatures.attachments',
+  // Bijlagen in de chat: hoofdschakelaar van de beheerder (Instellingen)
+  'chatAttachments.platform',
   // Quiz (student)
   'quiz.progress',
   // Analyse (losse module: src/features/analytics)
