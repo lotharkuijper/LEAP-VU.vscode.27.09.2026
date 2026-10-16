@@ -138,3 +138,43 @@ describe('berichten naar het taalmodel', () => {
     expect(msgs).toHaveLength(21);
   });
 });
+
+describe('vaste kennisdocumenten (besluit 2026-10-16)', () => {
+  it('handleiding én stappenplan gaan helemaal mee, zonder stil afkappen', async () => {
+    const { loadKnowledgeDocs, KNOWLEDGE_DOC_LIMIT, KNOWLEDGE_DOCS } = await import('../designAssistant.js');
+    const docs = loadKnowledgeDocs();
+    expect(docs).toHaveLength(KNOWLEDGE_DOCS.length);
+    for (const d of docs) {
+      expect(d.text.length).toBeGreaterThan(5000);
+      // Faalt zodra een document te lang wordt: splits of kort het dan in.
+      expect(d.text.length).toBeLessThanOrEqual(KNOWLEDGE_DOC_LIMIT);
+    }
+    const k = loadLeapKnowledge('docent');
+    expect(k).toMatch(/Stap 4 — Het eindrapport en de voorbeoordeling/);
+    expect(k).toMatch(/\| Titel \| /);
+    expect(k).not.toMatch(/Veld bijwerken/); // inhoudsopgave weggelaten
+  });
+  it('het Docker-image bevat elk kennisdocument', async () => {
+    const { KNOWLEDGE_DOCS } = await import('../designAssistant.js');
+    const docker = fs.readFileSync(path.join(root, 'Dockerfile'), 'utf8');
+    for (const d of KNOWLEDGE_DOCS) expect(docker).toContain(`COPY ${d.file} `);
+  });
+  it('gescheiden van cursusmateriaal: de Ontwerphulp leest geen cursus-RAG en niets anders leest zijn kennis', () => {
+    const src = fs.readFileSync(path.join(root, 'server/designAssistant.js'), 'utf8').replace(/^\s*\/\/.*$/gm, ''); // commentaar telt niet
+    expect(src).not.toMatch(/document_chunks|match_documents|\.rpc\(|from\('documents'\)/);
+    for (const f of fs.readdirSync(path.join(root, 'server')).filter((n) => n.endsWith('.js') && n !== 'designAssistant.js')) {
+      const other = fs.readFileSync(path.join(root, 'server', f), 'utf8');
+      expect(other, f).not.toMatch(/loadKnowledgeDocs|KNOWLEDGE_DOCS|loadLeapKnowledge/);
+    }
+  });
+});
+
+describe('werkwijze van de bot', () => {
+  it('bevat de onderwijskundige principes en de VU-waarden, en verzint geen VU-regels', () => {
+    for (const s of ['Constructive alignment', 'Scaffolding', 'Activerend onderwijs', 'Blended onderwijs', 'Variatie in toetsvormen', 'Open:', 'Persoonlijk:', 'Verantwoordelijk:']) {
+      expect(DEFAULT_DESIGN_ASSISTANT_PROMPT).toContain(s);
+    }
+    expect(DEFAULT_DESIGN_ASSISTANT_PROMPT).toMatch(/nooit als cijferbron/);
+    expect(DEFAULT_DESIGN_ASSISTANT_PROMPT).toMatch(/Verzin die niet/);
+  });
+});

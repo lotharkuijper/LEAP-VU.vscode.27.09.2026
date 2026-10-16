@@ -55,8 +55,10 @@ COPY scripts ./scripts
 COPY supabase/migrations ./supabase/migrations
 # De server leest de vertalingen voor e-mails uit de frontend-bestanden.
 COPY src/i18n/locales ./src/i18n/locales
-# De Ontwerphulp (server/designAssistant.js) leest de handleiding als achtergrondkennis.
+# De Ontwerphulp (server/designAssistant.js) leest de handleiding en het
+# stappenplan voor projecten als achtergrondkennis (KNOWLEDGE_DOCS).
 COPY docs/handleiding/handleiding.html ./docs/handleiding/handleiding.html
+COPY docs/handleiding/Stappenplan-project-LEAP.docx ./docs/handleiding/Stappenplan-project-LEAP.docx
 COPY --from=build /app/dist ./dist
 # Niet als root draaien.
 USER node
