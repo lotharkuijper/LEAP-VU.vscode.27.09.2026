@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>LEAP: AI die studenten laat denken</title>
+<style>
+@font-face {
+  font-family: "Nunito";
+  src: url("nunito-latin-wght-normal.woff2") format("woff2");
+  font-weight: 200 1000;
+}
+:root {
+  --brand: rgb(11 114 194);
+  --brand-dark: rgb(17 65 107);
+  --brand-soft: rgb(239 248 255);
+  --brand-line: rgb(219 238 254);
+  --ink: rgb(15 23 42);
+  --ink-soft: rgb(71 85 105);
+  --ink-line: rgb(226 232 240);
+  --accent: rgb(234 88 12);
+  --accent-soft: rgb(255 247 237);
+}
+@page {
+  size: A4;
+  margin: 22mm 20mm 22mm 20mm;
+  @bottom-center {
+    content: counter(page);
+    font-family: "Nunito", sans-serif;
+    font-size: 8.5pt;
+    color: rgb(100 116 139);
+  }
+  @top-right {
+    content: "LEAP: AI die studenten laat denken";
+    font-family: "Nunito", sans-serif;
+    font-size: 8pt;
+    color: rgb(100 116 139);
+  }
+}
+@page :first {
+  @top-right { content: none; }
+  @bottom-center { content: none; }
+}
+html { background: white; }
+body {
+  font-family: Cambria, Georgia, "Times New Roman", serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+  hyphens: auto;
+  text-align: justify;
+}
+h1, h2, h3, h4, .sans, .kicker, table, figcaption, .box-title, .meta {
+  font-family: "Nunito", "Segoe UI", sans-serif;
+  text-align: left;
+  hyphens: manual;
+}
+h1 {
+  font-size: 23pt;
+  line-height: 1.15;
+  font-weight: 800;
+  color: var(--brand-dark);
+  margin: 0 0 6pt;
+}
+.subtitle {
+  font-family: "Nunito", sans-serif;
+  font-size: 13pt;
+  font-weight: 500;
+  color: var(--ink-soft);
+  margin: 0 0 18pt;
+  text-align: left;
+  line-height: 1.3;
+}
+.kicker {
+  font-size: 9pt;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 10pt;
+}
+.meta {
+  font-size: 9.5pt;
+  color: var(--ink-soft);
+  border-top: 2px solid var(--brand);
+  padding-top: 8pt;
+  margin-bottom: 18pt;
+}
+.meta strong { color: var(--ink); }
+.abstract {
+  background: var(--brand-soft);
+  border-left: 4px solid var(--brand);
+  padding: 10pt 14pt;
+  margin: 0 0 14pt;
+  font-size: 10pt;
+}
+.abstract p { margin: 0 0 6pt; }
+.abstract p:last-child { margin-bottom: 0; }
+.abstract .box-title { font-weight: 800; color: var(--brand-dark); font-size: 10pt; margin-bottom: 4pt; }
+.keywords { font-size: 9pt; color: var(--ink-soft); margin: 0 0 6pt; }
+h2 {
+  font-size: 14.5pt;
+  font-weight: 800;
+  color: var(--brand-dark);
+  margin: 20pt 0 6pt;
+  break-after: avoid;
+}
+h2 .num { color: var(--accent); margin-right: 6pt; }
+h3 {
+  font-size: 11.5pt;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 14pt 0 4pt;
+  break-after: avoid;
+}
+h3 .num { color: var(--brand); margin-right: 5pt; }
+h4 {
+  font-size: 10pt;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin: 8pt 0 2pt;
+  break-after: avoid;
+}
+p { margin: 0 0 7pt; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 7pt; padding-left: 16pt; }
+li { margin: 0 0 3pt; }
+em { font-style: italic; }
+.inleap {
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  padding: 6pt 10pt;
+  margin: 6pt 0 10pt;
+  font-size: 9.6pt;
+  break-inside: avoid;
+}
+.inleap .box-title {
+  font-weight: 800;
+  font-size: 8.5pt;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2pt;
+}
+.inleap ul { margin: 0; padding-left: 14pt; }
+.inleap li { margin-bottom: 2pt; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.8pt;
+  line-height: 1.35;
+  margin: 6pt 0 4pt;
+  break-inside: avoid;
+}
+th {
+  background: var(--brand-dark);
+  color: white;
+  font-weight: 700;
+  text-align: left;
+  padding: 5pt 6pt;
+}
+td {
+  padding: 5pt 6pt;
+  vertical-align: top;
+  border-bottom: 1px solid var(--ink-line);
+}
+tr:nth-child(even) td { background: rgb(248 250 252); }
+td:first-child { font-weight: 700; color: var(--brand-dark); }
+figure { margin: 10pt 0 12pt; break-inside: avoid; }
+figcaption {
+  font-size: 8.8pt;
+  color: var(--ink-soft);
+  margin-top: 4pt;
+  line-height: 1.4;
+}
+figcaption strong { color: var(--ink); }
+.refs p {
+  font-size: 9pt;
+  line-height: 1.4;
+  padding-left: 16pt;
+  text-indent: -16pt;
+  margin-bottom: 4pt;
+  text-align: left;
+  hyphens: manual;
+}
+.pb { break-before: page; }
+.note { font-size: 9pt; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<p class="kicker">Ontwerpnotitie · onderwijs en AI</p>
+<h1>LEAP: AI die studenten laat denken</h1>
+<p class="subtitle">Onderwijskundige principes achter een leeromgeving die werkt met het materiaal van de eigen cursus</p>
+
+<div class="meta">
+  <strong>L.D.J. Kuijper</strong> · Vrije Universiteit Amsterdam<br>
+  Werkversie, oktober 2026 · LEAP-VU (Learning &amp; Engagement AI-Platform)
+</div>
+
+<div class="abstract">
+  <div class="box-title">Samenvatting</div>
+  <p>Generatieve AI kan een student binnen enkele seconden een antwoord geven. Daar zit ook het risico in: wie het antwoord krijgt, hoeft zelf niet meer na te denken. LEAP-VU is een webomgeving van de Vrije Universiteit die het omgekeerde wil bereiken. Het platform zet AI in om studenten <em>meer</em> te laten denken, en het blijft daarbij binnen de stof die de docent heeft gekozen.</p>
+  <p>Deze notitie introduceert LEAP en legt uit welke onderwijskundige principes het ontwerp sturen. We bespreken tien principes, zoals verankering in het cursusmateriaal, socratisch doorvragen, leren door uitleggen, ophalen en spreiden, en formatieve feedback met een volgende stap. Andere principes zijn afstemming op het niveau van de student, reflectie en eigenaarschap, motivatie door verdiende successen, samen leren aan authentieke opdrachten en kritisch leren omgaan met AI. Bij elk principe laten we zien hoe het is uitgewerkt in de functies van LEAP, en welke ontwerpkeuzes daarbij bewust zijn gemaakt.</p>
+  <p>Daarna gaan we in op de rol van de docent, die de regie houdt, en op privacy en betrouwbare leergegevens. We sluiten af met de spanningen en open vragen die een empirische evaluatie moet beantwoorden.</p>
+</div>
+<p class="keywords"><strong>Trefwoorden:</strong> generatieve AI, retrieval-augmented generation, socratische tutor, self-explanation, retrieval practice, formatieve feedback, zelfdeterminatietheorie, authentiek leren, AI-geletterdheid</p>
+
+<h2><span class="num">1</span>Inleiding: het dilemma van de antwoordmachine</h2>
+
+<p>Een-op-eenbegeleiding is al decennia het ijkpunt voor goed onderwijs. Bloom (1984) beschreef het zogenoemde <em>2-sigmaprobleem</em>: studenten die individueel begeleid worden, presteren gemiddeld twee standaarddeviaties beter dan studenten in een gewone klas. De vraag was hoe je die opbrengst kunt benaderen zonder voor elke student een eigen tutor. Later onderzoek naar intelligente tutorsystemen liet zien dat een deel van die winst ook met software te halen is, vooral als het systeem de student stap voor stap laat redeneren (VanLehn, 2011).</p>
+
+<p>Grote taalmodellen lijken die belofte dichterbij te brengen. Ze kunnen in gewone taal uitleggen, doorvragen en reageren op wat een student schrijft. Tegelijk brengen ze nieuwe risico's mee (Kasneci e.a., 2023). Een taalmodel antwoordt vloeiend en overtuigend, ook als het antwoord onjuist is of niet aansluit bij de cursus. En een model dat altijd het antwoord geeft, neemt de student precies het denkwerk uit handen waar het leren door ontstaat. Recent veldonderzoek laat dat effect zien: scholieren die tijdens het oefenen vrij toegang hadden tot een algemene chatbot, scoorden beter op de oefenopgaven, maar slechter op een latere toets zonder hulp. Een versie met didactische vangrails had dat nadeel grotendeels niet (Bastani e.a., 2025).</p>
+
+<p>LEAP vertrekt vanuit dit dilemma. Het uitgangspunt is niet <em>hoe krijgt de student zo snel mogelijk een goed antwoord?</em>, maar <em>hoe zorgt AI ervoor dat de student zelf meer en beter nadenkt over de stof van deze cursus?</em> Dat uitgangspunt leidt tot een reeks ontwerpkeuzes, die we in deze notitie verbinden met de onderwijskundige literatuur waarop ze steunen.</p>
+
+<p>Paragraaf 2 geeft een overzicht van LEAP. Paragraaf 3 bespreekt tien principes en hun uitwerking. Paragraaf 4 gaat over de regie van de docent, paragraaf 5 over vertrouwen, privacy en de betrouwbaarheid van leergegevens. Paragraaf 6 bespreekt spanningen en open vragen.</p>
+
+<h2><span class="num">2</span>LEAP in vogelvlucht</h2>
+
+<p>LEAP-VU is een webapplicatie waarin studenten met AI-ondersteuning oefenen met de stof van een specifieke cursus. Het bijzondere is dat de AI in LEAP niet uit algemene kennis put, maar eerst zoekt in het materiaal dat de docent heeft toegevoegd: colleges, readers, slides en websites. Technisch gebeurt dat met <em>retrieval-augmented generation</em> (RAG; Lewis e.a., 2020). Het materiaal wordt opgeknipt in fragmenten en doorzoekbaar gemaakt. Bij elke vraag haalt LEAP de best passende fragmenten op en geeft die aan het taalmodel mee, met de opdracht het antwoord daarop te baseren en ernaar te verwijzen.</p>
+
+<p>Voor de student bestaat LEAP uit zes onderdelen (tabel 1). Vier daarvan zijn manieren om te oefenen. Het Studiecafé is de plek om met elkaar te leren, en het leerdagboek brengt alles samen.</p>
+
+<table>
+  <thead><tr><th style="width:18%">Onderdeel</th><th style="width:42%">Wat de student doet</th><th>Belangrijkste leermechanisme</th></tr></thead>
+  <tbody>
+    <tr><td>Chat</td><td>Stelt vragen aan een tutor die meedenkt en vaak eerst een wedervraag stelt.</td><td>Socratisch doorvragen, scaffolding</td></tr>
+    <tr><td>Ik leg uit</td><td>Legt een begrip uit de cursus in eigen woorden uit en krijgt gerichte feedback.</td><td>Self-explanation, leren door uitleggen</td></tr>
+    <tr><td>Quiz</td><td>Oefent met meerkeuze-, open en casusvragen over gekozen begrippen.</td><td>Retrieval practice, gespreid oefenen</td></tr>
+    <tr><td>Projecten</td><td>Werkt in een groep aan een opdracht en spreekt met persona's: een begeleider, een beoordelaar of een rolspeler.</td><td>Authentiek en samenwerkend leren</td></tr>
+    <tr><td>Studiecafé</td><td>Stelt vragen aan medestudenten, discussieert en laat AI-antwoorden door anderen controleren.</td><td>Peer learning, kritisch lezen van AI-output</td></tr>
+    <tr><td>Leerdagboek</td><td>Kijkt terug op het eigen leren, met feedback en een volgende stap, en verzamelt achievements.</td><td>Reflectie, zelfregulatie</td></tr>
+  </tbody>
+</table>
+<p class="note">Tabel 1. De zes onderdelen van LEAP voor studenten.</p>
+
+<p>De docent richt een cursus in via de beheeromgeving. Daar kiest de docent het materiaal en waarvoor het mag dienen. Daarnaast beoordeelt de docent de begrippen die LEAP uit de stof haalt, en bepaalt de docent waar quizvragen vandaan komen, hoe de chat klinkt en welke onderdelen studenten zien. LEAP draait in de Azure-omgeving van de VU; de gegevens van studenten blijven daar.</p>
+
+<p>Figuur 1 toont hoe de onderdelen samen een leerlus vormen. De student <em>verkent</em> de stof in de chat, <em>verwoordt</em> haar in Ik leg uit, <em>haalt</em> haar <em>op</em> in de quiz en <em>reflecteert</em> in het leerdagboek. Het cursusmateriaal staat daarbij in het midden. Projecten en het Studiecafé voegen daar het samen leren aan toe.</p>
+
+<figure>
+<svg viewBox="0 0 640 300" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Nunito, Segoe UI, sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="rgb(11 114 194)"/>
+    </marker>
+  </defs>
+  <!-- centrum -->
+  <circle cx="230" cy="150" r="62" fill="rgb(239 248 255)" stroke="rgb(11 114 194)" stroke-width="1.5"/>
+  <text x="230" y="143" text-anchor="middle" font-size="12" font-weight="800" fill="rgb(17 65 107)">Cursus-</text>
+  <text x="230" y="158" text-anchor="middle" font-size="12" font-weight="800" fill="rgb(17 65 107)">materiaal</text>
+  <text x="230" y="174" text-anchor="middle" font-size="9.5" fill="rgb(71 85 105)">gekozen door docent</text>
+  <!-- lus: vier stations -->
+  <g font-size="11.5" font-weight="800">
+    <rect x="170" y="10" width="120" height="44" rx="10" fill="white" stroke="rgb(11 114 194)" stroke-width="1.5"/>
+    <text x="230" y="29" text-anchor="middle" fill="rgb(15 23 42)">Chat</text>
+    <text x="230" y="45" text-anchor="middle" font-size="9.5" font-weight="500" fill="rgb(71 85 105)">verkennen</text>
+
+    <rect x="360" y="128" width="120" height="44" rx="10" fill="white" stroke="rgb(11 114 194)" stroke-width="1.5"/>
+    <text x="420" y="147" text-anchor="middle" fill="rgb(15 23 42)">Ik leg uit</text>
+    <text x="420" y="163" text-anchor="middle" font-size="9.5" font-weight="500" fill="rgb(71 85 105)">verwoorden</text>
+
+    <rect x="170" y="246" width="120" height="44" rx="10" fill="white" stroke="rgb(11 114 194)" stroke-width="1.5"/>
+    <text x="230" y="265" text-anchor="middle" fill="rgb(15 23 42)">Quiz</text>
+    <text x="230" y="281" text-anchor="middle" font-size="9.5" font-weight="500" fill="rgb(71 85 105)">ophalen</text>
+
+    <rect x="-20" y="128" width="130" height="44" rx="10" fill="white" stroke="rgb(11 114 194)" stroke-width="1.5" transform="translate(30 0)"/>
+    <text x="75" y="147" text-anchor="middle" fill="rgb(15 23 42)">Leerdagboek</text>
+    <text x="75" y="163" text-anchor="middle" font-size="9.5" font-weight="500" fill="rgb(71 85 105)">reflecteren</text>
+  </g>
+  <!-- pijlen met de klok mee -->
+  <path d="M292,40 C360,50 410,90 418,124" fill="none" stroke="rgb(11 114 194)" stroke-width="1.6" marker-end="url(#arr)"/>
+  <path d="M418,176 C410,215 360,255 294,264" fill="none" stroke="rgb(11 114 194)" stroke-width="1.6" marker-end="url(#arr)"/>
+  <path d="M168,264 C110,255 80,215 76,176" fill="none" stroke="rgb(11 114 194)" stroke-width="1.6" marker-end="url(#arr)"/>
+  <path d="M76,124 C80,90 110,50 166,38" fill="none" stroke="rgb(11 114 194)" stroke-width="1.6" marker-end="url(#arr)"/>
+  <!-- verankering -->
+  <g stroke="rgb(148 163 184)" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="230" y1="56" x2="230" y2="86"/>
+    <line x1="230" y1="214" x2="230" y2="244"/>
+    <line x1="294" y1="150" x2="358" y2="150"/>
+  </g>
+  <!-- samen leren -->
+  <rect x="512" y="40" width="120" height="220" rx="12" fill="rgb(255 247 237)" stroke="rgb(234 88 12)" stroke-width="1.5"/>
+  <text x="572" y="66" text-anchor="middle" font-size="11.5" font-weight="800" fill="rgb(154 52 18)">Samen leren</text>
+  <rect x="524" y="82" width="96" height="56" rx="8" fill="white" stroke="rgb(234 88 12)"/>
+  <text x="572" y="106" text-anchor="middle" font-size="11" font-weight="800" fill="rgb(15 23 42)">Projecten</text>
+  <text x="572" y="122" text-anchor="middle" font-size="9" fill="rgb(71 85 105)">persona's, groep</text>
+  <rect x="524" y="152" width="96" height="56" rx="8" fill="white" stroke="rgb(234 88 12)"/>
+  <text x="572" y="176" text-anchor="middle" font-size="11" font-weight="800" fill="rgb(15 23 42)">Studiecafé</text>
+  <text x="572" y="192" text-anchor="middle" font-size="9" fill="rgb(71 85 105)">"Klopt dit wel?"</text>
+  <text x="572" y="236" text-anchor="middle" font-size="9" fill="rgb(154 52 18)">verbonden met</text>
+  <text x="572" y="249" text-anchor="middle" font-size="9" fill="rgb(154 52 18)">de hele lus</text>
+  <line x1="482" y1="150" x2="510" y2="150" stroke="rgb(234 88 12)" stroke-width="1.5" stroke-dasharray="4 3"/>
+</svg>
+<figcaption><strong>Figuur 1.</strong> De leerlus in LEAP. Elke stap is verankerd in het cursusmateriaal dat de docent kiest (stippellijnen). Projecten en het Studiecafé voegen samen leren toe aan de individuele lus. Het leerdagboek voedt de volgende ronde met een concrete volgende stap.</figcaption>
+</figure>
+
+<h2><span class="num">3</span>Tien principes en hun uitwerking</h2>
+
+<p>We beschrijven hieronder tien principes. Bij elk principe noemen we eerst de onderwijskundige onderbouwing en daarna de uitwerking in LEAP. Een kader per principe vat samen waar de student of docent het principe terugziet. Tabel 2 aan het eind van deze paragraaf geeft een overzicht.</p>
+
+<h3><span class="num">3.1</span>Verankerd in het cursusmateriaal</h3>
+
+<p>Een cursus is meer dan een verzameling feiten. De docent kiest begrippen, terminologie, voorbeelden en een eigen nadruk, en stemt die af op de leerdoelen en de toetsing. Biggs (1996) noemt dat <em>constructive alignment</em>: leeractiviteiten, leerdoelen en toetsing moeten op elkaar aansluiten. Een algemene chatbot doorbreekt die afstemming. Hij gebruikt andere termen, andere definities en soms andere conventies dan de cursus, en de student kan niet zien waar een bewering vandaan komt.</p>
+
+<p>LEAP baseert daarom elk antwoord, elke feedback en elke quizvraag op fragmenten uit het materiaal van de cursus. De chat verwijst met bronnummers naar de passages, en een klik op zo'n verwijzing opent het document op de juiste plek. Staat iets niet in het materiaal, dan zegt de tutor dat, in plaats van te gokken. De docent kan de chat bovendien in een strikte stand zetten, waarin alleen cursusbronnen gebruikt worden.</p>
+
+<p>Dezelfde verankering geldt voor de <em>begrippen</em> waarover studenten uitleggen en quizzen. LEAP leest het volledige cursusmateriaal, document voor document en in vensters van ongeveer twaalfduizend tekens. Elk gevonden begrip onthoudt uit welke documenten het komt. Eerdere versies werkten met een steekproef van het materiaal en misten daardoor het grootste deel van de stof. Dubbele begrippen worden samengevoegd. Bij twijfel krijgt de docent een voorstel, en de docent keurt de begrippen ook goed voordat studenten ze zien. Begrippen lekken nooit tussen cursussen: een student ziet alleen de begrippen van de eigen cursus.</p>
+
+<p>Een belangrijke ontwerpregel is dat LEAP een zwak bewijs niet verdoezelt. Als het materiaal voor een quizonderwerp te mager is, valt LEAP niet stilzwijgend terug op vragen die het taalmodel zelf verzint. Een document dat niet goed verwerkt is, bijvoorbeeld omdat het in één reusachtig fragment is beland, wordt als fout gemeld en niet als een lege uitkomst geaccepteerd. De gedachte daarachter is eenvoudig: een student die oefent met stof die niet in de cursus staat, oefent het verkeerde.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Bronverwijzingen [1], [2] in chat en feedback, die het document openen op de juiste pagina.</li>
+    <li>Instelling "Strikt: alleen cursusbronnen" per onderdeel.</li>
+    <li>Begrippen uit de hele cursus, met herkomst per document en goedkeuring door de docent.</li>
+    <li>Per bestand een doel: leerstof, cursusinformatie, projectmateriaal, alleen delen, of alleen voor docenten. Materiaal "alleen voor docenten", zoals antwoordmodellen en tentamens, bereikt studenten nooit, ook niet via de AI.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.2</span>Denken in plaats van antwoorden krijgen</h3>
+
+<p>Leren vraagt mentale inspanning. Bjork (1994) spreekt van <em>desirable difficulties</em>: moeilijkheden die het leren op korte termijn trager maken, maar het beklijven op lange termijn verbeteren. Tegelijk werkt volledig zelfontdekkend leren slecht voor beginners, omdat zij nog te weinig voorkennis hebben om zelf de weg te vinden (Kirschner, Sweller &amp; Clark, 2006). Goede begeleiding zit daartussen. Wood, Bruner en Ross (1976) noemden dat <em>scaffolding</em>: de begeleider neemt alleen het deel van de taak over dat de leerling nog niet zelf kan, en bouwt die steun geleidelijk af.</p>
+
+<p>De chat in LEAP werkt daarom als een socratische tutor. In plaats van meteen het antwoord te geven, vraagt de tutor vaak eerst wat de student zelf denkt, en bouwt voort op wat de student al weet. Waar de student vastloopt, geeft de tutor een aanwijzing of een deel van de redenering, gegrond in het cursusmateriaal. Hoe de tutor dat precies doet, bepaalt de docent in de chat-instructie van de cursus (paragraaf 4). LEAP levert een algemeen sjabloon dat de docent per cursus aanpast.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Een tutor die doorvraagt en hints geeft voordat hij uitlegt.</li>
+    <li>Een chat-instructie per cursus, gebaseerd op een sjabloon, waarin de docent rol, aanpak, structuur en toon vastlegt.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.3</span>Leren door uitleggen</h3>
+
+<p>Wie iets in eigen woorden uitlegt, ontdekt zelf waar het eigen begrip tekortschiet. Chi e.a. (1994) toonden dat studenten die gevraagd werden zichzelf een tekst uit te leggen, die tekst beter begrepen dan studenten die hem twee keer lazen. Uitleggen aan een ander heeft een vergelijkbaar effect (Fiorella &amp; Mayer, 2013). In het overzicht van Dunlosky e.a. (2013) behoort zelfverklaren tot de leerstrategieën met een redelijk sterke onderbouwing.</p>
+
+<p>In <em>Ik leg uit</em> draait LEAP de gebruikelijke rol van AI om: de student legt uit, de AI luistert. De student kiest een begrip uit de cursus en schrijft een uitleg. LEAP zoekt de passende fragmenten in het cursusmateriaal en beoordeelt de uitleg daartegen. De feedback heeft een vaste vorm in vier delen:</p>
+
+<ol>
+  <li><strong>Feedback</strong> over dit ene begrip en de definitie ervan: wat klopt, wat ontbreekt en welke misvattingen er spelen, met verwijzingen naar het materiaal.</li>
+  <li><strong>Een score</strong> van 0 tot 100 op een vaste schaal.</li>
+  <li><strong>Verwante begrippen</strong>: hoogstens drie goedgekeurde begrippen uit dezelfde cursus die dezelfde bronfragmenten delen.</li>
+  <li><strong>Feed-forward</strong>: een of twee concrete volgende stappen.</li>
+</ol>
+
+<p>Achter deze vorm zitten een paar bewuste keuzes. De feedback gaat alleen over het gevraagde begrip. Een student die uitlegt wat een begrip is, wordt niet afgerekend op een verwant begrip dat hij niet noemde; zulke begrippen verschijnen apart als suggestie om verder te leren, en tellen niet mee in de score. De score is gekalibreerd tegen het echte model met voorbeelduitleggen van wisselende kwaliteit: een uitstekende uitleg kreeg 100, een redelijke 85, een verwarde 40 en een onjuiste 30. Alleen de student ziet de score. Hij verschijnt niet in voortgangsoverzichten of analyses, zodat Ik leg uit een oefenplek blijft en geen toets wordt.</p>
+
+<p>Ook leerniveaus spelen in Ik leg uit bewust geen rol. Bij uitleggen gaat het om de vraag of een student een begrip beheerst of niet; een lagere lat voor een beginner zou die vraag vertroebelen.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>"Leg dit begrip uit in je eigen woorden", met feedback, score, verwante begrippen en feed-forward.</li>
+    <li>Beoordeling, score en opslag gebeuren in één stap op de server; de browser kan de feedback niet zelf aanpassen.</li>
+    <li>Vanuit de feedback kan de student met één klik het begrip oefenen in de quiz.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.4</span>Ophalen en spreiden</h3>
+
+<p>Kennis actief ophalen uit het geheugen versterkt die kennis meer dan opnieuw bestuderen. Dit <em>testing effect</em> is een van de best onderbouwde bevindingen uit de leerpsychologie (Roediger &amp; Karpicke, 2006). Het effect wordt groter als het oefenen over de tijd gespreid wordt in plaats van in één blok (Cepeda e.a., 2006). Dunlosky e.a. (2013) beoordelen oefentoetsen en gespreid oefenen als de twee meest effectieve leerstrategieën die zij onderzochten.</p>
+
+<p>De quiz in LEAP is gebouwd als oefeninstrument, niet als toets. De student kiest een of meer begrippen, een vraagtype (meerkeuze, open of casus) en een moeilijkheidsgraad. Bij meerkeuzevragen ziet de student direct of het antwoord goed is, met uitleg. Open antwoorden krijgen feedback, feed-forward en een score. De vragen komen uit de bronnen die de docent instelt: het cursusmateriaal, een eigen vraagbank, of vrij gegenereerd door de AI, in een mengverhouding die de docent bepaalt.</p>
+
+<p>Op de quizpagina ziet de student onder <em>Jouw voortgang</em> per begrip hoe het gaat. LEAP stelt daar voor wat de student het beste kan oefenen, volgens een eenvoudige vorm van gespreide herhaling: eerst begrippen die nog zwak gaan, dan begrippen die aan herhaling toe zijn, en pas daarna nieuwe begrippen. De standaardmoeilijkheid volgt het leerniveau van de student (paragraaf 3.6).</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Meerkeuze-, open en casusvragen per begrip, met directe feedback.</li>
+    <li>"Jouw voortgang" en "Oefen wat je lastig vindt": zwak eerst, dan herhaling, dan nieuw.</li>
+    <li>Een vraagbronnenmix die de docent per cursus instelt.</li>
+    <li>"Klopt dit wel?" bij elke quizvraag, om twijfel over vraag of feedback in het Studiecafé te bespreken.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.5</span>Formatieve feedback met een volgende stap</h3>
+
+<p>Feedback is een van de krachtigste invloeden op leren, maar alleen als ze de juiste vragen beantwoordt. Hattie en Timperley (2007) onderscheiden drie: <em>waar ga ik naartoe?</em> (feed up), <em>hoe sta ik ervoor?</em> (feed back) en <em>wat is mijn volgende stap?</em> (feed forward). Black en Wiliam (1998) lieten zien dat formatieve toetsing, waarbij feedback het verdere leren stuurt, sterke leerwinst oplevert. Nicol en Macfarlane-Dick (2006) benadrukken dat goede feedback de student helpt het eigen leren te sturen, in plaats van alleen een oordeel te geven.</p>
+
+<p>LEAP past dit consequent toe. Feedback in Ik leg uit en bij open quizvragen eindigt altijd met een volgende stap. Het leerdagboek gebruikt overal dezelfde drie blokken: <em>wat heb je gedaan</em>, <em>feedback</em> (wat ging goed en wat kan beter) en <em>je volgende stap</em>. Die vaste vorm maakt feedback uit verschillende onderdelen vergelijkbaar, en de volgende stap wordt het startpunt voor de volgende oefensessie.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Feedback én feed-forward bij uitleggen en bij open quizvragen.</li>
+    <li>Reflecties in het leerdagboek in drie vaste blokken, voor chat, uitleg, quiz en projecten.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.6</span>Afstemming op het niveau van de student</h3>
+
+<p>Uitleg werkt het best als ze net boven wat de student al zelfstandig kan ligt, in wat Vygotsky (1978) de <em>zone van naaste ontwikkeling</em> noemde. Een beginner heeft baat bij alledaagse taal, weinig vaktermen en kleine stappen; een gevorderde student wil precisie, abstractie en de randen van een begrip. Te moeilijke uitleg overbelast het werkgeheugen, te makkelijke uitleg verveelt.</p>
+
+<p>In de chat kiest de student daarom een leerniveau, van <em>Nieuw</em> tot <em>Expert</em>. Dat niveau verandert de taal van de tutor echt. LEAP beschrijft elk niveau op zes dimensies: taalniveau (oplopend van ERK-niveau B1 naar C2; Council of Europe, 2020), terminologie, zinsbouw, abstractie, verwachte voorkennis en stapgrootte. Ook de lengte van het antwoord hangt ervan af. Dat het niveau echt verschil maakt, wordt gecontroleerd met een meting op het echte model. De leesbaarheidsindex LIX (Björnsson, 1968) moet van niveau 1 naar niveau 5 oplopen met ten minste tien punten, en op niveau 1 mag hoogstens ongeveer één vakterm voorkomen.</p>
+
+<p>De verhouding tussen docent en niveau is bewust geregeld. De docent bepaalt in de chat-instructie het <em>soort</em> antwoord: rol, aanpak, structuur, toon en grenzen zoals een maximale lengte. Het niveau bepaalt <em>hoe technisch en complex</em> het antwoord binnen dat kader is. Een docent die vraagt om "te beginnen bij wat de student al weet", krijgt op niveau 1 een start bij alledaagse ervaring en op niveau 5 een start bij een dieper aspect van het begrip. Docenten hoeven het taalniveau dus niet zelf in hun instructie op te nemen.</p>
+
+<p>Leerniveaus horen alleen bij de chat. In projecten spelen ze geen rol, omdat een groep met verschillende niveaus aan één authentieke opdracht werkt. Ook in Ik leg uit spelen ze geen rol (paragraaf 3.3).</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Een niveaukeuze onder de chat, van Nieuw tot Expert.</li>
+    <li>Een niveautabel met zes dimensies, gecontroleerd met een leesbaarheidsmeting op het echte model.</li>
+    <li>De standaardmoeilijkheid van de quiz volgt het gekozen niveau.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.7</span>Reflectie en eigenaarschap</h3>
+
+<p>Studenten die hun eigen leren plannen, volgen en bijsturen, leren effectiever. Zimmerman (2002) beschrijft zelfregulatie als een cyclus van vooruitdenken, uitvoeren en reflecteren. Reflectie maakt het eigen leerproces zichtbaar, en zichtbaarheid is een voorwaarde om het bij te sturen (Schön, 1983).</p>
+
+<p>Het leerdagboek is de plek waar dit samenkomt. Na een chatgesprek, een uitleg, een quiz of een projectgesprek maakt LEAP een reflectie in de drie blokken uit paragraaf 3.5, met waar van toepassing het leerniveau van dat moment. Studenten schrijven daarnaast eigen notities. Een student kan een afgerond chatgesprek zelf naar het dagboek verplaatsen; zo blijft de student eigenaar van wat er wordt vastgelegd.</p>
+
+<p>Eigenaarschap geldt ook voor het niveau. De AI verandert het leerniveau nooit uit zichzelf. Een student kan vragen of hij klaar is voor een hoger niveau, krijgt een eerlijk oordeel, en besluit daarna zelf. En eigenaarschap geldt voor de eigen gegevens: onder <em>Mijn gegevens</em> downloadt een student alles wat LEAP over hem bewaart, drukt hij een leerdossier af, of verwijdert hij zelf zijn account.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Automatische reflecties in drie blokken, plus eigen notities.</li>
+    <li>"Klaar voor een hoger niveau?": een oordeel van de tutor, een besluit van de student.</li>
+    <li>"Mijn gegevens": alles downloaden, een afdrukbaar leerdossier en zelf je account verwijderen.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.8</span>Motivatie door verdiende successen</h3>
+
+<p>De zelfdeterminatietheorie (Deci &amp; Ryan, 2000) noemt drie psychologische basisbehoeften die intrinsieke motivatie voeden: <em>autonomie</em> (zelf kiezen), <em>competentie</em> (merken dat je groeit) en <em>verbondenheid</em> (erbij horen). Beloningen kunnen die motivatie versterken, maar ook ondermijnen. Een meta-analyse van Deci, Koestner en Ryan (1999) liet zien dat beloningen die afhangen van het simpelweg doen van een taak de intrinsieke motivatie vaak verlagen. Beloningen die informatie geven over echte competentie doen dat minder.</p>
+
+<p>LEAP volgt daarom de regel <em>verdiend, niet geklikt</em>. Een student die zelf een hoger niveau kiest, krijgt geen feestje. Een viering en een achievement volgen alleen op een positief oordeel van de tutor op de vraag "Klaar voor een hoger niveau?", na een inhoudelijk gesprek. De server controleert dat oordeel zelf: het niveau komt uit de database, de student moet voldoende eigen inbreng hebben geleverd, het onderwerp moet een goedgekeurd begrip van de cursus zijn, en alleen gespreksbeurten die aantoonbaar in LEAP zijn gevoerd tellen mee. Elke achievement verwijst naar een reflectie in het leerdagboek als bewijs. Zo zegt een medaille iets over wat de student kan, en daarmee voedt hij competentie in plaats van alleen activiteit te belonen.</p>
+
+<p>De drie basisbehoeften komen ook elders terug. Autonomie zit in de vrije keuze van niveau, begrippen en vraagtypen. Competentie zit in de feedback met een volgende stap en in de voortgang per begrip. Verbondenheid zit in de projectgroepen en het Studiecafé.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Een viering alleen na een positief, door de server gecontroleerd oordeel.</li>
+    <li>Medailles van brons tot platina per onderwerp en niveau, in de prijzenkast van het leerdagboek, met het oordeel als bewijs.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.9</span>Samen leren aan authentieke opdrachten</h3>
+
+<p>Kennis wordt beter toegepast als ze geleerd is in een context die lijkt op die waarin ze later gebruikt wordt. Lave en Wenger (1991) beschreven leren als deelname aan een praktijk. Herrington, Reeves en Oliver (2014) werkten uit wat een leeromgeving <em>authentiek</em> maakt: realistische taken, meerdere perspectieven, samenwerking, en ruimte voor reflectie en articulatie. Samenwerkend leren werkt vooral als groepsleden elkaar iets te vertellen hebben en samen betekenis moeten construeren (Dillenbourg, 1999).</p>
+
+<p>In <em>Projecten</em> werken studenten in groepen aan een opdracht. Ze spreken daarbij met persona's, AI-figuren met een eigen gezicht, rol en toon, die de docent inricht. Een persona heeft een van drie rollen:</p>
+
+<ul>
+  <li>De <strong>begeleider</strong> helpt de groep door de stappen van het project en verwijst naar het projectmateriaal.</li>
+  <li>De <strong>beoordelaar</strong> geeft formatieve feedback op tussen- en eindproducten die de groep inlevert. De beoordelaar werkt met een rubric van de docent die de studenten niet zien, en met een vast aantal feedbackrondes per groep. Zo blijft de feedback richtinggevend zonder dat de groep naar de rubric toe schrijft, en dwingt het beperkte aantal rondes de groep om eerst zelf kritisch te kijken.</li>
+  <li>De <strong>rolspeler</strong> is een personage in een simulatie, zoals een wethouder, een cliënt of een opdrachtgever, die reageert vanuit de eigen rol.</li>
+</ul>
+
+<p>Bij een rolspeler kan de docent een <em>verstandhouding</em> aanzetten. Die loopt van koud via neutraal naar warm. Na elk afgesloten gesprek beoordeelt een aparte AI-stap, aan de hand van gedragsregels van de docent, of de verstandhouding één stap verschuift. Die gedragsregels staan bewust niet in de instructie van de rolspeler zelf: de rolspeler kent alleen zijn huidige verstandhouding en het gedrag dat daarbij hoort. Een groep die zich na een koude verstandhouding opnieuw misdraagt, verliest het contact; alleen de docent kan dat herstellen. De groep ziet steeds het niveau en de laatste aanleiding. Zoals in de praktijk telt dus niet alleen <em>wat</em> de groep vraagt, maar ook <em>hoe</em>.</p>
+
+<p>Leerniveaus spelen in projecten geen rol. Na afloop komen samenvattingen van de gesprekken en de tussen- en eindreflecties in het leerdagboek van alle groepsleden, in dezelfde drie blokken als elders.</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>Een projectruimte per groep, met persona's in drie rollen.</li>
+    <li>Beoordelaars met een verborgen rubric en een vast aantal feedbackrondes.</li>
+    <li>Rolspelers met een zichtbare verstandhouding volgens de gedragsregels van de docent.</li>
+  </ul>
+</div>
+
+<h3><span class="num">3.10</span>Van elkaar leren en kritisch omgaan met AI</h3>
+
+<p>AI maakt fouten, en doet dat vaak overtuigend. AI-geletterdheid, het vermogen om AI-uitvoer kritisch te beoordelen en verstandig te gebruiken, wordt daarmee een vaardigheid die onderwijs expliciet moet oefenen (Long &amp; Magerko, 2020). LEAP maakt AI-uitvoer daarom controleerbaar: bronnen zijn zichtbaar, en twijfel heeft een vaste plek.</p>
+
+<p>Die plek is het <em>Studiecafé</em>, een forum per cursus met de categorieën vraag, discussie, samenwerken en <em>Klopt dit wel?</em>. Onder elk antwoord van de tutor en bij elke quizvraag staat een knop "Klopt dit wel?". Die zet het antwoord, met bronnen, in het Studiecafé, waar medestudenten en docenten het kunnen beoordelen. Een vermoedelijke fout van de AI wordt zo een aanleiding voor een inhoudelijk gesprek. Studenten reageren op elkaar en geven elkaar kudos; docenten plaatsen aankondigingen en kunnen berichten vastzetten of sluiten. Een bericht in het Studiecafé is een bewuste keuze van de student om iets te delen. Dat is ook de reden dat docenten die berichten wel zien, terwijl ze de individuele chat niet kunnen inzien (paragraaf 5).</p>
+
+<div class="inleap">
+  <div class="box-title">In LEAP</div>
+  <ul>
+    <li>"Klopt dit wel?" onder elk tutorantwoord en bij elke quizvraag.</li>
+    <li>Een Studiecafé per cursus, met e-mailmeldingen bij reacties als de student dat wil.</li>
+  </ul>
+</div>
+
+<table>
+  <thead><tr><th style="width:24%">Principe</th><th style="width:34%">Onderbouwing</th><th>Uitwerking in LEAP</th></tr></thead>
+  <tbody>
+    <tr><td>Verankerd in de cursus</td><td>Constructive alignment (Biggs, 1996); RAG (Lewis e.a., 2020)</td><td>Bronverwijzingen, strikte stand, begrippen uit de hele cursus, docentmateriaal afgeschermd</td></tr>
+    <tr><td>Denken, niet ontvangen</td><td>Scaffolding (Wood e.a., 1976); desirable difficulties (Bjork, 1994)</td><td>Socratische chat met cursusinstructie</td></tr>
+    <tr><td>Leren door uitleggen</td><td>Self-explanation (Chi e.a., 1994); learning by teaching (Fiorella &amp; Mayer, 2013)</td><td>Ik leg uit: feedback, score, verwante begrippen, feed-forward</td></tr>
+    <tr><td>Ophalen en spreiden</td><td>Testing effect (Roediger &amp; Karpicke, 2006); spacing (Cepeda e.a., 2006)</td><td>Quiz, Jouw voortgang, gespreide herhaling</td></tr>
+    <tr><td>Formatieve feedback</td><td>Hattie &amp; Timperley (2007); Black &amp; Wiliam (1998)</td><td>Feed-forward overal; dagboek in drie blokken</td></tr>
+    <tr><td>Afstemming op niveau</td><td>Zone van naaste ontwikkeling (Vygotsky, 1978); ERK</td><td>Zes niveaudimensies in de chat, getoetst met LIX</td></tr>
+    <tr><td>Reflectie en eigenaarschap</td><td>Zelfregulatie (Zimmerman, 2002); Schön (1983)</td><td>Leerdagboek, eigen niveaukeuze, Mijn gegevens</td></tr>
+    <tr><td>Verdiende successen</td><td>Zelfdeterminatietheorie (Deci &amp; Ryan, 2000); Deci e.a. (1999)</td><td>Achievements alleen na gecontroleerd oordeel</td></tr>
+    <tr><td>Authentiek samen leren</td><td>Lave &amp; Wenger (1991); Herrington e.a. (2014)</td><td>Projecten met begeleider, beoordelaar en rolspeler</td></tr>
+    <tr><td>Kritisch omgaan met AI</td><td>AI-geletterdheid (Long &amp; Magerko, 2020)</td><td>"Klopt dit wel?" en het Studiecafé</td></tr>
+  </tbody>
+</table>
+<p class="note">Tabel 2. Overzicht van de principes, hun onderbouwing en hun uitwerking.</p>
+
+<h2><span class="num">4</span>De docent houdt de regie</h2>
+
+<p>Een AI-leeromgeving kan de docent gemakkelijk naar de achtergrond duwen. LEAP doet bewust het tegenovergestelde: de docent ontwerpt het onderwijs, LEAP voert uit binnen dat ontwerp. Dat blijkt op verschillende plekken.</p>
+
+<p><strong>Materiaal en bronnen.</strong> De docent kiest welk materiaal LEAP gebruikt en waarvoor. De docent beoordeelt de begrippen, stelt de mengverhouding van quizbronnen in en bepaalt hoe streng de AI bij het materiaal blijft.</p>
+
+<p><strong>Aanpak en toon.</strong> LEAP is vakneutraal. De vaste instructies in de software bevatten geen vakinhoud, en de algemene chat- en uitleginstructies zijn sjablonen. De docent past die per cursus aan: socratisch of juist directer, met de voorbeelden en conventies van het eigen vak. Vakinhoud hoort in de instructie van de cursus, niet in het platform. Zo kan LEAP even goed dienen voor een cursus statistiek als voor een cursus recht of geschiedenis.</p>
+
+<p><strong>Welke onderdelen studenten zien.</strong> Per cursus zet de docent onderdelen aan of uit: chat, Ik leg uit, quiz, projecten, leerdagboek en Studiecafé. Uitzetten verbergt het onderdeel; er wordt niets verwijderd. De docent kan een uitgezet onderdeel zelf blijven gebruiken, bijvoorbeeld om het voor te bereiden. Die keuze wordt op drie plekken afgedwongen: in de browser, op de server en in de database. Een uitgezet onderdeel is dus ook echt dicht.</p>
+
+<p><strong>Ondersteuning bij het ontwerp.</strong> De <em>Ontwerphulp</em> is een optionele assistent in de beheeromgeving. Hij weet waar de docent is, kent de handleiding en de helpteksten, en kan de staat van de cursus bekijken. Hij geeft advies en schrijft concepten, bijvoorbeeld voor een chat-instructie of een persona, maar verandert zelf nooit iets. Zijn kennis van LEAP wordt per vraag samengesteld uit de actuele helpteksten en handleiding, zodat hij meegroeit met het platform in plaats van achter te lopen.</p>
+
+<p><strong>Inzicht zonder toezicht.</strong> Onder <em>Analyse</em> ziet de docent een begrippenthermometer voor de eigen cursus: welke begrippen veel vragen oproepen en waar studenten in de quiz moeite mee hebben. Die cijfers zijn altijd samengeteld. Een docent ziet nooit wat een individuele student vroeg of scoorde (paragraaf 5). Het doel is het onderwijs bij te stellen, niet studenten te volgen.</p>
+
+<p>LEAP is beschikbaar in twintig talen. Elke tekst in de interface is vertaald, zodat internationale studenten de omgeving in hun eigen taal kunnen gebruiken; het cursusmateriaal blijft de bron.</p>
+
+<h2><span class="num">5</span>Vertrouwen: privacy en betrouwbare leergegevens</h2>
+
+<p>Een omgeving waarin studenten hardop denken, fouten maken en twijfels uiten, werkt alleen als studenten erop vertrouwen dat dat veilig is. Wie weet dat de docent meeleest, stelt andere vragen. LEAP hanteert daarom een strikte regel over wat docenten mogen zien:</p>
+
+<ul>
+  <li>Een docent ziet <strong>wie</strong> er in de eigen cursus zit, en wie in welke projectgroep zit.</li>
+  <li>Een docent ziet <strong>niet</strong> de leerdagboeken, quizpogingen en scores, uitleggen, chatgesprekken, groepsgesprekken, persona-gesprekken, feedback, badges, de verstandhouding met een rolspeler of het leerniveau van een individuele student. Van leerniveaus ziet de docent alleen de verdeling.</li>
+  <li>De uitzonderingen zijn wat een student bewust deelt: berichten in het Studiecafé en ingeleverde projectproducten.</li>
+</ul>
+
+<p>Deze regel is niet alleen in de interface vastgelegd, maar ook in de database, en geautomatiseerde tests bewaken hem. De analysecijfers bevatten geen gebruikers, tijdstippen of vraagteksten, alleen tellingen per week, cursus en begrip. Quizcijfers worden pas getoond als ze op ten minste vijf verschillende studenten berusten, naar het idee van <em>k-anonimiteit</em> (Sweeney, 2002). Bij gemiddelden telt eerst het gemiddelde per student, zodat één student met veel pogingen het beeld niet bepaalt.</p>
+
+<p>Vertrouwen gaat ook over de betrouwbaarheid van leergegevens. Omdat studenten oefenen in de browser, bewaakt de database dat quizscores kloppen: meerkeuzevragen worden op de server opnieuw nagekeken tegen de antwoordsleutel, en pogingen kunnen achteraf niet gewijzigd worden. Studenten kunnen reflecties in het dagboek niet zelf aanpassen. Achievements worden alleen door de server toegekend (paragraaf 3.8). Zo betekent een medaille of een voortgangsbalk wat hij lijkt te betekenen.</p>
+
+<p>Ten slotte draait LEAP in de Azure-omgeving van de VU, met de taalmodellen van Azure OpenAI. De gegevens van studenten blijven binnen die omgeving.</p>
+
+<h2><span class="num">6</span>Discussie: spanningen en open vragen</h2>
+
+<p>De principes in deze notitie zijn ontleend aan robuust onderwijsonderzoek, maar dat betekent niet dat hun uitwerking in LEAP vanzelf werkt. We noemen vijf spanningen die aandacht verdienen.</p>
+
+<p><strong>Een taalmodel blijft een taalmodel.</strong> Verankering in het cursusmateriaal verkleint de kans op onjuiste of vakvreemde antwoorden, maar sluit ze niet uit. Het taalmodel kan een fragment verkeerd lezen of twee fragmenten onjuist combineren. LEAP vangt dit op met zichtbare bronnen en met "Klopt dit wel?", maar die vangnetten werken alleen als studenten ze gebruiken. Hoe vaak dat gebeurt en wat het oplevert, is een empirische vraag.</p>
+
+<p><strong>De betrouwbaarheid van AI-feedback.</strong> De score bij Ik leg uit is gekalibreerd op voorbeelduitleggen, maar een kleine kalibratieset zegt weinig over de spreiding bij echte studenten, in verschillende vakken en talen. Ook de vraag of AI-feedback misvattingen even goed herkent als een docent, verdient systematisch onderzoek, bijvoorbeeld door AI-feedback te vergelijken met beoordelingen van docenten op dezelfde uitleggen.</p>
+
+<p><strong>Socratisch doorvragen versus frustratie.</strong> Een tutor die doorvraagt, kan een student die haast heeft of vastzit ook frustreren. Studenten kunnen dan uitwijken naar een algemene chatbot die wel direct antwoordt. De juiste balans tussen doorvragen en uitleggen hangt af van de student, het vak en het moment. LEAP legt die balans deels bij de docent (de chat-instructie) en deels bij de student (het leerniveau), maar of die verdeling goed werkt, moet blijken.</p>
+
+<p><strong>Privacy versus begeleiding.</strong> De strikte privacyregel beschermt de veiligheid van de oefenruimte, maar beperkt ook wat een docent kan doen voor een individuele student die vastloopt. LEAP kiest bewust voor vertrouwen en voor geaggregeerd inzicht. Een student die hulp wil, kan zelf delen, bijvoorbeeld via het Studiecafé. Of deze keuze in de praktijk goed uitpakt, hangt mede af van hoe docenten en studenten haar ervaren.</p>
+
+<p><strong>Het effect op leren.</strong> De belangrijkste open vraag is of studenten met LEAP beter leren dan zonder, en beter dan met een algemene chatbot. Het onderzoek van Bastani e.a. (2025) laat zien dat het verschil tussen een AI met en zonder didactische vangrails groot kan zijn. Voor LEAP is zo'n vergelijking nog niet gedaan. Mogelijke uitkomstmaten zijn prestaties op latere toetsen zonder hulp, de kwaliteit van uitleggen over de tijd, en de mate waarin studenten zelf hun leren sturen. Een evaluatie zou ook moeten nagaan welke onderdelen het meest bijdragen; dat LEAP onderdelen per cursus aan of uit laat zetten, maakt zulke vergelijkingen praktisch uitvoerbaar.</p>
+
+<h2><span class="num">7</span>Conclusie</h2>
+
+<p>LEAP is ontworpen vanuit één vraag: hoe kan generatieve AI studenten helpen meer na te denken, in plaats van minder? Het antwoord bestaat niet uit één functie, maar uit een samenhangend geheel van keuzes. AI die zich baseert op het materiaal van de cursus en dat laat zien. Een tutor die doorvraagt. Een student die uitlegt en oefent met ophalen. Feedback die eindigt met een volgende stap. Een niveau dat de student zelf kiest en dat de taal echt verandert. Successen die verdiend moeten worden. Samenwerking aan authentieke opdrachten. En een vaste plek om aan de AI te twijfelen. Steeds houdt de docent de regie over het onderwijs, en de student over het eigen leren en de eigen gegevens.</p>
+
+<p>Elk van deze keuzes steunt op bekend onderwijsonderzoek. Of ze samen het beoogde effect hebben, moet de komende tijd blijken. Deze notitie legt de basis voor die evaluatie, door expliciet te maken wat LEAP probeert te bereiken en waarom.</p>
+
+<h2>Literatuur</h2>
+<div class="refs">
+<p>Bastani, H., Bastani, O., Sungu, A., Ge, H., Kabakcı, Ö., &amp; Mariman, R. (2025). Generative AI without guardrails can harm learning: Evidence from high school mathematics. <em>Proceedings of the National Academy of Sciences, 122</em>(26).</p>
+<p>Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education, 32</em>(3), 347–364.</p>
+<p>Bjork, R. A. (1994). Memory and metamemory considerations in the training of human beings. In J. Metcalfe &amp; A. P. Shimamura (Eds.), <em>Metacognition: Knowing about knowing</em> (pp. 185–205). MIT Press.</p>
+<p>Björnsson, C. H. (1968). <em>Läsbarhet</em>. Liber.</p>
+<p>Black, P., &amp; Wiliam, D. (1998). Assessment and classroom learning. <em>Assessment in Education: Principles, Policy &amp; Practice, 5</em>(1), 7–74.</p>
+<p>Bloom, B. S. (1984). The 2 sigma problem: The search for methods of group instruction as effective as one-to-one tutoring. <em>Educational Researcher, 13</em>(6), 4–16.</p>
+<p>Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., &amp; Rohrer, D. (2006). Distributed practice in verbal recall tasks: A review and quantitative synthesis. <em>Psychological Bulletin, 132</em>(3), 354–380.</p>
+<p>Chi, M. T. H., de Leeuw, N., Chiu, M.-H., &amp; LaVancher, C. (1994). Eliciting self-explanations improves understanding. <em>Cognitive Science, 18</em>(3), 439–477.</p>
+<p>Council of Europe. (2020). <em>Common European Framework of Reference for Languages: Learning, teaching, assessment – Companion volume</em>. Council of Europe Publishing.</p>
+<p>Deci, E. L., Koestner, R., &amp; Ryan, R. M. (1999). A meta-analytic review of experiments examining the effects of extrinsic rewards on intrinsic motivation. <em>Psychological Bulletin, 125</em>(6), 627–668.</p>
+<p>Deci, E. L., &amp; Ryan, R. M. (2000). The "what" and "why" of goal pursuits: Human needs and the self-determination of behavior. <em>Psychological Inquiry, 11</em>(4), 227–268.</p>
+<p>Dillenbourg, P. (1999). What do you mean by collaborative learning? In P. Dillenbourg (Ed.), <em>Collaborative learning: Cognitive and computational approaches</em> (pp. 1–19). Elsevier.</p>
+<p>Dunlosky, J., Rawson, K. A., Marsh, E. J., Nathan, M. J., &amp; Willingham, D. T. (2013). Improving students' learning with effective learning techniques: Promising directions from cognitive and educational psychology. <em>Psychological Science in the Public Interest, 14</em>(1), 4–58.</p>
+<p>Fiorella, L., &amp; Mayer, R. E. (2013). The relative benefits of learning by teaching and teaching expectancy. <em>Contemporary Educational Psychology, 38</em>(4), 281–288.</p>
+<p>Hattie, J., &amp; Timperley, H. (2007). The power of feedback. <em>Review of Educational Research, 77</em>(1), 81–112.</p>
+<p>Herrington, J., Reeves, T. C., &amp; Oliver, R. (2014). Authentic learning environments. In J. M. Spector, M. D. Merrill, J. Elen, &amp; M. J. Bishop (Eds.), <em>Handbook of research on educational communications and technology</em> (4th ed., pp. 401–412). Springer.</p>
+<p>Kasneci, E., Seßler, K., Küchemann, S., Bannert, M., Dementieva, D., Fischer, F., … Kasneci, G. (2023). ChatGPT for good? On opportunities and challenges of large language models for education. <em>Learning and Individual Differences, 103</em>, 102274.</p>
+<p>Kirschner, P. A., Sweller, J., &amp; Clark, R. E. (2006). Why minimal guidance during instruction does not work: An analysis of the failure of constructivist, discovery, problem-based, experiential, and inquiry-based teaching. <em>Educational Psychologist, 41</em>(2), 75–86.</p>
+<p>Lave, J., &amp; Wenger, E. (1991). <em>Situated learning: Legitimate peripheral participation</em>. Cambridge University Press.</p>
+<p>Lewis, P., Perez, E., Piktus, A., Petroni, F., Karpukhin, V., Goyal, N., … Kiela, D. (2020). Retrieval-augmented generation for knowledge-intensive NLP tasks. <em>Advances in Neural Information Processing Systems, 33</em>, 9459–9474.</p>
+<p>Long, D., &amp; Magerko, B. (2020). What is AI literacy? Competencies and design considerations. In <em>Proceedings of the 2020 CHI Conference on Human Factors in Computing Systems</em> (pp. 1–16). ACM.</p>
+<p>Nicol, D. J., &amp; Macfarlane-Dick, D. (2006). Formative assessment and self-regulated learning: A model and seven principles of good feedback practice. <em>Studies in Higher Education, 31</em>(2), 199–218.</p>
+<p>Roediger, H. L., &amp; Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. <em>Psychological Science, 17</em>(3), 249–255.</p>
+<p>Schön, D. A. (1983). <em>The reflective practitioner: How professionals think in action</em>. Basic Books.</p>
+<p>Sweeney, L. (2002). k-anonymity: A model for protecting privacy. <em>International Journal of Uncertainty, Fuzziness and Knowledge-Based Systems, 10</em>(5), 557–570.</p>
+<p>VanLehn, K. (2011). The relative effectiveness of human tutoring, intelligent tutoring systems, and other tutoring systems. <em>Educational Psychologist, 46</em>(4), 197–221.</p>
+<p>Vygotsky, L. S. (1978). <em>Mind in society: The development of higher psychological processes</em>. Harvard University Press.</p>
+<p>Wood, D., Bruner, J. S., &amp; Ross, G. (1976). The role of tutoring in problem solving. <em>Journal of Child Psychology and Psychiatry, 17</em>(2), 89–100.</p>
+<p>Zimmerman, B. J. (2002). Becoming a self-regulated learner: An overview. <em>Theory Into Practice, 41</em>(2), 64–70.</p>
+</div>
+
+</body>
+</html>

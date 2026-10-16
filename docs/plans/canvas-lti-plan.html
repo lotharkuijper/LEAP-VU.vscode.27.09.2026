@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Bouwplan: inloggen via Canvas (LTI 1.3) en open cursussen voor externen</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: black; font-size: 10.5pt; line-height: 1.45; max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; padding-bottom: 3pt; border-bottom: 1px solid lightgray; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 4pt; break-after: avoid; }
+  p, li { margin: 3pt 0; }
+  ul, ol { padding-left: 18pt; margin: 4pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9.5pt; break-inside: avoid; }
+  th, td { border: 1px solid lightgray; padding: 4pt 6pt; vertical-align: top; text-align: left; }
+  th { background: whitesmoke; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: whitesmoke; padding: 0 2pt; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.8pt; background: whitesmoke; padding: 6pt 8pt; white-space: pre-wrap; break-inside: avoid; }
+  .muted { color: dimgray; }
+  .box { border: 1px solid lightgray; border-left: 4px solid steelblue; padding: 6pt 10pt; margin: 8pt 0; break-inside: avoid; }
+  .warn { border-left-color: darkorange; }
+  .meta { color: dimgray; font-size: 9.5pt; margin-bottom: 12pt; }
+  .toc { columns: 2; font-size: 9.5pt; }
+  .toc li { margin: 1pt 0; }
+</style>
+</head>
+<body>
+
+<h1>Bouwplan: inloggen via Canvas (LTI 1.3) en open cursussen voor externen</h1>
+<p class="meta">LEAP-VU · opgesteld 13 oktober 2026 · status: <b>plan, nog niet gebouwd</b> · bedoeld als opdracht voor Claude wanneer we gaan bouwen, en als achtergrond voor Lothar, Jasper en Rob</p>
+
+<div class="box">
+<b>Hoe dit document te gebruiken.</b> Geef dit PDF aan Claude met de opdracht "bouw fase 1" (of een andere fase). Hoofdstuk 13 is de bouwchecklist. Hoofdstuk 12 noemt wat bij de start eerst opnieuw gecontroleerd moet worden, omdat de code sinds 13 oktober 2026 veranderd kan zijn.
+</div>
+
+<h2>Inhoud</h2>
+<ol class="toc">
+  <li>Doel en genomen besluiten</li>
+  <li>Hoe het nu werkt (bevindingen)</li>
+  <li>Doelbeeld: twee soorten cursussen, twee soorten accounts</li>
+  <li>Datamodel (migraties)</li>
+  <li>Toegangsregels aanpassen</li>
+  <li>Inloggen via Canvas (LTI 1.3)</li>
+  <li>Registratie voor externen</li>
+  <li>Open variant van een cursus</li>
+  <li>Beheer, teksten en documentatie</li>
+  <li>Configuratie: wat Rob nodig heeft</li>
+  <li>Privacy</li>
+  <li>Eerst opnieuw controleren bij de start</li>
+  <li>Bouwchecklist, tests en fasering</li>
+</ol>
+
+<h2>1. Doel en genomen besluiten</h2>
+<p><b>Doel.</b> VU-studenten en -docenten openen LEAP vanuit Canvas en komen direct, ingelogd, in de bijbehorende LEAP-cursus. Ze hebben geen eigen LEAP-account of registratie meer nodig. Daarnaast kan LEAP <i>open</i> cursussen aanbieden aan externen, die zich daarvoor zelf registreren, zonder dat ze iets zien van of terechtkomen in de gesloten VU-cursussen.</p>
+<table>
+  <tr><th style="width:32%">Besluit (Lothar, 13-10-2026)</th><th>Uitwerking in dit plan</th></tr>
+  <tr><td>Rollen: <b>optie A</b></td><td>Een <i>Instructor</i> of <i>TA</i> uit Canvas wordt docent van die LEAP-cursus (<code>course_members.member_role = 'teacher'</code>). Was zijn account nog <code>student</code>, dan wordt het automatisch <code>docent</code> (vastgelegd in <code>user_audit_log</code>). Nooit automatisch <code>admin</code>.</td></tr>
+  <tr><td>Canvas mag <b>naam, e-mail en VUnetID</b> meesturen</td><td>Privacyniveau "public" bij de registratie in Canvas, plus het extra veld <code>vunetid=$Canvas.user.loginId</code>. Gebruikt om bestaande accounts te herkennen en om namen te tonen waar de privacyregel dat toestaat.</td></tr>
+  <tr><td><b>Gesloten VU-cursussen naast open cursussen voor externen</b></td><td>Elke cursus krijgt een <i>publiek</i>: <code>vu</code> (gesloten, gekoppeld aan Canvas, alleen voor leden) of <code>open</code> (zichtbaar voor iedereen met een LEAP-account, zelf aanmelden kan). Externen registreren zich zelf en zien alleen open cursussen. Dezelfde inhoud kan als <i>open variant</i> naast een VU-cursus bestaan, zonder de Canvas-cursus te vervuilen.</td></tr>
+</table>
+
+<h2>2. Hoe het nu werkt (bevindingen, 13-10-2026)</h2>
+<ul>
+  <li><b>Inloggen</b> loopt via de zelf gehoste Supabase-inlogdienst (GoTrue) op Azure. Zelfregistratie staat open (<code>GOTRUE_DISABLE_SIGNUP=false</code> in <code>azure/scripts/deploy.sh</code>): de inlogpagina roept <code>supabase.auth.signUp</code> aan (<code>src/contexts/AuthContext.tsx</code>, <code>src/pages/LoginPage.tsx</code>). Een nieuw account krijgt een profiel via de trigger <code>handle_new_user()</code>.</li>
+  <li><b>Accounts in bulk</b> voor een cursus: <code>server/bulkAccounts.js</code> + route in <code>server/index.js</code> (uitnodiging per e-mail met activatielink).</li>
+  <li><b>Lidmaatschap</b>: <code>course_members(user_id, course_id, member_role 'student'|'teacher')</code>.</li>
+  <li><b>Zichtbaarheid (belangrijk)</b>: iedere ingelogde gebruiker ziet <i>alle</i> cursussen die actief en <code>student_visible</code> zijn (policy "Students see available courses, teachers see own" op <code>courses</code>), en mag de inhoud ervan gebruiken: <code>course_content_is_public()</code> wordt gebruikt in de leesregels voor documenten en fragmenten, in <code>sc_can_read_course()</code> (Studiecafé), in <code>leap_can_use_course()</code> en in de server (<code>userHasCourseAccess</code>, <code>canAccessCourseContent</code>). Zelfgeregistreerde studenten (Task #272) hebben daardoor vaak géén <code>course_members</code>-rij. <b>Met externen erbij zou iedere externe dus alle VU-cursussen zien.</b> Deze regel moet om (hoofdstuk 5).</li>
+  <li><b>Documenten aan een cursus</b>: via <code>course_folder_assignments</code> (map → cursus). <code>folder_course_id(folder)</code> neemt bij meerdere cursussen per map willekeurig één (<code>LIMIT 1</code>). Een map met dezelfde documenten aan een VU-cursus én een open variant hangen werkt daardoor nu niet betrouwbaar (hoofdstuk 8).</li>
+  <li><b>Rolbeveiliging</b>: trigger <code>pr_guard_profile_role</code> voorkomt dat gebruikers hun eigen rol wijzigen; alleen beheerder of server (service role).</li>
+  <li><b>Inlogcache</b>: <code>server/authCache.js</code> (30 s). Na het verwijderen of blokkeren van een account: <code>userCache.forgetUser(id)</code> en <code>profileCache.invalidate(id)</code>.</li>
+  <li><b>E-mail</b>: account-e-mails via <code>server/authEmailHook.js</code> (Azure Communication Services).</li>
+  <li><b>Eén replica</b> op Azure; in-memory staat moet in de database als die een herstart moet overleven.</li>
+</ul>
+
+<h2>3. Doelbeeld: twee soorten cursussen, twee soorten accounts</h2>
+<table>
+  <tr><th></th><th>VU-cursus (<code>audience = 'vu'</code>)</th><th>Open cursus (<code>audience = 'open'</code>)</th></tr>
+  <tr><td>Bedoeld voor</td><td>VU-studenten en -docenten van één Canvas-cursus</td><td>Externen (en desgewenst ook VU'ers)</td></tr>
+  <tr><td>Hoe word je lid</td><td>Automatisch bij openen vanuit Canvas; uitzonderlijk door een beheerder/docent toegevoegd</td><td>Zelf aanmelden met de knop "Deelnemen", of toegevoegd door docent</td></tr>
+  <tr><td>Wie ziet hem in de cursuskeuze</td><td>Alleen leden, docenten en beheerders</td><td>Iedereen met een LEAP-account</td></tr>
+  <tr><td>Wie mag de inhoud gebruiken</td><td>Alleen leden (+ docenten, beheerders)</td><td>Leden; zichtbaar maar pas te gebruiken na "Deelnemen"</td></tr>
+  <tr><td>Koppeling met Canvas</td><td>Eén of meer Canvas-cursussen</td><td>Nooit</td></tr>
+</table>
+<table>
+  <tr><th></th><th>VU-account (<code>account_type = 'vu'</code>)</th><th>Extern account (<code>account_type = 'external'</code>)</th></tr>
+  <tr><td>Ontstaat via</td><td>Canvas (LTI), bulkaanmaak door docent, of beheerder</td><td>Zelfregistratie op de inlogpagina</td></tr>
+  <tr><td>Inloggen</td><td>Via Canvas; bestaande accounts met wachtwoord blijven ook werken (docenten, beheerders)</td><td>E-mail + wachtwoord</td></tr>
+  <tr><td>Kan lid worden van</td><td>VU-cursussen (via Canvas) en open cursussen</td><td>Alleen open cursussen</td></tr>
+</table>
+<p><b>Grenzen die altijd gelden:</b> een extern account kan nooit lid worden van een VU-cursus (database-regel, niet alleen in de interface). VU-adressen (<code>@vu.nl</code>, <code>@student.vu.nl</code>, lijst instelbaar) kunnen zich niet als extern registreren; zij krijgen de melding "Log in via Canvas".</p>
+
+<h2>4. Datamodel (migraties)</h2>
+<p>Elke migratie volgens CLAUDE.md: naam <code>&lt;YYYYMMDDHHMMSS&gt;_&lt;naam&gt;.sql</code>, precies één keer uitvoerbaar, terugdraaiscript in <code>supabase/rollback/</code>, eindigt met <code>NOTIFY pgrst, 'reload schema';</code>, vóór het uitvoeren een momentopname met <code>scripts/db-snapshot.mjs</code> van de tabellen die veranderen.</p>
+<h3>4.1 Migratie <code>…_course_audience_and_account_type</code></h3>
+<pre>ALTER TABLE courses  ADD COLUMN audience text NOT NULL DEFAULT 'vu'
+  CHECK (audience IN ('vu','open'));
+ALTER TABLE profiles ADD COLUMN account_type text NOT NULL DEFAULT 'vu'
+  CHECK (account_type IN ('vu','external'));
+-- Bestaande accounts: VU-adres → 'vu', anders 'external' (lijst VU-domeinen
+-- in een tabel app_settings of als constante in de migratie).
+-- Guard: pr_guard_profile_role uitbreiden zodat ook account_type alleen door
+-- beheerder/server te wijzigen is.
+-- Database-regel: course_members INSERT/UPDATE weigert een extern account in
+-- een cursus met audience 'vu' (trigger course_member_audience_guard).</pre>
+<p><b>Overgang (backfill) — belangrijk.</b> Na deze migratie zien gebruikers zonder lidmaatschap hun VU-cursus niet meer. Daarom in dezelfde migratie: een <code>course_members</code>-rij (student) voor elke gebruiker die in die cursus actief was: <code>profiles.last_active_course_id</code>, of rijen met die <code>course_id</code> in <code>quiz_attempts</code>, <code>learning_journal_entries</code>, <code>student_explanations</code>, <code>student_course_levels</code>, <code>conversations</code> (indien course_id aanwezig), of lid van een projectgroep in die cursus. Eerst een droge run met aantallen per cursus tonen aan Lothar.</p>
+<h3>4.2 Migratie <code>…_lti</code></h3>
+<pre>lti_platforms      (id, issuer, client_id, auth_login_url, auth_token_url,
+                    jwks_url, deployment_ids text[], active bool, created_at)
+lti_identities     (id, platform_id → lti_platforms, sub text, user_id → auth.users
+                    ON DELETE CASCADE, vunetid text, created_at, last_launch_at,
+                    UNIQUE(platform_id, sub))
+lti_course_links   (id, platform_id, deployment_id, context_id text,
+                    context_title text, course_id → courses ON DELETE CASCADE,
+                    linked_by uuid, created_at,
+                    UNIQUE(platform_id, deployment_id, context_id))
+lti_launch_states  (state text PK, nonce text, created_at, expires_at)  -- 10 min
+lti_handover_codes (code_hash text PK, user_id, session jsonb (versleuteld),
+                    target text, expires_at, used_at)                  -- 60 s, eenmalig</pre>
+<p>Alle vijf: RLS aan, <b>geen</b> policies (alleen de server leest en schrijft). <code>lti_platforms</code> is één rij voor VU-Canvas; de waarden komen van Rob (hoofdstuk 10). Opruimen van verlopen states/codes: bij elke start (geen timer nodig).</p>
+
+<h2>5. Toegangsregels aanpassen</h2>
+<p>Kern: "actief en zichtbaar" betekent niet meer "voor iedereen". Eén nieuwe centrale functie, en de bestaande functies gebruiken die.</p>
+<pre>course_open_to_user(course)  = actief AND student_visible AND audience = 'open'
+user_is_course_member(course) = course_members-rij van auth.uid()
+user_can_use_course(course)   = admin OR is_course_teacher OR
+                                (actief AND student_visible AND user_is_course_member)
+                                -- open cursus: ook na "Deelnemen" via lidmaatschap</pre>
+<table>
+  <tr><th>Plek</th><th>Nu</th><th>Wordt</th></tr>
+  <tr><td>Policy <code>courses</code> SELECT</td><td>actief + zichtbaar, of docent</td><td>docent/admin, <b>of</b> lid (actief + zichtbaar), <b>of</b> <code>course_open_to_user</code></td></tr>
+  <tr><td><code>course_content_is_public()</code></td><td>actief + zichtbaar</td><td>vervangen door <code>user_can_use_course()</code> in alle policies die hem gebruiken (documenten, fragmenten, documentdoelen)</td></tr>
+  <tr><td><code>sc_can_read_course()</code> (Studiecafé)</td><td>actief + zichtbaar, of lid</td><td><code>user_can_use_course()</code></td></tr>
+  <tr><td><code>leap_can_use_course()</code> (leergegevens)</td><td>open of lid of docent</td><td><code>user_can_use_course()</code></td></tr>
+  <tr><td>Documenten/fragmenten via map</td><td><code>folder_course_id()</code> (LIMIT 1)</td><td><code>folder_usable_by_user(folder)</code>: EXISTS een gekoppelde cursus waarvoor <code>user_can_use_course</code> (nodig voor de open variant, H8)</td></tr>
+  <tr><td>Server <code>userHasCourseAccess</code> / <code>canAccessCourseContent</code></td><td>actief + zichtbaar = iedereen</td><td>zelfde regel als <code>user_can_use_course</code>; de pure functie <code>canAccessCourseContent</code> krijgt <code>audience</code> en <code>isMember</code></td></tr>
+  <tr><td>Cursuskeuze (<code>ChooseCoursePage</code>)</td><td>alle zichtbare cursussen</td><td>twee lijsten: "Mijn cursussen" (lid) en "Open cursussen" (met knop Deelnemen). Externen zien alleen open cursussen.</td></tr>
+</table>
+<p>Nieuwe route <code>POST /api/courses/:id/join</code>: alleen voor <code>audience = 'open'</code>, maakt een <code>course_members</code>-rij (student). Server-melding via <code>server/serverI18n.js</code>.</p>
+<div class="box warn"><b>Risico.</b> Dit verandert wie wat ziet in heel LEAP. Daarom: (1) eerst backfill (4.1) met droge run, (2) een regressietest per policy (bestaande stijl: <code>server/__tests__/teacherPrivacy.test.js</code> + controle in de database met het testaccount in een teruggedraaide transactie, zoals <code>learningIntegrity</code>), (3) terugdraaiscript dat de oude policies letterlijk herstelt.</div>
+
+<h2>6. Inloggen via Canvas (LTI 1.3)</h2>
+<h3>6.1 Stappen en routes</h3>
+<table>
+  <tr><th>Route</th><th>Wat er gebeurt</th></tr>
+  <tr><td><code>GET/POST /api/lti/login</code><br><span class="muted">(OIDC-initiatie)</span></td><td>Canvas stuurt <code>iss</code>, <code>login_hint</code>, <code>target_link_uri</code>, <code>lti_message_hint</code>, <code>client_id</code>. Controleer <code>iss</code>/<code>client_id</code> tegen <code>lti_platforms</code>. Maak <code>state</code> + <code>nonce</code> (willekeurig, 32 bytes), sla op in <code>lti_launch_states</code>, zet ook een cookie <code>lti_state</code> (HttpOnly, Secure, SameSite=None). Stuur de browser naar <code>auth_login_url</code> van Canvas met scope=openid, response_type=id_token, response_mode=form_post, prompt=none, redirect_uri, state, nonce, login_hint, lti_message_hint.</td></tr>
+  <tr><td><code>POST /api/lti/launch</code><br><span class="muted">(redirect_uri)</span></td><td>Ontvang <code>id_token</code> + <code>state</code>. Controleer: state bestaat, niet verlopen, gelijk aan cookie (daarna verwijderen); JWT-handtekening met de JWKS van Canvas (<code>jose.createRemoteJWKSet</code>, cache); <code>iss</code>, <code>aud</code> = client_id (of <code>azp</code> bij meerdere aud), <code>exp</code>/<code>iat</code> (marge 60 s), <code>nonce</code> = opgeslagen nonce, <code>deployment_id</code> in de toegestane lijst, <code>message_type = LtiResourceLinkRequest</code>, <code>version = 1.3.0</code>. Daarna 6.2 t/m 6.5.</td></tr>
+  <tr><td><code>GET /lti/done?code=…</code><br><span class="muted">(frontend-pagina)</span></td><td>De pagina ruilt de eenmalige code in via <code>POST /api/lti/handover</code>, krijgt access + refresh token, roept <code>supabase.auth.setSession()</code> aan en gaat naar het doel (cursus/pagina). Code is 60 s geldig en één keer bruikbaar; in de database alleen een hash.</td></tr>
+  <tr><td><code>GET /.well-known/jwks.json</code></td><td>Publieke sleutel van LEAP. Pas nodig voor de extra's (H13 fase 5); de private sleutel in Key Vault <code>kv-vu-leap</code>.</td></tr>
+</table>
+<h3>6.2 Persoon herkennen</h3>
+<ol>
+  <li>Zoek <code>lti_identities</code> op (platform, <code>sub</code>). Gevonden → dat account (werk naam/e-mail/vunetid bij in het profiel als die veranderd zijn).</li>
+  <li>Niet gevonden → zoek een bestaand account op <b>VUnetID</b> (custom veld <code>vunetid</code>; vergelijk met e-maillokaal deel of een opgeslagen vunetid), dan op <b>e-mail</b> (alleen als Canvas een e-mail meestuurt). Gevonden → koppelen. Zo houdt wie al via de bulklijst een account had, zijn leerdagboek, quizgeschiedenis en prestaties.</li>
+  <li>Nog steeds niets → nieuw account via <code>supabaseAdmin.auth.admin.createUser({ email, email_confirm: true, user_metadata: { full_name } })</code>, <code>account_type = 'vu'</code>, geen activatiemail. Ontbreekt de e-mail (privacyinstelling): synthetisch adres <code>lti-&lt;hash(sub)&gt;@lti.leap.invalid</code>.</li>
+  <li>Een extern account wordt nooit via Canvas gekoppeld (account_type moet 'vu' zijn; anders duidelijke foutpagina en melding in het log).</li>
+</ol>
+<h3>6.3 Cursus koppelen</h3>
+<ul>
+  <li>Zoek <code>lti_course_links</code> op (platform, deployment, <code>context.id</code>).</li>
+  <li>Gevonden → die LEAP-cursus (moet <code>audience = 'vu'</code> zijn).</li>
+  <li>Niet gevonden en de gebruiker is <b>Instructor/TA</b> → pagina "Koppel deze Canvas-cursus" (<code>/lti/link</code>): kies een bestaande LEAP-cursus waar hij docent van is, of maak een nieuwe aan (naam = Canvas-cursusnaam). Daarna wordt de koppeling opgeslagen.</li>
+  <li>Niet gevonden en de gebruiker is <b>student</b> → nette pagina: "Je docent heeft deze Canvas-cursus nog niet aan LEAP gekoppeld. Probeer het later opnieuw."</li>
+  <li>Eén LEAP-cursus mag aan meerdere Canvas-cursussen hangen (bijvoorbeeld meerdere secties of jaren).</li>
+</ul>
+<h3>6.4 Lidmaatschap en rol (optie A)</h3>
+<ul>
+  <li>Rollen uit de claim <code>https://purl.imsglobal.org/spec/lti/claim/roles</code>: bevat <code>…membership#Instructor</code> of <code>…#TeachingAssistant</code> (of <code>ContentDeveloper</code>) → <code>teacher</code>; <code>…#Learner</code> → <code>student</code>. Instellingsrollen (<code>…/institution/person#…</code>) tellen niet.</li>
+  <li>Upsert <code>course_members</code> met die rol bij elke start (een docent kan in Canvas student worden en andersom; bij een lagere rol omlaag zetten).</li>
+  <li>Teacher en profiel nog <code>student</code> → profiel naar <code>docent</code> + regel in <code>user_audit_log</code> (changed_by = systeem/LTI). Nooit <code>admin</code>. Inlogcache vergeten na een rolwijziging.</li>
+  <li><code>profiles.last_active_course_id</code> = deze cursus.</li>
+</ul>
+<h3>6.5 Sessie aanmaken en doorsturen</h3>
+<ul>
+  <li>Geen eigen sessiemechanisme: <code>supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email })</code> (er wordt niets gemaild) → <code>hashed_token</code> → server roept <code>verifyOtp({ type: 'magiclink', token_hash })</code> aan → access + refresh token.</li>
+  <li>Sla de sessie op onder een eenmalige code (<code>lti_handover_codes</code>, 60 s) en stuur de browser naar <code>/lti/done?code=…</code>. Tokens komen nooit in een URL.</li>
+  <li>Doel: custom parameter <code>leap_page</code> (chat | explain | quiz | projects | studiecafe | feedback) uit de claim <code>…/claim/custom</code>, anders <code>/dashboard</code>. Alleen deze vaste lijst (geen vrije URL's: geen open redirect).</li>
+  <li>LEAP opent in een <b>nieuw tabblad</b> (instelling bij Rob); binnen een Canvas-frame blokkeren browsers inloggen.</li>
+</ul>
+<h3>6.6 Implementatiekeuzes</h3>
+<ul>
+  <li>Bibliotheek: <code>jose</code> (JWT/JWKS controleren). Geen groot LTI-framework (ltijs vraagt MongoDB). Eigen module <code>server/lti/</code> met pure functies (<code>validateLaunchClaims</code>, <code>mapRoles</code>, <code>pickTarget</code>) + <code>registerLtiRoutes(app, deps)</code>, net als andere modules.</li>
+  <li>Waar mogelijk de aanpak van Case Studio volgen (<code>App/src/lib/lti/</code> in die repository) zodat EDULAB één werkwijze heeft. Vraag Lothar bij de start om toegang of een kopie.</li>
+  <li>Foutpagina's (<code>/lti/error?reason=…</code>) met begrijpelijke tekst in alle talen; details alleen in het serverlog. De PDF waarschuwt: kleine configuratiefouten geven vage fouten — log daarom per stap wat er misging (zonder tokens).</li>
+  <li>Rate limiting op <code>/api/lti/*</code> (zelfde aanpak als <code>createSlidingWindowLimiter</code>).</li>
+</ul>
+
+<h2>7. Registratie voor externen</h2>
+<ul>
+  <li><b>GoTrue-signup dicht</b> (<code>GOTRUE_DISABLE_SIGNUP=true</code> in de Azure-configuratie). Registratie loopt via een eigen route <code>POST /api/register</code> die <code>auth.admin.createUser</code> gebruikt. Zo bepaalt LEAP zelf wie zich mag registreren.</li>
+  <li>Regels in die route: e-maildomein staat niet op de VU-lijst (anders code <code>useCanvas</code> → melding "VU-student of -medewerker? Log in via Canvas"); <code>account_type = 'external'</code>; e-mailbevestiging via de bestaande hook (<code>server/authEmailHook.js</code>); rate limit; registratie aan/uit met één beheerinstelling ("Externen mogen zich registreren").</li>
+  <li>Na bevestigen en inloggen: de externe ziet alleen open cursussen en kiest "Deelnemen".</li>
+  <li>Optioneel: een uitnodigingslink per open cursus (<code>/join/&lt;code&gt;</code>) die na registratie direct lid maakt.</li>
+  <li>Inlogpagina: knop/uitleg "VU? Open LEAP via je cursus in Canvas", daaronder e-mail/wachtwoord (voor externen, docenten en beheerders) en "Account aanmaken (extern)".</li>
+</ul>
+
+<h2>8. Open variant van een cursus</h2>
+<p>Dezelfde cursus voor externen wordt een <b>aparte LEAP-cursus</b> met <code>audience = 'open'</code>. Zo komen externen nooit in de Canvas-cursus, hun leden, Studiecafé of analyses.</p>
+<ul>
+  <li>Beheer → Cursussen → "Open variant maken" (alleen beheerder, of docent van de bron): maakt een nieuwe cursus en kopieert de <b>inrichting</b>: begrippen (met aliassen en bewijs), quizbronnen-mix, zoekgevoeligheid, chat-instructies, cursusinfo, projecten en persona's (zonder groepen, gesprekken of inleveringen). Geen leden, geen leergegevens.</li>
+  <li><b>Documenten niet dupliceren</b>: dezelfde mappen worden ook aan de open variant gekoppeld (<code>course_folder_assignments</code>). Daarvoor moet <code>folder_course_id()</code> (LIMIT 1) in de leesregels vervangen worden door <code>folder_usable_by_user()</code> (H5). Voordeel: geen dubbele verwerking en embeddings, één plek om materiaal bij te werken.</li>
+  <li>Let op documentdoelen: <code>teacher_only</code> blijft overal alleen voor docenten; bestanden die niet voor externen bedoeld zijn, kun je in de variant per map uitzetten (eigen map voor VU-only materiaal).</li>
+  <li>De variant leeft daarna zelfstandig (wijzigingen in begrippen of projecten gaan niet automatisch mee). Later eventueel "bijwerken vanuit bron".</li>
+</ul>
+
+<h2>9. Beheer, teksten en documentatie</h2>
+<ul>
+  <li>Cursusinstellingen: "Voor wie" (VU via Canvas / Open voor externen), lijst gekoppelde Canvas-cursussen (ontkoppelen kan), "Open variant maken".</li>
+  <li>Instellingen (beheerder): externe registratie aan/uit, lijst VU-domeinen, Canvas-koppeling (status van <code>lti_platforms</code>, laatste geslaagde start).</li>
+  <li>Gebruikers (beheerder): kolom accounttype, en of het account aan Canvas gekoppeld is.</li>
+  <li>Alle teksten via i18n (<code>nl.json</code> bron, <code>en.json</code> met de hand, rest via <code>scripts/i18n-generate.mjs</code>); servermeldingen via <code>server/serverI18n.js</code>; nieuwe hulpteksten in <code>src/help/helpTopics.ts</code>; Ontwerphulp: <code>ADMIN_SECTIONS</code>/<code>OTHER_PAGES</code> bijwerken; <code>server/myData.js</code>: <code>lti_identities</code> in <code>EXPORT_SOURCES</code> of <code>NOT_EXPORTED</code> (test faalt anders).</li>
+  <li>Handleiding (<code>docs/handleiding/handleiding.html</code> + PDF): hoofdstuk "Via Canvas" en "Open cursussen". CLAUDE.md: sectie met de nieuwe regels.</li>
+</ul>
+
+<h2>10. Configuratie: wat Rob nodig heeft (Developer Key, LTI 1.3)</h2>
+<table>
+  <tr><th style="width:38%">Veld</th><th>Waarde</th></tr>
+  <tr><td>Redirect URI(s)</td><td><code>https://leap.vu-edulab.nl/api/lti/launch</code></td></tr>
+  <tr><td>Target Link URI</td><td><code>https://leap.vu-edulab.nl/api/lti/launch</code></td></tr>
+  <tr><td>OpenID Connect Initiation URL</td><td><code>https://leap.vu-edulab.nl/api/lti/login</code></td></tr>
+  <tr><td>JWK method / Public JWK URL</td><td><code>https://leap.vu-edulab.nl/.well-known/jwks.json</code></td></tr>
+  <tr><td>Privacy level</td><td><b>Public</b> (naam en e-mail)</td></tr>
+  <tr><td>Custom fields</td><td><code>vunetid=$Canvas.user.loginId</code><br><code>course_name=$Canvas.course.name</code></td></tr>
+  <tr><td>Placements</td><td>Course Navigation ("LEAP"), Assignment Selection / Link Selection; <i>open in new tab</i></td></tr>
+  <tr><td>LTI Advantage services</td><td>Fase 1: geen. Later eventueel Names and Roles (klassenlijst).</td></tr>
+</table>
+<p>Van Rob terug nodig: <b>client_id</b>, <b>deployment_id</b>(s), en bevestiging van <b>issuer</b> en de Canvas-adressen voor autorisatie, token en JWKS (bij Instructure-gehoste Canvas meestal issuer <code>https://canvas.instructure.com</code>, autorisatie <code>https://sso.canvaslms.com/api/lti/authorize_redirect</code>, JWKS <code>https://sso.canvaslms.com/api/lti/security/jwks</code> — <b>bij Rob verifiëren</b>). Er worden geen geheimen uitgewisseld. Die waarden komen in <code>lti_platforms</code> (niet in de repo; de repo is openbaar).</p>
+<p>Lokaal testen: <code>.env</code>-variabele <code>LTI_DEV_PLATFORM</code> voor een simulator (bijv. de IMS LTI 1.3 reference implementation of saltire.lti.app). Er is geen gratis test-Canvas.</p>
+
+<h2>11. Privacy</h2>
+<ul>
+  <li>Van Canvas ontvangen we per start: anoniem Canvas-id (<code>sub</code>), naam, e-mail, VUnetID, Canvas-cursus (id + naam) en rol. Opslaan: koppeling in <code>lti_identities</code> en <code>lti_course_links</code>; naam/e-mail in het profiel (zoals nu). Geen cijfers, geen andere Canvas-gegevens.</li>
+  <li>De bestaande privacyregel voor docenten blijft gelden: een docent ziet wie in zijn cursus zit en in welke projectgroep, verder niets.</li>
+  <li>Externen: gescheiden van VU-cursussen; zij zien geen VU-studenten en andersom alleen binnen een open cursus waar beiden lid zijn.</li>
+  <li>DPIA aanvullen: bron van de gegevens (Canvas), grondslag, bewaartermijn van koppelingen (verwijderd met het account; "Mijn gegevens" toont ze), en de nieuwe groep betrokkenen (externen).</li>
+</ul>
+
+<h2>12. Eerst opnieuw controleren bij de start van de bouw</h2>
+<ul>
+  <li>Branch en stand: <code>git log</code>, openstaande migraties (<code>node scripts/migrate.mjs --status</code>), tests en typecheck als nulmeting.</li>
+  <li>Of de bevindingen uit H2 nog kloppen (vooral policies op <code>courses</code>, <code>course_content_is_public</code>, <code>folder_course_id</code>, de signup-instelling).</li>
+  <li>Of Rob de gegevens uit H10 al heeft aangeleverd; zo niet, fase 1 met de simulator bouwen.</li>
+  <li>Of Case Studio-code beschikbaar is om op aan te sluiten.</li>
+  <li>Aantallen voor de backfill (droge run) aan Lothar laten zien vóór het uitvoeren.</li>
+</ul>
+
+<h2>13. Bouwchecklist, tests en fasering</h2>
+<table>
+  <tr><th style="width:16%">Fase</th><th>Inhoud</th><th style="width:30%">Klaar als</th></tr>
+  <tr><td><b>1. Publiek van cursussen</b></td><td>Migratie 4.1 met backfill (droge run eerst), toegangsregels H5, cursuskeuze met "Mijn cursussen" + "Open cursussen", "Deelnemen", beheerinstelling "Voor wie". Bestaande cursussen worden <code>vu</code>.</td><td>Testaccount ziet alleen cursussen waar het lid van is + open; VU-cursus onzichtbaar voor extern; niemand verliest toegang tot een cursus waarin hij actief was (controle op aantallen).</td></tr>
+  <tr><td><b>2. LTI-basis</b></td><td>Migratie 4.2, <code>server/lti/</code>, routes 6.1, herkennen 6.2, koppelen 6.3 (pagina voor docent), rol 6.4, sessie 6.5, foutpagina's. Getest met simulator.</td><td>Simulator-start als student en als docent komt ingelogd in de juiste cursus; vervalste/oude/verkeerde tokens worden geweigerd (tests per controle).</td></tr>
+  <tr><td><b>3. Externe registratie</b></td><td>Signup dicht in GoTrue, <code>/api/register</code>, VU-domeinen geweigerd, open cursussen + uitnodigingslink, inlogpagina aangepast.</td><td>Extern kan registreren en alleen open cursussen zien; VU-adres krijgt "Log in via Canvas"; registratie uit = geen nieuwe accounts.</td></tr>
+  <tr><td><b>4. Pilot met VU-Canvas</b></td><td>Registratie door Rob, één testcursus, docent koppelt, studenten starten. Daarna zelfregistratie voor VU-adressen definitief uit.</td><td>Een echte Canvas-student en -docent komen binnen; bestaande accounts worden herkend (VUnetID/e-mail).</td></tr>
+  <tr><td><b>5. Open variant</b></td><td><code>folder_usable_by_user</code>, "Open variant maken" (H8).</td><td>Variant heeft dezelfde documenten zonder herverwerking, eigen leden, geen leergegevens van de bron.</td></tr>
+  <tr><td><b>6. Later (optioneel)</b></td><td>Names and Roles (klassenlijst: wie is nog niet in LEAP geweest), Deep Linking (docent kiest bij een Canvas-opdracht een LEAP-project of -quiz). Cijfers terugsturen: niet (LEAP is formatief).</td><td>Apart besluit.</td></tr>
+</table>
+<h3>Tests die minimaal nodig zijn</h3>
+<ul>
+  <li>Pure functies: claimcontrole (iss/aud/azp/exp/nonce/deployment/message_type/version), rolvertaling, doelpagina (alleen vaste lijst), e-maildomein-check.</li>
+  <li>Routes met nagebootste database (stijl <code>server/__tests__/analytics.test.js</code>): start met geldig token → overdrachtscode; ongeldige handtekening, verlopen token, hergebruikte state/nonce, onbekende deployment → geweigerd; student zonder cursuskoppeling → nette melding; extern account via Canvas → geweigerd.</li>
+  <li>Database (testaccount, teruggedraaide transactie, stijl <code>learningIntegrity</code>): extern niet in VU-cursus; open cursus wel zichtbaar; VU-cursus niet zichtbaar voor niet-lid; fragmenten van een gedeelde map leesbaar via de open variant.</li>
+  <li>Bestaande suites blijven groen (bekende uitzonderingen: 3 tests die een lege <code>.env</code> verwachten, 3 Studiecafé-tests); typecheck niet hoger dan de nulmeting.</li>
+  <li>UI: <code>npm run ui:audit</code> voor de nieuwe pagina's (cursuskeuze, koppelpagina, registratie).</li>
+</ul>
+<h3>Terugdraaien</h3>
+<ul>
+  <li>Per migratie een terugdraaiscript; fase 1 herstelt de oude policies letterlijk en laat de backfill-lidmaatschappen staan (onschadelijk).</li>
+  <li>LTI kan uit door <code>lti_platforms.active = false</code> (de routes weigeren dan netjes); registratie terug open met de beheerinstelling en <code>GOTRUE_DISABLE_SIGNUP=false</code>.</li>
+  <li>Zoals altijd: pushen naar main alleen als Lothar dat zegt; DB-wijzigingen tijdens testen alleen met momentopname.</li>
+</ul>
+
+<p class="muted" style="margin-top:18pt">Achtergrond: "Canvas and LTI, in plain terms" (EDULAB) en de huidige code van LEAP-VU per 13 oktober 2026 (commit cee6fbe op main).</p>
+</body>
+</html>

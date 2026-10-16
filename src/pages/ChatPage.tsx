@@ -64,15 +64,6 @@ const RAG_DEFAULTS: RagSettings = {
   project: { similarity_threshold: 0.60, match_count: 7, rag_strict_mode: false },
 };
 
-// Minimale vorm van een Studiecafé-thread voor de in-chat topic-kiezer (Task #354).
-interface ReplyThreadOption {
-  id: string;
-  title: string;
-  category: string;
-  isLocked: boolean;
-  replyCount: number;
-}
-
 export function AssistantMessageBody({
   messageId,
   content,
@@ -90,30 +81,6 @@ export function AssistantMessageBody({
   const courseFeatures = useCourseFeatures();
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  // In-chat topic-kiezer (Task #354): de student kan een bestaand open topic van
-  // de actieve cursus kiezen vóór hij naar het Studiecafé gaat.
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [threads, setThreads] = useState<ReplyThreadOption[]>([]);
-  const [threadsLoading, setThreadsLoading] = useState(false);
-  const [threadsError, setThreadsError] = useState(false);
-  const [threadSearch, setThreadSearch] = useState('');
-  // Direct plaatsen (Task #358): de student plaatst het AI-antwoord met één klik
-  // als reactie in het gekozen topic, zonder eerst naar het Studiecafé te gaan.
-  const [postingThreadId, setPostingThreadId] = useState<string | null>(null);
-  const [postResult, setPostResult] = useState<{ ok: boolean; threadId?: string; title?: string } | null>(null);
-  // Task #361: het in de chat gekozen doel-topic blijkt al verdwenen/gesloten bij
-  // de keuze. Toon dan meteen een inline melding in de kiezer i.p.v. de verrassing
-  // pas op de Studiecafé-pagina te tonen (#359).
-  const [targetGone, setTargetGone] = useState(false);
-  const pickerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!pickerOpen) return;
-    const onDown = (e: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [pickerOpen]);
   const dispRaw: SourceItem[] = (retrievedContext?.displaySources as SourceItem[] | undefined)
     ?? (retrievedContext?.chunks
           ? dedupeSourcesByDocument(
@@ -174,122 +141,6 @@ export function AssistantMessageBody({
     });
     navigate('/studiecafe');
   };
-  // Haalt de actuele lijst open topics op (zonder state te muteren) zodat we hem
-  // zowel voor de kiezer als voor de verse validatie bij een keuze (Task #361)
-  // kunnen gebruiken. Gooit bij een fout zodat de aanroeper kan beslissen.
-  const fetchThreadOptions = async (): Promise<ReplyThreadOption[]> => {
-    if (!activeCourse) return [];
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    const r = await fetch(`/api/studiecafe/${activeCourse}/threads`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    if (!r.ok) throw new Error('threads');
-    const d = await r.json();
-    return (Array.isArray(d.threads) ? d.threads : [])
-      .filter((th: any) => !th.isLocked)
-      .map((th: any) => ({
-        id: th.id,
-        title: th.title,
-        category: th.category,
-        isLocked: !!th.isLocked,
-        replyCount: th.replyCount || 0,
-      }));
-  };
-  const loadThreads = async () => {
-    if (!activeCourse) { setThreads([]); return; }
-    setThreadsLoading(true);
-    setThreadsError(false);
-    try {
-      setThreads(await fetchThreadOptions());
-    } catch {
-      setThreadsError(true);
-      setThreads([]);
-    } finally {
-      setThreadsLoading(false);
-    }
-  };
-  const handleCheckLLMReply = () => {
-    const next = !pickerOpen;
-    setPickerOpen(next);
-    if (next) {
-      setThreadSearch('');
-      setTargetGone(false);
-      loadThreads();
-    }
-  };
-  const handlePickThread = async (threadId: string | null) => {
-    // Task #361: koos de student een specifiek doel-topic, valideer dan eerst dat
-    // het nog bestaat/zichtbaar is vóór we de overdracht stallen. Zo verschijnt de
-    // "topic verdwenen"-melding meteen hier i.p.v. pas op het Studiecafé (#359).
-    if (threadId) {
-      setTargetGone(false);
-      let fresh: ReplyThreadOption[];
-      try {
-        fresh = await fetchThreadOptions();
-      } catch {
-        setThreadsError(true);
-        return;
-      }
-      setThreads(fresh);
-      if (!fresh.some((th) => th.id === threadId)) {
-        setTargetGone(true);
-        return;
-      }
-    }
-    stashStudiecafeHandoff({
-      v: 1,
-      courseId: activeCourse ?? null,
-      category: 'check-llm',
-      attachment: buildExcerptAttachment(),
-      mode: 'reply',
-      ...(threadId ? { targetThreadId: threadId } : {}),
-    });
-    setPickerOpen(false);
-    navigate('/studiecafe');
-  };
-  // Task #358: plaats het AI-antwoord direct als reactie in het gekozen topic.
-  const handlePostReply = async (thread: ReplyThreadOption) => {
-    if (!activeCourse || postingThreadId) return;
-    setPostingThreadId(thread.id);
-    setPostResult(null);
-    setTargetGone(false);
-    try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      const r = await fetch(`/api/studiecafe/${activeCourse}/threads/${thread.id}/replies`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          body: t('chat.replyPicker.defaultBody'),
-          attachments: [buildExcerptAttachment()],
-        }),
-      });
-      // Task #361: het topic is intussen verdwenen/gesloten (verwijderd → 404,
-      // gesloten of cursus verborgen → 403). Ververs de lijst en toon de inline
-      // melding zodat de student meteen een ander topic kan kiezen.
-      if (r.status === 404 || r.status === 403) {
-        setPostingThreadId(null);
-        try { setThreads(await fetchThreadOptions()); } catch { /* lijst blijft staan */ }
-        setTargetGone(true);
-        return;
-      }
-      if (!r.ok) throw new Error('post');
-      setPostResult({ ok: true, threadId: thread.id, title: thread.title });
-      setPickerOpen(false);
-    } catch {
-      setPostResult({ ok: false });
-    } finally {
-      setPostingThreadId(null);
-    }
-  };
-  const handleViewPostedTopic = () => {
-    if (!postResult?.threadId) { navigate('/studiecafe'); return; }
-    navigate(`/studiecafe?thread=${encodeURIComponent(postResult.threadId)}`);
-  };
   return (
     <>
       <MarkdownMessage
@@ -314,105 +165,18 @@ export function AssistantMessageBody({
       )}
       <div className="flex flex-wrap items-center gap-2 mt-3 pt-2 border-t border-gray-200">
         {/* Studiecafé uit in deze cursus: geen doorverwijzing. */}
-        {courseFeatures.visible('studiecafe') && (<>
-        <button
-          type="button"
-          onClick={handleCheckLLM}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 transition-colors"
-          title={t('chat.checkLLMHint')}
-          data-testid={`button-check-llm-${messageId}`}
-        >
-          <Coffee className="w-3.5 h-3.5" />
-          {t('chat.checkLLM')}
-        </button>
-        <div className="relative" ref={pickerRef}>
+        {courseFeatures.visible('studiecafe') && (
           <button
             type="button"
-            onClick={handleCheckLLMReply}
+            onClick={handleCheckLLM}
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100 transition-colors"
-            title={t('chat.checkLLMReplyHint')}
-            data-testid={`button-check-llm-reply-${messageId}`}
-            aria-expanded={pickerOpen}
+            title={t('chat.checkLLMHint')}
+            data-testid={`button-check-llm-${messageId}`}
           >
-            <MessageSquare className="w-3.5 h-3.5" />
-            {t('chat.checkLLMReply')}
+            <Coffee className="w-3.5 h-3.5" />
+            {t('chat.checkLLM')}
           </button>
-          {pickerOpen && (
-            <div
-              className="absolute z-20 mt-1 left-0 w-72 max-w-[90vw] bg-white rounded-xl ring-1 ring-slate-200 shadow-lg p-2"
-              data-testid={`thread-picker-${messageId}`}
-            >
-              <p className="text-xs font-medium text-slate-600 px-1 pb-1.5">{t('chat.replyPicker.title')}</p>
-              {targetGone && (
-                <div
-                  className="flex items-start gap-1.5 mb-1.5 px-2 py-1.5 rounded-lg text-[11px] bg-rose-50 text-rose-700 ring-1 ring-rose-200"
-                  data-testid={`reply-target-gone-${messageId}`}
-                >
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <span className="flex-1">{t('chat.replyPicker.targetGone')}</span>
-                  <button
-                    onClick={() => setTargetGone(false)}
-                    className="inline-flex items-center gap-1 shrink-0 px-1.5 py-0.5 rounded text-[11px] font-medium text-rose-700 hover:bg-rose-100 transition-colors"
-                    data-testid={`button-dismiss-reply-target-gone-${messageId}`}
-                  >
-                    <X className="w-3 h-3" />{t('chat.replyPicker.targetGoneDismiss')}
-                  </button>
-                </div>
-              )}
-              <input
-                type="text"
-                value={threadSearch}
-                onChange={(e) => setThreadSearch(e.target.value)}
-                placeholder={t('chat.replyPicker.searchPlaceholder')}
-                className="w-full px-2.5 py-1.5 text-sm rounded-lg ring-1 ring-slate-200 focus:ring-2 focus:ring-amber-300 outline-none mb-1.5"
-                data-testid={`input-thread-search-${messageId}`}
-              />
-              <div className="max-h-56 overflow-y-auto space-y-0.5">
-                {threadsLoading ? (
-                  <p className="text-xs text-slate-400 px-1 py-2 flex items-center gap-1.5" data-testid={`thread-picker-loading-${messageId}`}>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />{t('chat.replyPicker.loading')}
-                  </p>
-                ) : threadsError ? (
-                  <p className="text-xs text-red-500 px-1 py-2" data-testid={`thread-picker-error-${messageId}`}>{t('chat.replyPicker.error')}</p>
-                ) : (() => {
-                  const q = threadSearch.trim().toLowerCase();
-                  const filtered = q ? threads.filter((th) => th.title.toLowerCase().includes(q)) : threads;
-                  if (filtered.length === 0) {
-                    return <p className="text-xs text-slate-400 px-1 py-2" data-testid={`thread-picker-empty-${messageId}`}>{t('chat.replyPicker.empty')}</p>;
-                  }
-                  return filtered.map((th) => (
-                    <button
-                      key={th.id}
-                      type="button"
-                      onClick={() => handlePostReply(th)}
-                      disabled={!!postingThreadId}
-                      title={t('chat.replyPicker.postHint')}
-                      className="w-full flex items-center gap-2 text-left px-2 py-1.5 rounded-lg hover:bg-amber-50 transition-colors disabled:opacity-60 disabled:cursor-wait"
-                      data-testid={`button-pick-thread-${th.id}`}
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm text-slate-700 truncate">{th.title}</span>
-                        <span className="block text-[11px] text-slate-400">{t('chat.replyPicker.replyCount').replace('{n}', String(th.replyCount))}</span>
-                      </span>
-                      {postingThreadId === th.id
-                        ? <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin text-amber-600" />
-                        : <Send className="w-3.5 h-3.5 shrink-0 text-amber-500" />}
-                    </button>
-                  ));
-                })()}
-              </div>
-              <button
-                type="button"
-                onClick={() => handlePickThread(null)}
-                className="w-full text-left mt-1.5 pt-1.5 border-t border-slate-100 px-2 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 rounded-lg transition-colors"
-                data-testid={`button-pick-in-studiecafe-${messageId}`}
-              >
-                {t('chat.replyPicker.chooseOnPage')}
-              </button>
-            </div>
-          )}
-        </div>
-        </>)}
+        )}
         <button
           type="button"
           onClick={handleCopyMarkdown}
@@ -424,34 +188,6 @@ export function AssistantMessageBody({
           {copied ? t('chat.copied') : t('chat.copyMarkdown')}
         </button>
       </div>
-      {postResult && (
-        postResult.ok ? (
-          <div
-            className="mt-2 flex flex-wrap items-center gap-2 text-xs text-green-700 bg-green-50 ring-1 ring-green-200 rounded-lg px-2.5 py-1.5"
-            data-testid={`reply-post-success-${messageId}`}
-          >
-            <Check className="w-3.5 h-3.5 shrink-0" />
-            <span>{t('chat.replyPicker.posted').replace('{title}', postResult.title ?? '')}</span>
-            <button
-              type="button"
-              onClick={handleViewPostedTopic}
-              className="ml-auto inline-flex items-center gap-1 font-medium text-green-800 underline hover:no-underline"
-              data-testid={`button-view-posted-topic-${messageId}`}
-            >
-              <Coffee className="w-3.5 h-3.5" />
-              {t('chat.replyPicker.viewTopic')}
-            </button>
-          </div>
-        ) : (
-          <div
-            className="mt-2 flex items-center gap-2 text-xs text-red-700 bg-red-50 ring-1 ring-red-200 rounded-lg px-2.5 py-1.5"
-            data-testid={`reply-post-error-${messageId}`}
-          >
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-            <span>{t('chat.replyPicker.postError')}</span>
-          </div>
-        )
-      )}
     </>
   );
 }

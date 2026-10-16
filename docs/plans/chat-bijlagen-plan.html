@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Bouwplan: bijlagen in de chat</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+  body { font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: black; font-size: 10.5pt; line-height: 1.45; max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 20pt; margin: 0 0 4pt; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; padding-bottom: 3pt; border-bottom: 1px solid lightgray; break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 4pt; break-after: avoid; }
+  p, li { margin: 3pt 0; }
+  ul, ol { padding-left: 18pt; margin: 4pt 0; }
+  table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9.5pt; break-inside: avoid; }
+  th, td { border: 1px solid lightgray; padding: 4pt 6pt; vertical-align: top; text-align: left; }
+  th { background: whitesmoke; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: whitesmoke; padding: 0 2pt; }
+  .muted { color: dimgray; }
+  .box { border: 1px solid lightgray; border-left: 4px solid steelblue; padding: 6pt 10pt; margin: 8pt 0; break-inside: avoid; }
+  .warn { border-left-color: darkorange; }
+  .meta { color: dimgray; font-size: 9.5pt; margin-bottom: 12pt; }
+  .toc { columns: 2; font-size: 9.5pt; }
+  .toc li { margin: 1pt 0; }
+</style>
+</head>
+<body>
+
+<h1>Bouwplan: afbeeldingen en bestanden in de chat</h1>
+<div class="meta">LEAP-VU · opgesteld 16 oktober 2026 · status: plan, nog niet gebouwd · bedoeld als opdracht voor Claude wanneer we gaan bouwen, en als achtergrond voor het team</div>
+
+<div class="box">
+  <strong>Hoe dit document te gebruiken.</strong> Geef dit document aan Claude met de opdracht "bouw fase 1" (of een andere fase). Hoofdstuk 14 is de bouwchecklist. Hoofdstuk 13 noemt wat bij de start eerst opnieuw gecontroleerd moet worden, omdat de code sinds 16 oktober 2026 veranderd kan zijn. Hoofdstuk 12 is een reflectie op een later berichtensysteem voor de beheerder; dat valt buiten deze bouw.
+</div>
+
+<h3>Inhoud</h3>
+<ol class="toc">
+  <li>Doel en genomen besluiten</li>
+  <li>Hoe het nu werkt (bevindingen)</li>
+  <li>Wat de student ziet en doet</li>
+  <li>Wat er wel en niet bewaard wordt</li>
+  <li>Twee schakelaars: beheerder en docent</li>
+  <li>Server: poort, grenzen en verwerking</li>
+  <li>Bestanden (PDF, Word, PowerPoint, tekst)</li>
+  <li>Afscherming: Studiecafé, dagboek, docenten, analyse</li>
+  <li>Teksten, hulp en handleiding</li>
+  <li>Kosten en grenzen</li>
+  <li>Risico's en hoe we ze beperken</li>
+  <li>Reflectie: berichtensysteem voor de beheerder (later)</li>
+  <li>Eerst opnieuw controleren bij de start</li>
+  <li>Bouwchecklist, tests en fasering</li>
+</ol>
+
+<h2>1. Doel en genomen besluiten</h2>
+<p><strong>Doel.</strong> In cursussen waar de docent dat bewust aanzet, kan een student in de chat een afbeelding of bestand meegeven aan de tutor: een screenshot (Windows+Shift+S en plakken), een foto, een PDF, een Word- of PowerPoint-bestand. De tutor haalt de inhoud eruit, laat zien wat hij ziet, en bespreekt het met de student, met toelichting van de student en verankerd in het cursusmateriaal. Het kan om van alles gaan, niet alleen om collegeslides.</p>
+
+<table style="break-inside: auto">
+  <tr><th style="width:38%">Besluit (Lothar, 16-10-2026)</th><th>Uitwerking in dit plan</th></tr>
+  <tr><td>Standaard <strong>uit</strong>; een docent zet het per cursus aan na een dubbele bevestiging met een waarschuwing over de gevolgen.</td><td>Nieuwe schakelaar onder Onderdelen die, anders dan de andere onderdelen, alleen aan staat als hij bewust is aangezet (H5).</td></tr>
+  <tr><td>De beheerder kan de optie altijd voor iedereen uitschakelen, bijvoorbeeld als de kosten te hoog oplopen.</td><td>Hoofdschakelaar voor de beheerder; de optie werkt alleen als beide schakelaars aan staan (H5).</td></tr>
+  <tr><td>Studenten kunnen <strong>plakken</strong> in het chatvenster, naast een klik op het paperclipje.</td><td>Plakken, paperclipje en slepen (H3).</td></tr>
+  <tr><td>Afbeeldingen en bijlagen worden weggegooid na het afsluiten van de chat.</td><td>LEAP bewaart ze nergens: ze staan alleen in het geheugen van de browser zolang de chat open is (H4).</td></tr>
+  <tr><td>Bijlagen worden nooit overgeheveld naar het Studiecafé.</td><td>Afgedwongen in code en test (H8).</td></tr>
+  <tr><td>Afgeleide tekst (de beschrijving van een afbeelding, de antwoorden van de tutor) mag blijven bestaan, net als wanneer een student een gelezen paper zonder upload bespreekt.</td><td>Beschrijving en gesprek blijven in de chatgeschiedenis en mogen in de dagboekreflectie (H4).</td></tr>
+  <tr><td>Alles in één ronde: afbeeldingen én bestanden.</td><td>H6 en H7; de fasering in H14 bouwt wel eerst afbeeldingen, dan bestanden.</td></tr>
+  <tr><td>Een berichtensysteem voor de beheerder komt later.</td><td>Alleen reflectie (H12); dit plan legt wel vast wat zo'n systeem later nodig heeft.</td></tr>
+</table>
+
+<h2>2. Hoe het nu werkt (bevindingen, 16-10-2026)</h2>
+<ul>
+  <li><strong>Onderdelen per cursus</strong> (<code>server/courseFeatures.js</code>, gelijk aan <code>src/lib/courseFeatures.ts</code>): <code>courses.features</code> bewaart alleen wat UIT staat; een ontbrekende sleutel betekent aan. In de database doet <code>leap_course_feature_on</code> hetzelfde. Een nieuwe sleutel zou met die regel automatisch overal <em>aan</em> staan. Dat moet voor deze optie juist niet.</li>
+  <li><strong>Chatverzoek</strong>: de browser stuurt <code>messages</code> naar <code>POST /api/chat</code> (<code>server/index.js</code>); <code>featureForChatRequest</code> bepaalt welk onderdeel het verzoek bedient. De body-limiet is 50 MB (<code>express.json</code>), dus afbeeldingen passen er technisch in.</li>
+  <li><strong>De browser schrijft de chatberichten zelf weg</strong> in de tabel <code>messages</code> (<code>src/pages/ChatPage.tsx</code>). Dat is het belangrijkste aandachtspunt: als de bijlage in de berichttekst of in <code>retrieved_context</code> belandt, wordt ze toch bewaard. De afscherming moet dus in de browser én in de database zitten.</li>
+  <li><strong>"Klopt dit wel?"</strong> stuurt alleen de tekst van het tutorantwoord plus bronnen mee (<code>buildExcerptAttachment</code> in <code>ChatPage.tsx</code>), niet het bericht van de student.</li>
+  <li><strong>Documentverwerking</strong> bestaat al voor cursusmateriaal: LibreOffice in de container (<code>server/documentRender.js</code>), <code>server/pptxExtract.js</code>, PDF-tekst. Die kan hergebruikt worden voor studentbestanden, maar dan zonder iets op te slaan.</li>
+  <li><strong>Taalmodel</strong>: lokaal staat <code>AZURE_OPENAI_DEPLOYMENT=gpt-5.5</code> met API-versie <code>2024-10-21</code>. Nergens in LEAP wordt nu beeldinvoer gebruikt. De live configuratie op Azure is niet gecontroleerd.</li>
+  <li><strong>Tokens meten</strong>: de analysemodule (<code>server/analytics/</code>) telt Azure-tokens per cursus via een wrapper rond <code>fetch</code>. Beeldtokens komen daar vanzelf in mee, maar zijn niet apart zichtbaar.</li>
+  <li><strong>Schakelaar van de beheerder</strong>: er is al een voorbeeld van een platformbrede aan/uit-stand in <code>chatbot_prompts</code> (<code>__design_assistant_enabled__</code> voor de Ontwerphulp).</li>
+  <li><strong>Communicatie</strong>: er is nu alleen het Studiecafé per cursus (aankondigingen door docenten) en een e-maildigest (<code>server/notifications.js</code>), met een limiet van 30 e-mails per minuut en 100 per uur. Een kanaal van beheerder naar docenten en studenten bestaat niet (H12).</li>
+</ul>
+
+<h2>3. Wat de student ziet en doet</h2>
+<ol>
+  <li><strong>Toevoegen</strong> op drie manieren: plakken in het invoerveld (Ctrl+V na Windows+Shift+S), het paperclipje, of slepen naar het chatvenster. Op een telefoon werkt plakken van afbeeldingen vaak niet; daar blijft het paperclipje.</li>
+  <li><strong>Voorbeeld vóór verzenden</strong>: een miniatuur of bestandsnaam boven het invoerveld, met een kruisje om te verwijderen. De student typt er een toelichting bij ("ik snap niet waarom de lijn hier daalt").</li>
+  <li><strong>Eerste keer per gesprek</strong>: een korte melding: niet bewaard na het afsluiten, geen persoonsgegevens van anderen, geen tentamenmateriaal, en de tutor kan zich verlezen.</li>
+  <li><strong>De tutor laat eerst zien wat hij ziet</strong>: een korte, zakelijke beschrijving ("Dit zie ik: …"), en vraagt of die klopt. De student kan corrigeren. Daarna gaat het gesprek socratisch verder, vanuit het cursusmateriaal en met bronverwijzingen, zoals bij een getypte vraag.</li>
+  <li><strong>In de geschiedenis</strong> staat bij het studentbericht een label "Afbeelding: naam (niet bewaard)". De beschrijving en het gesprek blijven staan. Na herladen of afsluiten is de afbeelding zelf weg; het label en de tekst blijven.</li>
+  <li><strong>Afsluiten</strong> = een nieuw gesprek beginnen, naar het dagboek verplaatsen, het gesprek verwijderen, de pagina verlaten of herladen, of het tabblad sluiten. In al die gevallen is de bijlage weg, omdat ze alleen in het geheugen van de pagina stond.</li>
+</ol>
+
+<h2>4. Wat er wel en niet bewaard wordt</h2>
+<table>
+  <tr><th style="width:30%">Wat</th><th style="width:32%">Waar</th><th>Hoe lang</th></tr>
+  <tr><td>De afbeelding of het bestand zelf</td><td>Alleen in het geheugen van de browser</td><td>Tot de chat wordt afgesloten (H3, punt 6). Nooit in de database, nooit in Storage, nooit in serverlogs.</td></tr>
+  <tr><td>Uit een bestand gehaalde tekst</td><td>Alleen in het geheugen van de browser</td><td>Idem.</td></tr>
+  <tr><td>Beschrijving door de tutor, het gesprek</td><td>Tabel <code>messages</code>, zoals nu</td><td>Zoals elk chatgesprek (afgeleide tekst mag blijven, besluit 16-10).</td></tr>
+  <tr><td>Label "Afbeelding: naam (niet bewaard)"</td><td>In het studentbericht (alleen naam, type en grootte)</td><td>Zoals het gesprek.</td></tr>
+  <tr><td>Tellingen (aantal bijlagen, beeldtokens)</td><td><code>analytics_counters</code>, zonder gebruiker</td><td>Zoals de andere tellers.</td></tr>
+  <tr><td>Bij Azure OpenAI</td><td>Verwerking van het verzoek</td><td>Afhankelijk van het VU-contract (misbruikcontrole kan tijdelijke opslag betekenen). Eerlijk vermelden in de waarschuwing; nagaan in H13.</td></tr>
+</table>
+<p>Omdat LEAP niets bewaart, hoeft er ook niets opgeruimd te worden en is er geen opruimtaak nodig voor gesprekken die nooit netjes zijn afgesloten. "Mijn gegevens" hoeft niets nieuws te exporteren; wel komt in de uitleg te staan dat bijlagen niet bewaard worden.</p>
+<div class="box warn"><strong>Zwakke plek.</strong> De browser schrijft berichten zelf weg. Een programmeerfout zou de bijlage (bijvoorbeeld als base64) in <code>messages.content</code> of <code>retrieved_context</code> kunnen zetten. Daarom: (1) de bijlage leeft in een aparte state die nooit in het bericht-object terechtkomt; (2) een databasecontrole (trigger of check) weigert berichten met <code>data:image</code>, lange base64-reeksen of een veld met bijlage-inhoud; (3) een test dat het weggeschreven bericht alleen het label bevat.</div>
+
+<h2>5. Twee schakelaars: beheerder en docent</h2>
+<h3>5.1 Hoofdschakelaar (beheerder)</h3>
+<ul>
+  <li>Platformbreed, alleen voor LEAP-beheerders, naar het voorbeeld van <code>__design_assistant_enabled__</code>. Standaard uit.</li>
+  <li>Staat hij uit, dan werkt de optie nergens, ongeacht de stand in de cursus. De docent ziet bij Onderdelen "Uitgezet door de beheerder"; de keuze van de docent blijft bewaard.</li>
+  <li>Zet de beheerder hem weer aan, dan gaan alleen de cursussen die de docent eerder bewust had aangezet weer aan. Voorstel: de beheerder krijgt daarnaast een knop "alle cursussen terug naar uit" voor als de kosten echt uit de hand liepen.</li>
+  <li>De stand en elke wijziging (wie, wanneer, hoeveel cursussen geraakt) worden vastgelegd. Een later berichtensysteem (H12) kan daarmee precies de getroffen docenten en studenten bereiken.</li>
+</ul>
+<h3>5.2 Cursusschakelaar (docent)</h3>
+<ul>
+  <li>Nieuw onderdeel <code>attachments</code> onder Onderdelen (<code>CourseFeaturesAdminTab</code>), los van de bestaande zes, zichtbaar als subonderdeel van Chat (zonder chat geen bijlagen).</li>
+  <li><strong>Opt-in.</strong> Anders dan de rest wordt deze sleutel alleen als aan gezien bij <code>{"attachments": true}</code>. De gedeelde regel krijgt een lijst <code>OPT_IN_FEATURES</code>; <code>normalizeCourseFeatures</code>, <code>mergeCourseFeatures</code> en de browserkopie behandelen die apart, en de bestaande vergelijkingstest tussen server en browser dekt het. <code>leap_course_feature_on</code> in de database wordt voor deze sleutel ook opt-in gemaakt (of mag hem expliciet niet accepteren), zodat de regel nergens anders uitvalt.</li>
+  <li><strong>Dubbele bevestiging.</strong> Stap 1: een waarschuwing (in een portal-modal, zie CLAUDE.md) over kosten, auteursrecht, privacy, dat het model zich kan verlezen, dat LEAP niets bewaart maar Azure het verzoek verwerkt, en dat de beheerder de optie kan uitzetten. Met een vinkje "Ik heb dit gelezen". Stap 2: een tweede bevestiging met de naam van de cursus ("Bijlagen aanzetten voor <em>cursusnaam</em>?"). Uitzetten kan met één klik.</li>
+  <li>Vastleggen wie de optie wanneer aan- of uitzette (bestaande auditlog als die past, anders een kolom of tabel; controleren in H13).</li>
+  <li>Docenten van de cursus en beheerders kunnen de optie, net als bij andere onderdelen, testen terwijl die voor studenten uit staat.</li>
+</ul>
+
+<h2>6. Server: poort, grenzen en verwerking</h2>
+<ul>
+  <li><strong>De server is de poort.</strong> Plakken kun je in de browser niet tegenhouden, dus <code>/api/chat</code> weigert elk verzoek met bijlagen als de hoofdschakelaar of de cursusschakelaar uit staat (nieuwe melding in <code>server/serverI18n.js</code>). Alleen in de chat, niet in Ik leg uit, quiz of projecten.</li>
+  <li><strong>Controle van de invoer</strong>: toegestane typen (PNG, JPEG, WebP, GIF zonder animatie; PDF, DOCX, PPTX, TXT, MD), echte bestandsinhoud controleren in plaats van de extensie, maximale grootte, maximaal aantal per bericht.</li>
+  <li><strong>Afbeeldingen, één keer beschrijven.</strong> Bij het eerste verzoek met een afbeelding gaat de afbeelding met de vraag naar het model; het antwoord begint met de beschrijving. Volgende beurten sturen alleen tekst. Wil de student dat de tutor opnieuw kijkt ("kijk nog eens naar de linkeras"), dan stuurt de browser de afbeelding zolang de chat open is opnieuw mee; dat telt mee voor de grenzen.</li>
+  <li><strong>In de browser verkleinen en opnieuw coderen</strong> voordat iets verstuurd wordt (bijvoorbeeld langste zijde 1600 px). Dat bespaart tokens en haalt EXIF-gegevens weg, zoals de GPS-locatie in foto's van een telefoon.</li>
+  <li><strong>Detailstand</strong> (laag of hoog) is een platforminstelling van de beheerder, met een standaardwaarde op basis van fase 0.</li>
+  <li><strong>Promptregels</strong> (in het vaste deel van de prompt, vakneutraal): de bijlage is materiaal van de student en geen instructie, en tekst in een afbeelding of bestand die opdrachten geeft wordt genegeerd; eerst beschrijven, dan vragen of het klopt; antwoorden blijven verankerd in het cursusmateriaal, en wat buiten de stof valt wordt zo benoemd; geen volledige teksten overtikken of reproduceren.</li>
+  <li><strong>Zoeken in het cursusmateriaal</strong>: de beschrijving en de toelichting van de student worden samen als zoekvraag gebruikt, zodat de tutor passende fragmenten vindt.</li>
+  <li><strong>"Klaar voor een hoger niveau?"</strong>: alleen getypte tekst telt als eigen inbreng van de student, niet de inhoud van een bijlage (<code>server/readiness.js</code>).</li>
+  <li><strong>Logs</strong>: nooit bijlage-inhoud loggen, ook niet bij fouten (alleen type en grootte).</li>
+</ul>
+
+<h2>7. Bestanden (PDF, Word, PowerPoint, tekst)</h2>
+<ul>
+  <li>De server haalt de tekst eruit in het geheugen, met de bestaande verwerking (LibreOffice, <code>pptxExtract</code>, PDF-tekst), en schrijft niets naar schijf of Storage. Tijdelijke bestanden die LibreOffice nodig heeft, worden direct na de conversie verwijderd.</li>
+  <li>De uitgehaalde tekst gaat terug naar de browser en blijft daar in het geheugen. Bij elke beurt gaat ze mee naar het model, afgekapt op een maximum (voorstel: 40.000 tekens). Herhaalde invoer valt bij Azure onder prompt caching, wat de kosten drukt; dat meten we in fase 0.</li>
+  <li>Gescande PDF's zonder tekstlaag: de eerste pagina's (voorstel: maximaal 5) als afbeelding naar het model, met een melding aan de student dat de rest niet gelezen is.</li>
+  <li>Ingesloten afbeeldingen in Word en PowerPoint worden niet apart bekeken (te duur). De student kan zo'n figuur als screenshot plakken.</li>
+  <li>Het label in de geschiedenis wordt "Bestand: naam.pdf, 12 pagina's (niet bewaard)".</li>
+</ul>
+
+<h2>8. Afscherming: Studiecafé, dagboek, docenten, analyse</h2>
+<ul>
+  <li><strong>Studiecafé</strong>: "Klopt dit wel?" neemt alleen de tekst van het tutorantwoord mee, nooit een bijlage of het studentbericht met bijlage. Een test dwingt dat af, ook voor <code>stashStudiecafeHandoff</code> in het algemeen. Gevolg dat we accepteren: een antwoord over een afbeelding kan in het Studiecafé zonder die afbeelding lastig te volgen zijn; de student kan dat in zijn bericht toelichten.</li>
+  <li><strong>Leerdagboek</strong>: de reflectie wordt gemaakt uit de tekst van het gesprek, inclusief de beschrijving (mag, besluit 16-10), zonder bijlage.</li>
+  <li><strong>Docenten</strong>: zien niets van bijlagen of gesprekken, zoals de privacyregel al voorschrijft. Bij Analyse ziet de docent hoogstens het aantal bijlagen per week in de eigen cursus (geen inhoud), zodat het effect op de kosten zichtbaar is.</li>
+  <li><strong>Beheerder</strong>: ziet bij platformkosten de beeldtokens en het aantal bijlagen per cursus apart.</li>
+</ul>
+
+<h2>9. Teksten, hulp en handleiding</h2>
+<ul>
+  <li>Alle teksten via i18n (<code>nl.json</code> als bron, <code>en.json</code> met de hand, overige talen met <code>scripts/i18n-generate.mjs</code>); nieuwe servermeldingen in <code>server/serverI18n.js</code>.</li>
+  <li>Het paperclipje krijgt een <code>Tooltip</code>; de nieuwe schakelaar een <code>HelpTip</code> met een nieuw id in <code>src/help/helpTopics.ts</code> (bijvoorbeeld <code>courseFeatures.attachments</code>) en een <code>AdminHint variant="warning"</code>.</li>
+  <li>Handleiding (<code>docs/handleiding/handleiding.html</code>): een stuk over de optie, de waarschuwing en wat er bewaard wordt. Daarmee kent de Ontwerphulp de optie ook (die leest de helpteksten en de handleiding).</li>
+  <li>"Mijn gegevens": een zin dat bijlagen niet bewaard worden.</li>
+</ul>
+
+<h2>10. Kosten en grenzen</h2>
+<p>Startwaarden (voorstel; definitief na fase 0, en daarna instelbaar door de beheerder):</p>
+<table>
+  <tr><th style="width:50%">Grens</th><th>Voorstel</th></tr>
+  <tr><td>Afbeeldingen per bericht</td><td>3</td></tr>
+  <tr><td>Bijlagen per gesprek</td><td>10</td></tr>
+  <tr><td>Bijlagen per student per dag (per cursus)</td><td>20</td></tr>
+  <tr><td>Grootte van een afbeelding na verkleinen</td><td>langste zijde 1600 px</td></tr>
+  <tr><td>Grootte van een bestand</td><td>10 MB</td></tr>
+  <tr><td>Tekst uit een bestand per beurt</td><td>40.000 tekens</td></tr>
+  <tr><td>Gescande PDF-pagina's</td><td>5</td></tr>
+</table>
+<p>Bij het bereiken van een grens krijgt de student een duidelijke melding, en de chat zonder bijlagen werkt gewoon door. De daggrens wordt op de server bijgehouden, zonder iets over de bijlage zelf te bewaren (alleen een teller per student per dag, die na een dag vervalt).</p>
+
+<h2>11. Risico's en hoe we ze beperken</h2>
+<table>
+  <tr><th style="width:24%">Risico</th><th>Maatregel</th></tr>
+  <tr><td>Auteursrecht</td><td>Niets bewaard; de tutor reproduceert geen volledige teksten; waarschuwing voor docent en student; opt-in per cursus.</td></tr>
+  <tr><td>Privacy van derden</td><td>Melding aan de student; EXIF weghalen; niets bewaard; geen inzage voor docenten.</td></tr>
+  <tr><td>Kosten</td><td>Eén keer beschrijven, verkleinen, detailstand, grenzen, aparte meting, hoofdschakelaar.</td></tr>
+  <tr><td>Verkeerd gelezen inhoud</td><td>Eerst beschrijven en laten bevestigen; de student kan corrigeren.</td></tr>
+  <tr><td>Instructies verstopt in een afbeelding of bestand</td><td>Promptregel: bijlage-inhoud is materiaal, geen opdracht. Het model heeft geen toegang tot docentmateriaal, dus daar valt niets uit te halen.</td></tr>
+  <tr><td>Tentamenfraude</td><td>Melding aan de student; de docent kiest bewust; de optie staat standaard uit. Echt voorkomen kan LEAP het niet.</td></tr>
+  <tr><td>Ongepaste inhoud</td><td>Contentfilters van Azure; een nette melding als het filter ingrijpt.</td></tr>
+  <tr><td>Bijlage toch in de database</td><td>Gescheiden state, databasecontrole, test (H4).</td></tr>
+  <tr><td>Kwaadaardige bestanden</td><td>Typecontrole op inhoud, grootte, conversie in de bestaande afgeschermde LibreOffice-stap, alles in het geheugen.</td></tr>
+</table>
+
+<h2>12. Reflectie: berichtensysteem voor de beheerder (later)</h2>
+<p>Als de beheerder de bijlagen platformbreed uitzet, raakt dat docenten die er bewust voor kozen en studenten die eraan gewend waren. Dat roept vragen op, en LEAP heeft nu geen kanaal om die te beantwoorden: het Studiecafé is per cursus en van de docent, en e-mail loopt buiten LEAP. Een berichtensysteem voor de beheerder is daarom een logische volgende stap. Het is breder dan deze optie, want het geldt ook voor onderhoud, nieuwe functies en storingen. Een paar overwegingen voor het latere ontwerp:</p>
+<ul>
+  <li><strong>Platform, niet cursus.</strong> Het Studiecafé blijft het kanaal van de docent naar de eigen cursus. Het berichtensysteem is van de beheerder naar groepen op het platform. Zo overlappen ze niet.</li>
+  <li><strong>Doelgroepen</strong>: alle docenten, alle studenten, iedereen in een of meer cursussen, docenten van cursussen met een bepaalde instelling (bijvoorbeeld bijlagen aan), en losse personen. Dit plan legt daarom vast welke cursussen geraakt worden bij het uitzetten (H5.1).</li>
+  <li><strong>Eenrichting eerst.</strong> Mededelingen zonder antwoordmogelijkheid zijn eenvoudig en duidelijk. Vragen kunnen via een vast contactadres. Een gesprek in twee richtingen is een veel groter ontwerp (moderatie, privacy, bewaartermijnen).</li>
+  <li><strong>Kanalen</strong>: een berichtenbak in LEAP (met een teller in het menu), een banner voor dringende berichten, en optioneel e-mail via de bestaande digest. De e-maillimiet (100 per uur) maakt e-mail ongeschikt als hoofdkanaal voor grote groepen; e-mail moet daarom een samenvatting zijn, binnen de bestaande meldingsvoorkeuren.</li>
+  <li><strong>Twintig talen.</strong> De beheerder schrijft in één taal. Automatisch vertalen bij het tonen (er is al vertaalcode voor documenten) ligt voor de hand, met het origineel erbij.</li>
+  <li><strong>Privacy.</strong> Geen leesbevestiging per persoon; hoogstens het aantal lezers. Berichten aan een student horen bij "Mijn gegevens" (<code>EXPORT_SOURCES</code>).</li>
+  <li><strong>Azure</strong>: geen Realtime, dus nieuwe berichten komen binnen via <code>liveUpdates</code> (periodiek verversen).</li>
+  <li><strong>Automatische voorstellen.</strong> Bij een ingrijpende schakelaar (zoals het uitzetten van bijlagen) kan LEAP de beheerder een conceptbericht aan de getroffen groep voorstellen, dat de beheerder aanpast en verstuurt.</li>
+  <li><strong>Tot het er is</strong>: bij uitzetten door de beheerder ziet de docent bij Onderdelen "Uitgezet door de beheerder", en ziet de student bij het paperclipje "Bijlagen zijn tijdelijk niet beschikbaar". Dat is het minimum zonder berichtensysteem.</li>
+</ul>
+
+<h2>13. Eerst opnieuw controleren bij de start van de bouw</h2>
+<ul>
+  <li>Branch en stand: <code>git log</code>, openstaande migraties, tests en typecheck als nulmeting.</li>
+  <li>Live configuratie op Azure: naam van de chat-deployment, of die beeldinvoer accepteert, en of de API-versie (<code>2024-10-21</code> of nieuwer) beeldinhoud in berichten ondersteunt.</li>
+  <li>VU-contract met Azure OpenAI: misbruikcontrole en tijdelijke opslag; de tekst van de waarschuwing daarop afstemmen.</li>
+  <li>Of de bevindingen uit H2 nog kloppen, vooral: wie <code>messages</code> wegschrijft, hoe <code>courseFeatures</code> werkt, en wat "Klopt dit wel?" meeneemt.</li>
+  <li>Of er een geschikte auditlog is voor het aan- en uitzetten.</li>
+  <li>Of er intussen een berichtensysteem is gekomen (H12).</li>
+</ul>
+
+<h2>14. Bouwchecklist, tests en fasering</h2>
+<table>
+  <tr><th style="width:17%">Fase</th><th style="width:48%">Inhoud</th><th>Klaar als</th></tr>
+  <tr><td>0. Verkennen</td><td>Los testscript (geen productcode): 15–20 uiteenlopende screenshots en 5 bestanden naar het live model, in lage en hoge detailstand. Meten: klopt de beschrijving, kosten, duur, effect van verkleinen en caching. Controles uit H13.</td><td>Een korte notitie met resultaten en voorgestelde grenzen en detailstand; Lothar beslist of fase 1 doorgaat.</td></tr>
+  <tr><td>1. Schakelaars</td><td>Hoofdschakelaar beheerder; opt-in sleutel <code>attachments</code> in de gedeelde regel (server, browser, database); dubbele bevestiging; vastleggen van wijzigingen; status "Uitgezet door de beheerder"; helpteksten.</td><td>Nieuwe cursus: uit. Aanzetten lukt alleen na twee bevestigingen. Hoofdschakelaar uit = overal uit, met behoud van de keuze van de docent.</td></tr>
+  <tr><td>2. Afbeeldingen</td><td>Plakken, paperclipje, slepen; verkleinen en EXIF weghalen; serverpoort en grenzen; eerst beschrijven; label in de geschiedenis; databasecontrole tegen opgeslagen bijlagen; promptregels; meting in Analyse.</td><td>Screenshot plakken geeft een beschrijving en een verankerd gesprek; na herladen is de afbeelding weg en het label en de tekst er nog; met de optie uit weigert de server.</td></tr>
+  <tr><td>3. Bestanden</td><td>Tekst uit PDF/DOCX/PPTX/TXT in het geheugen; gescande PDF's; afkappen; label.</td><td>Een PDF bespreken werkt; niets op schijf of in Storage; grenzen werken.</td></tr>
+  <tr><td>4. Afronding</td><td>Teksten in alle talen, handleiding, "Mijn gegevens", <code>npm run ui:audit</code>.</td><td>Alle tests groen; pariteit van talen; UI-audit zonder nieuwe meldingen.</td></tr>
+  <tr><td>5. Proef</td><td>Eén cursus, enkele weken; kosten volgen in Analyse.</td><td>Besluit: breder, aanpassen of stoppen.</td></tr>
+</table>
+
+<h3>Tests die minimaal nodig zijn</h3>
+<ul>
+  <li>Gedeelde regel: <code>attachments</code> is standaard uit, alleen aan bij <code>true</code>; de andere zes blijven standaard aan; server en browser gelijk.</li>
+  <li><code>/api/chat</code>: bijlage met hoofdschakelaar uit → geweigerd; cursusschakelaar uit → geweigerd; te groot, verkeerd type of te veel → geweigerd; alles aan → doorgegeven aan het model als beeldinhoud.</li>
+  <li>Niet bewaren: het weggeschreven bericht bevat alleen het label; de databasecontrole weigert een bericht met <code>data:image</code> of lange base64; geen bijlage-inhoud in logs.</li>
+  <li>Studiecafé: "Klopt dit wel?" na een gesprek met bijlage bevat geen bijlage en geen studentbericht.</li>
+  <li>Readiness: bijlage-inhoud telt niet als eigen inbreng.</li>
+  <li>Browser: plakken van een afbeelding voegt een voorbeeld toe; kruisje verwijdert; geen paperclipje als de optie uit staat.</li>
+  <li>Bestaande suites blijven groen; vakneutraal-test, helptopics-test, Ontwerphulp-test en taalpariteit slagen.</li>
+</ul>
+
+<h3>Terugdraaien</h3>
+<ul>
+  <li>De hoofdschakelaar is de noodrem: uit = direct overal uit, zonder deploy.</li>
+  <li>Elke migratie (databasecontrole, eventuele audit) krijgt een terugdraaiscript.</li>
+  <li>Omdat er geen bijlagen bewaard worden, is er bij terugdraaien niets op te ruimen.</li>
+</ul>
+
+</body>
+</html>
