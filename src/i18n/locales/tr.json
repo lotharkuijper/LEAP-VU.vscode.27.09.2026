@@ -2997,5 +2997,20 @@
   "material.files.retry": "Yeniden içe aktar",
   "material.files.retryAll": "Tüm {n} öğeyi yeniden içe aktar",
   "material.files.failedBanner": "{n} dosya içe aktarılamadı. Bu genellikle aynı anda çok fazla dosya işlendiğinde olur; dosyaların kendisi hâlâ LEAP’te duruyor. Yeniden içe aktarılmalarını başlat: LEAP şimdi bunları tek tek işleyecek.",
-  "material.files.retryQueued": "{n} dosya yeniden içe aktarılıyor. Bu biraz sürebilir; bu arada çalışmaya devam edebilirsin."
+  "material.files.retryQueued": "{n} dosya yeniden içe aktarılıyor. Bu biraz sürebilir; bu arada çalışmaya devam edebilirsin.",
+  "material.bulk.selectAll": "Tümünü seç",
+  "material.bulk.selectFile": "{name} seç",
+  "material.bulk.selected": "{n} seçildi",
+  "material.bulk.clear": "Seçimi temizle",
+  "material.bulk.delete": "Sil ({n})",
+  "material.bulk.confirmTitle": "Seçim silinsin mi?",
+  "material.bulk.sumFiles": "{n} dosya",
+  "material.bulk.sumWeb": "Toplam {pages} sayfadan oluşan {n} web sitesi",
+  "material.bulk.sumChunks": "Yapay zekânın kullandığı {n} parça",
+  "material.bulk.sumConcepts": "{n} kavramın artık kanıtı kalmayacak. Bunlar kalır; 3. adım Kavramlar'da sil veya tamamla.",
+  "material.bulk.irreversible": "Bunu geri alamazsın. Öğrenciler bu materyali daha sonra sohbette, Açıklıyorum'da ve quizde kullanamaz.",
+  "material.bulk.typeName": "Onaylamak için dersin adını yaz: {name}",
+  "material.bulk.confirm": "Kalıcı olarak sil ({n})",
+  "material.bulk.done": "{n} dosya silindi.",
+  "tasks.deleteFiles.title": "Dosyaları sil ({n})"
 }

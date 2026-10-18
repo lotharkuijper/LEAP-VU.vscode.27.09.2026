@@ -30,6 +30,18 @@ import { computeTeacherFolderScope } from './documentScope.js';
 import { createProcessingQueue } from './processingQueue.js';
 import { EMBEDDINGS_RATE_LIMIT_MSG } from './embeddingsRetry.js';
 
+/**
+ * Meerdere bestanden tegelijk verwijderen (2026-10-18). Vanaf dit aantal moet de
+ * docent de cursusnaam typen; de server controleert dat zelf, niet alleen de browser.
+ */
+export const BULK_CONFIRM_THRESHOLD = 5;
+export const bulkDeleteNeedsName = (count) => count > BULK_CONFIRM_THRESHOLD;
+/** Pure: komt de getypte naam overeen met de cursusnaam (hoofdletters en witruimte tellen niet)? */
+export function courseNameMatches(typed, name) {
+  const norm = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  return !!norm(name) && norm(typed) === norm(name);
+}
+
 /** Tijdelijke fout van de embeddings-dienst (snelheidslimiet): later opnieuw proberen. */
 export function isRateLimitError(err) {
   return !!(err && (err.isRateLimit || err.status === 429 || err.message === EMBEDDINGS_RATE_LIMIT_MSG));
@@ -542,6 +554,118 @@ export function registerCourseFilesRoutes(app, deps) {
     if (!doc || !scope.ids.has(doc.folder_id)) return null;
     return { doc, folder: scope.byId.get(doc.folder_id) };
   }
+
+  // ── Meerdere bestanden tegelijk verwijderen ─────────────────────────────────
+  // Body { docIds?: string[], webSourceIds?: string[] }. Alleen wat binnen deze
+  // cursus valt, telt mee; de rest wordt stil genegeerd. Websites gaan als
+  // geheel (met al hun pagina's). Begrippen blijven staan: die beheert de
+  // docent in stap 3 (de voorvertoning zegt hoeveel hun bewijs verliezen).
+  async function resolveBulkSelection(courseId, body) {
+    const scope = await courseScope(courseId);
+    const docIds = [...new Set((Array.isArray(body?.docIds) ? body.docIds : []).map(String))];
+    const sourceIds = [...new Set((Array.isArray(body?.webSourceIds) ? body.webSourceIds : []).map(String))];
+    const docs = [];
+    for (let i = 0; i < docIds.length; i += 200) {
+      const { data, error } = await supabaseAdmin.from('documents')
+        .select('id, folder_id, file_path, bucket, file_type, web_source_id, total_chunks')
+        .in('id', docIds.slice(i, i + 200));
+      if (error) throw new Error(error.message);
+      docs.push(...(data || []).filter((d) => scope.ids.has(d.folder_id) && !d.web_source_id));
+    }
+    const sources = [];
+    if (sourceIds.length && webSourcesReady()) {
+      for (const id of sourceIds) {
+        const found = await loadWebSource(courseId, id);
+        if (found) sources.push(found);
+      }
+    }
+    const allIds = [...docs.map((d) => d.id), ...sources.flatMap((s) => s.pages.map((p) => p.id))];
+    return { docs, sources, allIds };
+  }
+
+  async function conceptsLosingEvidence(courseId, docIds) {
+    if (!docIds.length) return 0;
+    const hit = new Set();
+    for (let i = 0; i < docIds.length; i += 200) {
+      const { data } = await supabaseAdmin.from('concept_evidence').select('concept_id').in('document_id', docIds.slice(i, i + 200));
+      for (const r of data || []) hit.add(r.concept_id);
+    }
+    if (!hit.size) return 0;
+    const ids = [...hit];
+    const gone = new Set(docIds);
+    const keeps = new Set();
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data } = await supabaseAdmin.from('concept_evidence').select('concept_id, document_id').in('concept_id', ids.slice(i, i + 200));
+      for (const r of data || []) if (!gone.has(r.document_id)) keeps.add(r.concept_id);
+    }
+    const { data: own } = await supabaseAdmin.from('concepts').select('id').eq('course_id', courseId).in('id', ids.filter((id) => !keeps.has(id)));
+    return (own || []).length;
+  }
+
+  app.post('/api/admin/course-files/:courseId/delete-preview', async (req, res) => {
+    const auth = await requireStaff(req, res);
+    if (!auth) return;
+    const { courseId } = req.params;
+    try {
+      const sel = await resolveBulkSelection(courseId, req.body);
+      const pages = sel.sources.flatMap((s) => s.pages);
+      const chunks = [...sel.docs, ...pages].reduce((n, d) => n + (d.total_chunks || 0), 0);
+      return res.json({
+        files: sel.docs.length,
+        webSources: sel.sources.length,
+        webPages: pages.length,
+        chunks,
+        conceptsLosingEvidence: await conceptsLosingEvidence(courseId, sel.allIds),
+        needsName: bulkDeleteNeedsName(sel.docs.length + pages.length),
+        courseName: await courseName(courseId),
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
+  app.post('/api/admin/course-files/:courseId/delete', async (req, res) => {
+    const auth = await requireStaff(req, res);
+    if (!auth) return;
+    const { courseId } = req.params;
+    try {
+      const sel = await resolveBulkSelection(courseId, req.body);
+      if (!sel.allIds.length && !sel.sources.length) return res.json({ deleted: 0, webSources: 0 });
+      if (bulkDeleteNeedsName(sel.allIds.length) && !courseNameMatches(req.body?.confirmName, await courseName(courseId))) {
+        return res.status(400).json({ error: 'Typ de naam van de cursus om te bevestigen', code: 'confirmNameMismatch' });
+      }
+      // Opslag eerst (per bucket), dan bewijs, fragmenten en de rijen zelf.
+      const byBucket = new Map();
+      for (const d of sel.docs) {
+        if (d.bucket && d.file_path && d.file_type !== 'web') {
+          if (!byBucket.has(d.bucket)) byBucket.set(d.bucket, []);
+          byBucket.get(d.bucket).push(d.file_path);
+        }
+      }
+      for (const [bucket, paths] of byBucket) {
+        for (let i = 0; i < paths.length; i += 100) {
+          const { error } = await supabaseAdmin.storage.from(bucket).remove(paths.slice(i, i + 100));
+          if (error) console.warn(`[course-files] opslag niet (helemaal) verwijderd in ${bucket}:`, error.message);
+        }
+      }
+      for (let i = 0; i < sel.allIds.length; i += 100) {
+        const part = sel.allIds.slice(i, i + 100);
+        await supabaseAdmin.from('concept_evidence').delete().in('document_id', part);
+        await supabaseAdmin.from('document_chunks').delete().in('document_id', part);
+        const { error } = await supabaseAdmin.from('documents').delete().in('id', part);
+        if (error) throw new Error(error.message);
+      }
+      for (const s of sel.sources) {
+        const { error } = await supabaseAdmin.from('web_sources').delete().eq('id', s.src.id);
+        if (error) throw new Error(error.message);
+      }
+      await markDocsChanged(courseId);
+      console.log(`[course-files] ${auth.user.id} verwijderde ${sel.allIds.length} bestanden en ${sel.sources.length} websites uit cursus ${courseId}`);
+      return res.json({ deleted: sel.allIds.length, webSources: sel.sources.length });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
 
   // ── POST: mislukte bestanden opnieuw inlezen ───────────────────────────────
   // Body { docIds?: string[] }: zonder lijst alle mislukte leerstof van deze

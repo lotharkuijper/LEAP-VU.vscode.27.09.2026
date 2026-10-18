@@ -137,6 +137,17 @@ export const changePurpose = (courseId: string, docId: string, d: Omit<PurposeDe
     body: JSON.stringify(d),
   });
 
+export interface DeletePreview { files: number; webSources: number; webPages: number; chunks: number; conceptsLosingEvidence: number; needsName: boolean; courseName: string }
+export interface DeleteSelection { docIds: string[]; webSourceIds: string[] }
+
+/** Wat er weggaat bij het verwijderen van een selectie (alleen tellen). */
+export const previewDeleteCourseFiles = (courseId: string, sel: DeleteSelection) =>
+  request<DeletePreview>(`/api/admin/course-files/${courseId}/delete-preview`, { method: 'POST', body: JSON.stringify(sel) });
+
+/** Verwijder een selectie bestanden en websites; boven de drempel met de getypte cursusnaam. */
+export const deleteCourseFiles = (courseId: string, sel: DeleteSelection, confirmName: string) =>
+  request<{ deleted: number; webSources: number }>(`/api/admin/course-files/${courseId}/delete`, { method: 'POST', body: JSON.stringify({ ...sel, confirmName }) });
+
 /** Mislukt ingelezen leerstof opnieuw in de wachtrij; zonder docIds alle mislukte van de cursus. */
 export const reprocessFailedFiles = (courseId: string, docIds?: string[]) =>
   request<{ queued: number }>(`/api/admin/course-files/${courseId}/reprocess`, {

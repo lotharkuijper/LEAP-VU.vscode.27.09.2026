@@ -2997,5 +2997,20 @@
   "material.files.retry": "再読み込み",
   "material.files.retryAll": "{n}件すべてを再読み込み",
   "material.files.failedBanner": "{n}件のファイルが読み込まれませんでした。多くの場合、一度に処理された数が多すぎたことが原因です。ファイル自体はまだLEAPにあります。再読み込みしてください。LEAPが今度は1件ずつ処理します。",
-  "material.files.retryQueued": "{n}件のファイルを再読み込みしています。少し時間がかかる場合があります。その間も作業を続けられます。"
+  "material.files.retryQueued": "{n}件のファイルを再読み込みしています。少し時間がかかる場合があります。その間も作業を続けられます。",
+  "material.bulk.selectAll": "すべて選択",
+  "material.bulk.selectFile": "{name} を選択",
+  "material.bulk.selected": "{n} 件選択済み",
+  "material.bulk.clear": "選択を解除",
+  "material.bulk.delete": "削除 ({n})",
+  "material.bulk.confirmTitle": "選択した項目を削除する？",
+  "material.bulk.sumFiles": "{n} 個のファイル",
+  "material.bulk.sumWeb": "合計 {pages} ページを含む {n} 件のウェブサイト",
+  "material.bulk.sumChunks": "AI が使用する {n} 個の断片",
+  "material.bulk.sumConcepts": "{n} 個の概念に根拠がなくなります。概念は残ります。ステップ3「概念」で削除するか、補足してください。",
+  "material.bulk.irreversible": "これは元に戻せません。その後、学生はチャット、「説明する」、クイズでこの教材を使えなくなります。",
+  "material.bulk.typeName": "確認のため、コース名を入力してください: {name}",
+  "material.bulk.confirm": "完全に削除 ({n})",
+  "material.bulk.done": "{n} 個のファイルを削除しました。",
+  "tasks.deleteFiles.title": "ファイルを削除 ({n})"
 }

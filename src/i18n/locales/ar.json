@@ -2997,5 +2997,20 @@
   "material.files.retry": "إعادة التحميل",
   "material.files.retryAll": "إعادة تحميل كل {n}",
   "material.files.failedBanner": "لم يتم تحميل {n} من الملفات. يحدث ذلك غالبًا بسبب معالجة عدد كبير منها في الوقت نفسه؛ الملفات نفسها ما زالت موجودة في LEAP. اطلبي إعادة تحميلها: سيعالجها LEAP الآن واحدًا تلو الآخر.",
-  "material.files.retryQueued": "تتم إعادة تحميل {n} من الملفات. قد يستغرق ذلك بعض الوقت؛ يمكنك متابعة العمل في الأثناء."
+  "material.files.retryQueued": "تتم إعادة تحميل {n} من الملفات. قد يستغرق ذلك بعض الوقت؛ يمكنك متابعة العمل في الأثناء.",
+  "material.bulk.selectAll": "تحديد الكل",
+  "material.bulk.selectFile": "تحديد {name}",
+  "material.bulk.selected": "تم تحديد {n}",
+  "material.bulk.clear": "إلغاء التحديد",
+  "material.bulk.delete": "حذف ({n})",
+  "material.bulk.confirmTitle": "حذف التحديد؟",
+  "material.bulk.sumFiles": "{n} ملفات",
+  "material.bulk.sumWeb": "{n} مواقع ويب تضم معًا {pages} صفحات",
+  "material.bulk.sumChunks": "{n} مقاطع يستخدمها الذكاء الاصطناعي",
+  "material.bulk.sumConcepts": "{n} مفاهيم لن يتبقى لها أي دليل. ستبقى موجودة؛ احذفها أو أكملها في الخطوة 3: المفاهيم.",
+  "material.bulk.irreversible": "لا يمكنك التراجع عن هذا. لن يتمكن الطلاب بعد ذلك من استخدام هذه المادة في الدردشة و\"أشرح\" والاختبار القصير.",
+  "material.bulk.typeName": "اكتب اسم المقرر للتأكيد: {name}",
+  "material.bulk.confirm": "حذف نهائيًا ({n})",
+  "material.bulk.done": "تم حذف {n} ملفات.",
+  "tasks.deleteFiles.title": "حذف الملفات ({n})"
 }

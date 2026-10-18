@@ -2997,5 +2997,20 @@
   "material.files.retry": "Muat ulang",
   "material.files.retryAll": "Muat ulang semua {n}",
   "material.files.failedBanner": "{n} file tidak berhasil dimuat. Sering kali ini terjadi karena terlalu banyak file diproses sekaligus; file itu sendiri masih ada di LEAP. Minta untuk dimuat ulang: LEAP kini memprosesnya satu per satu.",
-  "material.files.retryQueued": "{n} file sedang dimuat ulang. Ini bisa memakan waktu; sementara itu kamu bisa lanjut bekerja."
+  "material.files.retryQueued": "{n} file sedang dimuat ulang. Ini bisa memakan waktu; sementara itu kamu bisa lanjut bekerja.",
+  "material.bulk.selectAll": "Pilih semua",
+  "material.bulk.selectFile": "Pilih {name}",
+  "material.bulk.selected": "{n} dipilih",
+  "material.bulk.clear": "Batalkan pilihan",
+  "material.bulk.delete": "Hapus ({n})",
+  "material.bulk.confirmTitle": "Hapus pilihan?",
+  "material.bulk.sumFiles": "{n} file",
+  "material.bulk.sumWeb": "{n} situs web dengan total {pages} halaman",
+  "material.bulk.sumChunks": "{n} fragmen yang digunakan AI",
+  "material.bulk.sumConcepts": "{n} konsep tidak lagi memiliki bukti. Konsep tersebut tetap ada; hapus atau lengkapi di langkah 3 Konsep.",
+  "material.bulk.irreversible": "Ini tidak bisa kamu batalkan. Setelah itu, mahasiswa tidak bisa lagi menggunakan materi ini dalam chat, Saya menjelaskan, dan kuis.",
+  "material.bulk.typeName": "Ketik nama mata kuliah untuk konfirmasi: {name}",
+  "material.bulk.confirm": "Hapus permanen ({n})",
+  "material.bulk.done": "{n} file dihapus.",
+  "tasks.deleteFiles.title": "Hapus file ({n})"
 }

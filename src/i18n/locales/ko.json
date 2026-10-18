@@ -2997,5 +2997,20 @@
   "material.files.retry": "다시 불러오기",
   "material.files.retryAll": "{n}개 모두 다시 불러오기",
   "material.files.failedBanner": "{n}개의 파일을 불러오지 못했어. 보통 한꺼번에 너무 많이 처리해서 그래. 파일 자체는 아직 LEAP에 있어. 다시 불러오게 해: LEAP이 이제 하나씩 처리할 거야.",
-  "material.files.retryQueued": "{n}개의 파일을 다시 불러오고 있어. 시간이 조금 걸릴 수 있어. 그동안 계속 작업해도 돼."
+  "material.files.retryQueued": "{n}개의 파일을 다시 불러오고 있어. 시간이 조금 걸릴 수 있어. 그동안 계속 작업해도 돼.",
+  "material.bulk.selectAll": "모두 선택",
+  "material.bulk.selectFile": "{name} 선택",
+  "material.bulk.selected": "{n}개 선택됨",
+  "material.bulk.clear": "선택 해제",
+  "material.bulk.delete": "삭제 ({n})",
+  "material.bulk.confirmTitle": "선택 항목을 삭제할까요?",
+  "material.bulk.sumFiles": "파일 {n}개",
+  "material.bulk.sumWeb": "총 {pages}페이지가 있는 웹사이트 {n}개",
+  "material.bulk.sumChunks": "AI가 사용하는 조각 {n}개",
+  "material.bulk.sumConcepts": "{n}개 개념에 더 이상 근거가 남지 않아. 그대로 유지되며, 3단계 개념에서 삭제하거나 보완해.",
+  "material.bulk.irreversible": "이 작업은 되돌릴 수 없어. 이후 학생들은 이 자료를 채팅, Ik leg uit, 퀴즈에서 더 이상 사용할 수 없어.",
+  "material.bulk.typeName": "확인을 위해 과정 이름을 입력해: {name}",
+  "material.bulk.confirm": "영구 삭제 ({n})",
+  "material.bulk.done": "파일 {n}개가 삭제됨.",
+  "tasks.deleteFiles.title": "파일 삭제 ({n})"
 }

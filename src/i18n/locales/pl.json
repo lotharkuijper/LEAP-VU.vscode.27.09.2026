@@ -2997,5 +2997,20 @@
   "material.files.retry": "Wczytaj ponownie",
   "material.files.retryAll": "Wczytaj ponownie wszystkie {n}",
   "material.files.failedBanner": "Nie wczytano {n} plików. Często dzieje się tak, gdy przetwarzano zbyt wiele naraz; same pliki nadal są w LEAP. Wczytaj je ponownie: LEAP zrobi to teraz po kolei.",
-  "material.files.retryQueued": "{n} plików zostanie wczytanych ponownie. To może chwilę potrwać; w tym czasie możesz pracować dalej."
+  "material.files.retryQueued": "{n} plików zostanie wczytanych ponownie. To może chwilę potrwać; w tym czasie możesz pracować dalej.",
+  "material.bulk.selectAll": "Zaznacz wszystko",
+  "material.bulk.selectFile": "Zaznacz {name}",
+  "material.bulk.selected": "Zaznaczono {n}",
+  "material.bulk.clear": "Wyczyść zaznaczenie",
+  "material.bulk.delete": "Usuń ({n})",
+  "material.bulk.confirmTitle": "Usunąć zaznaczone?",
+  "material.bulk.sumFiles": "{n} plików",
+  "material.bulk.sumWeb": "{n} stron internetowych z łącznie {pages} stronami",
+  "material.bulk.sumChunks": "{n} fragmentów, których używa AI",
+  "material.bulk.sumConcepts": "{n} pojęć nie będzie już mieć żadnych dowodów. Pozostaną na liście; usuń je lub uzupełnij w kroku 3 Pojęcia.",
+  "material.bulk.irreversible": "Tego nie możesz cofnąć. Studenci nie będą potem mogli korzystać z tych materiałów na czacie, w „Wyjaśniam” i w quizie.",
+  "material.bulk.typeName": "Aby potwierdzić, wpisz nazwę kursu: {name}",
+  "material.bulk.confirm": "Usuń definitywnie ({n})",
+  "material.bulk.done": "Usunięto {n} plików.",
+  "tasks.deleteFiles.title": "Usuń pliki ({n})"
 }

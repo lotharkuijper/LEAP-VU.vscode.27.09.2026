@@ -2997,5 +2997,20 @@
   "material.files.retry": "Relire",
   "material.files.retryAll": "Relire les {n}",
   "material.files.failedBanner": "{n} fichiers n’ont pas été lus. Cela arrive souvent parce qu’un trop grand nombre a été traité en même temps ; les fichiers eux-mêmes sont toujours dans LEAP. Fais-les relire : LEAP les traite maintenant un par un.",
-  "material.files.retryQueued": "{n} fichiers sont en cours de relecture. Cela peut prendre un moment ; tu peux continuer à travailler entre-temps."
+  "material.files.retryQueued": "{n} fichiers sont en cours de relecture. Cela peut prendre un moment ; tu peux continuer à travailler entre-temps.",
+  "material.bulk.selectAll": "Tout sélectionner",
+  "material.bulk.selectFile": "Sélectionner {name}",
+  "material.bulk.selected": "{n} sélectionné(s)",
+  "material.bulk.clear": "Effacer la sélection",
+  "material.bulk.delete": "Supprimer ({n})",
+  "material.bulk.confirmTitle": "Supprimer la sélection ?",
+  "material.bulk.sumFiles": "{n} fichiers",
+  "material.bulk.sumWeb": "{n} sites web avec {pages} pages au total",
+  "material.bulk.sumChunks": "{n} fragments utilisés par l’IA",
+  "material.bulk.sumConcepts": "{n} notions n’auront plus de preuves. Elles resteront affichées ; supprime-les ou complète-les à l’étape 3 Notions.",
+  "material.bulk.irreversible": "Tu ne peux pas annuler cette action. Les étudiants ne pourront ensuite plus utiliser ce contenu dans le chat, J’explique et le quiz.",
+  "material.bulk.typeName": "Pour confirmer, tape le nom du cours : {name}",
+  "material.bulk.confirm": "Supprimer définitivement ({n})",
+  "material.bulk.done": "{n} fichiers supprimés.",
+  "tasks.deleteFiles.title": "Supprimer les fichiers ({n})"
 }

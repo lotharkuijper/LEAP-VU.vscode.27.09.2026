@@ -2997,5 +2997,20 @@
   "material.files.retry": "Read in again",
   "material.files.retryAll": "Read in all {n} again",
   "material.files.failedBanner": "{n} files were not read in. This usually happens when too many were processed at once; the files themselves are still in LEAP. Have them read in again: LEAP now does them one by one.",
-  "material.files.retryQueued": "{n} files are being read in again. This can take a while; you can keep working in the meantime."
+  "material.files.retryQueued": "{n} files are being read in again. This can take a while; you can keep working in the meantime.",
+  "material.bulk.selectAll": "Select all",
+  "material.bulk.selectFile": "Select {name}",
+  "material.bulk.selected": "{n} selected",
+  "material.bulk.clear": "Clear selection",
+  "material.bulk.delete": "Delete ({n})",
+  "material.bulk.confirmTitle": "Delete selection?",
+  "material.bulk.sumFiles": "{n} files",
+  "material.bulk.sumWeb": "{n} websites with {pages} pages in total",
+  "material.bulk.sumChunks": "{n} fragments the AI uses",
+  "material.bulk.sumConcepts": "{n} concepts are left without evidence. They stay; delete or supplement them in step 3 Concepts.",
+  "material.bulk.irreversible": "This cannot be undone. Students can then no longer use this material in the chat, Explain and the quiz.",
+  "material.bulk.typeName": "To confirm, type the name of the course: {name}",
+  "material.bulk.confirm": "Delete permanently ({n})",
+  "material.bulk.done": "{n} files deleted.",
+  "tasks.deleteFiles.title": "Deleting files ({n})"
 }

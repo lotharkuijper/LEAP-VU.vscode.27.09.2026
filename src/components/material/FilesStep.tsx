@@ -5,6 +5,7 @@ import {
   uploadCourseFile,
   changePurpose,
   reprocessFailedFiles,
+  deleteCourseFiles,
   downloadCourseFile,
   deleteCourseFile,
   CourseFilesError,
@@ -17,6 +18,7 @@ import { suggestPurpose } from '../../../server/filePurpose.js';
 import { PURPOSE_ORDER, PURPOSE_STYLE, formatBytes } from './purposeUi';
 import { PurposePicker, type PurposeValue } from './PurposePicker';
 import { WebSourceRow } from './WebSourceRow';
+import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { WebImportPanel } from '../WebImportPanel';
 import { HelpTip } from '../help/HelpTip';
 import { Tooltip } from '../help/Tooltip';
@@ -185,6 +187,48 @@ export function FilesStep({
     }
   };
 
+  // Selectie (2026-10-18): meerdere bestanden en websites tegelijk verwijderen,
+  // met "alles selecteren" per soort. Zo veeg je ook een hele cursus leeg.
+  const [selDocs, setSelDocs] = useState<Set<string>>(new Set());
+  const [selSources, setSelSources] = useState<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const presentDocs = new Set(files.filter(f => !f.webSourceId).map(f => f.id));
+  const presentSources = new Set(webSources.map(w => w.id));
+  const chosenDocs = [...selDocs].filter(id => presentDocs.has(id));
+  const chosenSources = [...selSources].filter(id => presentSources.has(id));
+  const chosenCount = chosenDocs.length + chosenSources.length;
+  const toggleIn = (set: Set<string>, ids: string[], on: boolean) => {
+    const next = new Set(set);
+    for (const id of ids) { if (on) next.add(id); else next.delete(id); }
+    return next;
+  };
+  const clearSelection = () => { setSelDocs(new Set()); setSelSources(new Set()); };
+  const doBulkDelete = async (confirmName: string) => {
+    const sel = { docIds: chosenDocs, webSourceIds: chosenSources };
+    setBulkOpen(false);
+    await startTask<{ kind: 'ok' | 'error'; text: string }>({
+      kind: 'deleteFiles',
+      key: courseId,
+      title: t('tasks.deleteFiles.title', { n: String(chosenCount) }),
+      resultLink: '/admin?tab=material&step=files',
+      run: async () => {
+        try {
+          const r = await deleteCourseFiles(courseId, sel, confirmName);
+          const result = { kind: 'ok' as const, text: t('material.bulk.done', { n: String(r.deleted) }) };
+          clearSelection();
+          setNotice(result);
+          onChanged();
+          return result;
+        } catch (err) {
+          const result = { kind: 'error' as const, text: errorText(err) };
+          setNotice(result);
+          return result;
+        }
+      },
+      summarize: (r) => r.text,
+    }).promise;
+  };
+
   // Mislukt inlezen (bv. door de snelheidslimiet bij een grote upload): opnieuw
   // in de wachtrij zetten. Het bestand zelf staat nog in LEAP.
   const failedRag = files.filter(f => f.processing_status === 'failed' && !f.isWeb && (f.purpose === 'course_material' || f.purpose === 'course_info'));
@@ -323,6 +367,19 @@ export function FilesStep({
         </AdminHint>
       )}
 
+      {chosenCount > 0 && (
+        <div className="sticky top-16 z-20 flex flex-wrap items-center gap-3 rounded-xl border border-gray-300 bg-white px-4 py-2 shadow-sm" data-testid="bar-file-selection">
+          <span className="min-w-0 text-sm font-medium text-gray-900">{t('material.bulk.selected', { n: String(chosenCount) })}</span>
+          <button type="button" onClick={clearSelection} className="whitespace-nowrap text-sm text-gray-600 hover:underline" data-testid="button-clear-selection">{t('material.bulk.clear')}</button>
+          <button type="button" onClick={() => setBulkOpen(true)} className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700" data-testid="button-bulk-delete">
+            <Trash2 className="h-4 w-4" />{t('material.bulk.delete', { n: String(chosenCount) })}
+          </button>
+        </div>
+      )}
+      {bulkOpen && (
+        <BulkDeleteDialog courseId={courseId} docIds={chosenDocs} webSourceIds={chosenSources} onCancel={() => setBulkOpen(false)} onConfirm={(name) => { void doBulkDelete(name); }} />
+      )}
+
       {/* Bestanden per doel */}
       {PURPOSE_ORDER.map(p => {
         const s = PURPOSE_STYLE[p];
@@ -330,6 +387,11 @@ export function FilesStep({
         const list = byPurpose.get(p) || [];
         const sources = webSources.filter(w => w.purpose === p);
         const projectDocCount = p === 'project' ? projects.reduce((n, pr) => n + pr.documents.length, 0) : 0;
+        const sectionDocIds = list.filter(f => !f.webSourceId).map(f => f.id);
+        const sectionSourceIds = sources.map(w => w.id);
+        const sectionCount = sectionDocIds.length + sectionSourceIds.length;
+        const sectionAll = sectionCount > 0 && sectionDocIds.every(id => selDocs.has(id)) && sectionSourceIds.every(id => selSources.has(id));
+        const setSection = (on: boolean) => { setSelDocs(s => toggleIn(s, sectionDocIds, on)); setSelSources(s => toggleIn(s, sectionSourceIds, on)); };
         return (
           <section key={p} className={`rounded-2xl border ${s.ring} bg-white`} data-testid={`section-purpose-${p}`}>
             <header className="flex flex-wrap items-start gap-3 px-5 py-3 border-b border-gray-100">
@@ -344,6 +406,12 @@ export function FilesStep({
                 </h3>
                 <AdminHint variant="intro">{tk(`filePurpose.${p}.desc`)}</AdminHint>
               </div>
+              {sectionCount > 0 && (
+                <label className="flex items-center gap-2 whitespace-nowrap text-xs text-gray-600">
+                  <input type="checkbox" checked={sectionAll} onChange={e => setSection(e.target.checked)} data-testid={`checkbox-select-all-${p}`} />
+                  {t('material.bulk.selectAll')}
+                </label>
+              )}
             </header>
 
             {p === 'project' && (
@@ -376,7 +444,8 @@ export function FilesStep({
             {sources.length > 0 && (
               <ul className="divide-y divide-gray-100 border-b border-gray-100" data-testid={`list-web-sources-${p}`}>
                 {sources.map(src => (
-                  <WebSourceRow key={src.id} courseId={courseId} source={src} pages={pagesOf(src.id)} onChanged={onChanged} />
+                  <WebSourceRow key={src.id} courseId={courseId} source={src} pages={pagesOf(src.id)} onChanged={onChanged}
+                    selected={selSources.has(src.id)} onToggleSelect={(on) => setSelSources(s => toggleIn(s, [src.id], on))} />
                 ))}
               </ul>
             )}
@@ -387,6 +456,15 @@ export function FilesStep({
               <ul className="divide-y divide-gray-100">
                 {list.map(f => (
                   <li key={f.id} className="px-5 py-2.5 flex flex-wrap items-center gap-3" data-testid={`row-file-${f.id}`}>
+                    {!f.webSourceId && (
+                      <input
+                        type="checkbox"
+                        checked={selDocs.has(f.id)}
+                        onChange={e => setSelDocs(s => toggleIn(s, [f.id], e.target.checked))}
+                        aria-label={t('material.bulk.selectFile', { name: f.title })}
+                        data-testid={`checkbox-file-${f.id}`}
+                      />
+                    )}
                     <div className="flex-1 min-w-[12rem]">
                       <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
                         {f.isWeb && <Globe className="w-3.5 h-3.5 text-gray-400" />}

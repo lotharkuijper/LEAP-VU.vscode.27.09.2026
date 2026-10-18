@@ -2997,5 +2997,20 @@
   "material.files.retry": "Επανάληψη ανάγνωσης",
   "material.files.retryAll": "Επανάληψη ανάγνωσης και των {n}",
   "material.files.failedBanner": "{n} αρχεία δεν διαβάστηκαν. Συχνά αυτό συμβαίνει επειδή επεξεργάστηκαν πάρα πολλά ταυτόχρονα· τα ίδια τα αρχεία παραμένουν στο LEAP. Ζήτησε να διαβαστούν ξανά: το LEAP θα τα επεξεργαστεί τώρα ένα-ένα.",
-  "material.files.retryQueued": "{n} αρχεία διαβάζονται ξανά. Αυτό μπορεί να πάρει λίγο χρόνο· στο μεταξύ μπορείς να συνεχίσεις να δουλεύεις."
+  "material.files.retryQueued": "{n} αρχεία διαβάζονται ξανά. Αυτό μπορεί να πάρει λίγο χρόνο· στο μεταξύ μπορείς να συνεχίσεις να δουλεύεις.",
+  "material.bulk.selectAll": "Επιλογή όλων",
+  "material.bulk.selectFile": "Επιλογή {name}",
+  "material.bulk.selected": "{n} επιλεγμένα",
+  "material.bulk.clear": "Απαλοιφή επιλογής",
+  "material.bulk.delete": "Διαγραφή ({n})",
+  "material.bulk.confirmTitle": "Να διαγραφεί η επιλογή;",
+  "material.bulk.sumFiles": "{n} αρχεία",
+  "material.bulk.sumWeb": "{n} ιστότοποι με συνολικά {pages} σελίδες",
+  "material.bulk.sumChunks": "{n} αποσπάσματα που χρησιμοποιεί η AI",
+  "material.bulk.sumConcepts": "{n} έννοιες δεν θα έχουν πλέον τεκμηρίωση. Θα παραμείνουν· διάγραψέ τες ή συμπλήρωσέ τες στο βήμα 3 Έννοιες.",
+  "material.bulk.irreversible": "Δεν μπορείς να το αναιρέσεις. Μετά από αυτό, οι φοιτητές δεν θα μπορούν πλέον να χρησιμοποιούν αυτό το υλικό στη συνομιλία, στο Εξηγώ και στο κουίζ.",
+  "material.bulk.typeName": "Για επιβεβαίωση, πληκτρολόγησε το όνομα του μαθήματος: {name}",
+  "material.bulk.confirm": "Οριστική διαγραφή ({n})",
+  "material.bulk.done": "{n} αρχεία διαγράφηκαν.",
+  "tasks.deleteFiles.title": "Διαγραφή αρχείων ({n})"
 }

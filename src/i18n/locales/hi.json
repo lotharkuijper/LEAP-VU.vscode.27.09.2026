@@ -2997,5 +2997,20 @@
   "material.files.retry": "फिर से लोड करें",
   "material.files.retryAll": "सभी {n} को फिर से लोड करें",
   "material.files.failedBanner": "{n} फ़ाइलें लोड नहीं हुईं। अक्सर ऐसा इसलिए होता है क्योंकि एक साथ बहुत सारी फ़ाइलें प्रोसेस की गईं; फ़ाइलें खुद अभी भी LEAP में हैं। उन्हें फिर से लोड कराओ: LEAP अब उन्हें एक-एक करके प्रोसेस करेगा।",
-  "material.files.retryQueued": "{n} फ़ाइलें फिर से लोड की जा रही हैं। इसमें थोड़ा समय लग सकता है; इस बीच तुम अपना काम जारी रख सकते हो।"
+  "material.files.retryQueued": "{n} फ़ाइलें फिर से लोड की जा रही हैं। इसमें थोड़ा समय लग सकता है; इस बीच तुम अपना काम जारी रख सकते हो।",
+  "material.bulk.selectAll": "सभी चुनें",
+  "material.bulk.selectFile": "{name} चुनें",
+  "material.bulk.selected": "{n} चुने गए",
+  "material.bulk.clear": "चयन हटाएँ",
+  "material.bulk.delete": "हटाएँ ({n})",
+  "material.bulk.confirmTitle": "चयन हटाएँ?",
+  "material.bulk.sumFiles": "{n} फ़ाइलें",
+  "material.bulk.sumWeb": "{n} वेबसाइटें, कुल {pages} पेज",
+  "material.bulk.sumChunks": "{n} अंश जिन्हें AI उपयोग करता है",
+  "material.bulk.sumConcepts": "{n} अवधारणाओं के पास अब कोई प्रमाण नहीं बचेगा। वे बनी रहेंगी; चरण 3 अवधारणाएँ में उन्हें हटाओ या पूरा करो।",
+  "material.bulk.irreversible": "इसे वापस नहीं किया जा सकता। इसके बाद छात्र इस सामग्री का उपयोग चैट, मैं समझाता हूँ और क्विज़ में नहीं कर पाएँगे।",
+  "material.bulk.typeName": "पुष्टि के लिए कोर्स का नाम टाइप करो: {name}",
+  "material.bulk.confirm": "स्थायी रूप से हटाएँ ({n})",
+  "material.bulk.done": "{n} फ़ाइलें हटा दी गईं।",
+  "tasks.deleteFiles.title": "फ़ाइलें हटाएँ ({n})"
 }

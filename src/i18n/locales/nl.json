@@ -2997,5 +2997,20 @@
   "material.files.retry": "Opnieuw inlezen",
   "material.files.retryAll": "Alle {n} opnieuw inlezen",
   "material.files.failedBanner": "{n} bestanden zijn niet ingelezen. Vaak komt dat doordat er te veel tegelijk werd verwerkt; de bestanden zelf staan nog in LEAP. Laat ze opnieuw inlezen: LEAP doet ze nu een voor een.",
-  "material.files.retryQueued": "{n} bestanden worden opnieuw ingelezen. Dat kan even duren; je kunt intussen verder werken."
+  "material.files.retryQueued": "{n} bestanden worden opnieuw ingelezen. Dat kan even duren; je kunt intussen verder werken.",
+  "material.bulk.selectAll": "Alles selecteren",
+  "material.bulk.selectFile": "{name} selecteren",
+  "material.bulk.selected": "{n} geselecteerd",
+  "material.bulk.clear": "Selectie opheffen",
+  "material.bulk.delete": "Verwijderen ({n})",
+  "material.bulk.confirmTitle": "Selectie verwijderen?",
+  "material.bulk.sumFiles": "{n} bestanden",
+  "material.bulk.sumWeb": "{n} websites met samen {pages} pagina's",
+  "material.bulk.sumChunks": "{n} fragmenten die de AI gebruikt",
+  "material.bulk.sumConcepts": "{n} begrippen houden geen bewijs meer over. Ze blijven staan; verwijder of vul ze aan in stap 3 Begrippen.",
+  "material.bulk.irreversible": "Dit kun je niet ongedaan maken. Studenten kunnen deze stof daarna niet meer gebruiken in de chat, Ik leg uit en de quiz.",
+  "material.bulk.typeName": "Typ ter bevestiging de naam van de cursus: {name}",
+  "material.bulk.confirm": "Definitief verwijderen ({n})",
+  "material.bulk.done": "{n} bestanden verwijderd.",
+  "tasks.deleteFiles.title": "Bestanden verwijderen ({n})"
 }

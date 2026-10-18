@@ -2997,5 +2997,20 @@
   "material.files.retry": "Повторно завантажити",
   "material.files.retryAll": "Повторно завантажити всі {n}",
   "material.files.failedBanner": "{n} файлів не було завантажено. Часто це трапляється через те, що забагато файлів оброблялося одночасно; самі файли все ще є в LEAP. Запусти повторне завантаження: LEAP тепер обробить їх по одному.",
-  "material.files.retryQueued": "{n} файлів повторно завантажуються. Це може зайняти трохи часу; тим часом ти можеш продовжувати роботу."
+  "material.files.retryQueued": "{n} файлів повторно завантажуються. Це може зайняти трохи часу; тим часом ти можеш продовжувати роботу.",
+  "material.bulk.selectAll": "Вибрати все",
+  "material.bulk.selectFile": "Вибрати {name}",
+  "material.bulk.selected": "Вибрано: {n}",
+  "material.bulk.clear": "Скасувати вибір",
+  "material.bulk.delete": "Видалити ({n})",
+  "material.bulk.confirmTitle": "Видалити вибране?",
+  "material.bulk.sumFiles": "{n} файлів",
+  "material.bulk.sumWeb": "{n} вебсайтів із загалом {pages} сторінками",
+  "material.bulk.sumChunks": "{n} фрагментів, які використовує ШІ",
+  "material.bulk.sumConcepts": "{n} понять більше не матимуть доказів. Вони залишаться; видали їх або доповни на кроці 3 «Поняття».",
+  "material.bulk.irreversible": "Цю дію не можна скасувати. Після цього студенти більше не зможуть використовувати цей матеріал у чаті, «Я пояснюю» і вікторині.",
+  "material.bulk.typeName": "Для підтвердження введи назву курсу: {name}",
+  "material.bulk.confirm": "Остаточно видалити ({n})",
+  "material.bulk.done": "{n} файлів видалено.",
+  "tasks.deleteFiles.title": "Видалити файли ({n})"
 }

@@ -465,6 +465,7 @@
   "Titel is verplicht": "Назва обов’язкова",
   "Titel mag maximaal {0} tekens zijn": "Назва може містити щонайбільше {0} символів",
   "Token verlopen": "Термін дії токена минув",
+  "Typ de naam van de cursus om te bevestigen": "Введи назву курсу для підтвердження",
   "Typ je eigen e-mailadres om te bevestigen": "Введи власну адресу електронної пошти для підтвердження",
   "Uit dit bestand kon geen tekst worden gehaald": "Не вдалося витягти текст із цього файлу",
   "Uitleg is te lang (max 8000 tekens)": "Пояснення занадто довге (макс. 8000 символів)",

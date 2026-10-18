@@ -25,11 +25,16 @@ export function WebSourceRow({
   source,
   pages,
   onChanged,
+  selected,
+  onToggleSelect,
 }: {
   courseId: string;
   source: WebSource;
   pages: CourseFile[];
   onChanged: () => void;
+  /** Geselecteerd voor verwijderen in één keer (FilesStep). */
+  selected?: boolean;
+  onToggleSelect?: (on: boolean) => void;
 }) {
   const { t } = useLanguage();
   const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
@@ -134,6 +139,15 @@ export function WebSourceRow({
   return (
     <li className="px-5 py-3 space-y-2" data-testid={`row-web-source-${source.id}`}>
       <div className="flex flex-wrap items-center gap-3">
+        {onToggleSelect && (
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={e => onToggleSelect(e.target.checked)}
+            aria-label={t('material.bulk.selectFile', { name: source.title || source.baseUrl })}
+            data-testid={`checkbox-web-source-${source.id}`}
+          />
+        )}
         <button
           type="button"
           onClick={() => setOpen(o => !o)}

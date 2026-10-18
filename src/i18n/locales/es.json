@@ -2997,5 +2997,20 @@
   "material.files.retry": "Volver a cargar",
   "material.files.retryAll": "Volver a cargar los {n}",
   "material.files.failedBanner": "No se han cargado {n} archivos. A menudo esto ocurre porque se procesaron demasiados a la vez; los archivos siguen estando en LEAP. Vuelve a cargarlos: LEAP los procesará ahora uno por uno.",
-  "material.files.retryQueued": "Se están volviendo a cargar {n} archivos. Esto puede tardar un poco; mientras tanto, puedes seguir trabajando."
+  "material.files.retryQueued": "Se están volviendo a cargar {n} archivos. Esto puede tardar un poco; mientras tanto, puedes seguir trabajando.",
+  "material.bulk.selectAll": "Seleccionar todo",
+  "material.bulk.selectFile": "Seleccionar {name}",
+  "material.bulk.selected": "{n} seleccionados",
+  "material.bulk.clear": "Quitar selección",
+  "material.bulk.delete": "Eliminar ({n})",
+  "material.bulk.confirmTitle": "¿Eliminar selección?",
+  "material.bulk.sumFiles": "{n} archivos",
+  "material.bulk.sumWeb": "{n} sitios web con {pages} páginas en total",
+  "material.bulk.sumChunks": "{n} fragmentos que usa la IA",
+  "material.bulk.sumConcepts": "{n} conceptos ya no tendrán evidencia. Permanecerán; elimínalos o complétalos en el paso 3 Conceptos.",
+  "material.bulk.irreversible": "No puedes deshacer esto. Después, los estudiantes ya no podrán usar este material en el chat, Te explico y el cuestionario.",
+  "material.bulk.typeName": "Escribe el nombre del curso para confirmar: {name}",
+  "material.bulk.confirm": "Eliminar definitivamente ({n})",
+  "material.bulk.done": "{n} archivos eliminados.",
+  "tasks.deleteFiles.title": "Eliminar archivos ({n})"
 }

@@ -2997,5 +2997,20 @@
   "material.files.retry": "重新读取",
   "material.files.retryAll": "重新读取全部 {n} 个",
   "material.files.failedBanner": "{n} 个文件未能读取。这通常是因为同时处理的文件太多；文件本身仍在 LEAP 中。请让它们重新读取：LEAP 现在会逐个处理。",
-  "material.files.retryQueued": "{n} 个文件正在重新读取。这可能需要一点时间；你可以先继续工作。"
+  "material.files.retryQueued": "{n} 个文件正在重新读取。这可能需要一点时间；你可以先继续工作。",
+  "material.bulk.selectAll": "全选",
+  "material.bulk.selectFile": "选择 {name}",
+  "material.bulk.selected": "已选择 {n} 项",
+  "material.bulk.clear": "取消选择",
+  "material.bulk.delete": "删除（{n}）",
+  "material.bulk.confirmTitle": "删除所选内容？",
+  "material.bulk.sumFiles": "{n} 个文件",
+  "material.bulk.sumWeb": "{n} 个网站，共 {pages} 个页面",
+  "material.bulk.sumChunks": "AI 使用的 {n} 个片段",
+  "material.bulk.sumConcepts": "{n} 个概念将不再有依据。它们会保留；请在第 3 步“概念”中删除或补充。",
+  "material.bulk.irreversible": "此操作无法撤销。之后学生将无法再在聊天、“我来解释”和测验中使用这些学习材料。",
+  "material.bulk.typeName": "请输入课程名称以确认：{name}",
+  "material.bulk.confirm": "永久删除（{n}）",
+  "material.bulk.done": "已删除 {n} 个文件。",
+  "tasks.deleteFiles.title": "删除文件（{n}）"
 }

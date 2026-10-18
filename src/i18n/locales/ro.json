@@ -2997,5 +2997,20 @@
   "material.files.retry": "Reîncarcă",
   "material.files.retryAll": "Reîncarcă toate cele {n}",
   "material.files.failedBanner": "{n} fișiere nu au fost încărcate. De obicei, acest lucru se întâmplă deoarece au fost procesate prea multe simultan; fișierele propriu-zise sunt încă în LEAP. Cere reîncărcarea lor: LEAP le procesează acum pe rând.",
-  "material.files.retryQueued": "{n} fișiere sunt reîncărcate. Poate dura puțin; între timp poți continua să lucrezi."
+  "material.files.retryQueued": "{n} fișiere sunt reîncărcate. Poate dura puțin; între timp poți continua să lucrezi.",
+  "material.bulk.selectAll": "Selectează tot",
+  "material.bulk.selectFile": "Selectează {name}",
+  "material.bulk.selected": "{n} selectate",
+  "material.bulk.clear": "Anulează selecția",
+  "material.bulk.delete": "Șterge ({n})",
+  "material.bulk.confirmTitle": "Ștergi selecția?",
+  "material.bulk.sumFiles": "{n} fișiere",
+  "material.bulk.sumWeb": "{n} site-uri web cu în total {pages} pagini",
+  "material.bulk.sumChunks": "{n} fragmente pe care le folosește AI-ul",
+  "material.bulk.sumConcepts": "{n} concepte nu mai au dovezi. Rămân afișate; șterge-le sau completează-le la pasul 3 Concepte.",
+  "material.bulk.irreversible": "Nu poți anula această acțiune. După aceea, studenții nu vor mai putea folosi acest material în chat, în Explic și în quiz.",
+  "material.bulk.typeName": "Tastează numele cursului pentru confirmare: {name}",
+  "material.bulk.confirm": "Șterge definitiv ({n})",
+  "material.bulk.done": "{n} fișiere șterse.",
+  "tasks.deleteFiles.title": "Șterge fișiere ({n})"
 }

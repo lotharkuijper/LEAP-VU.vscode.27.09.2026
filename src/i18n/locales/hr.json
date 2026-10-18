@@ -2997,5 +2997,20 @@
   "material.files.retry": "Ponovno učitaj",
   "material.files.retryAll": "Ponovno učitaj svih {n}",
   "material.files.failedBanner": "{n} datoteka nije učitano. To se često događa jer se previše njih obrađivalo odjednom; same datoteke i dalje su u LEAP-u. Pusti ih da se ponovno učitaju: LEAP će ih sada obraditi jednu po jednu.",
-  "material.files.retryQueued": "{n} datoteka ponovno se učitava. To može potrajati; u međuvremenu možeš nastaviti raditi."
+  "material.files.retryQueued": "{n} datoteka ponovno se učitava. To može potrajati; u međuvremenu možeš nastaviti raditi.",
+  "material.bulk.selectAll": "Odaberi sve",
+  "material.bulk.selectFile": "Odaberi {name}",
+  "material.bulk.selected": "Odabrano: {n}",
+  "material.bulk.clear": "Poništi odabir",
+  "material.bulk.delete": "Izbriši ({n})",
+  "material.bulk.confirmTitle": "Izbrisati odabir?",
+  "material.bulk.sumFiles": "{n} datoteka",
+  "material.bulk.sumWeb": "{n} web-stranica s ukupno {pages} stranica",
+  "material.bulk.sumChunks": "{n} odlomaka koje AI koristi",
+  "material.bulk.sumConcepts": "{n} pojmova više nema dokaze. Ostat će; izbriši ih ili dopuni u 3. koraku Pojmovi.",
+  "material.bulk.irreversible": "Ovo ne možeš poništiti. Studenti nakon toga više ne mogu koristiti ovo gradivo u chatu, Objašnjavam i kvizu.",
+  "material.bulk.typeName": "Za potvrdu upiši naziv kolegija: {name}",
+  "material.bulk.confirm": "Trajno izbrisati ({n})",
+  "material.bulk.done": "Izbrisano {n} datoteka.",
+  "tasks.deleteFiles.title": "Izbriši datoteke ({n})"
 }

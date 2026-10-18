@@ -465,6 +465,7 @@
   "Titel is verplicht": "タイトルは必須です",
   "Titel mag maximaal {0} tekens zijn": "タイトルは最大{0}文字までです",
   "Token verlopen": "トークンの有効期限が切れています",
+  "Typ de naam van de cursus om te bevestigen": "確認のためコース名を入力して",
   "Typ je eigen e-mailadres om te bevestigen": "確認のため、自分のメールアドレスを入力して",
   "Uit dit bestand kon geen tekst worden gehaald": "このファイルからテキストを抽出できませんでした",
   "Uitleg is te lang (max 8000 tekens)": "説明が長すぎます（最大8000文字）",
