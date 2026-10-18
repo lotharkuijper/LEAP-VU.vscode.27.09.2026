@@ -25,3 +25,16 @@ describe('bevestiging met de cursusnaam', () => {
     expect(resolve).toMatch(/loadWebSource\(courseId, id\)/);
   });
 });
+
+describe('fragmenten tellen (regressie Microbiologie, 2026-10-18)', () => {
+  it('telt in de database, niet in de browser (de API geeft hoogstens 1000 rijen)', () => {
+    const panel = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'RAGDocumentStatusPanel.tsx'), 'utf8');
+    expect(panel).not.toMatch(/from\('document_chunks'\)/);
+    expect(panel).toMatch(/fetchChunkStats\(/);
+    const src = fs.readFileSync(path.join(__dirname, '..', 'courseFiles.js'), 'utf8');
+    const route = src.slice(src.indexOf("'/api/admin/course-files/:courseId/chunk-stats'"), src.indexOf('// ── Meerdere bestanden tegelijk verwijderen'));
+    expect(route).toMatch(/count\(c\.id\)/);
+    expect(route).toMatch(/GROUP BY d\.id/);
+    expect(route).toMatch(/requireStaff\(req, res\)/);
+  });
+});

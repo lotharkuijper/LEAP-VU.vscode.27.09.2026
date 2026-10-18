@@ -555,6 +555,34 @@ export function registerCourseFilesRoutes(app, deps) {
     return { doc, folder: scope.byId.get(doc.folder_id) };
   }
 
+  // ── GET: fragmenten per document, geteld in de database ─────────────────────
+  // Het Verwerking-scherm haalde vroeger alle fragmentrijen op in de browser en
+  // telde ze daar; de API geeft per verzoek hoogstens 1000 rijen, dus bij een
+  // grote cursus (Microbiologie: 3577 fragmenten) kregen de meeste documenten
+  // onterecht "geen chunks". Nu telt de database per document (GROUP BY).
+  app.get('/api/admin/course-files/:courseId/chunk-stats', async (req, res) => {
+    const auth = await requireStaff(req, res);
+    if (!auth) return;
+    try {
+      const scope = await courseScope(req.params.courseId);
+      const folderIds = [...scope.ids];
+      if (!folderIds.length) return res.json({ documents: [] });
+      const r = await pgPool.query(
+        `SELECT d.id,
+                count(c.id)::int AS chunks,
+                bool_or(c.metadata ? 'pageStart' AND c.metadata->>'pageStart' IS NOT NULL) AS has_page_data
+           FROM documents d
+           LEFT JOIN document_chunks c ON c.document_id = d.id
+          WHERE d.folder_id = ANY($1::uuid[])
+          GROUP BY d.id`,
+        [folderIds],
+      );
+      return res.json({ documents: r.rows.map((x) => ({ id: x.id, chunks: x.chunks, hasPageData: !!x.has_page_data })) });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || String(err) });
+    }
+  });
+
   // ── Meerdere bestanden tegelijk verwijderen ─────────────────────────────────
   // Body { docIds?: string[], webSourceIds?: string[] }. Alleen wat binnen deze
   // cursus valt, telt mee; de rest wordt stil genegeerd. Websites gaan als

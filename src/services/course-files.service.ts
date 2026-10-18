@@ -137,6 +137,10 @@ export const changePurpose = (courseId: string, docId: string, d: Omit<PurposeDe
     body: JSON.stringify(d),
   });
 
+/** Fragmenten per document van de cursus, geteld in de database (geen limiet van 1000 rijen). */
+export const fetchChunkStats = (courseId: string) =>
+  request<{ documents: Array<{ id: string; chunks: number; hasPageData: boolean }> }>(`/api/admin/course-files/${courseId}/chunk-stats`);
+
 export interface DeletePreview { files: number; webSources: number; webPages: number; chunks: number; conceptsLosingEvidence: number; needsName: boolean; courseName: string }
 export interface DeleteSelection { docIds: string[]; webSourceIds: string[] }
 

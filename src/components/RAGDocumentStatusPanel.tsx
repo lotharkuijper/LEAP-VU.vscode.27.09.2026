@@ -3,6 +3,7 @@ import { CheckCircle, AlertTriangle, Loader2, RefreshCw, FileText, Info, Trash2 
 import { supabase } from '../lib/supabase';
 import { retryFailedDocument, UploadProgress, sessionExpiredMessage } from '../services/document-upload.service';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
+import { fetchChunkStats } from '../services/course-files.service';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../i18n';
 import { Tooltip } from './help/Tooltip';
@@ -103,26 +104,14 @@ export function RAGDocumentStatusPanel() {
       let chunkCountMap: Record<string, number> = {};
       const docsWithPageData = new Set<string>();
 
-      if (completedDocIds.length > 0) {
-        const { data: chunks } = await supabase
-          .from('document_chunks')
-          .select('document_id')
-          .in('document_id', completedDocIds);
-
-        for (const chunk of chunks || []) {
-          chunkCountMap[chunk.document_id] = (chunkCountMap[chunk.document_id] || 0) + 1;
-        }
-
-        // Welke voltooide docs hebben al paginanummers (metadata.pageStart)? Eén
-        // rij per chunk-met-paginanummer; we dedupen client-side naar een set.
-        const { data: pageChunks } = await supabase
-          .from('document_chunks')
-          .select('document_id')
-          .in('document_id', completedDocIds)
-          .not('metadata->>pageStart', 'is', null);
-
-        for (const chunk of pageChunks || []) {
-          docsWithPageData.add(chunk.document_id);
+      // Tellen gebeurt in de database (per document). Vroeger haalde de browser
+      // alle fragmentrijen op, maar de API geeft er hoogstens 1000 per verzoek:
+      // bij een grote cursus kregen de meeste documenten dan onterecht "Geen chunks".
+      if (completedDocIds.length > 0 && activeCourseId) {
+        const stats = await fetchChunkStats(activeCourseId);
+        for (const s of stats.documents) {
+          chunkCountMap[s.id] = s.chunks;
+          if (s.hasPageData) docsWithPageData.add(s.id);
         }
       }
 
