@@ -116,6 +116,48 @@ export interface RAGSearchStats {
   maxSimilarity: number;
   candidatesConsidered: number;
   searchPerformed: boolean;
+  /** Vertaalde zoekvraag (taal van het cursusmateriaal), als die is gebruikt. */
+  translatedQuery?: string | null;
+}
+
+// Zoeken in twee talen (server/crossLingual.js). Is de vraag in een andere taal
+// dan het cursusmateriaal, dan levert de server een vertaling; we zoeken met
+// beide en nemen per passage de beste score. Nooit blokkerend: na 6 s of bij een
+// fout zoeken we alleen met de originele vraag.
+const translationMemo = new Map<string, string | null>();
+async function fetchTranslatedQuery(courseId: string, query: string): Promise<string | null> {
+  const key = `${courseId}|${query}`;
+  if (translationMemo.has(key)) return translationMemo.get(key) ?? null;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.access_token) return null;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch('/api/rag/query-variants', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId, query }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(timer));
+    if (!r.ok) return null;
+    const j = await r.json() as { translated?: string | null };
+    const t = j.translated && j.translated.trim() && j.translated.trim() !== query.trim() ? j.translated.trim() : null;
+    if (translationMemo.size > 200) translationMemo.delete(translationMemo.keys().next().value as string);
+    translationMemo.set(key, t);
+    return t;
+  } catch {
+    return null;
+  }
+}
+
+/** Pure: kandidaten van meerdere zoekopdrachten samenvoegen; per passage de hoogste score. */
+export function mergeCandidatesByBestScore<T extends { id: string; similarity: number }>(lists: T[][]): T[] {
+  const best = new Map<string, T>();
+  for (const list of lists) for (const c of list || []) {
+    const cur = best.get(c.id);
+    if (!cur || c.similarity > cur.similarity) best.set(c.id, c);
+  }
+  return [...best.values()].sort((a, b) => b.similarity - a.similarity);
 }
 
 export async function searchRelevantChunksWithStats(
@@ -156,7 +198,18 @@ export async function searchRelevantChunksWithStats(
     console.log(`[RAG] Query expanded for embedding: "${query}" -> "${embedQuery.slice(0, 120)}${embedQuery.length > 120 ? '…' : ''}"`);
   }
 
-  const embedding = await generateEmbedding(embedQuery);
+  // Vraag en (zo nodig) de vertaling naar de taal van het materiaal tegelijk embedden.
+  const translatedQuery = courseId ? await fetchTranslatedQuery(courseId, query) : null;
+  let embedding: number[] | null = null;
+  let translatedEmbedding: number[] | null = null;
+  try {
+    const embs = await generateEmbeddings(translatedQuery ? [embedQuery, translatedQuery] : [embedQuery]);
+    embedding = embs[0] || null;
+    translatedEmbedding = translatedQuery ? embs[1] || null : null;
+  } catch (error) {
+    console.warn('No embedding generated, RAG functionality will be limited:', error);
+  }
+  if (translatedQuery) console.log(`[RAG] Ook gezocht met vertaling: "${translatedQuery.slice(0, 120)}"`);
 
   if (!embedding) {
     console.warn('[RAG] No embedding generated, RAG not available');
@@ -224,17 +277,21 @@ export async function searchRelevantChunksWithStats(
     // is een grote pool goedkoop en eerlijk, en blijft een zwak-scorende maar
     // relevante chunk binnen bereik ook als de corpus groeit. Drempel 0 zodat we
     // altijd de hoogste beschikbare score kunnen rapporteren bij geen match.
-    const { data: allChunks, error } = await supabase.rpc('match_document_chunks', {
-      query_embedding: embedding,
+    const rpcArgs = (vec: number[]) => ({
+      query_embedding: vec,
       match_threshold: 0,
       match_count: Math.max(matchCount * 5, 60),
       filter_document_ids: filterDocumentIds,
     });
-
+    type Candidate = { id: string; document_id: string; content: string; document_title: string; similarity: number; metadata: unknown };
+    const searches = await Promise.all([embedding, translatedEmbedding].filter((v): v is number[] => !!v)
+      .map((vec) => supabase.rpc('match_document_chunks', rpcArgs(vec))));
+    const error = searches[0]?.error;
     if (error) {
       console.error('[RAG] Error searching chunks:', error);
       return baseStats;
     }
+    const allChunks = mergeCandidatesByBestScore(searches.map((s) => (s.data || []) as Candidate[]));
 
     if (!allChunks || allChunks.length === 0) {
       console.warn('[RAG] match_document_chunks returned no rows at all');
@@ -299,6 +356,7 @@ export async function searchRelevantChunksWithStats(
         maxSimilarity: maxAllowed,
         candidatesConsidered: workingSet.length,
         searchPerformed: true,
+        translatedQuery,
       };
     }
 
@@ -320,6 +378,7 @@ export async function searchRelevantChunksWithStats(
       maxSimilarity: maxAllowed,
       candidatesConsidered: workingSet.length,
       searchPerformed: true,
+      translatedQuery,
     };
   } catch (error) {
     console.error('[RAG] Unexpected error in searchRelevantChunksWithStats:', error);

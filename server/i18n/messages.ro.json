@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id și name sunt obligatorii",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId și (selectedTopics ne-gol sau topSegments) sunt obligatorii",
   "courseId en niet-lege conceptIds vereist": "courseId și conceptIds ne-gol sunt obligatorii",
+  "courseId en query zijn vereist": "courseId și interogarea sunt obligatorii",
   "courseId is required": "courseId is required",
   "courseId is required for non-admin users": "courseId is required for non-admin users",
   "courseId is vereist": "courseId este obligatoriu",

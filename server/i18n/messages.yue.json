@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id 同 name 係必填",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "需要 courseId 同（非空 selectedTopics 或 topSegments）",
   "courseId en niet-lege conceptIds vereist": "需要 courseId 同非空 conceptIds",
+  "courseId en query zijn vereist": "courseId 同 query 係必填",
   "courseId is required": "courseId 係必填",
   "courseId is required for non-admin users": "非管理員用戶需要 courseId",
   "courseId is vereist": "courseId 係必填",

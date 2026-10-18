@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id와 name은 필수야",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId와 비어 있지 않은 selectedTopics 또는 topSegments가 필요해",
   "courseId en niet-lege conceptIds vereist": "courseId와 비어 있지 않은 conceptIds가 필요해",
+  "courseId en query zijn vereist": "courseId와 query가 필요해",
   "courseId is required": "courseId is required",
   "courseId is required for non-admin users": "courseId is required for non-admin users",
   "courseId is vereist": "courseId는 필수야",

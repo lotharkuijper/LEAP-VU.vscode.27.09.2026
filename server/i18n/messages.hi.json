@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id और name आवश्यक हैं",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId और (खाली नहीं selectedTopics या topSegments) आवश्यक हैं",
   "courseId en niet-lege conceptIds vereist": "courseId और खाली नहीं conceptIds आवश्यक हैं",
+  "courseId en query zijn vereist": "courseId और query आवश्यक हैं",
   "courseId is required": "courseId आवश्यक है",
   "courseId is required for non-admin users": "non-admin users के लिए courseId आवश्यक है",
   "courseId is vereist": "courseId आवश्यक है",

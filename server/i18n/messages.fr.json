@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id et name sont obligatoires",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId et (selectedTopics non vides ou topSegments) requis",
   "courseId en niet-lege conceptIds vereist": "courseId et conceptIds non vides requis",
+  "courseId en query zijn vereist": "courseId et la requête sont requis",
   "courseId is required": "courseId is required",
   "courseId is required for non-admin users": "courseId is required for non-admin users",
   "courseId is vereist": "courseId est requis",

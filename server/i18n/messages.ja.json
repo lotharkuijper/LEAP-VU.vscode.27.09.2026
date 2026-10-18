@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id と name は必須です",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId と（空でない selectedTopics または topSegments）が必要です",
   "courseId en niet-lege conceptIds vereist": "courseId と空でない conceptIds が必要です",
+  "courseId en query zijn vereist": "courseId と query は必須です",
   "courseId is required": "courseId is required",
   "courseId is required for non-admin users": "非管理者ユーザーには courseId is required",
   "courseId is vereist": "courseId は必須です",

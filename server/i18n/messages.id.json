@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id dan name wajib diisi",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId dan (selectedTopics yang tidak kosong atau topSegments) diperlukan",
   "courseId en niet-lege conceptIds vereist": "courseId dan conceptIds yang tidak kosong diperlukan",
+  "courseId en query zijn vereist": "courseId dan query wajib diisi",
   "courseId is required": "courseId wajib diisi",
   "courseId is required for non-admin users": "courseId wajib diisi untuk pengguna non-admin",
   "courseId is vereist": "courseId wajib diisi",

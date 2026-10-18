@@ -42,6 +42,7 @@ export function CourseMaterialWorkspace({
   extractionOptions = DEFAULT_EXTRACTION_OPTIONS,
   onExtractionOptionsChange,
   conceptPicker,
+  conceptBounds,
 }: {
   step: MaterialStep;
   onStepChange: (s: MaterialStep) => void;
@@ -54,6 +55,8 @@ export function CourseMaterialWorkspace({
   onExtractionOptionsChange?: (next: ExtractionOptions) => void;
   /** "Begrippen kiezen" (ConceptPicker): direct onder de uitleg van stap 3, vóór de waarschuwingen. */
   conceptPicker?: ReactNode;
+  /** Minimum en maximum aantal begrippen (AdminPage), bovenaan stap 3 naast "Zoek nieuwe begrippen". */
+  conceptBounds?: ReactNode;
 }) {
   const { t } = useLanguage();
   const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
@@ -226,6 +229,7 @@ export function CourseMaterialWorkspace({
           <AdminHint variant="intro">{t('material.concepts.intro')}</AdminHint>
           {conceptPicker}
           <WarningList warnings={warningsFor('concepts')} onGoTo={onStepChange} />
+          {conceptBounds}
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"

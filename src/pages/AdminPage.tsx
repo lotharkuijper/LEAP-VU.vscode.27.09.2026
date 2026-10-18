@@ -666,6 +666,58 @@ export function AdminPage() {
   // De server weigert een minimum boven het maximum.
   const handleSaveMaxConcepts = (value: number | null) => saveConceptBound('max_concepts', value);
   const handleSaveMinConcepts = (value: number | null) => saveConceptBound('min_concepts', value);
+
+  // Minimum en maximum aantal begrippen: in "Kwaliteit en instellingen" én bovenaan
+  // stap 3 (zelfde waarden, zelfde opslag). idSuffix houdt de ids uniek.
+  const renderConceptBounds = (idSuffix: string, withHelp: boolean) => (
+    <div className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+      <label htmlFor={`input-min-concepts${idSuffix}`} className="text-gray-700 font-medium">
+        {t('admin.concepts.minConceptsLabel')}
+      </label>
+      <input
+        id={`input-min-concepts${idSuffix}`}
+        type="number"
+        min={1}
+        max={500}
+        placeholder={t('admin.concepts.minConceptsNone')}
+        value={minConceptsSetting ?? ''}
+        onChange={(e) => setMinConceptsSetting(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+        onBlur={(e) => {
+          const raw = e.target.value;
+          if (raw === '') { handleSaveMinConcepts(null); return; }
+          const parsed = parseInt(raw, 10);
+          handleSaveMinConcepts(Number.isFinite(parsed) ? Math.max(1, Math.min(500, parsed)) : null);
+        }}
+        className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+        data-testid={`input-min-concepts${idSuffix}`}
+      />
+      <label htmlFor={`input-max-concepts${idSuffix}`} className="text-gray-700 font-medium">
+        {t('admin.concepts.maxConceptsLabel')}
+      </label>
+      <input
+        id={`input-max-concepts${idSuffix}`}
+        type="number"
+        min={5}
+        max={500}
+        placeholder={t('admin.concepts.maxConceptsUnlimited')}
+        value={maxConceptsSetting ?? ''}
+        onChange={(e) => setMaxConceptsSetting(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+        onBlur={(e) => {
+          const raw = e.target.value;
+          if (raw === '') { handleSaveMaxConcepts(null); return; }
+          const parsed = parseInt(raw, 10);
+          handleSaveMaxConcepts(Number.isFinite(parsed) ? Math.max(5, Math.min(500, parsed)) : null);
+        }}
+        className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
+        data-testid={`input-max-concepts${idSuffix}`}
+      />
+      {withHelp && <HelpTip id="concepts.minMax" />}
+      <span className="min-w-0 text-xs text-gray-500">{t('admin.concepts.minMaxHint')}</span>
+      {maxConceptsSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
+      {maxConceptsError && <span className="text-xs text-red-600">{maxConceptsError}</span>}
+    </div>
+  );
+
   const saveConceptBound = async (field: 'min_concepts' | 'max_concepts', value: number | null) => {
     if (field === 'max_concepts') setMaxConceptsSetting(value); else setMinConceptsSetting(value);
     if (!session?.access_token || !activeCourseId) return;
@@ -1935,6 +1987,7 @@ const tabGroups = [
                   onOpenDetails={setConceptDrawerId}
                 />
               ) : undefined}
+              conceptBounds={activeCourseId ? renderConceptBounds('-top', false) : undefined}
             />
           )}
           {conceptDrawerId && activeCourseId && (
@@ -2034,54 +2087,7 @@ const tabGroups = [
                 />
               )}
 
-              {activeCourseId && (
-                <div className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                  <label htmlFor="input-min-concepts" className="text-gray-700 font-medium">
-                    {t('admin.concepts.minConceptsLabel')}
-                  </label>
-                  <input
-                    id="input-min-concepts"
-                    type="number"
-                    min={1}
-                    max={500}
-                    placeholder={t('admin.concepts.minConceptsNone')}
-                    value={minConceptsSetting ?? ''}
-                    onChange={(e) => setMinConceptsSetting(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                    onBlur={(e) => {
-                      const raw = e.target.value;
-                      if (raw === '') { handleSaveMinConcepts(null); return; }
-                      const parsed = parseInt(raw, 10);
-                      handleSaveMinConcepts(Number.isFinite(parsed) ? Math.max(1, Math.min(500, parsed)) : null);
-                    }}
-                    className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
-                    data-testid="input-min-concepts"
-                  />
-                  <label htmlFor="input-max-concepts" className="text-gray-700 font-medium">
-                    {t('admin.concepts.maxConceptsLabel')}
-                  </label>
-                  <input
-                    id="input-max-concepts"
-                    type="number"
-                    min={5}
-                    max={500}
-                    placeholder={t('admin.concepts.maxConceptsUnlimited')}
-                    value={maxConceptsSetting ?? ''}
-                    onChange={(e) => setMaxConceptsSetting(e.target.value === '' ? null : parseInt(e.target.value, 10))}
-                    onBlur={(e) => {
-                      const raw = e.target.value;
-                      if (raw === '') { handleSaveMaxConcepts(null); return; }
-                      const parsed = parseInt(raw, 10);
-                      handleSaveMaxConcepts(Number.isFinite(parsed) ? Math.max(5, Math.min(500, parsed)) : null);
-                    }}
-                    className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
-                    data-testid="input-max-concepts"
-                  />
-                  <HelpTip id="concepts.minMax" />
-                  <span className="min-w-0 text-xs text-gray-500">{t('admin.concepts.minMaxHint')}</span>
-                  {maxConceptsSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
-                  {maxConceptsError && <span className="text-xs text-red-600">{maxConceptsError}</span>}
-                </div>
-              )}
+              {activeCourseId && renderConceptBounds('', true)}
                 </div>
               </details>
               )}

@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id і name є обов’язковими",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "Потрібні courseId і непорожні selectedTopics або topSegments",
   "courseId en niet-lege conceptIds vereist": "Потрібні courseId і непорожні conceptIds",
+  "courseId en query zijn vereist": "courseId і query обов’язкові",
   "courseId is required": "courseId є обов’язковим",
   "courseId is required for non-admin users": "courseId є обов’язковим для користувачів без прав адміністратора",
   "courseId is vereist": "courseId є обов’язковим",

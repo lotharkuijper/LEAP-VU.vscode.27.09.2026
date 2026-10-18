@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id και name είναι υποχρεωτικά",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "Απαιτείται courseId και μη κενά selectedTopics ή topSegments",
   "courseId en niet-lege conceptIds vereist": "Απαιτείται courseId και μη κενά conceptIds",
+  "courseId en query zijn vereist": "courseId και query είναι υποχρεωτικά",
   "courseId is required": "Το courseId είναι υποχρεωτικό",
   "courseId is required for non-admin users": "Το courseId είναι υποχρεωτικό για χρήστες που δεν είναι admin",
   "courseId is vereist": "Το courseId είναι υποχρεωτικό",

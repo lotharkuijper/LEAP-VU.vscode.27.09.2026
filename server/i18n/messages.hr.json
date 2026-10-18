@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id i name su obavezni",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "courseId i (neprazni selectedTopics ili topSegments) su obavezni",
   "courseId en niet-lege conceptIds vereist": "courseId i neprazni conceptIds su obavezni",
+  "courseId en query zijn vereist": "courseId i query su obavezni",
   "courseId is required": "courseId je obavezan",
   "courseId is required for non-admin users": "courseId je obavezan za korisnike koji nisu admini",
   "courseId is vereist": "courseId je obavezan",

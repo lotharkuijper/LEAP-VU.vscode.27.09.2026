@@ -95,6 +95,7 @@
   "course_id en name zijn verplicht": "course_id 和 name 为必填项",
   "courseId en (niet-lege selectedTopics of topSegments) vereist": "需要 courseId 和非空的 selectedTopics 或 topSegments",
   "courseId en niet-lege conceptIds vereist": "需要 courseId 和非空的 conceptIds",
+  "courseId en query zijn vereist": "courseId 和 query 是必填项",
   "courseId is required": "courseId 为必填项",
   "courseId is required for non-admin users": "非管理员用户需要 courseId",
   "courseId is vereist": "courseId 为必填项",

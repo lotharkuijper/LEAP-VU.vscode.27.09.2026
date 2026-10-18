@@ -134,6 +134,8 @@ import { registerDesignAssistantRoutes } from './designAssistant.js';
 import { registerSystemMessageRoutes } from './systemMessages.js';
 import { registerCourseUnitRoutes, loadLeerlijn, loadPracticedUnits, anchorUnit, buildLeerlijnBlock } from './courseUnits.js';
 import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
+import { createCourseOverview } from './courseOverview.js';
+import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
 import { installAnalytics } from './analytics/index.js';
@@ -803,6 +805,11 @@ app.post('/api/chat', async (req, res) => {
     if (chatSourcesBlock) systemContent += chatSourcesBlock;
     // Bijlagen: instructie + bestandstekst, vóór het taal-/niveaublok.
     systemContent += attachmentSystemBlock(attachmentParts);
+    // Cursusoverzicht (server/courseOverview.js): naam, opbouw en begrippen,
+    // voor oriëntatievragen ("waar gaat deze cursus over?").
+    if (req.body?.purpose === 'tutor_chat' && courseId) {
+      systemContent += await courseOverviewBlock(courseId);
+    }
     // Leerlijn (server/courseUnits.js): terugverwijzen naar voorafgaande
     // onderdelen, spaarzaam vooruit, behalve naar wat de student al oefende.
     if (req.body?.purpose === 'tutor_chat' && courseId) {
@@ -9269,6 +9276,12 @@ async function leerlijnBlockFor(userId, courseId, sources, explicitUnitId) {
   }
 }
 
+const courseOverviewBlock = createCourseOverview({
+  supabaseAdmin,
+  loadLeerlijn: (courseId) => cachedLeerlijn(courseId),
+  materialDocuments: (courseId) => courseMaterialDocuments(courseId),
+});
+
 /** Leerstofbestanden van een cursus (voor het voorstel en de controle bij opslaan). */
 async function courseMaterialDocuments(courseId) {
   const { data: assigns } = await supabaseAdmin.from('course_folder_assignments').select('folder_id').eq('course_id', courseId);
@@ -14459,6 +14472,17 @@ const preassessmentRunner = createPreassessmentRunner({
   },
 });
 registerPreassessmentRoutes(app, { supabaseAdmin, pgPool, requireAuthUser, isStaffForCourse, runner: preassessmentRunner });
+
+// Zoeken in twee talen (server/crossLingual.js): vraag vertalen naar de taal van het materiaal.
+registerCrossLingualRoute(app, {
+  pgPool, requireAuthUser, userHasCourseAccess,
+  translate: async (messages) => {
+    const r = await openaiChatCompletion({ model: OPENAI_MODEL, messages, ...chatModelParams({ temperature: 0, maxTokens: 200 }) }, { timeoutMs: 15000 });
+    if (!r.ok) throw new Error('Taalmodel-fout ' + r.status);
+    const j = await r.json();
+    return j.choices?.[0]?.message?.content || '';
+  },
+});
 
 registerCourseUnitRoutes(app, {
   supabaseAdmin, requireAuthUser, userHasCourseAccess, isStaffForCourse,
