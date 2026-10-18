@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "إجمالي {0} مصطلحًا لهذه الدورة ({1} جديد/محدّث، {2} موجود بالفعل){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "إجمالي {0} مصطلحًا لهذه الدورة ({1} جديد/محدّث، {2} موجود بالفعل){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "تم إنشاء الحساب لكن فشل التسجيل:",
   "Admin client niet beschikbaar": "عميل Admin غير متاح",
   "Admin client not available": "عميل Admin غير متاح",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "لا يجوز أن يكون الحد الأدنى لحجم المجموعة أكبر من الحد الأقصى",
   "Naam is al in gebruik door een andere cursus": "الاسم مستخدم بالفعل من قبل مقرر آخر",
   "Naam is vereist": "الاسم مطلوب",
+  "Netwerkfout: {0}": "خطأ في الشبكة: {0}",
   "Niet geauthenticeerd": "غير مصادق عليه",
   "Niet langer lid van deze groep": "لم تعد عضوًا في هذه المجموعة",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "لم تتم المعالجة — تم إيقاف الدفعة بعد حدّ البريد الإلكتروني",

@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "{0} termeni în total pentru acest curs ({1} noi/actualizați, {2} deja existenți){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} termeni în total pentru acest curs ({1} noi/actualizați, {2} deja prezenți){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Cont creat, dar înscrierea a eșuat:",
   "Admin client niet beschikbaar": "Clientul admin nu este disponibil",
   "Admin client not available": "Clientul admin nu este disponibil",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Dimensiunea minimă a grupului nu poate fi mai mare decât maximul",
   "Naam is al in gebruik door een andere cursus": "Numele este deja folosit de un alt curs",
   "Naam is vereist": "Numele este obligatoriu",
+  "Netwerkfout: {0}": "Eroare de rețea: {0}",
   "Niet geauthenticeerd": "Neautentificat",
   "Niet langer lid van deze groep": "Nu mai ești membru al acestui grup",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "Neprocesat — lot întrerupt după limita de e-mailuri",

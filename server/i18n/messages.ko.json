@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "이 과정의 총 {0}개 용어({1}개 신규/업데이트, {2}개 이미 있음){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "이 과정의 총 {0}개 용어({1}개 신규/업데이트, {2}개 이미 있음){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "계정은 생성됐지만 등록에 실패했어:",
   "Admin client niet beschikbaar": "Admin client를 사용할 수 없어",
   "Admin client not available": "Admin client not available",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "최소 그룹 크기는 최대값보다 클 수 없어",
   "Naam is al in gebruik door een andere cursus": "이름이 이미 다른 수업에서 사용 중이야",
   "Naam is vereist": "이름은 필수야",
+  "Netwerkfout: {0}": "네트워크 오류: {0}",
   "Niet geauthenticeerd": "인증되지 않았어",
   "Niet langer lid van deze groep": "더 이상 이 그룹의 멤버가 아니야",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "처리되지 않음 — 이메일 한도 때문에 배치가 중단됨",

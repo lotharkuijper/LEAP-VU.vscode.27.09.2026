@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "Ukupno {0} pojmova za ovaj kolegij ({1} novo/ažurirano, {2} već prisutno){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} pojmova ukupno za ovaj kolegij ({1} novih/ažuriranih, {2} već prisutnih){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Račun je stvoren, ali upis nije uspio:",
   "Admin client niet beschikbaar": "Admin client nije dostupan",
   "Admin client not available": "Admin client nije dostupan",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Minimalna veličina grupe ne smije biti veća od maksimalne",
   "Naam is al in gebruik door een andere cursus": "Naziv već koristi drugi kolegij",
   "Naam is vereist": "Naziv je obavezan",
+  "Netwerkfout: {0}": "Mrežna pogreška: {0}",
   "Niet geauthenticeerd": "Nisi autentificiran/a",
   "Niet langer lid van deze groep": "Više nisi član ove grupe",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "Nije obrađeno — batch prekinut nakon dosegnutog ograničenja e-pošte",

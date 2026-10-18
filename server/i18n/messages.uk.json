@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "Усього {0} понять для цього курсу ({1} нових/оновлених, {2} уже наявні){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "Усього {0} понять для цього курсу ({1} нових/оновлених, {2} уже наявні){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Акаунт створено, але запис не вдався:",
   "Admin client niet beschikbaar": "Admin client недоступний",
   "Admin client not available": "Admin client not available",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Мінімальний розмір групи не може бути більшим за максимальний",
   "Naam is al in gebruik door een andere cursus": "Назва вже використовується іншим курсом",
   "Naam is vereist": "Назва обов’язкова",
+  "Netwerkfout: {0}": "Помилка мережі: {0}",
   "Niet geauthenticeerd": "Не автентифіковано",
   "Niet langer lid van deze groep": "Ти більше не учасник цієї групи",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "Не оброблено — пакет перервано після досягнення ліміту e-mail",

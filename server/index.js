@@ -5682,7 +5682,7 @@ async function extractConceptsHandler(req, res) {
 
     const { data: allDocs, error: docsError } = await supabaseAdmin
       .from('documents')
-      .select('id, purpose')
+      .select('id, purpose, title')
       .in('folder_id', ragFolderIds)
       .eq('processing_status', 'completed');
     // Alleen leerstof levert begrippen: cursusinformatie (studiehandleiding,
@@ -5797,24 +5797,41 @@ ${combinedText}`;
     // tweede poging faalt, geven we een Nederlandstalige melding terug
     // — en omdat de replace-stap pas later in deze handler draait,
     // verliest de cursus géén begrippen meer als de extractie crasht.
-    async function callOpenAI(prompt, maxRetries = 1) {
+    // Robuust per venster (2026-10-18, Microbiologie: 534 vensters): een
+    // snelheidslimiet, een tijdelijke serverfout (5xx) of een netwerkhapering
+    // (ECONNRESET, "fetch failed") wordt met een pauze opnieuw geprobeerd en
+    // gooit NOOIT: één hapering brak eerder de hele extractie af na 295 vensters.
+    async function callOpenAI(prompt, maxRetries = 5) {
+      let last = null;
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        const resp = await openaiChatCompletion({
-          model: OPENAI_MODEL,
-          messages: [{ role: 'user', content: prompt }],
-          ...chatModelParams({ temperature: 0.2, maxTokens: 8192 }),
-        });
+        let resp;
+        try {
+          resp = await openaiChatCompletion({
+            model: OPENAI_MODEL,
+            messages: [{ role: 'user', content: prompt }],
+            ...chatModelParams({ temperature: 0.2, maxTokens: 8192 }),
+          });
+        } catch (netErr) {
+          last = { resp: null, errData: { error: { message: `Netwerkfout: ${netErr?.cause?.code || netErr?.message || netErr}` } } };
+          if (attempt === maxRetries) return last;
+          const waitMs = Math.min(60000, 3000 * 2 ** attempt);
+          console.warn(`[extract-concepts] netwerkfout (${netErr?.cause?.code || netErr?.message}), wacht ${waitMs}ms en probeer opnieuw…`);
+          await new Promise((r) => setTimeout(r, waitMs));
+          continue;
+        }
         if (resp.ok) return { resp, errData: null };
         const errData = await resp.json().catch(() => ({}));
+        last = { resp, errData };
         const isRateLimit = resp.status === 429 || errData?.error?.code === 'rate_limit_exceeded';
-        if (!isRateLimit || attempt === maxRetries) return { resp, errData };
+        const isTransient = resp.status >= 500;
+        if ((!isRateLimit && !isTransient) || attempt === maxRetries) return last;
         const msg = errData?.error?.message || '';
         const m = msg.match(/try again in ([\d.]+)s/i);
-        const waitMs = m ? Math.min(60000, Math.ceil(parseFloat(m[1]) * 1000) + 500) : 5000;
-        console.warn(`[extract-concepts] OpenAI rate-limit, wacht ${waitMs}ms en probeer opnieuw…`);
+        const waitMs = m ? Math.min(60000, Math.ceil(parseFloat(m[1]) * 1000) + 500) : Math.min(60000, 5000 * 2 ** attempt);
+        console.warn(`[extract-concepts] ${isRateLimit ? 'snelheidslimiet' : `serverfout ${resp.status}`}, wacht ${waitMs}ms en probeer opnieuw…`);
         await new Promise((r) => setTimeout(r, waitMs));
       }
-      return { resp: null, errData: { error: { message: 'Onbereikbaar' } } };
+      return last || { resp: null, errData: { error: { message: 'Onbereikbaar' } } };
     }
 
     // JSON uit het antwoord halen; bij een afgekapt antwoord de complete
@@ -5836,11 +5853,16 @@ ${combinedText}`;
     req.__onProgress?.({ step: 'reading', done: 0, total: windows.length });
     const windowResults = await mapLimit(windows, 4, async (w) => {
       const result = await (async () => {
-      const { resp, errData } = await callOpenAI(buildExtractionPrompt(w.text), 1);
-      if (!resp || !resp.ok) return { documentId: w.documentId, error: errData, concepts: [] };
-      const data = await resp.json();
-      const list = parseExtractedConcepts(data.choices?.[0]?.message?.content || '');
-      return { documentId: w.documentId, concepts: Array.isArray(list) ? list : [] };
+        try {
+          const { resp, errData } = await callOpenAI(buildExtractionPrompt(w.text));
+          if (!resp || !resp.ok) return { documentId: w.documentId, error: errData, concepts: [] };
+          const data = await resp.json();
+          const list = parseExtractedConcepts(data.choices?.[0]?.message?.content || '');
+          return { documentId: w.documentId, concepts: Array.isArray(list) ? list : [] };
+        } catch (winErr) {
+          // Nooit de hele extractie laten vallen om één venster.
+          return { documentId: w.documentId, error: { error: { message: winErr?.message || String(winErr) } }, concepts: [] };
+        }
       })();
       windowsDone++;
       req.__onProgress?.({ step: 'reading', done: windowsDone, total: windows.length });
@@ -5973,6 +5995,7 @@ ${combinedText}`;
     console.log(`[extract-concepts] Verificatie: ${candidateConcepts.length} kandidaten met drempel ${verifyThreshold.toFixed(2)} en min ${minEvidence} bewijschunks`);
 
     let verified = 0;
+    let verifyFailed = 0;
     req.__onProgress?.({ step: 'verifying', done: 0, total: candidateConcepts.length });
     const verificationResults = await mapLimit(candidateConcepts, 6, async (c) => {
       const out = await (async () => {
@@ -5983,12 +6006,23 @@ ${combinedText}`;
         // aan de embedding-query (dezelfde expandQuery die chat/explain/quiz
         // al gebruiken) geeft méér context zonder de drempel te verlagen —
         // dus zonder de bewijseis te verzwakken.
-        const result = await searchChunksServerSide(
-          c.name, verifyThreshold, 10, ragFolderIds,
-          { enabled: true, definition: c.definition },
-          conceptLanguage === 'en' ? 'en' : 'nl',
-          'concepts'
-        );
+        // Eén netwerkhapering mag de verificatie niet afbreken: twee keer
+        // opnieuw proberen, daarna telt dit begrip als "niet te controleren"
+        // (gemeld in het resultaat, niet stil weggegooid).
+        let result = null;
+        for (let attempt = 0; attempt < 3 && !result; attempt++) {
+          try {
+            result = await searchChunksServerSide(
+              c.name, verifyThreshold, 10, ragFolderIds,
+              { enabled: true, definition: c.definition },
+              conceptLanguage === 'en' ? 'en' : 'nl',
+              'concepts'
+            );
+          } catch (vErr) {
+            if (attempt === 2) { verifyFailed++; console.warn(`[extract-concepts] verificatie mislukt voor "${c.name}":`, vErr?.message || vErr); }
+            else await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
+          }
+        }
         return {
           concept: c,
           matchedCount: result?.matched?.length || 0,
@@ -6464,6 +6498,14 @@ ${combinedText}`;
     if (selection.toppedUp.length > 0) minParts.push(`${selection.toppedUp.length} aangevuld om het minimum te halen (minder bewijs, te beoordelen)`);
     if (selection.shortBy > 0) minParts.push(`minimum van ${extractionSettings.min_concepts} niet gehaald: er zijn te weinig begrippen met bewijs in het materiaal; controleer of alle documenten goed verwerkt zijn`);
     const minMsg = minParts.length > 0 ? `. ${minParts.join('; ')}` : '';
+    // Vensters die ondanks herhaalpogingen niet gelezen konden worden, en
+    // begrippen die niet te controleren waren: zichtbaar melden, nooit stil.
+    const failedDocTitles = [...new Set(failedWindows.map((r) => docs.find((d) => d.id === r.documentId)?.title).filter(Boolean))];
+    const failedList = failedDocTitles.slice(0, 5).join(', ') + (failedDocTitles.length > 5 ? ', …' : '');
+    const failMsg = failedWindows.length > 0
+      ? `. Let op: ${failedWindows.length} van ${windows.length} delen konden niet gelezen worden (${failedList}); begrippen uit die delen kunnen ontbreken. Start de extractie later opnieuw`
+      : '';
+    const verifyFailMsg = verifyFailed > 0 ? `. Let op: ${verifyFailed} begrippen konden door een verbindingsfout niet gecontroleerd worden en zijn niet opgenomen` : '';
 
     return res.json({
       concepts: inserted,
@@ -6487,7 +6529,9 @@ ${combinedText}`;
       maxConcepts: extractionSettings.max_concepts ?? null,
       toppedUp: [...toppedUpNames],
       shortBy: selection.shortBy,
-      message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}${minMsg}`,
+      failedDocuments: failedDocTitles,
+      verifyFailed,
+      message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}${minMsg}${failMsg}${verifyFailMsg}`,
     });
   } catch (err) {
     console.error('[extract-concepts] Unexpected error:', err);

@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "このコースの用語は合計{0}件（{1}件が新規/更新、{2}件は既存）{3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "このコースの用語は合計{0}件（{1}件が新規/更新、{2}件は既存）{3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "アカウントは作成されたが、登録に失敗しました:",
   "Admin client niet beschikbaar": "Admin client は利用できません",
   "Admin client not available": "Admin client not available",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "最小グループサイズは最大値より大きくできません",
   "Naam is al in gebruik door een andere cursus": "名前は別のコースで既に使用されています",
   "Naam is vereist": "名前は必須です",
+  "Netwerkfout: {0}": "ネットワークエラー: {0}",
   "Niet geauthenticeerd": "認証されていません",
   "Niet langer lid van deze groep": "このグループのメンバーではなくなりました",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "未処理 — メール上限に達したためバッチを中止",

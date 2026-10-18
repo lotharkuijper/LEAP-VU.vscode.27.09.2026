@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "{0} όροι συνολικά για αυτό το μάθημα ({1} νέοι/ενημερωμένοι, {2} ήδη υπάρχουν){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} όροι συνολικά για αυτό το μάθημα ({1} νέοι/ενημερωμένοι, {2} ήδη υπάρχουν){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Ο λογαριασμός δημιουργήθηκε, αλλά η εγγραφή απέτυχε:",
   "Admin client niet beschikbaar": "Ο admin client δεν είναι διαθέσιμος",
   "Admin client not available": "Admin client not available",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Το ελάχιστο μέγεθος ομάδας δεν μπορεί να είναι μεγαλύτερο από το μέγιστο",
   "Naam is al in gebruik door een andere cursus": "Το όνομα χρησιμοποιείται ήδη από άλλο μάθημα",
   "Naam is vereist": "Το όνομα είναι υποχρεωτικό",
+  "Netwerkfout: {0}": "Σφάλμα δικτύου: {0}",
   "Niet geauthenticeerd": "Δεν έχεις συνδεθεί",
   "Niet langer lid van deze groep": "Δεν είσαι πλέον μέλος αυτής της ομάδας",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "Δεν έγινε επεξεργασία — η δέσμη διακόπηκε μετά το όριο e-mail",

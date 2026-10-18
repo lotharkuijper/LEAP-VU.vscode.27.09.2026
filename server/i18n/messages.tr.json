@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "Bu kurs için toplam {0} terim ({1} yeni/güncellendi, {2} zaten mevcut){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "Bu kurs için toplam {0} kavram ({1} yeni/güncellendi, {2} zaten mevcut){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Hesap oluşturuldu ama kaydolma başarısız oldu:",
   "Admin client niet beschikbaar": "Admin client kullanılamıyor",
   "Admin client not available": "Admin client kullanılamıyor",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Minimum grup boyutu maksimumdan büyük olamaz",
   "Naam is al in gebruik door een andere cursus": "Ad başka bir kurs tarafından zaten kullanılıyor",
   "Naam is vereist": "Ad gerekli",
+  "Netwerkfout: {0}": "Ağ hatası: {0}",
   "Niet geauthenticeerd": "Kimlik doğrulanmadı",
   "Niet langer lid van deze groep": "Artık bu grubun üyesi değilsin",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "İşlenmedi — e-posta limiti sonrası batch iptal edildi",

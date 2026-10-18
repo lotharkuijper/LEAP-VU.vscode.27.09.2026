@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "{0} concepts au total pour ce cours ({1} nouveaux/mis à jour, {2} déjà présents){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} notions au total pour ce cours ({1} nouvelles/mises à jour, {2} déjà présentes){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Compte créé, mais l’inscription a échoué :",
   "Admin client niet beschikbaar": "Client admin indisponible",
   "Admin client not available": "Client admin indisponible",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "La taille minimale du groupe ne peut pas être supérieure au maximum",
   "Naam is al in gebruik door een andere cursus": "Le nom est déjà utilisé par un autre cours",
   "Naam is vereist": "Le nom est requis",
+  "Netwerkfout: {0}": "Erreur réseau : {0}",
   "Niet geauthenticeerd": "Non authentifié",
   "Niet langer lid van deze groep": "Tu n’es plus membre de ce groupe",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "Non traité — lot interrompu après la limite d’e-mails",

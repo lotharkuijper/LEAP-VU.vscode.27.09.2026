@@ -459,7 +459,14 @@ export async function mapLimit(items, limit, fn) {
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (next < items.length) {
       const i = next++;
-      out[i] = await fn(items[i], i);
+      try {
+        out[i] = await fn(items[i], i);
+      } catch (err) {
+        // Na een fout geen nieuwe items meer oppakken: anders werken de andere
+        // workers door voor een resultaat dat niemand meer gebruikt.
+        next = items.length;
+        throw err;
+      }
     }
   });
   await Promise.all(workers);

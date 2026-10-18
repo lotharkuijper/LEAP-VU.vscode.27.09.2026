@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "{0} concepts total for this course ({1} new/updated, {2} already present){3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} terms total for this course ({1} new/updated, {2} already present){3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "Account created but enrollment failed:",
   "Admin client niet beschikbaar": "Admin client not available",
   "Admin client not available": "Admin client not available",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "Minimum group size cannot be greater than the maximum",
   "Naam is al in gebruik door een andere cursus": "Name is already used by another course",
   "Naam is vereist": "Name is required",
+  "Netwerkfout: {0}": "Network error: {0}",
   "Niet geauthenticeerd": "Not authenticated",
   "Niet langer lid van deze groep": "No longer a member of this group",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "Not processed — batch aborted after email limit",

@@ -1,5 +1,5 @@
 {
-  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}": "呢個課程共有 {0} 個概念（{1} 個新增／已更新，{2} 個已存在）{3}{4}",
+  "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "呢個課程共有 {0} 個概念（{1} 個新增/已更新，{2} 個已存在）{3}{4}{5}{6}",
   "Account aangemaakt maar inschrijven mislukte:": "帳戶已建立，但註冊失敗：",
   "Admin client niet beschikbaar": "Admin client 不可用",
   "Admin client not available": "Admin client not available",
@@ -354,6 +354,7 @@
   "Minimum groepsgrootte mag niet groter zijn dan het maximum": "最小群組大小唔可以大過最大值",
   "Naam is al in gebruik door een andere cursus": "名稱已被另一個課程使用",
   "Naam is vereist": "名稱為必填",
+  "Netwerkfout: {0}": "網絡錯誤：{0}",
   "Niet geauthenticeerd": "未驗證身份",
   "Niet langer lid van deze groep": "已不再係呢個群組嘅成員",
   "Niet verwerkt — batch afgebroken na e-mail-limiet": "未處理 — 因電郵限額而中止批次",
