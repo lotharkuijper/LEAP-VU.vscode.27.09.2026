@@ -45,6 +45,7 @@ describe('vaste instructies aan het taalmodel zijn vakneutraal', () => {
     'server/conceptExtraction.js',
     'server/learningLevel.js',
     'server/explainFeedback.js',
+    'server/flawedExplanations.js',
     'server/queryExpansion.js',
     'src/services/queryExpansion.ts',
     'src/services/llm.service.ts',

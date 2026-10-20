@@ -9,12 +9,16 @@ export type CourseFeature = (typeof COURSE_FEATURES)[number];
 // 'attachments' = bijlagen in de chat (server/chatAttachments.js).
 export const OPT_IN_FEATURES = ['attachments'] as const;
 export type OptInFeature = (typeof OPT_IN_FEATURES)[number];
-export type CourseFeatures = Record<CourseFeature | OptInFeature, boolean>;
+// Onderdelen van Ik leg uit: standaard aan; alleen geldig als 'explain' aan staat.
+export const EXPLAIN_PARTS = ['explainSelf', 'explainImprove'] as const;
+export type ExplainPart = (typeof EXPLAIN_PARTS)[number];
+export type CourseFeatures = Record<CourseFeature | OptInFeature | ExplainPart, boolean>;
 
 export function normalizeCourseFeatures(raw: unknown): CourseFeatures {
   const src = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const out = {} as CourseFeatures;
   for (const key of COURSE_FEATURES) out[key] = src[key] !== false;
+  for (const key of EXPLAIN_PARTS) out[key] = src[key] !== false;
   for (const key of OPT_IN_FEATURES) out[key] = src[key] === true;
   return out;
 }
@@ -43,5 +47,11 @@ export interface FeatureView {
 
 export function featureView(features: CourseFeatures, feature: CourseFeature, isStaff: boolean): FeatureView {
   const on = features[feature] !== false;
+  return { visible: on || isStaff, offForStudents: !on };
+}
+
+/** Een onderdeel van Ik leg uit: zichtbaar als Ik leg uit én dat onderdeel aan staan (of voor staf). */
+export function explainPartView(features: CourseFeatures, part: ExplainPart, isStaff: boolean): FeatureView {
+  const on = features.explain !== false && features[part] !== false;
   return { visible: on || isStaff, offForStudents: !on };
 }

@@ -137,6 +137,7 @@ import { createPreassessmentRunner, registerPreassessmentRoutes } from './preass
 import { createCourseOverview } from './courseOverview.js';
 import { registerEnrollmentRoutes } from './enrollment.js';
 import { registerPromptTemplateRoutes } from './promptTemplates.js';
+import { registerFlawedExplanationRoutes } from './flawedExplanations.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
@@ -189,7 +190,7 @@ import { sanitizeAvatar, faceFields, changedFaceFields, syncPersonaFace } from '
 import { journalFormatInstruction, journalFieldsFromModel, journalRedistributePrompt } from './journalSections.js';
 import { buildReadinessInstruction, extractReadiness, evaluateReadiness, countVerifiedPriorStudentMessages, turnSignature, levelName, topicKey } from './readiness.js';
 import { cleanKeyPoints, rankRelatedConcepts, explainFormatInstruction, parseExplainFeedback, explainFeedbackMarkdown, buildExplainUserMessage } from './explainFeedback.js';
-import { normalizeCourseFeatures, parseCourseFeaturesPatch, mergeCourseFeatures, featureForChatRequest, featureAllowed, FEATURE_DISABLED_MSG } from './courseFeatures.js';
+import { normalizeCourseFeatures, parseCourseFeaturesPatch, mergeCourseFeatures, featureForChatRequest, featureAllowed, explainPartsValid, FEATURE_DISABLED_MSG } from './courseFeatures.js';
 import {
   PLATFORM_KEY as ATTACHMENTS_PLATFORM_KEY, normalizePlatformSettings, parsePlatformPatch, mergePlatformSettings,
   attachmentsAvailability, parseChatAttachments, createDailyCounter, attachmentSystemBlock, attachImagesToLastUser,
@@ -4414,6 +4415,9 @@ app.patch('/api/courses/:id/features', async (req, res) => {
     }
     if (!current) return res.status(404).json({ error: 'Cursus niet gevonden' });
     const stored = mergeCourseFeatures(current.features, parsed.value);
+    if (!explainPartsValid(stored)) {
+      return res.status(400).json({ error: 'Laat minstens één onderdeel van Ik leg uit aan, of zet Ik leg uit helemaal uit', code: 'explainNeedsOnePart' });
+    }
     const { error } = await supabaseAdmin.from('courses').update({ features: stored }).eq('id', courseId);
     if (error) return res.status(500).json({ error: error.message || 'Bijwerken mislukt' });
     courseFeaturesCache.delete(courseId);
@@ -7199,6 +7203,7 @@ app.post('/api/explain/evaluate', async (req, res) => {
       return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
     }
     if (await rejectIfFeatureOff(res, auth.user, auth.profile, scopeCourseId, 'explain')) return;
+    if (await rejectIfFeatureOff(res, auth.user, auth.profile, scopeCourseId, 'explainSelf')) return;
 
     // Verwante begrippen: goedgekeurde begrippen van dezelfde cursus die in
     // dezelfde cursusfragmenten (of documenten) voorkomen.
@@ -14466,6 +14471,72 @@ registerPromptTemplateRoutes(app, {
   isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
   isStaffAnywhere,
   loadTemplate: { chat: loadGlobalChatPrompt, explain: loadGlobalExplainPrompt },
+});
+// "Verbeter deze uitleg" (server/flawedExplanations.js): oefening ter plekke
+// gemaakt en blind gecontroleerd; niets bewaard behalve een dagboekreflectie op verzoek.
+async function flawedChunksFor(concept, courseId) {
+  const out = [];
+  const seen = new Set();
+  const { data: ev } = await supabaseAdmin.from('concept_evidence')
+    .select('chunk_id, document_id, similarity').eq('concept_id', concept.id)
+    .order('similarity', { ascending: false }).limit(12);
+  const ids = [...new Set((ev || []).map(e => e.chunk_id).filter(Boolean))].slice(0, 6);
+  if (ids.length) {
+    const { data: rows } = await supabaseAdmin.from('document_chunks').select('id, content, document_id').in('id', ids);
+    for (const id of ids) {
+      const r = (rows || []).find(x => x.id === id);
+      if (r?.content && !seen.has(r.id)) { seen.add(r.id); out.push({ id: r.id, content: r.content, documentId: r.document_id }); }
+    }
+  }
+  if (out.length < 6 && courseId) {
+    const folders = await courseRagFolderIds(courseId);
+    const q = [concept.name, concept.definition || ''].filter(Boolean).join('. ');
+    const { matched } = await searchChunksServerSide(q, 0.3, 6, folders, null, 'nl', 'explain');
+    for (const m of matched || []) {
+      if (out.length >= 6) break;
+      if (!seen.has(m.id)) { seen.add(m.id); out.push({ id: m.id, content: m.content, documentId: m.document_id }); }
+    }
+  }
+  const docIds = [...new Set(out.map(c => c.documentId).filter(Boolean))];
+  if (docIds.length) {
+    const { data: docs } = await supabaseAdmin.from('documents').select('id, title, filename').in('id', docIds);
+    const title = new Map((docs || []).map(d => [d.id, d.title || d.filename || '']));
+    for (const c of out) c.title = title.get(c.documentId) || '';
+  }
+  return out;
+}
+
+async function flawedLlm(system, user, { effort = 'low', maxTokens = 6000, json = false } = {}) {
+  const messages = system ? [{ role: 'system', content: system }, { role: 'user', content: user }] : [{ role: 'user', content: user }];
+  const r = await openaiChatCompletion({
+    model: OPENAI_MODEL,
+    messages,
+    ...chatModelParams({ temperature: 0.7, maxTokens, reasoningEffort: effort }),
+    ...(json ? { response_format: { type: 'json_object' } } : {}),
+  }, { timeoutMs: 120_000 });
+  if (!r.ok) {
+    console.warn('[explain/improve] taalmodel-fout', r.status);
+    return null;
+  }
+  return ((await r.json())?.choices?.[0]?.message?.content || '').trim() || null;
+}
+
+registerFlawedExplanationRoutes(app, {
+  supabaseAdmin,
+  requireAuthUser,
+  userHasCourseAccess,
+  rejectIfFeatureOff,
+  courseFeatureOnFor,
+  isStaffForCourse,
+  getChunks: flawedChunksFor,
+  llmJson: async (system, user, opts) => {
+    const raw = await flawedLlm(system, user, { ...opts, json: true });
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  },
+  llmText: (system, user, opts) => flawedLlm(system, user, opts),
+  secret: TURN_SECRET,
+  resolveJournalCourseId,
+  get llmReady() { return AZURE_CHAT_READY; },
 });
 
 // Zoeken in twee talen (server/crossLingual.js): vraag vertalen naar de taal van het materiaal.

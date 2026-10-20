@@ -17,7 +17,7 @@ const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 describe('regels', () => {
   it('niets opgeslagen = alles aan; alleen false zet uit', () => {
     // Opt-in-onderdelen (bijlagen in de chat) staan juist standaard uit.
-    expect(normalizeCourseFeatures(null)).toEqual({ ...Object.fromEntries(COURSE_FEATURES.map(k => [k, true])), attachments: false });
+    expect(normalizeCourseFeatures(null)).toEqual({ ...Object.fromEntries(COURSE_FEATURES.map(k => [k, true])), explainSelf: true, explainImprove: true, attachments: false });
     expect(normalizeCourseFeatures({ quiz: false, chat: 'nee', onbekend: false })).toMatchObject({ quiz: false, chat: true });
     expect(normalizeCourseFeatures(['quiz'])).toMatchObject({ quiz: true });
     expect(isFeatureOn({ journal: false }, 'journal')).toBe(false);

@@ -19,6 +19,8 @@ import { NoticeBanner, useNotice } from '../components/Notice';
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { useContentTranslation, type TranslatableItem } from '../hooks/useContentTranslation';
 import { tStatic } from '../i18n/translations';
+import { explainPartView, type ExplainPart } from '../lib/courseFeatures';
+import { ImproveExplanation } from '../components/explain/ImproveExplanation';
 import { getActiveLang } from '../i18n/activeLang';
 
 type Concept = Database['public']['Tables']['concepts']['Row'];
@@ -233,6 +235,11 @@ export function ExplainPage() {
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [filteredConcepts, setFilteredConcepts] = useState<Concept[]>([]);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
+  // Leg zelf uit / Verbeter deze uitleg (onderdelen van Ik leg uit, per cursus aan/uit).
+  const partSelf = explainPartView(courseFeatures.features, 'explainSelf', courseFeatures.isStaff);
+  const partImprove = explainPartView(courseFeatures.features, 'explainImprove', courseFeatures.isStaff);
+  const [modeChoice, setModeChoice] = useState<ExplainPart>('explainSelf');
+  const mode: ExplainPart = !partSelf.visible ? 'explainImprove' : !partImprove.visible ? 'explainSelf' : modeChoice;
   const [explanation, setExplanation] = useState('');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackSections, setFeedbackSections] = useState<ExplainFeedbackSections | null>(null);
@@ -1004,6 +1011,41 @@ export function ExplainPage() {
             </div>
           ) : (
             <>
+              {partSelf.visible && partImprove.visible && (
+                <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('explain.modes.label')} data-testid="tabs-explain-mode">
+                  {(['explainSelf', 'explainImprove'] as const).map(p => {
+                    const view = p === 'explainSelf' ? partSelf : partImprove;
+                    const active = mode === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        role="tab"
+                        aria-selected={active}
+                        onClick={() => setModeChoice(p)}
+                        className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${active ? 'bg-amber-500 text-white shadow' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'}`}
+                        data-testid={`tab-explain-${p}`}
+                      >
+                        {t(p === 'explainSelf' ? 'explain.modes.self' : 'explain.modes.improve')}
+                        {view.offForStudents && <span className="ml-1.5 text-xs font-normal opacity-80">({t('courseFeatures.offForStudents')})</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {mode === 'explainImprove' && (
+                <>
+                  <h2 className="text-2xl font-bold text-gray-900">{conceptName(selectedConcept)}</h2>
+                  <ImproveExplanation
+                    concept={{ id: selectedConcept.id, name: selectedConcept.name }}
+                    displayName={conceptName(selectedConcept)}
+                    courseId={activeCourse || null}
+                  />
+                </>
+              )}
+
+              {mode === 'explainSelf' && (<>
               <div className="chic-card p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{conceptName(selectedConcept)}</h2>
                 <AutoTranslatedNotice
@@ -1135,6 +1177,7 @@ export function ExplainPage() {
                   {t('explain.practiceWithQuiz', { name: conceptName(selectedConcept) })}
                 </a>
               )}
+              </>)}
             </>
           )}
         </div>

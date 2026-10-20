@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { AdminHint } from '../../components/help/AdminHint';
 import { HelpTip } from '../../components/help/HelpTip';
-import { COURSE_FEATURES, type CourseFeature, type CourseFeatures } from '../../lib/courseFeatures';
+import { COURSE_FEATURES, EXPLAIN_PARTS, type CourseFeature, type CourseFeatures, type ExplainPart } from '../../lib/courseFeatures';
 import { CourseAttachmentsSetting } from './CourseAttachmentsSetting';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
@@ -38,14 +38,14 @@ export function CourseFeaturesAdminTab() {
   const tk = (k: string) => t(k as TKey);
   const { session } = useAuth();
   const { activeCourseId, activeCourse, courseFeatures, refreshActiveCourse } = useActiveCourse();
-  const [busy, setBusy] = useState<CourseFeature | null>(null);
+  const [busy, setBusy] = useState<CourseFeature | ExplainPart | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!activeCourseId) {
     return <div className="text-sm text-gray-500" data-testid="text-course-features-no-course">{t('courseFeatures.admin.noCourse')}</div>;
   }
 
-  const toggle = async (f: CourseFeature) => {
+  const toggle = async (f: CourseFeature | ExplainPart) => {
     if (!session?.access_token) return;
     setBusy(f);
     setError(null);
@@ -90,7 +90,7 @@ export function CourseFeaturesAdminTab() {
         {COURSE_FEATURES.map(f => {
           const Icon = ICONS[f];
           const on = courseFeatures[f];
-          return (
+          return [(
             <li key={f} className="flex items-start gap-3 px-4 py-3" data-testid={`row-feature-${f}`}>
               <Icon className={`mt-0.5 h-5 w-5 flex-shrink-0 ${on ? 'text-blue-600' : 'text-gray-400'}`} aria-hidden />
               <div className="min-w-0 flex-1">
@@ -117,7 +117,39 @@ export function CourseFeaturesAdminTab() {
                 </button>
               </div>
             </li>
-          );
+          ), ...(f === 'explain' && on ? EXPLAIN_PARTS.map(p => {
+            const pOn = courseFeatures[p];
+            // Minstens één onderdeel van Ik leg uit blijft aan; anders zet je Ik leg uit zelf uit.
+            const last = pOn && EXPLAIN_PARTS.filter(x => courseFeatures[x]).length === 1;
+            return (
+              <li key={p} className="flex items-start gap-3 py-2.5 pl-12 pr-4" data-testid={`row-feature-${p}`}>
+                <div className="min-w-0 flex-1">
+                  <label htmlFor={`feature-${p}`} className="block text-sm font-medium text-gray-900">{tk(`courseFeatures.name.${p}`)}</label>
+                  <p className="text-xs text-gray-600">{tk(`courseFeatures.desc.${p}`)}</p>
+                  {last && <p className="text-xs text-gray-500">{t('courseFeatures.admin.explainLastPart')}</p>}
+                </div>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  {busy === p && <Loader2 className="h-4 w-4 animate-spin text-gray-400" aria-hidden />}
+                  <span className={`whitespace-nowrap text-xs font-medium ${pOn ? 'text-accent-700' : 'text-gray-500'}`}>
+                    {pOn ? t('courseFeatures.admin.on') : t('courseFeatures.admin.off')}
+                  </span>
+                  <button
+                    id={`feature-${p}`}
+                    type="button"
+                    role="switch"
+                    aria-checked={pOn}
+                    aria-label={tk(`courseFeatures.name.${p}`)}
+                    disabled={busy !== null || last}
+                    onClick={() => toggle(p)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${pOn ? 'bg-blue-600' : 'bg-gray-300'}`}
+                    data-testid={`switch-feature-${p}`}
+                  >
+                    <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${pOn ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                  </button>
+                </div>
+              </li>
+            );
+          }) : [])];
         })}
       </ul>
 
