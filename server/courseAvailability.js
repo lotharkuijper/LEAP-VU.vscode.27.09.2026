@@ -62,18 +62,17 @@ export function memberCanAccessCourse({ studentVisible, isCourseTeacher }) {
 
 /**
  * Centrale toegangsregel voor cursus-inhoud (projecten, cursus-info, itembank).
- * Spiegelt bewust de courses-RLS van Task #270: een actieve, zichtbare cursus is
- * voor élke ingelogde student toegankelijk (géén course_members-rij nodig),
- * zodat zelf-geregistreerde studenten (Task #272) een cursus kunnen kiezen én de
- * inhoud ervan zien. De membership-eis gold vroeger overal, maar week af van de
- * RLS waardoor zelf-geregistreerde studenten niets zagen.
+ * Sinds 2026-10-20 (toegangsroute per cursus, server/enrollment.js) is
+ * toegang = lidmaatschap: een student wordt lid via open registratie, "Cursus
+ * toevoegen", een docent of beheerder, en straks via Canvas. Spiegelt de
+ * courses-RLS en course_content_is_public (migratie 20261020100000).
  *
- * Regels (strikt additief — niemand verliest bestaande toegang):
+ * Regels:
  *   - admin/superuser           → altijd toegang.
  *   - verborgen (student_visible=false) → alléén docent van de cursus
  *     (preserve Task #270: verborgen blijft verborgen, óók voor ingeschreven
  *     studenten).
- *   - actief + zichtbaar        → iedereen (de nieuwe open route, = courses-RLS).
+ *   - actief + zichtbaar        → lid óf docent.
  *   - inactief + zichtbaar      → lid óf docent (gearchiveerde cursus blijft
  *     leesbaar voor wie er al bij hoort).
  *
@@ -88,6 +87,5 @@ export function memberCanAccessCourse({ studentVisible, isCourseTeacher }) {
 export function canAccessCourseContent({ isAdmin, isCourseTeacher, isMember, isActive, studentVisible }) {
   if (isAdmin) return true;
   if (studentVisible === false) return !!isCourseTeacher;
-  if (isActive === true) return true;
   return !!(isMember || isCourseTeacher);
 }

@@ -74,6 +74,7 @@ export const HELP_TOPICS = [
   'chatInstructions.perCourse',
   'projects.submissions',
   'projects.preassessment',
+  'courses.enrollmentMode',
   'projects.docs',
   'personas.consultationLimits',
   'personas.hiddenRubric',

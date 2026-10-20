@@ -5,11 +5,10 @@ import userEvent from '@testing-library/user-event';
 import { afterEach } from 'vitest';
 
 // useAuth wordt gemockt zodat de tests geen echte Supabase-sessie nodig hebben;
-// signIn/signUp zijn losse vi.fn()'s die we per test sturen.
+// signIn is een losse vi.fn()'s die we per test sturen.
 const signInMock = vi.fn();
-const signUpMock = vi.fn();
 vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({ signIn: signInMock, signUp: signUpMock }),
+  useAuth: () => ({ signIn: signInMock }),
 }));
 
 // De LoginPage importeert de Supabase-client voor wachtwoord-vergeten; mock 'm
@@ -21,6 +20,18 @@ vi.mock('../../lib/supabase', () => ({
     },
   },
 }));
+
+// Open registratie (src/services/enrollment.service.ts): de open cursussen en de
+// registratieroute worden gemockt; isVuEmail blijft de echte functie.
+const registerOpenMock = vi.fn();
+vi.mock('../../services/enrollment.service', async (orig) => {
+  const real = await orig<typeof import('../../services/enrollment.service')>();
+  return {
+    ...real,
+    fetchOpenCourses: vi.fn().mockResolvedValue([{ id: 'c1', name: 'Cursus A', description: '' }]),
+    registerOpen: (...a: unknown[]) => registerOpenMock(...a),
+  };
+});
 
 import { LoginPage } from '../LoginPage';
 import { LanguageProvider } from '../../i18n';
@@ -70,14 +81,14 @@ describe('LoginPage formulier-interactie', () => {
     // Spatie i.p.v. leeg: passeert de native `required`-check zodat het
     // formulier verstuurt en de JS-validatie (`.trim()`) zijn werk kan doen.
     await user.type(screen.getByTestId('input-fullname'), ' ');
-    await user.type(screen.getByTestId('input-email'), 'nieuw@vu.nl');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@example.org');
     await user.type(screen.getByTestId('input-password'), 'geheim123');
     await user.click(screen.getByTestId('button-login'));
 
     expect(screen.getByTestId('text-login-error')).toHaveTextContent(
       nl['login.err.nameRequired'],
     );
-    expect(signUpMock).not.toHaveBeenCalled();
+    expect(registerOpenMock).not.toHaveBeenCalled();
   });
 
   it('toont de "wachtwoord te kort"-melding bij een te kort wachtwoord', async () => {
@@ -86,25 +97,26 @@ describe('LoginPage formulier-interactie', () => {
 
     await user.click(screen.getByTestId('button-toggle-signup'));
     await user.type(screen.getByTestId('input-fullname'), 'Nieuwe Gebruiker');
-    await user.type(screen.getByTestId('input-email'), 'nieuw@vu.nl');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@example.org');
     await user.type(screen.getByTestId('input-password'), 'kort');
     await user.click(screen.getByTestId('button-login'));
 
     expect(screen.getByTestId('text-login-error')).toHaveTextContent(
       nl['login.err.passwordTooShort'],
     );
-    expect(signUpMock).not.toHaveBeenCalled();
+    expect(registerOpenMock).not.toHaveBeenCalled();
   });
 
   it('toont de succesbanner en keert terug naar inloggen na een geslaagde registratie', async () => {
     const user = userEvent.setup();
-    signUpMock.mockResolvedValue(undefined);
+    registerOpenMock.mockResolvedValue({ ok: true, needsConfirmation: true });
     renderLogin();
 
     await user.click(screen.getByTestId('button-toggle-signup'));
     await user.type(screen.getByTestId('input-fullname'), 'Nieuwe Gebruiker');
-    await user.type(screen.getByTestId('input-email'), 'nieuw@vu.nl');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@example.org');
     await user.type(screen.getByTestId('input-password'), 'geheim123');
+    await user.click(await screen.findByTestId('checkbox-signup-course-c1'));
     await user.click(screen.getByTestId('button-login'));
 
     await waitFor(() => {
@@ -112,7 +124,7 @@ describe('LoginPage formulier-interactie', () => {
         nl['login.signUpSuccess'],
       );
     });
-    expect(signUpMock).toHaveBeenCalledWith('nieuw@vu.nl', 'geheim123', 'Nieuwe Gebruiker');
+    expect(registerOpenMock).toHaveBeenCalledWith({ fullName: 'Nieuwe Gebruiker', email: 'nieuw@example.org', password: 'geheim123', courseIds: ['c1'] });
     // Terug naar inlog-modus: het naam-veld is weg, knop toont "Inloggen".
     expect(screen.queryByTestId('input-fullname')).not.toBeInTheDocument();
     expect(screen.getByTestId('button-login')).toHaveTextContent(nl['login.loginBtn']);
@@ -125,7 +137,7 @@ describe('LoginPage formulier-interactie', () => {
     // Forceer eerst een foutmelding in registratie (spatie-naam → trim faalt).
     await user.click(screen.getByTestId('button-toggle-signup'));
     await user.type(screen.getByTestId('input-fullname'), ' ');
-    await user.type(screen.getByTestId('input-email'), 'nieuw@vu.nl');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@example.org');
     await user.type(screen.getByTestId('input-password'), 'geheim123');
     await user.click(screen.getByTestId('button-login'));
     expect(screen.getByTestId('text-login-error')).toBeInTheDocument();
@@ -137,13 +149,14 @@ describe('LoginPage formulier-interactie', () => {
 
   it('wist de succesbanner bij het opnieuw wisselen naar registratie', async () => {
     const user = userEvent.setup();
-    signUpMock.mockResolvedValue(undefined);
+    registerOpenMock.mockResolvedValue({ ok: true, needsConfirmation: true });
     renderLogin();
 
     await user.click(screen.getByTestId('button-toggle-signup'));
     await user.type(screen.getByTestId('input-fullname'), 'Nieuwe Gebruiker');
-    await user.type(screen.getByTestId('input-email'), 'nieuw@vu.nl');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@example.org');
     await user.type(screen.getByTestId('input-password'), 'geheim123');
+    await user.click(await screen.findByTestId('checkbox-signup-course-c1'));
     await user.click(screen.getByTestId('button-login'));
 
     await waitFor(() => {
@@ -153,6 +166,36 @@ describe('LoginPage formulier-interactie', () => {
     // Weer naar registratie → de succesbanner moet weg zijn.
     await user.click(screen.getByTestId('button-toggle-signup'));
     expect(screen.queryByTestId('text-signup-success')).not.toBeInTheDocument();
+  });
+
+  it('weigert een VU-adres bij open registratie', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+
+    await user.click(screen.getByTestId('button-toggle-signup'));
+    await user.type(screen.getByTestId('input-fullname'), 'Nieuwe Gebruiker');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@student.vu.nl');
+    await user.type(screen.getByTestId('input-password'), 'geheim123');
+    await user.click(await screen.findByTestId('checkbox-signup-course-c1'));
+    await user.click(screen.getByTestId('button-login'));
+
+    expect(screen.getByTestId('text-login-error')).toHaveTextContent(nl['login.err.vuEmail']);
+    expect(registerOpenMock).not.toHaveBeenCalled();
+  });
+
+  it('vraagt om minstens één cursus bij registratie', async () => {
+    const user = userEvent.setup();
+    renderLogin();
+
+    await user.click(screen.getByTestId('button-toggle-signup'));
+    await screen.findByTestId('checkbox-signup-course-c1');
+    await user.type(screen.getByTestId('input-fullname'), 'Nieuwe Gebruiker');
+    await user.type(screen.getByTestId('input-email'), 'nieuw@example.org');
+    await user.type(screen.getByTestId('input-password'), 'geheim123');
+    await user.click(screen.getByTestId('button-login'));
+
+    expect(screen.getByTestId('text-login-error')).toHaveTextContent(nl['login.err.courseRequired']);
+    expect(registerOpenMock).not.toHaveBeenCalled();
   });
 
   it('rendert de wachtwoord-vergeten-modus en keert terug naar inloggen', async () => {

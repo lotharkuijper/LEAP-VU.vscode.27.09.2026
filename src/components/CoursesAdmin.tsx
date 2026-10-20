@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,8 @@ import { useLanguage } from '../i18n';
 import { Tooltip } from './help/Tooltip';
 import { AdminHint } from './help/AdminHint';
 import { ListRow, StatusBadge } from './ui/ListRow';
+import { EnrollmentModeDialog } from './EnrollmentModeDialog';
+import type { EnrollmentMode } from '../services/enrollment.service';
 
 interface CourseRow {
   id: string;
@@ -28,6 +30,8 @@ interface CourseRow {
   cue_delta_max: number;
   // Task #270: zichtbaar/selecteerbaar voor studenten ja/nee.
   student_visible: boolean;
+  // Toegangsroute (server/enrollment.js); alleen de beheerder wijzigt hem.
+  enrollment_mode: EnrollmentMode;
 }
 
 interface DeleteCounts {
@@ -66,6 +70,7 @@ export default function CoursesAdmin() {
 
   // Per-rij state voor activeren/deactiveren en verwijderen.
   const [rowBusyId, setRowBusyId] = useState<string | null>(null);
+  const [enrollmentFor, setEnrollmentFor] = useState<CourseRow | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [rowCounts, setRowCounts] = useState<Record<string, DeleteCounts | null>>({});
   const [confirmBulkMembersId, setConfirmBulkMembersId] = useState<string | null>(null);
@@ -269,18 +274,18 @@ export default function CoursesAdmin() {
     let rows: CourseRow[] | null = null;
     const primary = await supabase
       .from('courses')
-      .select('id, name, description, is_active, cue_delta_max, student_visible')
+      .select('id, name, description, is_active, cue_delta_max, student_visible, enrollment_mode')
       .order('name', { ascending: true });
     const missingNewColumn = primary.error
-      && (primary.error.code === '42703' || /cue_delta_max|student_visible/i.test(primary.error.message || ''));
+      && (primary.error.code === '42703' || /cue_delta_max|student_visible|enrollment_mode/i.test(primary.error.message || ''));
     if (missingNewColumn) {
       const fallback = await supabase
         .from('courses')
         .select('id, name, description, is_active')
         .order('name', { ascending: true });
       if (fallback.error) console.error('[CoursesAdmin] load error:', fallback.error);
-      rows = ((fallback.data as Array<Omit<CourseRow, 'cue_delta_max' | 'student_visible'>>) ?? []).map((c) => ({
-        ...c, cue_delta_max: 2, student_visible: true,
+      rows = ((fallback.data as Array<Omit<CourseRow, 'cue_delta_max' | 'student_visible' | 'enrollment_mode'>>) ?? []).map((c) => ({
+        ...c, cue_delta_max: 2, student_visible: true, enrollment_mode: 'open' as EnrollmentMode,
       }));
     } else if (primary.error) {
       console.error('[CoursesAdmin] load error:', primary.error);
@@ -294,6 +299,7 @@ export default function CoursesAdmin() {
         cue_delta_max: Number.isFinite(Number(c.cue_delta_max)) ? Number(c.cue_delta_max) : 2,
         // Ontbrekende/onbekende waarde → behandel als zichtbaar (default true).
         student_visible: c.student_visible !== false,
+        enrollment_mode: (c.enrollment_mode as EnrollmentMode) || 'open',
       }));
     }
     setCourses(rows);
@@ -824,6 +830,13 @@ export default function CoursesAdmin() {
                             >
                               {c.student_visible ? t('coursesAdmin.row.available') : t('coursesAdmin.row.unavailable')}
                             </StatusBadge>
+                            <StatusBadge
+                              tone={c.enrollment_mode === 'closed' ? 'neutral' : 'info'}
+                              title={`${t(`enrollment.modeDesc.${c.enrollment_mode}` as Parameters<typeof t>[0])}${isAdmin ? '' : ` ${t('enrollment.setByAdmin')}`}`}
+                              testId={`status-course-enrollment-${c.id}`}
+                            >
+                              {t(`enrollment.mode.${c.enrollment_mode}` as Parameters<typeof t>[0])}
+                            </StatusBadge>
                           </>
                         }
                         meta={
@@ -850,6 +863,10 @@ export default function CoursesAdmin() {
                             testId: `button-toggle-availability-${c.id}`,
                           }] : []),
                           ...(isAdmin ? [{
+                            key: 'enrollment', label: t('enrollment.action'), icon: DoorOpen, tone: 'primary' as const,
+                            title: t('enrollment.actionTitle'), onClick: () => setEnrollmentFor(c),
+                            disabled: rowBusyId === c.id, testId: `button-enrollment-mode-${c.id}`,
+                          }, {
                             key: 'active', label: c.is_active ? t('coursesAdmin.row.deactivate') : t('coursesAdmin.row.activate'),
                             icon: Power, tone: (c.is_active ? 'warning' : 'success') as 'warning' | 'success',
                             title: c.is_active ? t('coursesAdmin.row.deactivateTitle') : t('coursesAdmin.row.activateTitle'),
@@ -1358,6 +1375,15 @@ export default function CoursesAdmin() {
             </div>
           </div>
         </div>
+      )}
+      {enrollmentFor && (
+        <EnrollmentModeDialog
+          courseId={enrollmentFor.id}
+          courseName={enrollmentFor.name}
+          current={enrollmentFor.enrollment_mode}
+          onClose={() => setEnrollmentFor(null)}
+          onSaved={() => { setEnrollmentFor(null); void loadCourses(); }}
+        />
       )}
     </div>
   );

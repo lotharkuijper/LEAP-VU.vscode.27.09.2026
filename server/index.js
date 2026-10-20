@@ -135,6 +135,7 @@ import { registerSystemMessageRoutes } from './systemMessages.js';
 import { registerCourseUnitRoutes, loadLeerlijn, loadPracticedUnits, anchorUnit, buildLeerlijnBlock } from './courseUnits.js';
 import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
 import { createCourseOverview } from './courseOverview.js';
+import { registerEnrollmentRoutes } from './enrollment.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
@@ -9157,10 +9158,8 @@ async function userHasCourseAccess(user, profile, courseId) {
   const isAdmin = profile?.role === 'admin' || profile?.email === SUPERUSER_EMAIL;
   if (isAdmin) return true;
   try {
-    // Laad de cursus-status eerst. Een actieve, zichtbare cursus is voor élke
-    // student toegankelijk (spiegelt de courses-RLS van Task #270), zodat
-    // zelf-geregistreerde studenten (Task #272) zonder course_members-rij de
-    // inhoud zien. Membership wordt alléén opgevraagd op het inactieve pad.
+    // Laad de cursus-status eerst. Toegang = lidmaatschap of docentschap
+    // (toegangsroute per cursus, server/enrollment.js; spiegelt de courses-RLS).
     const courseCols = coursesHasStudentVisible ? 'is_active, student_visible' : 'is_active';
     const { data: course, error: courseErr } = await supabaseAdmin
       .from('courses')
@@ -9189,11 +9188,7 @@ async function userHasCourseAccess(user, profile, courseId) {
       const teacher = await isCourseTeacher(user.id, courseId);
       return canAccessCourseContent({ isAdmin: false, isCourseTeacher: teacher, isMember: false, isActive, studentVisible: false });
     }
-    // Actief + zichtbaar: open voor iedereen.
-    if (isActive) {
-      return canAccessCourseContent({ isAdmin: false, isCourseTeacher: false, isMember: false, isActive: true, studentVisible: true });
-    }
-    // Inactief (gearchiveerd) maar zichtbaar: lid óf docent behoudt toegang.
+    // Zichtbaar (actief of gearchiveerd): lid óf docent.
     const isMember = await userHasCourseMembership(user.id, courseId);
     const teacher = isMember ? false : await isCourseTeacher(user.id, courseId);
     return canAccessCourseContent({ isAdmin: false, isCourseTeacher: teacher, isMember, isActive: false, studentVisible: true });
@@ -13187,29 +13182,11 @@ app.get('/api/projects/student-overview', async (req, res) => {
   const auth = await authUser(req);
   if (auth.error) return res.status(auth.error.status).json(auth.error.body);
   try {
-    // Cursussen waarvan de student projecten mag zien. Spiegelt de centrale
-    // toegangsregel (canAccessCourseContent): élke actieve, zichtbare cursus is
-    // open voor iedere student (géén course_members nodig — zo zien ook
-    // zelf-geregistreerde studenten een vers aangemaakt project meteen), plus de
-    // cursussen waar de student lid/docent van is en die de regel doorlaten
-    // (bv. een gearchiveerde maar zichtbare cursus). De frontend filtert
-    // vervolgens op de actieve cursus.
+    // Cursussen waarvan de student projecten mag zien: de cursussen waar hij
+    // lid of docent van is en die de centrale toegangsregel doorlaten
+    // (canAccessCourseContent; toegang = lidmaatschap sinds 2026-10-20). De
+    // frontend filtert vervolgens op de actieve cursus.
     const courseMap = new Map(); // id -> { id, name }
-
-    // 1) Open cursussen: actief (+ zichtbaar wanneer de kolom bestaat).
-    let openQuery = supabaseAdmin
-      .from('courses')
-      .select(coursesHasStudentVisible ? 'id, name, is_active, student_visible' : 'id, name, is_active')
-      .eq('is_active', true);
-    if (coursesHasStudentVisible) openQuery = openQuery.eq('student_visible', true);
-    const { data: openCourses } = await openQuery;
-    for (const c of (openCourses || [])) {
-      if (c?.id) courseMap.set(c.id, { id: c.id, name: c.name });
-    }
-
-    // 2) Lidmaatschappen: voeg cursussen toe die de toegangsregel doorlaten maar
-    //    nog niet in de open-lijst staan (bv. inactief maar zichtbaar, of de
-    //    docent van een verborgen cursus).
     const memberCols = coursesHasStudentVisible
       ? 'course_id, member_role, courses(id, name, is_active, student_visible)'
       : 'course_id, member_role, courses(id, name, is_active)';
@@ -14472,6 +14449,15 @@ const preassessmentRunner = createPreassessmentRunner({
   },
 });
 registerPreassessmentRoutes(app, { supabaseAdmin, pgPool, requireAuthUser, isStaffForCourse, runner: preassessmentRunner });
+
+// Toegangsroute per cursus en open registratie (server/enrollment.js).
+registerEnrollmentRoutes(app, {
+  supabaseAdmin,
+  createAnonClient: () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } }),
+  requireAuthUser,
+  isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
+  appOrigin: (req) => process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || req.get('origin') || `${req.protocol}://${req.get('host')}`,
+});
 
 // Zoeken in twee talen (server/crossLingual.js): vraag vertalen naar de taal van het materiaal.
 registerCrossLingualRoute(app, {

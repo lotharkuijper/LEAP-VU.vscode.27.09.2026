@@ -36,6 +36,10 @@ vi.mock('@supabase/supabase-js', () => {
         error: null,
       };
     }
+    // Toegang = lidmaatschap (2026-10-20): wie toegang heeft, is lid.
+    if (table === 'course_members' && filters.course_id === COURSE_ID) {
+      return { data: st.courseAccess ? { user_id: filters.user_id || 'u' } : null, error: null };
+    }
     return { data: null, error: null };
   }
   const makeBuilder = (table) => {

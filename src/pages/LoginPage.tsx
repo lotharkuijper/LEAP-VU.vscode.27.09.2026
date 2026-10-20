@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Mail, Lock, LogIn, KeyRound, User } from 'lucide-react';
+import { Mail, Lock, LogIn, KeyRound, User, BookOpen } from 'lucide-react';
+import { fetchOpenCourses, registerOpen, isVuEmail, EnrollmentError, type OpenCourse } from '../services/enrollment.service';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 import type { TranslationKey } from '../i18n/translations';
@@ -35,8 +36,17 @@ export function LoginPage() {
   const [forgotSent, setForgotSent] = useState(false);
   // Na het zelf verwijderen van een account (Mijn gegevens) een bevestiging tonen.
   const [accountDeleted] = useState(() => typeof window !== 'undefined' && (window.history.state as { usr?: { notice?: string } } | null)?.usr?.notice === 'accountDeleted');
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
   const { t, lang, setLang } = useLanguage();
+  // Open registratie (server/enrollment.js): de nieuwe gebruiker kiest één of
+  // meer cursussen die open zijn voor aanmelding.
+  const [openCourses, setOpenCourses] = useState<OpenCourse[] | null>(null);
+  const [chosen, setChosen] = useState<string[]>([]);
+  useEffect(() => {
+    if (!isSignUp || openCourses) return;
+    fetchOpenCourses().then(setOpenCourses).catch(() => setOpenCourses([]));
+  }, [isSignUp, openCourses]);
+  const toggleCourse = (id: string) => setChosen((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,12 +78,28 @@ export function LoginPage() {
           setLoading(false);
           return;
         }
+        if (isVuEmail(email)) {
+          setError(t('login.err.vuEmail'));
+          setLoading(false);
+          return;
+        }
         if (password.length < 6) {
           setError(t('login.err.passwordTooShort'));
           setLoading(false);
           return;
         }
-        await signUp(email, password, fullName);
+        if (chosen.length === 0) {
+          setError(t('login.err.courseRequired'));
+          setLoading(false);
+          return;
+        }
+        try {
+          await registerOpen({ fullName: fullName.trim(), email: email.trim(), password, courseIds: chosen });
+        } catch (regErr) {
+          if (regErr instanceof EnrollmentError && regErr.code === 'alreadyRegistered') throw new Error('User already registered');
+          throw regErr;
+        }
+        setChosen([]);
         // Met e-mailbevestiging aan komt er geen sessie terug en navigeert de
         // app niet weg: toon een bevestiging en schakel terug naar inloggen.
         setSignUpSuccess(true);
@@ -250,6 +276,33 @@ export function LoginPage() {
               </div>
             </div>
 
+            {isSignUp && (
+              <fieldset data-testid="fieldset-signup-courses">
+                <legend className="block text-sm font-semibold text-gray-700 mb-1">{t('login.coursesLabel')}</legend>
+                <p className="text-xs text-gray-500 mb-2">{t('login.coursesHint')}</p>
+                {openCourses === null ? (
+                  <p className="text-sm text-gray-500">{t('common.loading')}</p>
+                ) : openCourses.length === 0 ? (
+                  <p className="text-sm text-amber-700" data-testid="text-no-open-courses">{t('login.noOpenCourses')}</p>
+                ) : (
+                  <ul className="max-h-48 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+                    {openCourses.map((c) => (
+                      <li key={c.id}>
+                        <label className="flex items-start gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                          <input type="checkbox" className="mt-1" checked={chosen.includes(c.id)} onChange={() => toggleCourse(c.id)} data-testid={`checkbox-signup-course-${c.id}`} />
+                          <span className="min-w-0">
+                            <span className="flex items-center gap-1.5 text-sm font-medium text-gray-900"><BookOpen className="w-3.5 h-3.5 text-blue-600 shrink-0" />{c.name}</span>
+                            {c.description && <span className="block text-xs text-gray-500">{c.description}</span>}
+                          </span>
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-xs text-gray-500 mt-2">{t('login.vuNotice')}</p>
+              </fieldset>
+            )}
+
             {signUpSuccess && (
               <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm" data-testid="text-signup-success">
                 {t('login.signUpSuccess')}
@@ -264,7 +317,7 @@ export function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isSignUp && openCourses !== null && openCourses.length === 0)}
               className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-green-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               data-testid="button-login"
             >

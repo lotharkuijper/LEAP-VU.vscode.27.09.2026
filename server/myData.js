@@ -53,6 +53,9 @@ export const NOT_EXPORTED = [
   // Systeemberichten zijn van de beheerder (created_by), niet van de ontvanger;
   // wat de gebruiker wegklikte, staat wel in de export.
   'system_messages',
+  // Cursuskeuze bij open registratie, alleen tot de eerste login; daarna
+  // lidmaatschap (dat staat wel in de export) en wordt de rij verwijderd.
+  'pending_course_enrollments',
 ];
 
 const PAGE = 1000;

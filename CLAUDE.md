@@ -197,6 +197,14 @@
 - Stored as `student_explanations.feedback = { content, sections }` and `score = { total, reason }`. The score is shown only to the student, not in progress or analytics (decision 2026-10-15).
 - `concepts.key_points` contains technical labels (`course_id:…`, `[RAG-…]`) and no real key points. Always filter them out (`cleanKeyPoints` / `realKeyPoints`) before they reach a prompt or a search query.
 - Calibration against the real model (prospective cohort study): excellent 100, reasonable 85, confused 40, wrong 30. Re-check with a live run after changing the scale.
+
+## Course access and open registration (2026-10-20)
+- Access to a course = membership (`course_members`) or being its teacher; admins see everything. There is no longer a fallback to "every active, visible course". Server: `userHasCourseAccess` / `canAccessCourseContent`; database: `is_course_member` in `course_content_is_public`, `sc_can_read_course` and the courses SELECT policy (migration `20261020100000_course_enrollment_mode`, rollback next to it).
+- Each course has an access route `courses.enrollment_mode`: `closed`, `canvas`, `open` (default for now) or `canvas_open` (exception; needs `confirmBoth`). Only the admin sets it (`PUT /api/admin/courses/:id/enrollment-mode`, logged in `leap_setting_changes`); teachers only see the label. Code: `server/enrollment.js`, dialog `EnrollmentModeDialog`.
+- Open registration (`POST /api/auth/register`) requires choosing at least one open course; the choice waits in `pending_course_enrollments` and becomes membership after the e-mail is confirmed and the user logs in (`/api/me/activate-enrollments`). VU addresses (vu.nl and subdomains) are refused for open registration and self-join: VU students come via Canvas (VUnet-id lists, not built yet).
+- Students can add an open course themselves on Kies cursus (`/api/courses/:id/join`) and leave it again. Teachers add students to their course and may promote them to teacher (Beheer leden).
+- Re-check with `server/__tests__/enrollment.test.js`.
+
 ## Background tasks
 - Admin actions that take longer than a few seconds run as a background task via `startTask` (`src/lib/backgroundTasks.ts`), not only inside the component. Examples: extracting concepts, uploading files, importing or updating websites, and ShareStats imports.
 - A task keeps running when the user moves to another part of the app. The task tray (`TaskTray`, bottom right) shows progress and a "… is done — View result" notice with a link back.

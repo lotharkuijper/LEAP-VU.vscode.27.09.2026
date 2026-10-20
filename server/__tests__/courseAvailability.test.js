@@ -66,8 +66,10 @@ describe('canAccessCourseContent', () => {
     expect(canAccessCourseContent({ ...base, isAdmin: true, studentVisible: false, isActive: false })).toBe(true);
   });
 
-  it('opent een actieve, zichtbare cursus voor élke student (géén membership nodig)', () => {
-    expect(canAccessCourseContent({ ...base })).toBe(true);
+  it('toegang = lidmaatschap (2026-10-20): een niet-lid komt niet in een actieve, zichtbare cursus', () => {
+    expect(canAccessCourseContent({ ...base })).toBe(false);
+    expect(canAccessCourseContent({ ...base, isMember: true })).toBe(true);
+    expect(canAccessCourseContent({ ...base, isCourseTeacher: true })).toBe(true);
   });
 
   it('weert een niet-lid uit een verborgen cursus', () => {

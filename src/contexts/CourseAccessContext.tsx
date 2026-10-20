@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "./AuthContext";
+import { activateEnrollments } from "../services/enrollment.service";
 
 type Course = {
   id: string;
@@ -38,6 +39,8 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
 
     const loadCourses = async () => {
       setLoadingCourses(true);
+      // Open registratie: gekozen cursussen worden bij de eerste login lidmaatschappen.
+      await activateEnrollments();
 
       const { data: memberData, error: memberError } = await supabase
         .from("course_members")
@@ -77,34 +80,11 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
           setLoadingCourses(false);
           return;
         }
-        // Alle lidmaatschappen wijzen naar verborgen cursussen → val door naar
-        // de student-fallback (toont overige beschikbare cursussen).
       }
 
-      const isStudent = !profile || profile.role === "student";
-      if (isStudent) {
-        const { data: allCourses, error: allError } = await supabase
-          .from("courses")
-          .select("id, name, folder_name")
-          .eq("is_active", true)
-          .order("name", { ascending: true });
-
-        if (allError) {
-          console.error("[COURSES] Error loading all courses (student fallback):", allError);
-          setCourses([]);
-        } else {
-          const mapped: Course[] = (allCourses ?? []).map((c: any) => ({
-            role: "student",
-            id: c.id,
-            name: c.name,
-            folder_name: c.folder_name ?? "",
-          }));
-          setCourses(mapped);
-        }
-      } else {
-        setCourses([]);
-      }
-
+      // Toegang = lidmaatschap (server/enrollment.js): geen terugval meer op
+      // "alle actieve cursussen". Nieuwe cursussen komen via "Cursus toevoegen".
+      setCourses([]);
       setLoadingCourses(false);
     };
 
