@@ -11,6 +11,7 @@ import { searchRelevantChunksWithStats, buildContextWithCap, dedupeSourcesByDocu
 import { SourceList, type SourceItem } from '../components/SourceList';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
+import { ChatGoalButton, ChatGoalBar, goalFromMessages } from '../components/chat/ChatGoal';
 import { Send, MessageSquare, Plus, AlertCircle, RefreshCw, LogOut, BookText, Trash2, X, Loader2, Eye, Download, FileText, TrendingUp, Coffee, Copy, Check } from 'lucide-react';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { type ChatExcerptAttachment } from '../components/ChatExcerptCard';
@@ -338,7 +339,17 @@ export function ChatPage() {
     loadConversations();
   }, [profile, activeCourse]);
 
+  // Optioneel doel voor dit gesprek (server/chatGoal.js). touched = ooit gezet in dit
+  // gesprek: dan gaat het (ook als het weer is weggehaald) mee als label bij elk bericht.
+  const [chatGoal, setChatGoal] = useState<string | null>(null);
+  const [chatGoalTouched, setChatGoalTouched] = useState(false);
+  const [chatGoalEditing, setChatGoalEditing] = useState(false);
+
   useEffect(() => {
+    // Ander gesprek: eigen doel (of geen).
+    setChatGoal(null);
+    setChatGoalTouched(false);
+    setChatGoalEditing(false);
     if (currentConversationId) {
       loadMessages(currentConversationId);
       setFeedbackError(null);
@@ -435,6 +446,9 @@ export function ChatPage() {
       ...(msg.role === 'user' ? { attachments: metaFromStored(msg.retrieved_context) } : {}),
       ...turnSigOf(msg),
     })));
+    // Een eerder in dit gesprek gezet doel terugzetten (sluit een open invoerveld niet).
+    const g = goalFromMessages(data.map(msg => ({ role: msg.role, retrievedContext: msg.retrieved_context })));
+    if (g.touched) { setChatGoal(g.goal); setChatGoalTouched(true); }
   };
 
   const createNewConversation = async () => {
@@ -653,7 +667,7 @@ export function ChatPage() {
           displaySources.length > 0 ? displaySources : undefined,
           learningLevel,
           activeCourse || undefined,
-          { readinessCheck, ...(attachments?.payload.length ? { attachments: attachments.payload } : {}), ...(leerlijn.workingOn ? { leerlijnUnitId: leerlijn.workingOn } : {}) }
+          { readinessCheck, ...(attachments?.payload.length ? { attachments: attachments.payload } : {}), ...(leerlijn.workingOn ? { leerlijnUnitId: leerlijn.workingOn } : {}), ...(chatGoal ? { chatGoal } : {}) }
         );
       } catch (llmErr) {
         console.error('[CHAT] LLM call failed:', llmErr);
@@ -747,7 +761,8 @@ export function ChatPage() {
     try {
       // Alleen het label van een bijlage wordt bewaard, nooit de inhoud (de
       // database weigert ingebedde bestanden ook zelf).
-      const stored = meta.length ? { attachments: meta } : undefined;
+      const goalLabel = chatGoalTouched ? { chatGoal: chatGoal || null } : {};
+      const stored = meta.length || chatGoalTouched ? { ...(meta.length ? { attachments: meta } : {}), ...goalLabel } : undefined;
       if (hasInlineFile(userMessage.content) || hasInlineFile(stored)) throw new Error('inline file');
       await supabase.from('messages').insert({
         conversation_id: currentConversationId,
@@ -1058,6 +1073,7 @@ export function ChatPage() {
                     compact
                     className="min-w-[240px]"
                   />
+                  <ChatGoalButton goal={chatGoal} disabled={!currentConversationId} onClick={() => setChatGoalEditing(v => !v)} />
                   <button
                     type="button"
                     onClick={askReadiness}
@@ -1071,6 +1087,14 @@ export function ChatPage() {
                   </button>
                 </div>
               </div>
+              <ChatGoalBar
+                goal={chatGoal}
+                editing={chatGoalEditing}
+                onSave={(g) => { setChatGoal(g); setChatGoalTouched(true); setChatGoalEditing(false); }}
+                onRemove={() => { setChatGoal(null); setChatGoalEditing(false); }}
+                onEdit={() => setChatGoalEditing(true)}
+                onCancel={() => setChatGoalEditing(false)}
+              />
               <PendingAttachments
                 pending={att.pending}
                 busy={att.busy}

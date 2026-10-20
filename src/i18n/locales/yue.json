@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "學生用自己嘅說話解釋一個概念，並會收到評分同回饋。",
   "courseFeatures.name.explainImprove": "改善呢段解釋",
   "courseFeatures.desc.explainImprove": "學生會收到即場製作、包含一個或多個錯誤嘅解釋，搵出錯誤並解釋錯喺邊。",
-  "courseFeatures.admin.explainLastPart": "兩者之中至少有一個會保持開啟。如果你兩個都唔想要，就將「我嚟解釋」完全關閉。"
+  "courseFeatures.admin.explainLastPart": "兩者之中至少有一個會保持開啟。如果你兩個都唔想要，就將「我嚟解釋」完全關閉。",
+  "chat.goal.button": "目標",
+  "chat.goal.hint": "講低你想透過呢次對話達成咩目標。唔係必填。",
+  "chat.goal.question": "呢次對話之後，你想明白到啲咩，或者識做到啲咩？",
+  "chat.goal.placeholder": "例如：可以用自己嘅說話解釋兩個概念之間嘅分別",
+  "chat.goal.note": "唔係必填。導師會參考呢個目標，而你喺日記入面嘅反思會提到你做到幾多。你嘅老師唔會見到。",
+  "chat.goal.label": "目標",
+  "chat.goal.edit": "修改目標",
+  "chat.goal.remove": "移除目標"
 }

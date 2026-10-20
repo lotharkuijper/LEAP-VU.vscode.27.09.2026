@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Studierende erklären einen Begriff in eigenen Worten und erhalten Feedback mit einer Punktzahl.",
   "courseFeatures.name.explainImprove": "Verbessere diese Erklärung",
   "courseFeatures.desc.explainImprove": "Studierende erhalten eine vor Ort erstellte Erklärung mit einem oder mehreren Fehlern, suchen diese und erklären, was daran falsch ist.",
-  "courseFeatures.admin.explainLastPart": "Mindestens eine der beiden bleibt aktiviert. Wenn du keine von beiden möchtest, schalte „Ich erkläre“ vollständig aus."
+  "courseFeatures.admin.explainLastPart": "Mindestens eine der beiden bleibt aktiviert. Wenn du keine von beiden möchtest, schalte „Ich erkläre“ vollständig aus.",
+  "chat.goal.button": "Ziel",
+  "chat.goal.hint": "Gib an, was du mit diesem Gespräch erreichen möchtest. Nicht verpflichtend.",
+  "chat.goal.question": "Was möchtest du nach diesem Gespräch verstehen oder können?",
+  "chat.goal.placeholder": "Zum Beispiel: den Unterschied zwischen zwei Begriffen in eigenen Worten erklären können",
+  "chat.goal.note": "Nicht verpflichtend. Der Tutor berücksichtigt es, und deine Reflexion im Tagebuch nennt, wie weit du gekommen bist. Dein Dozent sieht es nicht.",
+  "chat.goal.label": "Ziel",
+  "chat.goal.edit": "Ziel anpassen",
+  "chat.goal.remove": "Ziel entfernen"
 }

@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Öğrenciler bir kavramı kendi sözleriyle açıklar ve puanlı geri bildirim alır.",
   "courseFeatures.name.explainImprove": "Bu açıklamayı düzelt",
   "courseFeatures.desc.explainImprove": "Öğrencilere, anında oluşturulmuş ve bir ya da daha fazla hata içeren bir açıklama verilir; hataları bulup neyin yanlış olduğunu açıklarlar.",
-  "courseFeatures.admin.explainLastPart": "İkisinden en az biri açık kalır. İkisini de istemiyorsan, Kendim açıklarım özelliğini tamamen kapat."
+  "courseFeatures.admin.explainLastPart": "İkisinden en az biri açık kalır. İkisini de istemiyorsan, Kendim açıklarım özelliğini tamamen kapat.",
+  "chat.goal.button": "Hedef",
+  "chat.goal.hint": "Bu konuşmayla neyi başarmak istediğini belirt. Zorunlu değil.",
+  "chat.goal.question": "Bu konuşmadan sonra neyi anlamak veya yapabilmek istiyorsun?",
+  "chat.goal.placeholder": "Örneğin: iki kavram arasındaki farkı kendi sözlerinle açıklayabilmek",
+  "chat.goal.note": "Zorunlu değil. Tutor bunu dikkate alır ve günlükteki yansıman ne kadar ilerlediğini belirtir. Öğretmenin bunu görmez.",
+  "chat.goal.label": "Hedef",
+  "chat.goal.edit": "Hedefi düzenle",
+  "chat.goal.remove": "Hedefi kaldır"
 }

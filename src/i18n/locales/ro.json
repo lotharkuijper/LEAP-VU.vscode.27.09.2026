@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Studenții explică un concept cu propriile cuvinte și primesc feedback cu un scor.",
   "courseFeatures.name.explainImprove": "Îmbunătățește această explicație",
   "courseFeatures.desc.explainImprove": "Studenții primesc o explicație creată pe loc, cu una sau mai multe greșeli, le caută și explică ce este greșit în ea.",
-  "courseFeatures.admin.explainLastPart": "Cel puțin una dintre cele două rămâne activată. Dacă nu vrei niciuna, dezactivează complet Eu explic."
+  "courseFeatures.admin.explainLastPart": "Cel puțin una dintre cele două rămâne activată. Dacă nu vrei niciuna, dezactivează complet Eu explic.",
+  "chat.goal.button": "Obiectiv",
+  "chat.goal.hint": "Indică ce vrei să obții cu această conversație. Opțional.",
+  "chat.goal.question": "Ce vrei să înțelegi sau să poți face după această conversație?",
+  "chat.goal.placeholder": "De exemplu: să poți explica în propriile cuvinte diferența dintre două concepte",
+  "chat.goal.note": "Opțional. Tutorul va ține cont de asta, iar reflecția ta din jurnal va menționa cât de departe ai ajuns. Profesorul tău nu vede acest lucru.",
+  "chat.goal.label": "Obiectiv",
+  "chat.goal.edit": "Ajustează obiectivul",
+  "chat.goal.remove": "Elimină obiectivul"
 }

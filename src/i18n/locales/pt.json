@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Os estudantes explicam um conceito por palavras suas e recebem feedback com uma pontuação.",
   "courseFeatures.name.explainImprove": "Melhora esta explicação",
   "courseFeatures.desc.explainImprove": "Os estudantes recebem uma explicação criada no momento com um ou mais erros, identificam-nos e explicam o que está errado.",
-  "courseFeatures.admin.explainLastPart": "Pelo menos uma das duas permanece ativada. Se não quiseres nenhuma delas, desativa completamente Eu explico."
+  "courseFeatures.admin.explainLastPart": "Pelo menos uma das duas permanece ativada. Se não quiseres nenhuma delas, desativa completamente Eu explico.",
+  "chat.goal.button": "Objetivo",
+  "chat.goal.hint": "Indica o que queres alcançar com esta conversa. Não é obrigatório.",
+  "chat.goal.question": "O que queres compreender ou conseguir fazer depois desta conversa?",
+  "chat.goal.placeholder": "Por exemplo: conseguir explicar por palavras tuas a diferença entre dois conceitos",
+  "chat.goal.note": "Não é obrigatório. O tutor terá isso em conta e a tua reflexão no diário indicará até onde chegaste. O teu docente não o vê.",
+  "chat.goal.label": "Objetivo",
+  "chat.goal.edit": "Editar objetivo",
+  "chat.goal.remove": "Remover objetivo"
 }

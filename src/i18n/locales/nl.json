@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Studenten leggen een begrip in eigen woorden uit en krijgen feedback met een score.",
   "courseFeatures.name.explainImprove": "Verbeter deze uitleg",
   "courseFeatures.desc.explainImprove": "Studenten krijgen een ter plekke gemaakte uitleg met één of meer fouten, zoeken die op en leggen uit wat eraan fout is.",
-  "courseFeatures.admin.explainLastPart": "Minstens één van beide blijft aan. Wil je geen van beide, zet dan Ik leg uit helemaal uit."
+  "courseFeatures.admin.explainLastPart": "Minstens één van beide blijft aan. Wil je geen van beide, zet dan Ik leg uit helemaal uit.",
+  "chat.goal.button": "Doel",
+  "chat.goal.hint": "Geef aan wat je met dit gesprek wilt bereiken. Niet verplicht.",
+  "chat.goal.question": "Wat wil je na dit gesprek begrijpen of kunnen?",
+  "chat.goal.placeholder": "Bijvoorbeeld: het verschil tussen twee begrippen in eigen woorden kunnen uitleggen",
+  "chat.goal.note": "Niet verplicht. De tutor houdt er rekening mee en je reflectie in het dagboek benoemt hoe ver je kwam. Je docent ziet het niet.",
+  "chat.goal.label": "Doel",
+  "chat.goal.edit": "Doel aanpassen",
+  "chat.goal.remove": "Doel weghalen"
 }

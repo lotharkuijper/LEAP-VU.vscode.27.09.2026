@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Studenti objašnjavaju pojam vlastitim riječima i dobivaju povratnu informaciju s ocjenom.",
   "courseFeatures.name.explainImprove": "Poboljšaj ovo objašnjenje",
   "courseFeatures.desc.explainImprove": "Studenti dobivaju na licu mjesta izrađeno objašnjenje s jednom ili više pogrešaka, pronalaze ih i objašnjavaju što je u njima pogrešno.",
-  "courseFeatures.admin.explainLastPart": "Najmanje jedna od tih dviju opcija ostaje uključena. Ako ne želiš nijednu, potpuno isključi opciju Ja objašnjavam."
+  "courseFeatures.admin.explainLastPart": "Najmanje jedna od tih dviju opcija ostaje uključena. Ako ne želiš nijednu, potpuno isključi opciju Ja objašnjavam.",
+  "chat.goal.button": "Cilj",
+  "chat.goal.hint": "Navedi što želiš postići ovim razgovorom. Nije obavezno.",
+  "chat.goal.question": "Što želiš razumjeti ili moći učiniti nakon ovog razgovora?",
+  "chat.goal.placeholder": "Na primjer: moći vlastitim riječima objasniti razliku između dvaju pojmova",
+  "chat.goal.note": "Nije obavezno. Tutor će to uzeti u obzir, a tvoja refleksija u dnevniku navest će koliko si daleko stigao/la. Tvoj nastavnik to ne vidi.",
+  "chat.goal.label": "Cilj",
+  "chat.goal.edit": "Prilagodi cilj",
+  "chat.goal.remove": "Ukloni cilj"
 }

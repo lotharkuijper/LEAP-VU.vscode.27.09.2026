@@ -154,7 +154,7 @@ export async function sendChatMessage(
   sources?: Array<{ title: string; similarity: number }>,
   learningLevel?: number,
   courseId?: string,
-  options?: { readinessCheck?: boolean; attachments?: AttachmentPayload[]; leerlijnUnitId?: string }
+  options?: { readinessCheck?: boolean; attachments?: AttachmentPayload[]; leerlijnUnitId?: string; chatGoal?: string }
 ): Promise<LLMResponse> {
   try {
     const userMessages = messages.filter(m => m.role !== 'system');
@@ -177,6 +177,7 @@ export async function sendChatMessage(
       ...(options?.attachments?.length ? { attachments: options.attachments } : {}),
       // Leerlijn: het onderdeel waar de student zelf voor koos (anders bepaalt de vraag het).
       ...(options?.leerlijnUnitId ? { leerlijnUnitId: options.leerlijnUnitId } : {}),
+      ...(options?.chatGoal ? { chatGoal: options.chatGoal } : {}),
     });
 
     const content = data.choices[0]?.message?.content;

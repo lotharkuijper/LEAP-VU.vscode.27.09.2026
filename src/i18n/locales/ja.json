@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "学生は概念を自分の言葉で説明し、スコア付きのフィードバックを受け取ります。",
   "courseFeatures.name.explainImprove": "この解説を改善",
   "courseFeatures.desc.explainImprove": "学生はその場で作成された、1つ以上の誤りを含む解説を受け取り、その誤りを探して何が間違っているかを説明します。",
-  "courseFeatures.admin.explainLastPart": "少なくともどちらか一方はオンのままになります。どちらも使わない場合は、「自分で説明する」を完全にオフにしてください。"
+  "courseFeatures.admin.explainLastPart": "少なくともどちらか一方はオンのままになります。どちらも使わない場合は、「自分で説明する」を完全にオフにしてください。",
+  "chat.goal.button": "目標",
+  "chat.goal.hint": "この会話で何を達成したいかを入力してね。必須ではないよ。",
+  "chat.goal.question": "この会話の後、何を理解したり、できるようになったりしたい？",
+  "chat.goal.placeholder": "例：2つの概念の違いを自分の言葉で説明できるようになる",
+  "chat.goal.note": "必須ではないよ。チューターはそれを考慮し、日記での振り返りにはどこまで到達したかが書かれるよ。先生には見えないよ。",
+  "chat.goal.label": "目標",
+  "chat.goal.edit": "目標を調整",
+  "chat.goal.remove": "目標を削除"
 }

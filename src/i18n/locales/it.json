@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Gli studenti spiegano un concetto con parole proprie e ricevono un feedback con un punteggio.",
   "courseFeatures.name.explainImprove": "Migliora questa spiegazione",
   "courseFeatures.desc.explainImprove": "Gli studenti ricevono una spiegazione creata sul momento con uno o più errori, li individuano e spiegano che cosa c'è di sbagliato.",
-  "courseFeatures.admin.explainLastPart": "Almeno una delle due rimane attiva. Se non vuoi nessuna delle due, disattiva completamente Io spiego."
+  "courseFeatures.admin.explainLastPart": "Almeno una delle due rimane attiva. Se non vuoi nessuna delle due, disattiva completamente Io spiego.",
+  "chat.goal.button": "Obiettivo",
+  "chat.goal.hint": "Indica cosa vuoi ottenere con questa conversazione. Non obbligatorio.",
+  "chat.goal.question": "Cosa vuoi capire o saper fare dopo questa conversazione?",
+  "chat.goal.placeholder": "Per esempio: saper spiegare con parole tue la differenza tra due concetti",
+  "chat.goal.note": "Non obbligatorio. Il tutor ne terrà conto e la tua riflessione nel diario indicherà fin dove sei arrivato. Il tuo docente non lo vede.",
+  "chat.goal.label": "Obiettivo",
+  "chat.goal.edit": "Modifica obiettivo",
+  "chat.goal.remove": "Rimuovi obiettivo"
 }

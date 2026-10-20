@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "학생들이 개념을 자신의 말로 설명하고 점수와 함께 피드백을 받아.",
   "courseFeatures.name.explainImprove": "이 설명 개선하기",
   "courseFeatures.desc.explainImprove": "학생들은 즉석에서 만들어진, 하나 이상의 오류가 있는 설명을 받고, 그 오류를 찾아 무엇이 잘못됐는지 설명해.",
-  "courseFeatures.admin.explainLastPart": "둘 중 최소 하나는 켜져 있어. 둘 다 원하지 않으면, ‘내가 설명하기’를 완전히 꺼."
+  "courseFeatures.admin.explainLastPart": "둘 중 최소 하나는 켜져 있어. 둘 다 원하지 않으면, ‘내가 설명하기’를 완전히 꺼.",
+  "chat.goal.button": "목표",
+  "chat.goal.hint": "이 대화로 무엇을 이루고 싶은지 알려줘. 필수는 아니야.",
+  "chat.goal.question": "이 대화 후에 무엇을 이해하거나 할 수 있게 되고 싶어?",
+  "chat.goal.placeholder": "예: 두 개념의 차이를 내 말로 설명할 수 있기",
+  "chat.goal.note": "필수는 아니야. 튜터가 이를 고려하고, 일기장의 성찰에는 네가 어디까지 도달했는지가 언급돼. 선생님은 볼 수 없어.",
+  "chat.goal.label": "목표",
+  "chat.goal.edit": "목표 수정",
+  "chat.goal.remove": "목표 삭제"
 }

@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Les étudiants expliquent une notion avec leurs propres mots et reçoivent un feedback avec un score.",
   "courseFeatures.name.explainImprove": "Améliore cette explication",
   "courseFeatures.desc.explainImprove": "Les étudiants reçoivent une explication créée sur le moment avec une ou plusieurs erreurs, les repèrent et expliquent ce qui est incorrect.",
-  "courseFeatures.admin.explainLastPart": "Au moins l’un des deux reste activé. Si tu ne veux aucun des deux, désactive complètement J’explique."
+  "courseFeatures.admin.explainLastPart": "Au moins l’un des deux reste activé. Si tu ne veux aucun des deux, désactive complètement J’explique.",
+  "chat.goal.button": "Objectif",
+  "chat.goal.hint": "Indique ce que tu veux atteindre avec cette conversation. Facultatif.",
+  "chat.goal.question": "Que veux-tu comprendre ou savoir faire après cette conversation ?",
+  "chat.goal.placeholder": "Par exemple : pouvoir expliquer avec tes propres mots la différence entre deux notions",
+  "chat.goal.note": "Facultatif. Le tuteur en tient compte et ta réflexion dans le journal indique jusqu’où tu es allé. Ton enseignant ne le voit pas.",
+  "chat.goal.label": "Objectif",
+  "chat.goal.edit": "Modifier l’objectif",
+  "chat.goal.remove": "Supprimer l’objectif"
 }

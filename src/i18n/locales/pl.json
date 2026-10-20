@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Studenci wyjaśniają pojęcie własnymi słowami i otrzymują informację zwrotną z oceną punktową.",
   "courseFeatures.name.explainImprove": "Popraw to wyjaśnienie",
   "courseFeatures.desc.explainImprove": "Studenci otrzymują przygotowane na miejscu wyjaśnienie z jednym lub kilkoma błędami, odnajdują je i wyjaśniają, co jest w nich błędne.",
-  "courseFeatures.admin.explainLastPart": "Co najmniej jedna z tych dwóch opcji pozostaje włączona. Jeśli nie chcesz żadnej z nich, całkowicie wyłącz opcję Wyjaśniam."
+  "courseFeatures.admin.explainLastPart": "Co najmniej jedna z tych dwóch opcji pozostaje włączona. Jeśli nie chcesz żadnej z nich, całkowicie wyłącz opcję Wyjaśniam.",
+  "chat.goal.button": "Cel",
+  "chat.goal.hint": "Wskaż, co chcesz osiągnąć w tej rozmowie. Nieobowiązkowe.",
+  "chat.goal.question": "Co chcesz po tej rozmowie rozumieć lub umieć?",
+  "chat.goal.placeholder": "Na przykład: umieć wyjaśnić własnymi słowami różnicę między dwoma pojęciami",
+  "chat.goal.note": "Nieobowiązkowe. Tutor weźmie to pod uwagę, a twoja refleksja w dzienniku wskaże, jak daleko udało ci się dojść. Twój nauczyciel tego nie zobaczy.",
+  "chat.goal.label": "Cel",
+  "chat.goal.edit": "Dostosuj cel",
+  "chat.goal.remove": "Usuń cel"
 }

@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Students explain a concept in their own words and get feedback with a score.",
   "courseFeatures.name.explainImprove": "Improve this explanation",
   "courseFeatures.desc.explainImprove": "Students get an explanation created on the spot with one or more errors, find them and explain what is wrong.",
-  "courseFeatures.admin.explainLastPart": "At least one of the two stays on. If you want neither, switch off I explain entirely."
+  "courseFeatures.admin.explainLastPart": "At least one of the two stays on. If you want neither, switch off I explain entirely.",
+  "chat.goal.button": "Goal",
+  "chat.goal.hint": "Say what you want to achieve with this conversation. Optional.",
+  "chat.goal.question": "What do you want to understand or be able to do after this conversation?",
+  "chat.goal.placeholder": "For example: be able to explain the difference between two concepts in my own words",
+  "chat.goal.note": "Optional. The tutor takes it into account and your journal reflection says how far you got. Your teacher does not see it.",
+  "chat.goal.label": "Goal",
+  "chat.goal.edit": "Edit goal",
+  "chat.goal.remove": "Remove goal"
 }

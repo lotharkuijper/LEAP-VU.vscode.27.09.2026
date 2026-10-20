@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "Mahasiswa menjelaskan suatu konsep dengan kata-kata sendiri dan mendapat umpan balik beserta skor.",
   "courseFeatures.name.explainImprove": "Perbaiki penjelasan ini",
   "courseFeatures.desc.explainImprove": "Mahasiswa mendapatkan penjelasan yang dibuat saat itu juga dengan satu atau lebih kesalahan, mencarinya, lalu menjelaskan apa yang salah.",
-  "courseFeatures.admin.explainLastPart": "Setidaknya salah satu dari keduanya tetap aktif. Jika kamu tidak menginginkan keduanya, nonaktifkan sepenuhnya Saya menjelaskan."
+  "courseFeatures.admin.explainLastPart": "Setidaknya salah satu dari keduanya tetap aktif. Jika kamu tidak menginginkan keduanya, nonaktifkan sepenuhnya Saya menjelaskan.",
+  "chat.goal.button": "Tujuan",
+  "chat.goal.hint": "Jelaskan apa yang ingin kamu capai dengan percakapan ini. Tidak wajib.",
+  "chat.goal.question": "Apa yang ingin kamu pahami atau kuasai setelah percakapan ini?",
+  "chat.goal.placeholder": "Misalnya: dapat menjelaskan perbedaan antara dua konsep dengan kata-katamu sendiri",
+  "chat.goal.note": "Tidak wajib. Tutor akan mempertimbangkannya, dan refleksimu di jurnal akan menyebutkan sejauh mana kamu mencapainya. Dosenmu tidak melihatnya.",
+  "chat.goal.label": "Tujuan",
+  "chat.goal.edit": "Sesuaikan tujuan",
+  "chat.goal.remove": "Hapus tujuan"
 }

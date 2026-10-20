@@ -3062,5 +3062,13 @@
   "courseFeatures.desc.explainSelf": "学生用自己的话解释一个概念，并获得带分数的反馈。",
   "courseFeatures.name.explainImprove": "改进这个解释",
   "courseFeatures.desc.explainImprove": "学生会获得一个现场生成、包含一个或多个错误的解释，找出错误并说明错在哪里。",
-  "courseFeatures.admin.explainLastPart": "两者中至少有一个会保持开启。如果你两个都不想要，就把“我来解释”完全关闭。"
+  "courseFeatures.admin.explainLastPart": "两者中至少有一个会保持开启。如果你两个都不想要，就把“我来解释”完全关闭。",
+  "chat.goal.button": "目标",
+  "chat.goal.hint": "说明你希望通过这次对话达到什么目标。非必填。",
+  "chat.goal.question": "这次对话后，你想理解或能够做到什么？",
+  "chat.goal.placeholder": "例如：能够用自己的话解释两个概念之间的区别",
+  "chat.goal.note": "非必填。导师会将其纳入考虑，你在日记中的反思会提到你达到了什么程度。你的教师不会看到。",
+  "chat.goal.label": "目标",
+  "chat.goal.edit": "调整目标",
+  "chat.goal.remove": "移除目标"
 }

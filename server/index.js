@@ -138,6 +138,7 @@ import { createCourseOverview } from './courseOverview.js';
 import { registerEnrollmentRoutes } from './enrollment.js';
 import { registerPromptTemplateRoutes } from './promptTemplates.js';
 import { registerFlawedExplanationRoutes } from './flawedExplanations.js';
+import { buildChatGoalBlock, lastChatGoal, chatGoalSummaryLine } from './chatGoal.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
@@ -818,6 +819,8 @@ app.post('/api/chat', async (req, res) => {
     if (req.body?.purpose === 'tutor_chat' && courseId) {
       systemContent += await leerlijnBlockFor(auth.user.id, courseId, sources, req.body?.leerlijnUnitId);
     }
+    // Optioneel doel van de student voor dit gesprek (server/chatGoal.js).
+    if (req.body?.purpose === 'tutor_chat') systemContent += buildChatGoalBlock(req.body?.chatGoal, lang);
     systemContent += langSuffix;
     finalMessages = [{ role: 'system', content: systemContent }, ...userMessages];
   }
@@ -1182,6 +1185,8 @@ app.post(['/api/chat/delete', '/api/chat/archive'], async (req, res) => {
               ? `\n\nGebruikte cursusbronnen in dit gesprek: ${[...ragSources].join(', ')}`
               : `\n\nCourse sources used in this conversation: ${[...ragSources].join(', ')}`)
           : '';
+        // Optioneel doel dat de student voor dit gesprek koos (server/chatGoal.js).
+        const goalLine = chatGoalSummaryLine(lastChatGoal(msgs), lang);
 
         const summaryPrompt = (lang !== 'nl'
           ? `You are a "critical friend" for a student at VU Amsterdam. Analyse the following study conversation and write a formative reflection report of 5 to 10 lines in English, addressed directly to the student.
@@ -1200,7 +1205,7 @@ Conversation title: "${conversation.title}"
 Conversation (lines marked with "You:" are the student you are addressing):
 ${chatText}
 
-Write the report directly without salutation. Be concrete, honest and motivating.`
+Write the report directly without salutation. Be concrete, honest and motivating.${goalLine}`
           : `Je bent een "critical friend" voor een student aan de VU Amsterdam. Analyseer het volgende studiegesprek en schrijf een formatief reflectieverslag van 5 tot 10 regels in het Nederlands, gericht aan de student zelf.
 
 Aanspraakvorm (volg STRIKT):
@@ -1217,7 +1222,7 @@ Gesprekstitel: "${conversation.title}"
 Gesprek (regels gemarkeerd met "Jij:" zijn de student aan wie je het verslag richt):
 ${chatText}
 
-Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
+Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.${goalLine}`) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
 
         if (AZURE_CHAT_READY) {
           try {
