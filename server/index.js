@@ -136,6 +136,7 @@ import { registerCourseUnitRoutes, loadLeerlijn, loadPracticedUnits, anchorUnit,
 import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
 import { createCourseOverview } from './courseOverview.js';
 import { registerEnrollmentRoutes } from './enrollment.js';
+import { registerPromptTemplateRoutes } from './promptTemplates.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
@@ -9149,10 +9150,9 @@ async function isStaffAnywhere(user, profile) {
 }
 
 // Controleer of een gebruiker toegang heeft tot de inhoud van een cursus.
-// Centrale regel via canAccessCourseContent: admins altijd; een actieve,
-// zichtbare cursus is open voor élke ingelogde student (géén course_members
-// nodig — spiegelt de courses-RLS); verborgen cursussen alléén voor de docent;
-// inactieve maar zichtbare cursussen voor leden/docenten. Geen cursus = geen toegang.
+// Centrale regel via canAccessCourseContent: admins altijd; verborgen cursussen
+// alléén voor de docent; verder alleen voor leden en docenten (toegangsroute,
+// 2026-10-20; spiegelt de courses-RLS). Geen cursus = geen toegang.
 async function userHasCourseAccess(user, profile, courseId) {
   if (!courseId || !user) return false;
   const isAdmin = profile?.role === 'admin' || profile?.email === SUPERUSER_EMAIL;
@@ -14457,6 +14457,15 @@ registerEnrollmentRoutes(app, {
   requireAuthUser,
   isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
   appOrigin: (req) => process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || req.get('origin') || `${req.protocol}://${req.get('host')}`,
+});
+
+// Sjablonen voor de cursusinstructies: docenten lezen, alleen de beheerder wijzigt (server/promptTemplates.js).
+registerPromptTemplateRoutes(app, {
+  supabaseAdmin,
+  requireAuthUser,
+  isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
+  isStaffAnywhere,
+  loadTemplate: { chat: loadGlobalChatPrompt, explain: loadGlobalExplainPrompt },
 });
 
 // Zoeken in twee talen (server/crossLingual.js): vraag vertalen naar de taal van het materiaal.
