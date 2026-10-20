@@ -61,6 +61,16 @@ export const HELP_TOPICS = [
   'systemMessages.compose',
   // Quiz (student)
   'quiz.progress',
+  // Studentenpagina's (2026-10-20): wat een knop doet, wat bewaard wordt en wie het ziet.
+  'student.chat.level',
+  'student.chat.readiness',
+  'student.chat.goal',
+  'student.chat.workingOn',
+  'student.chat.attachments',
+  'student.chat.close',
+  'student.explain.modes',
+  'student.journal.achievements',
+  'student.myData.delete',
   // Analyse (losse module: src/features/analytics)
   'analytics.thermometer',
   'analytics.platform',

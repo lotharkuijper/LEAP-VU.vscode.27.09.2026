@@ -21,6 +21,7 @@ import { useContentTranslation, type TranslatableItem } from '../hooks/useConten
 import { tStatic } from '../i18n/translations';
 import { explainPartView, type ExplainPart } from '../lib/courseFeatures';
 import { ImproveExplanation } from '../components/explain/ImproveExplanation';
+import { HelpTip } from '../components/help/HelpTip';
 import { getActiveLang } from '../i18n/activeLang';
 
 type Concept = Database['public']['Tables']['concepts']['Row'];
@@ -1003,37 +1004,38 @@ export function ExplainPage() {
         </div>
 
         <div className="lg:col-span-2 space-y-6">
+          {partSelf.visible && partImprove.visible && (
+            <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('explain.modes.label')} data-testid="tabs-explain-mode">
+              {(['explainSelf', 'explainImprove'] as const).map(p => {
+                const view = p === 'explainSelf' ? partSelf : partImprove;
+                const active = mode === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setModeChoice(p)}
+                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${active ? 'bg-amber-500 text-white shadow' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'}`}
+                    data-testid={`tab-explain-${p}`}
+                  >
+                    {t(p === 'explainSelf' ? 'explain.modes.self' : 'explain.modes.improve')}
+                    {view.offForStudents && <span className="ml-1.5 text-xs font-normal opacity-80">({t('courseFeatures.offForStudents')})</span>}
+                  </button>
+                );
+              })}
+              <HelpTip id="student.explain.modes" always className="self-center" />
+            </div>
+          )}
+
           {!selectedConcept ? (
             <div className="chic-card p-12 text-center">
               <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-semibold text-gray-900 mb-2">{t('explain.selectConcept')}</p>
-              <p className="text-sm text-gray-600">{t('explain.selectConceptSub')}</p>
+              <p className="text-sm text-gray-600">{t(mode === 'explainImprove' ? 'explain.improve.selectConceptSub' : 'explain.selectConceptSub')}</p>
             </div>
           ) : (
             <>
-              {partSelf.visible && partImprove.visible && (
-                <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('explain.modes.label')} data-testid="tabs-explain-mode">
-                  {(['explainSelf', 'explainImprove'] as const).map(p => {
-                    const view = p === 'explainSelf' ? partSelf : partImprove;
-                    const active = mode === p;
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        onClick={() => setModeChoice(p)}
-                        className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${active ? 'bg-amber-500 text-white shadow' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'}`}
-                        data-testid={`tab-explain-${p}`}
-                      >
-                        {t(p === 'explainSelf' ? 'explain.modes.self' : 'explain.modes.improve')}
-                        {view.offForStudents && <span className="ml-1.5 text-xs font-normal opacity-80">({t('courseFeatures.offForStudents')})</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
               {mode === 'explainImprove' && (
                 <>
                   <h2 className="text-2xl font-bold text-gray-900">{conceptName(selectedConcept)}</h2>

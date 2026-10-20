@@ -40,7 +40,7 @@ export function ConceptProgressCard({ topics, attempts, onPractice, now }: {
         <h3 className="text-sm font-semibold text-gray-800 flex items-center gap-2 min-w-0">
           <Target className="w-4 h-4 text-brand-600" />
           {t('quiz.progress.title')}
-          <HelpTip id="quiz.progress" />
+          <HelpTip id="quiz.progress" always />
         </h3>
         <span className="text-xs text-gray-500">{t('quiz.progress.practiced', { n: String(practiced), total: String(progress.length) })}</span>
         <button

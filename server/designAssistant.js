@@ -76,6 +76,8 @@ export const OTHER_PAGES = [
     what: 'Dit gesprek zelf: een zijpaneel dat open blijft terwijl de docent tussen onderdelen wisselt. Links in je antwoorden openen het onderdeel achter het paneel.' },
   { path: '/quiz', label: 'Quiz (studentkant)', helpGroups: ['quiz'],
     what: 'Studenten zien per begrip hun eigen voortgang (alleen voor henzelf) en kunnen "Oefen wat je lastig vindt" kiezen: gespreide herhaling op basis van hun eigen quizscores. De standaardmoeilijkheid volgt hun leerniveau; na "Ik leg uit" kunnen ze direct een quiz over dat begrip starten.' },
+  { path: '/chat, /explain, /feedback, /my-data', label: 'Studentenkant: uitleg bij knoppen', helpGroups: ['student'],
+    what: 'Bij knoppen waarvan het gevolg niet vanzelf spreekt, staat voor studenten een vraagteken: wat er gebeurt, wat bewaard wordt en wie het ziet. In de chat: leerniveau, Klaar voor een hoger niveau?, Doel (optioneel eigen doel voor een gesprek), Ik werk aan, bijlagen en afsluiten. In Ik leg uit: de twee manieren van oefenen (Leg zelf uit, Verbeter deze uitleg). Verder de prijzenkast en account verwijderen.' },
   { path: '/admin/courses', label: 'Cursussen beheren', helpGroups: ['courses'], what: 'Cursussen aanmaken, leden beheren (docenten kunnen zelf studenten toevoegen en tot docent bevorderen), beschikbaar maken voor studenten. De toegangsroute (gesloten, Canvas, open registratie, of Canvas + open) stelt alleen de beheerder in.' },
   { path: '/projects', label: 'Projectruimte', what: 'De werkplek van een groep. Alleen de groepsleden zien wat daar gebeurt; docenten niet (privacy). Docenten zien in Projecten alleen wie in welke groep zit. Het contact met een rolspeler herstellen en extra gesprekken toekennen kan alleen een beheerder.' },
 ];
@@ -171,7 +173,8 @@ export function docxToText(bytes) {
 export function helpTextsByGroup(locale) {
   const groups = {};
   for (const [k, v] of Object.entries(locale || {})) {
-    const m = k.match(/^help\.([^.]+)\.([^.]+)\.(title|body)$/);
+    // Ook ids met meer niveaus (material.step.files, student.chat.goal).
+    const m = k.match(/^help\.([^.]+)\.(.+)\.(title|body)$/);
     if (!m) continue;
     const g = (groups[m[1]] ||= {});
     const topic = (g[m[2]] ||= {});

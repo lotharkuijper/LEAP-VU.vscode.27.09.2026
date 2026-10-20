@@ -12,6 +12,7 @@ import { SourceList, type SourceItem } from '../components/SourceList';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
 import { ChatGoalButton, ChatGoalBar, goalFromMessages } from '../components/chat/ChatGoal';
+import { HelpTip } from '../components/help/HelpTip';
 import { Send, MessageSquare, Plus, AlertCircle, RefreshCw, LogOut, BookText, Trash2, X, Loader2, Eye, Download, FileText, TrendingUp, Coffee, Copy, Check } from 'lucide-react';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { type ChatExcerptAttachment } from '../components/ChatExcerptCard';
@@ -1055,7 +1056,7 @@ export function ChatPage() {
                 <div className="flex flex-wrap items-end gap-2 ml-auto">
                   {leerlijn.units.length > 0 && (
                     <label className="flex flex-col text-xs text-gray-600">
-                      <span className="mb-1">{t('chat.leerlijn.workingOn')}</span>
+                      <span className="mb-1 flex items-center gap-1">{t('chat.leerlijn.workingOn')}<HelpTip id="student.chat.workingOn" always /></span>
                       <select
                         value={leerlijn.workingOn ?? ''}
                         onChange={(e) => leerlijn.setWorkingOn(e.target.value || null)}
@@ -1073,7 +1074,11 @@ export function ChatPage() {
                     compact
                     className="min-w-[240px]"
                   />
-                  <ChatGoalButton goal={chatGoal} disabled={!currentConversationId} onClick={() => setChatGoalEditing(v => !v)} />
+                  <HelpTip id="student.chat.level" always className="mb-1.5" />
+                  <span className="flex items-center gap-1">
+                    <ChatGoalButton goal={chatGoal} disabled={!currentConversationId} onClick={() => setChatGoalEditing(v => !v)} />
+                    <HelpTip id="student.chat.goal" always />
+                  </span>
                   <button
                     type="button"
                     onClick={askReadiness}
@@ -1085,6 +1090,7 @@ export function ChatPage() {
                     <TrendingUp className="w-3.5 h-3.5" />
                     {t('learningLevel.readinessButton')}
                   </button>
+                  <HelpTip id="student.chat.readiness" always className="mb-1.5" />
                 </div>
               </div>
               <ChatGoalBar
@@ -1105,7 +1111,10 @@ export function ChatPage() {
               />
               <div className="flex gap-3 items-end">
                 {att.showClip && (
-                  <AttachButton available={att.available} disabled={loading} onFiles={(files) => { void att.add(files); }} />
+                  <div className="flex flex-col items-center gap-1">
+                    <HelpTip id="student.chat.attachments" always />
+                    <AttachButton available={att.available} disabled={loading} onFiles={(files) => { void att.add(files); }} />
+                  </div>
                 )}
                 <textarea
                   ref={chatInputRef}
@@ -1264,7 +1273,7 @@ export function ChatPage() {
             <div className="p-2 bg-red-100 rounded-xl">
               <Trash2 className="w-5 h-5 text-red-600" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">{t('chat.deleteTitle')}</h2>
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-1.5">{t('chat.deleteTitle')}<HelpTip id="student.chat.close" always /></h2>
             <button
               onClick={() => !deleting && setDeleteDialog(null)}
               className="ml-auto p-1 rounded hover:bg-gray-100 text-gray-500"

@@ -14,7 +14,7 @@ type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
  * De tekst komt uit de vertaalbestanden via de id (src/help/helpTopics.ts),
  * zodat de uitleg met de functie meeverhuist bij een herinrichting.
  */
-export function HelpTip({ id, className = '' }: { id: HelpId; className?: string }) {
+export function HelpTip({ id, className = '', always = false }: { id: HelpId; className?: string; always?: boolean }) {
   const { t } = useLanguage();
   const tk = (k: string) => t(k as TKey);
   const [open, setOpen] = useState(false);
@@ -50,8 +50,9 @@ export function HelpTip({ id, className = '' }: { id: HelpId; className?: string
     };
   }, [open]);
 
-  // "Uitleg tonen" staat uit: geen vraagteken tonen.
-  if (!visible) return null;
+  // "Uitleg tonen" (beheer) staat uit: geen vraagteken tonen. Studentenpagina's
+  // (always) houden hun uitleg altijd: daar bestaat die schakelaar niet.
+  if (!visible && !always) return null;
 
   return (
     // Wie de HelpTip zelf positioneert (absolute/fixed), krijgt geen `relative`:

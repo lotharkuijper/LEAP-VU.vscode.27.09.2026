@@ -7,6 +7,7 @@ import { useLanguage } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { buildDossierHtml } from '../lib/learningDossier';
+import { HelpTip } from '../components/help/HelpTip';
 
 type ExportData = { exportedAt: string; user: { email: string | null }; sources: Record<string, Record<string, unknown>[]> };
 
@@ -146,6 +147,7 @@ export function MyDataPage() {
         <h2 className="text-lg font-semibold text-red-800 flex items-center gap-2">
           <Trash2 className="w-5 h-5" />
           {t('myData.delete.title')}
+          <HelpTip id="student.myData.delete" always />
         </h2>
         <p className="text-sm text-red-900">{t('myData.delete.body')}</p>
         {profile?.role === 'admin' ? (

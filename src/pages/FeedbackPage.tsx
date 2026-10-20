@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { JournalSections, hasJournalSections, type JournalSectionsData } from '../components/JournalSections';
 import { AchievementsView } from '../components/AchievementsView';
+import { HelpTip } from '../components/help/HelpTip';
 import {
   BookText,
   Plus,
@@ -444,6 +445,7 @@ export function FeedbackPage() {
             {v === 'notes' ? t('feedback.tab.notes') : `🏆 ${t('achievements.tab')}`}
           </button>
         ))}
+        <HelpTip id="student.journal.achievements" always className="self-center mx-1" />
       </div>
 
       {view === 'achievements' && (
