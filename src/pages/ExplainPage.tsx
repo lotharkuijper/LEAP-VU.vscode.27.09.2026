@@ -1009,7 +1009,7 @@ export function ExplainPage() {
               {(['explainSelf', 'explainImprove'] as const).map(p => {
                 const view = p === 'explainSelf' ? partSelf : partImprove;
                 const active = mode === p;
-                return (
+                const tab = (
                   <button
                     key={p}
                     type="button"
@@ -1023,8 +1023,11 @@ export function ExplainPage() {
                     {view.offForStudents && <span className="ml-1.5 text-xs font-normal opacity-80">({t('courseFeatures.offForStudents')})</span>}
                   </button>
                 );
+                // Het vraagteken hoort vast aan het laatste tabblad (breekt nooit los af).
+                return p === 'explainImprove'
+                  ? <span key={p} className="inline-flex flex-nowrap items-center gap-1">{tab}<HelpTip id="student.explain.modes" always /></span>
+                  : tab;
               })}
-              <HelpTip id="student.explain.modes" always className="self-center" />
             </div>
           )}
 

@@ -1068,17 +1068,21 @@ export function ChatPage() {
                       </select>
                     </label>
                   )}
-                  <LearningLevelSelector
-                    value={learningLevel}
-                    onChange={setLearningLevel}
-                    compact
-                    className="min-w-[240px]"
-                  />
-                  <HelpTip id="student.chat.level" always className="mb-1.5" />
-                  <span className="flex items-center gap-1">
+                  {/* Vraagteken en knop vormen één blok: ze breken nooit los van elkaar af. */}
+                  <span className="flex flex-nowrap items-end gap-1">
+                    <LearningLevelSelector
+                      value={learningLevel}
+                      onChange={setLearningLevel}
+                      compact
+                      className="min-w-[240px]"
+                    />
+                    <HelpTip id="student.chat.level" always className="mb-1.5" />
+                  </span>
+                  <span className="flex flex-nowrap items-center gap-1">
                     <ChatGoalButton goal={chatGoal} disabled={!currentConversationId} onClick={() => setChatGoalEditing(v => !v)} />
                     <HelpTip id="student.chat.goal" always />
                   </span>
+                  <span className="flex flex-nowrap items-center gap-1">
                   <button
                     type="button"
                     onClick={askReadiness}
@@ -1090,7 +1094,8 @@ export function ChatPage() {
                     <TrendingUp className="w-3.5 h-3.5" />
                     {t('learningLevel.readinessButton')}
                   </button>
-                  <HelpTip id="student.chat.readiness" always className="mb-1.5" />
+                  <HelpTip id="student.chat.readiness" always />
+                  </span>
                 </div>
               </div>
               <ChatGoalBar
