@@ -1,6 +1,8 @@
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
+// Bedragen ("$10 en $20") nooit als formule (src/lib/mathText.ts).
+import { guardCurrencyDollars } from '../lib/mathText';
 import rehypeKatex from 'rehype-katex';
 import { CitationText, type CitationSource } from './CitationText';
 import { prepareLatex } from '../lib/mathDelimiters';
@@ -161,7 +163,7 @@ export function MarkdownMessage({
           ),
         }}
       >
-        {prepareLatex(normalizeFootnoteCitations(content, sources))}
+        {guardCurrencyDollars(prepareLatex(normalizeFootnoteCitations(content, sources)))}
       </ReactMarkdown>
     </div>
   );

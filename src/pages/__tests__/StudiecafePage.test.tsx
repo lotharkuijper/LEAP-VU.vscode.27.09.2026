@@ -17,7 +17,8 @@ vi.mock('../../contexts/AuthContext', () => {
 
 vi.mock('../../contexts/ActiveCourseContext', () => {
   const activeCourse = { name: 'Statistiek' };
-  return { useActiveCourse: () => ({ activeCourseId: 'course-1', activeCourse }) };
+  // useOptionalActiveCourse: de ∑-knop vraagt de onderdelen van de cursus op (null = standaard).
+  return { useActiveCourse: () => ({ activeCourseId: 'course-1', activeCourse }), useOptionalActiveCourse: () => null };
 });
 
 const realtimeHandlers: Array<() => void> = [];

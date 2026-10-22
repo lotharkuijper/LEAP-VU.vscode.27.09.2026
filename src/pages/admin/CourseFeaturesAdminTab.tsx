@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ToggleRight, MessageSquare, Lightbulb, GraduationCap, BarChart3, BookText, Coffee, Loader2 } from 'lucide-react';
+import { ToggleRight, MessageSquare, Lightbulb, GraduationCap, BarChart3, BookText, Coffee, Loader2, Sigma } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
@@ -38,14 +38,14 @@ export function CourseFeaturesAdminTab() {
   const tk = (k: string) => t(k as TKey);
   const { session } = useAuth();
   const { activeCourseId, activeCourse, courseFeatures, refreshActiveCourse } = useActiveCourse();
-  const [busy, setBusy] = useState<CourseFeature | ExplainPart | null>(null);
+  const [busy, setBusy] = useState<CourseFeature | ExplainPart | 'formulaEditor' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   if (!activeCourseId) {
     return <div className="text-sm text-gray-500" data-testid="text-course-features-no-course">{t('courseFeatures.admin.noCourse')}</div>;
   }
 
-  const toggle = async (f: CourseFeature | ExplainPart) => {
+  const toggle = async (f: CourseFeature | ExplainPart | 'formulaEditor') => {
     if (!session?.access_token) return;
     setBusy(f);
     setError(null);
@@ -152,6 +152,34 @@ export function CourseFeaturesAdminTab() {
           }) : [])];
         })}
       </ul>
+
+      {/* Formule-editor (opt-in, 2026-10-22): de ∑-knop bij alle tekstvakken van studenten. */}
+      <div className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3" data-testid="row-feature-formulaEditor">
+        <Sigma className={`mt-0.5 h-5 w-5 flex-shrink-0 ${courseFeatures.formulaEditor ? 'text-blue-600' : 'text-gray-400'}`} aria-hidden />
+        <div className="min-w-0 flex-1">
+          <label htmlFor="feature-formulaEditor" className="flex items-center gap-1.5 font-medium text-gray-900">{t('courseFeatures.name.formulaEditor')}<HelpTip id="courseFeatures.formulaEditor" /></label>
+          <p className="text-sm text-gray-600">{t('courseFeatures.desc.formulaEditor')}</p>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          {busy === 'formulaEditor' && <Loader2 className="h-4 w-4 animate-spin text-gray-400" aria-hidden />}
+          <span className={`whitespace-nowrap text-xs font-medium ${courseFeatures.formulaEditor ? 'text-accent-700' : 'text-gray-500'}`}>
+            {courseFeatures.formulaEditor ? t('courseFeatures.admin.on') : t('courseFeatures.admin.off')}
+          </span>
+          <button
+            id="feature-formulaEditor"
+            type="button"
+            role="switch"
+            aria-checked={courseFeatures.formulaEditor}
+            aria-label={t('courseFeatures.name.formulaEditor')}
+            disabled={busy !== null}
+            onClick={() => toggle('formulaEditor')}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-50 ${courseFeatures.formulaEditor ? 'bg-blue-600' : 'bg-gray-300'}`}
+            data-testid="switch-feature-formulaEditor"
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${courseFeatures.formulaEditor ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          </button>
+        </div>
+      </div>
 
       <CourseAttachmentsSetting
         courseId={activeCourseId}

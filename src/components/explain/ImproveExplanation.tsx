@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, BookText, CheckCircle, Coffee, Loader2, RefreshCw, Send, Wand2 } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useCourseFeatures } from '../../hooks/useCourseFeatures';
@@ -6,6 +6,7 @@ import { MarkdownMessage } from '../MarkdownMessage';
 import type { CitationSource } from '../CitationText';
 import { openRagDocument } from '../../services/rag.service';
 import { stashStudiecafeHandoff } from '../../lib/studiecafeHandoff';
+import { FormulaButton } from '../../components/formula/FormulaButton';
 import {
   createImproveExercise, evaluateImproveAnswer, saveImproveReflection,
   type ImproveExercise, type ImproveFeedback, type ImproveReveal,
@@ -61,6 +62,7 @@ export function ImproveExplanation({ concept, displayName, courseId }: Props) {
   const [exercise, setExercise] = useState<ImproveExercise | null>(null);
   const [creating, setCreating] = useState(false);
   const [answer, setAnswer] = useState('');
+  const answerRef = useRef<HTMLTextAreaElement>(null);
   const [evaluating, setEvaluating] = useState(false);
   const [result, setResult] = useState<{ feedback: ImproveFeedback; reveal: ImproveReveal } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -160,8 +162,12 @@ export function ImproveExplanation({ concept, displayName, courseId }: Props) {
               <MarkdownMessage content={exercise.text} />
             </div>
             <div>
-              <label htmlFor="improve-answer" className="block text-sm font-semibold text-gray-700 mb-2">{t('explain.improve.answerLabel')}</label>
+              <div className="mb-2 flex items-end justify-between gap-2">
+                <label htmlFor="improve-answer" className="block text-sm font-semibold text-gray-700">{t('explain.improve.answerLabel')}</label>
+                {!result && <FormulaButton targetRef={answerRef} value={answer} onChange={setAnswer} testId="button-formula-improve" />}
+              </div>
               <textarea
+                ref={answerRef}
                 id="improve-answer"
                 value={answer}
                 onChange={e => setAnswer(e.target.value)}

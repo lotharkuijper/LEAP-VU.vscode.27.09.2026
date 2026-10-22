@@ -13,6 +13,8 @@ import { ProductFeedbackPanel } from '../components/ProductFeedbackPanel';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { appendQuote, focusAtEnd } from '../lib/chatQuote';
 import { RELATIONSHIP_BADGE, RELATIONSHIP_LEVELS, type RelationshipKey } from '../lib/relationshipLevels';
+import { FormulaButton } from '../components/formula/FormulaButton';
+import { MathText } from '../components/MathText';
 // De viewer (met pdf.js) pas laden als een student een bron opent.
 const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m => ({ default: m.DocumentViewer })));
 import {
@@ -294,6 +296,8 @@ export function ProjectRoomPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const personaInputRef = useRef<HTMLTextAreaElement>(null);
+  const groupChatRef = useRef<HTMLInputElement>(null);
+  const reflectionRef = useRef<HTMLTextAreaElement>(null);
   const personaScrollRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
@@ -1237,7 +1241,7 @@ export function ProjectRoomPage() {
                       sources={personaSourcesFrom(m.rag_sources)}
                       onOpenSource={openPersonaSource}
                     />
-                  ) : m.content}
+                  ) : <MathText text={m.content} />}
                 </div>
               </div>
             ))}
@@ -1287,6 +1291,7 @@ export function ProjectRoomPage() {
               );
             })()}
             <div className="flex gap-2 items-end">
+              <FormulaButton targetRef={personaInputRef} value={personaInput} onChange={setPersonaInput} testId="button-formula-persona" />
               <textarea
                 ref={personaInputRef}
                 value={personaInput}
@@ -1352,7 +1357,7 @@ export function ProjectRoomPage() {
                   <div key={m.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     <div className="text-[10px] text-gray-400 mb-0.5">{isMe ? t('room.you') : author}</div>
                     <div className={`group max-w-[85%] px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-blue-100 text-blue-950' : 'bg-gray-100 text-gray-900'}`} data-testid={`msg-chat-${m.id}`}>
-                      <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                      <div className="whitespace-pre-wrap break-words"><MathText text={m.body} /></div>
                       <div className="flex items-center gap-1 mt-1 opacity-60 group-hover:opacity-100 transition-opacity">
                         {QUICK_REACTIONS.map(emoji => {
                           const reactors = m.reactions?.[emoji] || [];
@@ -1376,7 +1381,9 @@ export function ProjectRoomPage() {
             </div>
             <div className="border-t border-gray-200 p-2">
               <div className="flex gap-2">
+                {!isFinalized && <FormulaButton targetRef={groupChatRef} value={chatInput} onChange={setChatInput} testId="button-formula-group" />}
                 <input
+                  ref={groupChatRef}
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendChat())}
@@ -2154,7 +2161,11 @@ export function ProjectRoomPage() {
                 <p className="text-sm text-gray-600 mb-4">
                   {t('room.finalReflectionSub')}
                 </p>
+                <div className="mb-1 flex justify-end">
+                  <FormulaButton targetRef={reflectionRef} value={reflection} onChange={setReflection} testId="button-formula-reflection" />
+                </div>
                 <textarea
+                  ref={reflectionRef}
                   value={reflection}
                   onChange={e => setReflection(e.target.value)}
                   rows={10}

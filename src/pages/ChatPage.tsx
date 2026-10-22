@@ -13,6 +13,8 @@ import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
 import { ChatGoalButton, ChatGoalBar, goalFromMessages } from '../components/chat/ChatGoal';
 import { HelpTip } from '../components/help/HelpTip';
+import { FormulaButton } from '../components/formula/FormulaButton';
+import { MathText } from '../components/MathText';
 import { Send, MessageSquare, Plus, AlertCircle, RefreshCw, LogOut, BookText, Trash2, X, Loader2, Eye, Download, FileText, TrendingUp, Coffee, Copy, Check } from 'lucide-react';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { type ChatExcerptAttachment } from '../components/ChatExcerptCard';
@@ -929,7 +931,7 @@ export function ChatPage() {
                       />
                     ) : (
                       <>
-                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                        <p className="whitespace-pre-wrap"><MathText text={msg.content} /></p>
                         <SentAttachments meta={msg.attachments ?? []} previews={att.previews[msg.id]} />
                       </>
                     )}
@@ -1121,6 +1123,7 @@ export function ChatPage() {
                     <AttachButton available={att.available} disabled={loading} onFiles={(files) => { void att.add(files); }} />
                   </div>
                 )}
+                <FormulaButton targetRef={chatInputRef} value={input} onChange={setInput} disabled={loading} testId="button-formula-chat" />
                 <textarea
                   ref={chatInputRef}
                   value={input}

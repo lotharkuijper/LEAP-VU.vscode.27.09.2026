@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../i18n';
 import { intlLocale } from '../i18n/languages';
@@ -22,6 +22,7 @@ import { tStatic } from '../i18n/translations';
 import { explainPartView, type ExplainPart } from '../lib/courseFeatures';
 import { ImproveExplanation } from '../components/explain/ImproveExplanation';
 import { HelpTip } from '../components/help/HelpTip';
+import { FormulaButton } from '../components/formula/FormulaButton';
 import { getActiveLang } from '../i18n/activeLang';
 
 type Concept = Database['public']['Tables']['concepts']['Row'];
@@ -242,6 +243,7 @@ export function ExplainPage() {
   const [modeChoice, setModeChoice] = useState<ExplainPart>('explainSelf');
   const mode: ExplainPart = !partSelf.visible ? 'explainImprove' : !partImprove.visible ? 'explainSelf' : modeChoice;
   const [explanation, setExplanation] = useState('');
+  const explanationRef = useRef<HTMLTextAreaElement>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackSections, setFeedbackSections] = useState<ExplainFeedbackSections | null>(null);
   const [feedbackScore, setFeedbackScore] = useState<{ total: number; reason: string } | null>(null);
@@ -1066,10 +1068,14 @@ export function ExplainPage() {
                     <RAGStatusIndicator strictMode={ragSettings.explain.rag_strict_mode} />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      {t('explain.explainLabel')}
-                    </label>
+                    <div className="mb-2 flex items-end justify-between gap-2">
+                      <label className="block text-sm font-semibold text-gray-700">
+                        {t('explain.explainLabel')}
+                      </label>
+                      <FormulaButton targetRef={explanationRef} value={explanation} onChange={setExplanation} testId="button-formula-explain" />
+                    </div>
                     <textarea
+                      ref={explanationRef}
                       value={explanation}
                       onChange={(e) => setExplanation(e.target.value)}
                       placeholder={t('explain.typingPlaceholder')}

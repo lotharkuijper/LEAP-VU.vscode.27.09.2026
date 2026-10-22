@@ -71,6 +71,8 @@ export const HELP_TOPICS = [
   'student.explain.modes',
   'student.journal.achievements',
   'student.myData.delete',
+  'student.formula',
+  'courseFeatures.formulaEditor',
   // Analyse (losse module: src/features/analytics)
   'analytics.thermometer',
   'analytics.platform',

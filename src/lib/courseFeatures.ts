@@ -7,7 +7,8 @@ export const COURSE_FEATURES = ['chat', 'explain', 'quiz', 'projects', 'journal'
 export type CourseFeature = (typeof COURSE_FEATURES)[number];
 // Opt-in: alleen aan als de docent het bewust aanzette ({ attachments: true }).
 // 'attachments' = bijlagen in de chat (server/chatAttachments.js).
-export const OPT_IN_FEATURES = ['attachments'] as const;
+// 'formulaEditor' = de visuele formule-editor (∑) bij tekstvakken van studenten.
+export const OPT_IN_FEATURES = ['attachments', 'formulaEditor'] as const;
 export type OptInFeature = (typeof OPT_IN_FEATURES)[number];
 // Onderdelen van Ik leg uit: standaard aan; alleen geldig als 'explain' aan staat.
 export const EXPLAIN_PARTS = ['explainSelf', 'explainImprove'] as const;

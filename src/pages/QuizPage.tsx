@@ -30,6 +30,8 @@ import { estimateQuizSeconds, recordQuizDuration, roundSeconds } from '../lib/qu
 import { difficultyForLevel } from '../lib/conceptProgress';
 import { useLearningLevel } from '../hooks/useLearningLevel';
 import { ConceptProgressCard } from '../components/quiz/ConceptProgressCard';
+import { FormulaButton } from '../components/formula/FormulaButton';
+import { MathText } from '../components/MathText';
 import {
   Play,
   CheckCircle,
@@ -179,6 +181,7 @@ export function QuizPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showExplanation, setShowExplanation] = useState(false); // mcq inline feedback
   const [draftText, setDraftText] = useState(''); // typed text for current open/casus question
+  const draftRef = useRef<HTMLTextAreaElement>(null);
   const [evaluating, setEvaluating] = useState(false);
   const [evalError, setEvalError] = useState<{ title: string; detail?: string } | null>(null);
 
@@ -1422,7 +1425,13 @@ export function QuizPage() {
           {/* Free-text antwoordveld */}
           {isFreeText && (
             <div className="space-y-3">
+              {!isEvaluatedFree && (
+                <div className="flex justify-end">
+                  <FormulaButton targetRef={draftRef} value={draftText} onChange={setDraftText} disabled={evaluating} testId="button-formula-quiz" />
+                </div>
+              )}
               <textarea
+                ref={draftRef}
                 value={draftText}
                 onChange={e => setDraftText(e.target.value)}
                 disabled={isEvaluatedFree || evaluating}
@@ -1724,7 +1733,7 @@ function QuestionReviewCard({ index, question, answer }: { index: number; questi
           )}
           <p className="font-semibold text-gray-900 mb-2">{question.question}</p>
           <div className="space-y-1 text-sm">
-            <p className="text-gray-800"><strong>{t('quiz.yourAnswerColon')}</strong> {(a?.text || t('quiz.noAnswer')).trim()}</p>
+            <p className="text-gray-800"><strong>{t('quiz.yourAnswerColon')}</strong> <MathText text={(a?.text || t('quiz.noAnswer')).trim()} /></p>
             {ev && (
               <>
                 <p className="text-gray-800"><strong>{t('quiz.score')}:</strong> {ev.score}/100</p>

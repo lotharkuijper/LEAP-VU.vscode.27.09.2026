@@ -177,3 +177,9 @@
   user-select: none;
 }
 .textLayer.selecting .endOfContent { top: 0; }
+/* Formule-editor (MathLive): één eigen knop "Toetsenbord" in het venster, geen
+   dubbele menu- en toetsenbordknop in het invoerveld zelf. */
+math-field::part(menu-toggle),
+math-field::part(virtual-keyboard-toggle) {
+  display: none;
+}

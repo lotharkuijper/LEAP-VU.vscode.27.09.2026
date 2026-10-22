@@ -13,7 +13,7 @@ import { useContentTranslation, type TranslatableItem } from '../hooks/useConten
 import { AutoTranslatedNotice } from '../components/AutoTranslatedNotice';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { ChatExcerptCard, type ChatExcerptAttachment } from '../components/ChatExcerptCard';
-import { FormulaEditor } from '../components/FormulaEditor';
+import { FormulaButton } from '../components/formula/FormulaButton';
 import { takeStudiecafeHandoff } from '../lib/studiecafeHandoff';
 
 // Studiecafé (Task #304) — per-cursus discussieforum. Studenten posten vragen/
@@ -924,12 +924,9 @@ export function StudiecafePage() {
               className="w-full px-3 py-2 rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-violet-400 outline-none resize-y"
               data-testid="input-thread-body"
             />
-            <FormulaEditor
-              value={newBody}
-              onChange={setNewBody}
-              textareaRef={newBodyRef}
-              testidPrefix="thread"
-            />
+            <div className="flex justify-end">
+              <FormulaButton targetRef={newBodyRef} value={newBody} onChange={setNewBody} testId="button-formula-thread" />
+            </div>
             {newAttachment && (
               <ChatExcerptCard
                 attachment={newAttachment}
@@ -1351,12 +1348,9 @@ export function StudiecafePage() {
                             />
                           </div>
                         )}
-                        <FormulaEditor
-                          value={replyBody}
-                          onChange={setReplyBody}
-                          textareaRef={replyRef}
-                          testidPrefix={`reply-${th.id}`}
-                        />
+                        <div className="flex justify-end">
+                          <FormulaButton targetRef={replyRef} value={replyBody} onChange={setReplyBody} testId={`button-formula-reply-${th.id}`} />
+                        </div>
                         <div className="flex items-end gap-2">
                           <textarea
                             ref={replyRef}

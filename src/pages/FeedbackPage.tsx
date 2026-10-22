@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useCourseFeatures } from '../hooks/useCourseFeatures';
@@ -10,6 +10,7 @@ import { MarkdownMessage } from '../components/MarkdownMessage';
 import { JournalSections, hasJournalSections, type JournalSectionsData } from '../components/JournalSections';
 import { AchievementsView } from '../components/AchievementsView';
 import { HelpTip } from '../components/help/HelpTip';
+import { FormulaButton } from '../components/formula/FormulaButton';
 import {
   BookText,
   Plus,
@@ -150,6 +151,7 @@ export function FeedbackPage() {
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const contentRef = useRef<HTMLTextAreaElement>(null);
   const [activityType, setActivityType] = useState<string>('reflection');
   const [loading, setLoading] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -498,10 +500,14 @@ export function FeedbackPage() {
             </div>
 
             <div>
-              <label htmlFor="content" className="block text-sm font-semibold text-gray-700 mb-2">
-                {t('feedback.entryContent')}
-              </label>
+              <div className="mb-2 flex items-end justify-between gap-2">
+                <label htmlFor="content" className="block text-sm font-semibold text-gray-700">
+                  {t('feedback.entryContent')}
+                </label>
+                <FormulaButton targetRef={contentRef} value={content} onChange={setContent} testId="button-formula-journal" />
+              </div>
               <textarea
+                ref={contentRef}
                 id="content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
