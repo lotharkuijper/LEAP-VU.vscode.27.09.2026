@@ -87,6 +87,7 @@ export const HELP_TOPICS = [
   'projects.submissions',
   'projects.preassessment',
   'courses.enrollmentMode',
+  'courses.canvasLink',
   'projects.docs',
   'personas.consultationLimits',
   'personas.hiddenRubric',

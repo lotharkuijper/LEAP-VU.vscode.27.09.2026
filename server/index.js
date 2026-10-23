@@ -139,6 +139,7 @@ import { registerEnrollmentRoutes } from './enrollment.js';
 import { registerPromptTemplateRoutes } from './promptTemplates.js';
 import { registerFlawedExplanationRoutes } from './flawedExplanations.js';
 import { buildChatGoalBlock, lastChatGoal, chatGoalSummaryLine } from './chatGoal.js';
+import { registerLtiRoutes, loadPlatforms, loadToolKey, createRateLimiter as createLtiRateLimiter } from './lti.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
@@ -14542,6 +14543,24 @@ registerFlawedExplanationRoutes(app, {
   secret: TURN_SECRET,
   resolveJournalCourseId,
   get llmReady() { return AZURE_CHAT_READY; },
+});
+// Canvas-koppeling via LTI 1.3 (server/lti.js): Canvas-link per cursus, inloggen
+// zonder wachtwoord, en daarna inloggen met een code per e-mail.
+const ltiPlatforms = loadPlatforms(process.env);
+let ltiToolKey = null;
+loadToolKey(process.env).then((k) => { ltiToolKey = k; }).catch(() => {});
+console.log(`[lti] Canvas-koppeling ${ltiPlatforms.length ? `actief (${ltiPlatforms.map(p => p.issuer).join(', ')})` : 'niet ingesteld (LTI_PLATFORMS ontbreekt)'}`);
+const ltiAppUrl = (req) => String(process.env.LTI_APP_URL || process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+const ltiRateLimit = createLtiRateLimiter({ max: 3 });
+registerLtiRoutes(app, express, {
+  supabaseAdmin,
+  platforms: ltiPlatforms,
+  appUrl: ltiAppUrl,
+  get toolKey() { return ltiToolKey; },
+  requireAuthUser,
+  isStaffForCourse,
+  createAnonClient: () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } }),
+  rateLimit: (key, limit) => ltiRateLimit(key, limit),
 });
 
 // Zoeken in twee talen (server/crossLingual.js): vraag vertalen naar de taal van het materiaal.

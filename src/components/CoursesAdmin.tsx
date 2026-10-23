@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,7 @@ import { Tooltip } from './help/Tooltip';
 import { AdminHint } from './help/AdminHint';
 import { ListRow, StatusBadge } from './ui/ListRow';
 import { EnrollmentModeDialog } from './EnrollmentModeDialog';
+import { CanvasLinkDialog } from './CanvasLinkDialog';
 import type { EnrollmentMode } from '../services/enrollment.service';
 
 interface CourseRow {
@@ -71,6 +72,8 @@ export default function CoursesAdmin() {
   // Per-rij state voor activeren/deactiveren en verwijderen.
   const [rowBusyId, setRowBusyId] = useState<string | null>(null);
   const [enrollmentFor, setEnrollmentFor] = useState<CourseRow | null>(null);
+  // Canvas-link (server/lti.js) voor cursussen met de route Canvas of Canvas + open.
+  const [canvasLinkFor, setCanvasLinkFor] = useState<CourseRow | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [rowCounts, setRowCounts] = useState<Record<string, DeleteCounts | null>>({});
   const [confirmBulkMembersId, setConfirmBulkMembersId] = useState<string | null>(null);
@@ -862,6 +865,11 @@ export default function CoursesAdmin() {
                             onClick: () => toggleAvailability(c), busy: rowBusyId === c.id,
                             testId: `button-toggle-availability-${c.id}`,
                           }] : []),
+                          ...((isAdmin || myTeacherCourseIds.has(c.id)) && (c.enrollment_mode === 'canvas' || c.enrollment_mode === 'canvas_open') ? [{
+                            key: 'canvasLink', label: t('canvasLink.action'), icon: Link2, tone: 'primary' as const,
+                            title: t('canvasLink.actionTitle'), onClick: () => setCanvasLinkFor(c),
+                            disabled: rowBusyId === c.id, testId: `button-canvas-link-${c.id}`,
+                          }] : []),
                           ...(isAdmin ? [{
                             key: 'enrollment', label: t('enrollment.action'), icon: DoorOpen, tone: 'primary' as const,
                             title: t('enrollment.actionTitle'), onClick: () => setEnrollmentFor(c),
@@ -1375,6 +1383,9 @@ export default function CoursesAdmin() {
             </div>
           </div>
         </div>
+      )}
+      {canvasLinkFor && (
+        <CanvasLinkDialog courseId={canvasLinkFor.id} courseName={canvasLinkFor.name} isAdmin={isAdmin} onClose={() => setCanvasLinkFor(null)} />
       )}
       {enrollmentFor && (
         <EnrollmentModeDialog

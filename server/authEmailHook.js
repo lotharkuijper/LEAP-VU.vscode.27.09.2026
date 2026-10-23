@@ -57,7 +57,8 @@ export function verifyHookSignature({ secret, headers, rawBody, nowMs = Date.now
 
 // Soort e-mail → groep vertaalsleutels (email.auth.<groep>.*). Onbekende
 // soorten (bv. e-mailadres wijzigen) krijgen de algemene tekst.
-const TEXT_GROUP = { signup: 'signup', invite: 'invite', recovery: 'recovery' };
+// magiclink = inloggen zonder wachtwoord (Canvas-studenten, server/lti.js): code én knop.
+const TEXT_GROUP = { signup: 'signup', invite: 'invite', recovery: 'recovery', magiclink: 'magiclink' };
 
 // Link waarmee de ontvanger de actie afrondt. De inlogdienst controleert de
 // code en stuurt daarna door naar de app (redirect_to).
@@ -81,11 +82,16 @@ export function buildAuthEmail(emailData, { lang = 'nl', supabaseUrl, appUrl = '
   const linkHint = t('email.auth.linkHint');
   const ignore = t('email.auth.ignore');
 
-  const text = [greeting, '', intro, '', `${cta}: ${link}`, '', ignore].join('\n');
+  // Bij inloggen zonder wachtwoord ook de code zelf, om over te typen.
+  const code = group === 'magiclink' && /^[0-9]{6,10}$/.test(String(emailData.token || '')) ? String(emailData.token) : '';
+  const codeLabel = code ? t('email.auth.codeLabel') : '';
+
+  const text = [greeting, '', intro, '', ...(code ? [`${codeLabel}: ${code}`, ''] : []), `${cta}: ${link}`, '', ignore].join('\n');
   const html =
     `<div style="font-family:system-ui,Segoe UI,Arial,sans-serif;font-size:15px;color:#222;line-height:1.5">` +
     `<p>${escapeHtml(greeting)}</p>` +
     `<p>${escapeHtml(intro)}</p>` +
+    (code ? `<p style="margin:16px 0">${escapeHtml(codeLabel)}<br/><span style="font-size:28px;font-weight:700;letter-spacing:6px">${escapeHtml(code)}</span></p>` : '') +
     `<p style="margin:20px 0"><a href="${escapeHtml(link)}" ` +
     `style="background:#f59e0b;color:#fff;padding:10px 18px;border-radius:10px;` +
     `text-decoration:none;font-weight:600;display:inline-block">${escapeHtml(cta)}</a></p>` +

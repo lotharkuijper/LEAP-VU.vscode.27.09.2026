@@ -54,6 +54,11 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       },
+      // Canvas-koppeling (server/lti.js). /lti/start is een pagina van de app zelf.
+      '^/lti/(login|launch|jwks|config\\.json)': {
+        target: 'http://localhost:3001',
+        changeOrigin: false,
+      },
     },
   },
   test: {

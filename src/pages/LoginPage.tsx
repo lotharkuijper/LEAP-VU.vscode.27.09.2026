@@ -4,6 +4,7 @@ import { Mail, Lock, LogIn, KeyRound, User, BookOpen } from 'lucide-react';
 import { fetchOpenCourses, registerOpen, isVuEmail, EnrollmentError, type OpenCourse } from '../services/enrollment.service';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
+import { EmailCodeLogin } from '../components/EmailCodeLogin';
 import type { TranslationKey } from '../i18n/translations';
 
 // Mapt een ruwe auth-foutmelding naar een i18n-sleutel met een nette,
@@ -34,6 +35,8 @@ export function LoginPage() {
   // Wachtwoord-vergeten-modus: toont een apart e-mailformulier i.p.v. login.
   const [isForgot, setIsForgot] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
+  // Inloggen met een code per e-mail (wie via Canvas in LEAP kwam, server/lti.js).
+  const [isCode, setIsCode] = useState(false);
   // Na het zelf verwijderen van een account (Mijn gegevens) een bevestiging tonen.
   const [accountDeleted] = useState(() => typeof window !== 'undefined' && (window.history.state as { usr?: { notice?: string } } | null)?.usr?.notice === 'accountDeleted');
   const { signIn } = useAuth();
@@ -148,7 +151,9 @@ export function LoginPage() {
             </button>
           </div>
 
-          {isForgot ? (
+          {isCode ? (
+            <EmailCodeLogin onCancel={() => setIsCode(false)} onDone={() => { /* de inlogpagina stuurt zelf door zodra je bent ingelogd */ }} />
+          ) : isForgot ? (
             forgotSent ? (
               <div className="space-y-5">
                 <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm" data-testid="text-forgot-sent">
@@ -353,6 +358,17 @@ export function LoginPage() {
                   data-testid="button-forgot-password"
                 >
                   {t('login.forgotLink')}
+                </button>
+              )}
+
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => { setIsCode(true); setError(''); setSignUpSuccess(false); }}
+                  className="block w-full text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                  data-testid="button-code-login"
+                >
+                  {t('login.code.link')}
                 </button>
               )}
             </div>

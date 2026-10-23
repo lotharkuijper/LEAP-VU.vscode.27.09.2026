@@ -18,6 +18,7 @@ import ShareStatsQuizPage from "./pages/ShareStatsQuizPage";
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const ActivatePage = lazy(() => import('./pages/ActivatePage').then(m => ({ default: m.ActivatePage })));
+const LtiStartPage = lazy(() => import('./pages/LtiStartPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ChatPage = lazy(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const MyDataPage = lazy(() => import('./pages/MyDataPage').then(m => ({ default: m.MyDataPage })));
@@ -124,6 +125,9 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
       <Route path="/activate" element={<ActivatePage />} />
+
+      {/* Landing na de Canvas-link (server/lti.js): wisselt de eenmalige inlogcode in. */}
+      <Route path="/lti/start" element={<LtiStartPage />} />
 
       <Route
         path="/dashboard"
