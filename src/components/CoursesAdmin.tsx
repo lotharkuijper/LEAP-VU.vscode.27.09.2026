@@ -857,18 +857,21 @@ export default function CoursesAdmin() {
                             key: 'members', label: t('admin.users.manageCourseMembers'), icon: Users, tone: 'primary' as const,
                             title: t('coursesAdmin.row.manageMembersTitle'), onClick: () => openMembersDialog(c),
                             disabled: rowBusyId === c.id, testId: `button-manage-members-primary-${c.id}`,
-                          }, {
+                          }] : []),
+                          // Bij een Canvas-cursus is de Canvas-link de belangrijkste knop: direct na Beheer leden,
+                          // zodat hij zichtbaar blijft en niet als eerste in "⋯ Meer" verdwijnt.
+                          ...((isAdmin || myTeacherCourseIds.has(c.id)) && (c.enrollment_mode === 'canvas' || c.enrollment_mode === 'canvas_open') ? [{
+                            key: 'canvasLink', label: t('canvasLink.action'), icon: Link2, tone: 'primary' as const,
+                            title: t('canvasLink.actionTitle'), onClick: () => setCanvasLinkFor(c),
+                            disabled: rowBusyId === c.id, testId: `button-canvas-link-${c.id}`,
+                          }] : []),
+                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
                             key: 'availability',
                             label: c.student_visible ? t('coursesAdmin.row.makeUnavailable') : t('coursesAdmin.row.makeAvailable'),
                             icon: c.student_visible ? EyeOff : Eye, tone: (c.student_visible ? 'warning' : 'success') as 'warning' | 'success',
                             title: c.student_visible ? t('coursesAdmin.row.hideTitle') : t('coursesAdmin.row.showTitle'),
                             onClick: () => toggleAvailability(c), busy: rowBusyId === c.id,
                             testId: `button-toggle-availability-${c.id}`,
-                          }] : []),
-                          ...((isAdmin || myTeacherCourseIds.has(c.id)) && (c.enrollment_mode === 'canvas' || c.enrollment_mode === 'canvas_open') ? [{
-                            key: 'canvasLink', label: t('canvasLink.action'), icon: Link2, tone: 'primary' as const,
-                            title: t('canvasLink.actionTitle'), onClick: () => setCanvasLinkFor(c),
-                            disabled: rowBusyId === c.id, testId: `button-canvas-link-${c.id}`,
                           }] : []),
                           ...(isAdmin ? [{
                             key: 'enrollment', label: t('enrollment.action'), icon: DoorOpen, tone: 'primary' as const,
