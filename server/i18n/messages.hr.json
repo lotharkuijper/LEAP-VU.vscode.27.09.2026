@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Brisanje nije uspjelo: {0}",
   "visible moet een boolean zijn": "visible mora biti boolean",
   "visibleToStudents moet een boolean zijn": "visibleToStudents mora biti boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "Redoslijed pojmova nije se mogao odrediti",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Za ovaj pojam trenutačno ne uspijeva. Pokušaj s drugim pojmom ili objasni samostalno.",
   "Vraag {0} (mcq) mist options": "Pitanju {0} (mcq) nedostaju options",
   "Vraag {0} mist een tekstveld": "Pitanju {0} nedostaje tekstualno polje",

@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "LEAPのログインコード",
   "email.auth.magiclink.intro": "LEAPにログインするには、このコードを使うか、ボタンをクリックしてください。コードの有効時間は短いです。",
   "email.auth.magiclink.cta": "LEAPにログイン",
-  "email.auth.codeLabel": "あなたのコード"
+  "email.auth.codeLabel": "あなたのコード",
+  "conceptOrder.legendStart": "開始",
+  "conceptOrder.legendEnd": "コースの終わり",
+  "conceptOrder.phase.begin": "コースの初めに出てくる",
+  "conceptOrder.phase.middle": "コースの中盤に出てくる",
+  "conceptOrder.phase.end": "コースの終わりに出てくる",
+  "conceptOrder.phase.unknown": "教材内での位置は不明",
+  "conceptOrder.placeUnit": "{phase}: {total}中{unit}番目の単元（{title}）で初めて出てくる",
+  "conceptOrder.noUnit": "その他の教材"
 }

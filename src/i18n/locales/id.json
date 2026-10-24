@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Kode masukmu untuk LEAP",
   "email.auth.magiclink.intro": "Gunakan kode ini untuk masuk ke LEAP, atau klik tombol. Kode ini berlaku sebentar saja.",
   "email.auth.magiclink.cta": "Masuk ke LEAP",
-  "email.auth.codeLabel": "Kodemu"
+  "email.auth.codeLabel": "Kodemu",
+  "conceptOrder.legendStart": "awal",
+  "conceptOrder.legendEnd": "akhir kursus",
+  "conceptOrder.phase.begin": "Muncul di awal kursus",
+  "conceptOrder.phase.middle": "Muncul di pertengahan kursus",
+  "conceptOrder.phase.end": "Muncul di akhir kursus",
+  "conceptOrder.phase.unknown": "Posisi dalam materi tidak diketahui",
+  "conceptOrder.placeUnit": "{phase}: pertama kali di bagian {unit} dari {total} ({title})",
+  "conceptOrder.noUnit": "Materi lainnya"
 }

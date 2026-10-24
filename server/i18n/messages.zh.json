@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "删除失败：{0}",
   "visible moet een boolean zijn": "visible 必须是 boolean",
   "visibleToStudents moet een boolean zijn": "visibleToStudents 必须是 boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "无法确定概念的顺序",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "这个概念现在无法处理。请尝试另一个概念或自己解释。",
   "Vraag {0} (mcq) mist options": "问题 {0}（mcq）缺少 options",
   "Vraag {0} mist een tekstveld": "问题 {0} 缺少文本字段",

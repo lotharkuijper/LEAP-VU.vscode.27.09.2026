@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Penghapusan gagal: {0}",
   "visible moet een boolean zijn": "visible harus berupa boolean",
   "visibleToStudents moet een boolean zijn": "visibleToStudents harus berupa boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "Urutan istilah tidak dapat ditentukan",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Untuk konsep ini, saat ini belum bisa. Coba konsep lain atau Leg zelf uit.",
   "Vraag {0} (mcq) mist options": "Pertanyaan {0} (mcq) tidak memiliki options",
   "Vraag {0} mist een tekstveld": "Pertanyaan {0} tidak memiliki field teks",

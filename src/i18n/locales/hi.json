@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "LEAP के लिए तुम्हारा लॉगिन कोड",
   "email.auth.magiclink.intro": "LEAP में लॉग इन करने के लिए इस कोड का इस्तेमाल करो, या बटन पर क्लिक करो। कोड थोड़े समय के लिए मान्य है।",
   "email.auth.magiclink.cta": "LEAP में लॉग इन करो",
-  "email.auth.codeLabel": "तुम्हारा कोड"
+  "email.auth.codeLabel": "तुम्हारा कोड",
+  "conceptOrder.legendStart": "शुरुआत",
+  "conceptOrder.legendEnd": "पाठ्यक्रम का अंत",
+  "conceptOrder.phase.begin": "पाठ्यक्रम की शुरुआत में आता है",
+  "conceptOrder.phase.middle": "पाठ्यक्रम के मध्य में आता है",
+  "conceptOrder.phase.end": "पाठ्यक्रम के अंत में आता है",
+  "conceptOrder.phase.unknown": "सामग्री में स्थान अज्ञात",
+  "conceptOrder.placeUnit": "{phase}: पहली बार भाग {unit} में {total} में से ({title})",
+  "conceptOrder.noUnit": "अन्य सामग्री"
 }

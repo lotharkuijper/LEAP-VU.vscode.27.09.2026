@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Не вдалося видалити: {0}",
   "visible moet een boolean zijn": "visible має бути boolean",
   "visibleToStudents moet een boolean zijn": "visibleToStudents має бути boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "Не вдалося визначити порядок понять",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Для цього поняття зараз не виходить. Спробуй інше поняття або «Поясни самостійно».",
   "Vraag {0} (mcq) mist options": "Питання {0} (mcq) не має options",
   "Vraag {0} mist een tekstveld": "У питанні {0} бракує текстового поля",

@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Ștergerea a eșuat: {0}",
   "visible moet een boolean zijn": "visible trebuie să fie boolean",
   "visibleToStudents moet een boolean zijn": "visibleToStudents trebuie să fie boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "Ordinea termenilor nu a putut fi determinată",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Pentru acest concept nu funcționează acum. Încearcă un alt concept sau Explică singur.",
   "Vraag {0} (mcq) mist options": "Întrebarea {0} (mcq) nu are options",
   "Vraag {0} mist een tekstveld": "Întrebării {0} îi lipsește un câmp de text",

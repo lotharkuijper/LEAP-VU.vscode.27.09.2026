@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "你嘅 LEAP 登入代碼",
   "email.auth.magiclink.intro": "用呢個代碼登入 LEAP，或者撳按鈕。代碼只喺短時間內有效。",
   "email.auth.magiclink.cta": "登入 LEAP",
-  "email.auth.codeLabel": "你嘅代碼"
+  "email.auth.codeLabel": "你嘅代碼",
+  "conceptOrder.legendStart": "開始",
+  "conceptOrder.legendEnd": "課程完結",
+  "conceptOrder.phase.begin": "出現喺課程開始時",
+  "conceptOrder.phase.middle": "出現喺課程中段",
+  "conceptOrder.phase.end": "出現喺課程完結時",
+  "conceptOrder.phase.unknown": "喺教材入面嘅位置未知",
+  "conceptOrder.placeUnit": "{phase}：首次出現喺第 {unit} 個部分（共 {total} 個）（{title}）",
+  "conceptOrder.noUnit": "其他教材"
 }

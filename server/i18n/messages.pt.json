@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Falha ao eliminar: {0}",
   "visible moet een boolean zijn": "visible deve ser boolean",
   "visibleToStudents moet een boolean zijn": "visibleToStudents deve ser boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "Não foi possível determinar a ordem dos conceitos",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Para este conceito, agora não é possível. Tenta outro conceito ou Explica tu próprio.",
   "Vraag {0} (mcq) mist options": "A pergunta {0} (mcq) não tem options",
   "Vraag {0} mist een tekstveld": "A pergunta {0} não tem um campo de texto",

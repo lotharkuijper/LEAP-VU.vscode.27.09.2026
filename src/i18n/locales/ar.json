@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "رمز تسجيل الدخول الخاص بك إلى LEAP",
   "email.auth.magiclink.intro": "استخدم هذا الرمز لتسجيل الدخول إلى LEAP، أو اضغط على الزر. الرمز صالح لمدة قصيرة.",
   "email.auth.magiclink.cta": "تسجيل الدخول إلى LEAP",
-  "email.auth.codeLabel": "رمزك"
+  "email.auth.codeLabel": "رمزك",
+  "conceptOrder.legendStart": "البداية",
+  "conceptOrder.legendEnd": "نهاية المقرر",
+  "conceptOrder.phase.begin": "يأتي في بداية المقرر",
+  "conceptOrder.phase.middle": "يأتي في منتصف المقرر",
+  "conceptOrder.phase.end": "يأتي في نهاية المقرر",
+  "conceptOrder.phase.unknown": "الموضع في المادة غير معروف",
+  "conceptOrder.placeUnit": "{phase}: لأول مرة في الجزء {unit} من {total} ({title})",
+  "conceptOrder.noUnit": "مواد أخرى"
 }

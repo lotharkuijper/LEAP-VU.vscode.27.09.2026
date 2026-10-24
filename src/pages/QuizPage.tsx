@@ -32,6 +32,9 @@ import { useLearningLevel } from '../hooks/useLearningLevel';
 import { ConceptProgressCard } from '../components/quiz/ConceptProgressCard';
 import { FormulaButton } from '../components/formula/FormulaButton';
 import { MathText } from '../components/MathText';
+import { useConceptOrder } from '../hooks/useConceptOrder';
+import { sortByCourseOrder } from '../lib/conceptOrder';
+import { ConceptPlaceDot, ConceptPlaceLegend } from '../components/concepts/ConceptPlace';
 import {
   Play,
   CheckCircle,
@@ -147,6 +150,8 @@ export function QuizPage() {
   const QUESTION_TYPE_META = getQuestionTypeMeta(lang);
   const { profile } = useAuth();
   const { activeCourseId: activeCourse } = useActiveCourse();
+  // Plek van elk begrip in de stof (server/conceptOrder.js): volgorde + kleurverloop.
+  const places = useConceptOrder(activeCourse);
   const courseFeatures = useCourseFeatures();
 
   const [state, setState] = useState<QuizState>('setup');
@@ -368,9 +373,9 @@ export function QuizPage() {
 
   const filteredTopics = useMemo(() => {
     const q = topicSearch.trim().toLowerCase();
-    if (!q) return availableTopics;
-    return availableTopics.filter(t => t.name.toLowerCase().includes(q));
-  }, [availableTopics, topicSearch]);
+    const list = q ? availableTopics.filter(t => t.name.toLowerCase().includes(q)) : availableTopics;
+    return places ? sortByCourseOrder(list, x => x.id, x => x.name, places) : list;
+  }, [availableTopics, topicSearch, places]);
 
   const selectedTopics = useMemo(
     () => availableTopics.filter(t => selectedTopicIds.has(t.id)),
@@ -771,6 +776,7 @@ export function QuizPage() {
               <ConceptProgressCard
                 topics={availableTopics}
                 attempts={attempts}
+                places={places}
                 onPractice={(ids) => {
                   setSelectedTopicIds(new Set(ids));
                   if (setupValidationError) setSetupValidationError(null);
@@ -829,6 +835,7 @@ export function QuizPage() {
                     />
                   </div>
 
+                  {places && <ConceptPlaceLegend className="mb-1" />}
                   <div
                     className="max-h-60 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100 bg-white"
                     data-testid="list-quiz-topics"
@@ -850,6 +857,7 @@ export function QuizPage() {
                             className="w-4 h-4 accent-cyan-600"
                             data-testid={`checkbox-topic-${topic.id}`}
                           />
+                          {places && <ConceptPlaceDot place={places.get(topic.id)} />}
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium text-gray-900 truncate">{topic.name}</div>
                           </div>

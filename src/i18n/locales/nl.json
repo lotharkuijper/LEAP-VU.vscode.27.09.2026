@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Je inlogcode voor LEAP",
   "email.auth.magiclink.intro": "Gebruik deze code om in te loggen bij LEAP, of klik op de knop. De code is kort geldig.",
   "email.auth.magiclink.cta": "Inloggen bij LEAP",
-  "email.auth.codeLabel": "Je code"
+  "email.auth.codeLabel": "Je code",
+  "conceptOrder.legendStart": "begin",
+  "conceptOrder.legendEnd": "eind van de cursus",
+  "conceptOrder.phase.begin": "Komt aan het begin van de cursus",
+  "conceptOrder.phase.middle": "Komt halverwege de cursus",
+  "conceptOrder.phase.end": "Komt aan het eind van de cursus",
+  "conceptOrder.phase.unknown": "Plek in de stof onbekend",
+  "conceptOrder.placeUnit": "{phase}: voor het eerst in onderdeel {unit} van {total} ({title})",
+  "conceptOrder.noUnit": "Overige stof"
 }

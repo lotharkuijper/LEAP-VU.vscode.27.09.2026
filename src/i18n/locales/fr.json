@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Ton code de connexion pour LEAP",
   "email.auth.magiclink.intro": "Utilise ce code pour te connecter à LEAP, ou clique sur le bouton. Le code est valable peu de temps.",
   "email.auth.magiclink.cta": "Se connecter à LEAP",
-  "email.auth.codeLabel": "Ton code"
+  "email.auth.codeLabel": "Ton code",
+  "conceptOrder.legendStart": "début",
+  "conceptOrder.legendEnd": "fin du cours",
+  "conceptOrder.phase.begin": "Apparaît au début du cours",
+  "conceptOrder.phase.middle": "Apparaît au milieu du cours",
+  "conceptOrder.phase.end": "Apparaît à la fin du cours",
+  "conceptOrder.phase.unknown": "Emplacement dans le contenu inconnu",
+  "conceptOrder.placeUnit": "{phase} : pour la première fois dans la partie {unit} sur {total} ({title})",
+  "conceptOrder.noUnit": "Autre contenu"
 }

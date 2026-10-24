@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "削除に失敗しました: {0}",
   "visible moet een boolean zijn": "visible は boolean である必要があります",
   "visibleToStudents moet een boolean zijn": "visibleToStudents は boolean である必要があります",
+  "Volgorde van de begrippen kon niet worden bepaald": "用語の順序を決定できませんでした",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "この概念では今はうまくいきません。別の概念を試すか、自分で説明してね。",
   "Vraag {0} (mcq) mist options": "質問 {0}（mcq）に options がありません",
   "Vraag {0} mist een tekstveld": "質問 {0} にテキストフィールドがありません",

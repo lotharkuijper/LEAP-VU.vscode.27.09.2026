@@ -22,6 +22,9 @@ import { tStatic } from '../i18n/translations';
 import { explainPartView, type ExplainPart } from '../lib/courseFeatures';
 import { ImproveExplanation } from '../components/explain/ImproveExplanation';
 import { HelpTip } from '../components/help/HelpTip';
+import { useConceptOrder } from '../hooks/useConceptOrder';
+import { sortByCourseOrder } from '../lib/conceptOrder';
+import { ConceptPlaceDot, ConceptPlaceLegend } from '../components/concepts/ConceptPlace';
 import { FormulaButton } from '../components/formula/FormulaButton';
 import { getActiveLang } from '../i18n/activeLang';
 
@@ -237,6 +240,8 @@ export function ExplainPage() {
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [filteredConcepts, setFilteredConcepts] = useState<Concept[]>([]);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
+  // Plek van elk begrip in de stof (server/conceptOrder.js): volgorde + kleurverloop.
+  const places = useConceptOrder(activeCourse);
   // Leg zelf uit / Verbeter deze uitleg (onderdelen van Ik leg uit, per cursus aan/uit).
   const partSelf = explainPartView(courseFeatures.features, 'explainSelf', courseFeatures.isStaff);
   const partImprove = explainPartView(courseFeatures.features, 'explainImprove', courseFeatures.isStaff);
@@ -764,7 +769,7 @@ export function ExplainPage() {
                   data-testid={`button-concept-${concept.id}`}
                 >
                   <div className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 flex-shrink-0" />
+                    {places ? <ConceptPlaceDot place={places.get(concept.id)} className="mx-0.5" /> : <BookOpen className="w-4 h-4 flex-shrink-0" />}
                     <span className="text-sm flex-1 truncate">{conceptName(concept)}</span>
                     {isRagExtracted && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 font-medium shrink-0">AI</span>
@@ -797,6 +802,8 @@ export function ExplainPage() {
             const sortedAlpha = [...concepts].sort((a, b) =>
               a.name.localeCompare(b.name, intlLocale(lang), { sensitivity: 'base' })
             );
+            // Op volgorde van de stof (begin → eind); zonder volgorde alfabetisch.
+            const ordered = places ? sortByCourseOrder(concepts, c => c.id, c => c.name, places, intlLocale(lang)) : sortedAlpha;
 
             if (searchTerm) {
               if (filteredConcepts.length === 0) {
@@ -815,7 +822,7 @@ export function ExplainPage() {
               }
               return (
                 <div className="space-y-2 max-h-[500px] overflow-y-auto" data-testid="list-search-results">
-                  {filteredConcepts.map(renderConceptButton)}
+                  {(places ? sortByCourseOrder(filteredConcepts, c => c.id, c => c.name, places, intlLocale(lang)) : filteredConcepts).map(renderConceptButton)}
                 </div>
               );
             }
@@ -831,7 +838,9 @@ export function ExplainPage() {
               if (recentConcepts.length >= 5) break;
             }
             const usingRecent = recentConcepts.length > 0;
-            const shortList = usingRecent ? recentConcepts : sortedAlpha.slice(0, 5);
+            // Aanbevolen: de eerste begrippen uit de stof die je nog niet hebt uitgelegd.
+            const explainedIds = new Set(history.map(h => h.conceptId));
+            const shortList = usingRecent ? recentConcepts : ordered.filter(c => !explainedIds.has(c.id)).slice(0, 5);
             const shortHeading = usingRecent ? t('explain.recentlyViewed') : t('explain.recommendedStart');
 
             const letters = Array.from(new Set(sortedAlpha.map(c => (c.name[0] || '#').toUpperCase()))).sort();
@@ -844,6 +853,7 @@ export function ExplainPage() {
 
             return (
               <div className="space-y-3">
+                {places && <ConceptPlaceLegend />}
                 {!showAllConcepts && (
                   <>
                     <h3 className="text-xs uppercase tracking-wide text-gray-500 font-semibold">{shortHeading}</h3>
@@ -852,7 +862,25 @@ export function ExplainPage() {
                     </div>
                   </>
                 )}
-                {showAllConcepts && (
+                {showAllConcepts && places && (
+                  <div className="space-y-1 max-h-[500px] overflow-y-auto" data-testid="list-all-concepts">
+                    {ordered.map((c, i) => {
+                      const unit = places.get(c.id)?.unitTitle ?? null;
+                      const prev = i > 0 ? places.get(ordered[i - 1].id)?.unitTitle ?? null : undefined;
+                      return (
+                        <div key={c.id}>
+                          {unit !== prev && (unit || i > 0) && (
+                            <h4 className="px-1 pt-2 text-[11px] font-semibold uppercase tracking-wide text-gray-500" data-testid="heading-concept-unit">
+                              {unit || t('conceptOrder.noUnit')}
+                            </h4>
+                          )}
+                          {renderConceptButton(c)}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {showAllConcepts && !places && (
                   <>
                     <div
                       className="flex flex-wrap gap-1"

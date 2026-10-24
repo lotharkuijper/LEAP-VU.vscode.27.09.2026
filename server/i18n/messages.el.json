@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Η διαγραφή απέτυχε: {0}",
   "visible moet een boolean zijn": "Το visible πρέπει να είναι boolean",
   "visibleToStudents moet een boolean zijn": "Το visibleToStudents πρέπει να είναι boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "Δεν ήταν δυνατό να προσδιοριστεί η σειρά των όρων",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Για αυτή την έννοια δεν γίνεται τώρα. Δοκίμασε άλλη έννοια ή το «Εξήγησέ το μόνος σου».",
   "Vraag {0} (mcq) mist options": "Η ερώτηση {0} (mcq) δεν έχει options",
   "Vraag {0} mist een tekstveld": "Η ερώτηση {0} δεν έχει πεδίο κειμένου",

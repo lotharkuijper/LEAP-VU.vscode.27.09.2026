@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Твій код входу для LEAP",
   "email.auth.magiclink.intro": "Використай цей код, щоб увійти в LEAP, або натисни кнопку. Код дійсний недовго.",
   "email.auth.magiclink.cta": "Увійти в LEAP",
-  "email.auth.codeLabel": "Твій код"
+  "email.auth.codeLabel": "Твій код",
+  "conceptOrder.legendStart": "початок",
+  "conceptOrder.legendEnd": "кінець курсу",
+  "conceptOrder.phase.begin": "З’являється на початку курсу",
+  "conceptOrder.phase.middle": "З’являється посередині курсу",
+  "conceptOrder.phase.end": "З’являється наприкінці курсу",
+  "conceptOrder.phase.unknown": "Місце в матеріалі невідоме",
+  "conceptOrder.placeUnit": "{phase}: уперше в розділі {unit} з {total} ({title})",
+  "conceptOrder.noUnit": "Інший матеріал"
 }

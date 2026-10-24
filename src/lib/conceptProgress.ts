@@ -42,7 +42,12 @@ export function reviewIntervalDays(mastery: number): number {
   return 1 + 13 * Math.max(0, Math.min(100, mastery)) / 100;
 }
 
-export function buildConceptProgress(topics: ProgressTopic[], attempts: ProgressAttempt[], now: Date = new Date()): ConceptProgress[] {
+/**
+ * orderOf (optioneel): plek van een begrip in de stof (server/conceptOrder.js). Bij gelijke
+ * prioriteit gaat wat eerder in de stof komt voor; zo komen nieuwe begrippen op volgorde
+ * van de cursus. Er wordt niets verborgen.
+ */
+export function buildConceptProgress(topics: ProgressTopic[], attempts: ProgressAttempt[], now: Date = new Date(), orderOf?: (id: string) => number | null): ConceptProgress[] {
   const sorted = [...attempts]
     .filter(a => typeof a.score_percentage === 'number' && Array.isArray(a.topics))
     .sort((a, b) => b.created_at.localeCompare(a.created_at)); // nieuwste eerst
@@ -60,7 +65,17 @@ export function buildConceptProgress(topics: ProgressTopic[], attempts: Progress
     const priority = (1 - mastery / 100) + 0.5 * Math.min(overdue, 2);
     const reason: ProgressReason = mastery < WEAK_BELOW ? 'weak' : overdue >= 1 ? 'due' : 'ok';
     return { id: t.id, name: t.name, attempts: mine.length, mastery, lastPractisedAt: last, daysSince: Math.floor(days), priority, reason };
-  }).sort((a, b) => (TIER[b.reason] - TIER[a.reason]) || (b.priority - a.priority) || a.name.localeCompare(b.name));
+  }).sort((a, b) => (TIER[b.reason] - TIER[a.reason]) || (b.priority - a.priority) || courseOrder(a.id, b.id, orderOf) || a.name.localeCompare(b.name));
+}
+
+function courseOrder(a: string, b: string, orderOf?: (id: string) => number | null): number {
+  if (!orderOf) return 0;
+  const oa = orderOf(a);
+  const ob = orderOf(b);
+  if (oa === null && ob === null) return 0;
+  if (oa === null) return 1;
+  if (ob === null) return -1;
+  return oa - ob;
 }
 
 /**

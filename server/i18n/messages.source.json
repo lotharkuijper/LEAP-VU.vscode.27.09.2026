@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}",
   "visible moet een boolean zijn",
   "visibleToStudents moet een boolean zijn",
+  "Volgorde van de begrippen kon niet worden bepaald",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.",
   "Vraag {0} (mcq) mist options",
   "Vraag {0} mist een tekstveld",

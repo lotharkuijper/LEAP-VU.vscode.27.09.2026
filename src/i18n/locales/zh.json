@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "你的 LEAP 登录代码",
   "email.auth.magiclink.intro": "使用此代码登录 LEAP，或点击按钮。该代码有效期很短。",
   "email.auth.magiclink.cta": "登录 LEAP",
-  "email.auth.codeLabel": "你的代码"
+  "email.auth.codeLabel": "你的代码",
+  "conceptOrder.legendStart": "开始",
+  "conceptOrder.legendEnd": "课程结束",
+  "conceptOrder.phase.begin": "出现在课程开始时",
+  "conceptOrder.phase.middle": "出现在课程中期",
+  "conceptOrder.phase.end": "出现在课程结束时",
+  "conceptOrder.phase.unknown": "在学习内容中的位置未知",
+  "conceptOrder.placeUnit": "{phase}：首次出现在 {total} 个单元中的第 {unit} 个（{title}）",
+  "conceptOrder.noUnit": "其他学习内容"
 }

@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "فشل الحذف: {0}",
   "visible moet een boolean zijn": "يجب أن يكون visible قيمة boolean",
   "visibleToStudents moet een boolean zijn": "يجب أن يكون visibleToStudents قيمة boolean",
+  "Volgorde van de begrippen kon niet worden bepaald": "تعذّر تحديد ترتيب المفاهيم",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "لا يمكن الآن لهذا المفهوم. جرّب مفهومًا آخر أو اشرح بنفسك.",
   "Vraag {0} (mcq) mist options": "السؤال {0} (mcq) يفتقد options",
   "Vraag {0} mist een tekstveld": "السؤال {0} يفتقد حقل نص",

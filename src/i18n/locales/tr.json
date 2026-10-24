@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "LEAP giriş kodun",
   "email.auth.magiclink.intro": "LEAP’e giriş yapmak için bu kodu kullan veya düğmeye tıkla. Kod kısa süre geçerlidir.",
   "email.auth.magiclink.cta": "LEAP’e giriş yap",
-  "email.auth.codeLabel": "Kodun"
+  "email.auth.codeLabel": "Kodun",
+  "conceptOrder.legendStart": "başlangıç",
+  "conceptOrder.legendEnd": "dersin sonu",
+  "conceptOrder.phase.begin": "Dersin başında yer alır",
+  "conceptOrder.phase.middle": "Dersin ortalarında yer alır",
+  "conceptOrder.phase.end": "Dersin sonunda yer alır",
+  "conceptOrder.phase.unknown": "Konunun yeri bilinmiyor",
+  "conceptOrder.placeUnit": "{phase}: ilk kez {total} bölümden {unit}. bölümde ({title})",
+  "conceptOrder.noUnit": "Diğer konular"
 }

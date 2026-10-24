@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Codul tău de autentificare pentru LEAP",
   "email.auth.magiclink.intro": "Folosește acest cod pentru a te autentifica în LEAP sau apasă pe buton. Codul este valabil pentru scurt timp.",
   "email.auth.magiclink.cta": "Autentifică-te în LEAP",
-  "email.auth.codeLabel": "Codul tău"
+  "email.auth.codeLabel": "Codul tău",
+  "conceptOrder.legendStart": "început",
+  "conceptOrder.legendEnd": "sfârșitul cursului",
+  "conceptOrder.phase.begin": "Apare la începutul cursului",
+  "conceptOrder.phase.middle": "Apare la jumătatea cursului",
+  "conceptOrder.phase.end": "Apare la sfârșitul cursului",
+  "conceptOrder.phase.unknown": "Locul în materie este necunoscut",
+  "conceptOrder.placeUnit": "{phase}: pentru prima dată în partea {unit} din {total} ({title})",
+  "conceptOrder.noUnit": "Altă materie"
 }

@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Ο κωδικός σύνδεσής σου για το LEAP",
   "email.auth.magiclink.intro": "Χρησιμοποίησε αυτόν τον κωδικό για να συνδεθείς στο LEAP ή κάνε κλικ στο κουμπί. Ο κωδικός ισχύει για σύντομο χρονικό διάστημα.",
   "email.auth.magiclink.cta": "Σύνδεση στο LEAP",
-  "email.auth.codeLabel": "Ο κωδικός σου"
+  "email.auth.codeLabel": "Ο κωδικός σου",
+  "conceptOrder.legendStart": "αρχή",
+  "conceptOrder.legendEnd": "τέλος του μαθήματος",
+  "conceptOrder.phase.begin": "Εμφανίζεται στην αρχή του μαθήματος",
+  "conceptOrder.phase.middle": "Εμφανίζεται στα μέσα του μαθήματος",
+  "conceptOrder.phase.end": "Εμφανίζεται στο τέλος του μαθήματος",
+  "conceptOrder.phase.unknown": "Άγνωστη θέση στην ύλη",
+  "conceptOrder.placeUnit": "{phase}: για πρώτη φορά στην ενότητα {unit} από {total} ({title})",
+  "conceptOrder.noUnit": "Λοιπή ύλη"
 }

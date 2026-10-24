@@ -140,6 +140,7 @@ import { registerPromptTemplateRoutes } from './promptTemplates.js';
 import { registerFlawedExplanationRoutes } from './flawedExplanations.js';
 import { buildChatGoalBlock, lastChatGoal, chatGoalSummaryLine } from './chatGoal.js';
 import { registerLtiRoutes, loadPlatforms, loadToolKey, createRateLimiter as createLtiRateLimiter } from './lti.js';
+import { loadConceptOrder } from './conceptOrder.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary } from './projectJournal.js';
@@ -6612,6 +6613,36 @@ app.get('/api/admin/extract-concepts/jobs/:jobId', async (req, res) => {
     result: job.status === 'running' ? null : job.result,
     elapsedMs: (job.finishedAt || Date.now()) - job.startedAt,
   });
+});
+
+// Volgorde van de begrippen in de stof (server/conceptOrder.js): waar komt elk
+// begrip voor het eerst voor? Voor de lijst bij Ik leg uit en de quiz, met een
+// kleurverloop van begin naar eind. 5 minuten onthouden per cursus.
+const conceptOrderCache = new Map();
+const CONCEPT_ORDER_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : 5 * 60 * 1000;
+app.get('/api/concepts/order', async (req, res) => {
+  const auth = await requireAuthUser(req, res);
+  if (!auth) return;
+  const courseId = typeof req.query.courseId === 'string' ? req.query.courseId : '';
+  if (!courseId) return res.status(400).json({ error: 'courseId vereist' });
+  if (!(await userHasCourseAccess(auth.user, auth.profile, courseId))) {
+    return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
+  }
+  try {
+    const hit = conceptOrderCache.get(courseId);
+    if (hit && Date.now() - hit.at < CONCEPT_ORDER_TTL_MS) return res.json({ concepts: hit.value });
+    const value = await loadConceptOrder({
+      db: supabaseAdmin,
+      courseId,
+      loadLeerlijn: (id) => cachedLeerlijn(id),
+      courseFolderIds: (id) => courseRagFolderIds(id),
+    });
+    conceptOrderCache.set(courseId, { at: Date.now(), value });
+    return res.json({ concepts: value });
+  } catch (err) {
+    console.warn('[concepts/order] fout:', err?.message || err);
+    return res.status(500).json({ error: 'Volgorde van de begrippen kon niet worden bepaald' });
+  }
 });
 
 app.get('/api/concepts', async (req, res) => {

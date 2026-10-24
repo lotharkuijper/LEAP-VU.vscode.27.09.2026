@@ -5,6 +5,8 @@ import { Target, Sparkles } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { HelpTip } from '../help/HelpTip';
 import { buildConceptProgress, pickPracticeSet, type ProgressAttempt, type ProgressTopic, type ConceptProgress } from '../../lib/conceptProgress';
+import type { ConceptPlace } from '../../lib/conceptOrder';
+import { ConceptPlaceDot } from '../concepts/ConceptPlace';
 
 const REASON_STYLE: Record<ConceptProgress['reason'], string> = {
   weak: 'bg-red-50 text-red-700 border-red-200',
@@ -19,15 +21,20 @@ function barColor(m: number) {
   return 'bg-accent-500';
 }
 
-export function ConceptProgressCard({ topics, attempts, onPractice, now }: {
+export function ConceptProgressCard({ topics, attempts, onPractice, now, places = null }: {
   topics: ProgressTopic[];
   attempts: ProgressAttempt[];
+  /** Plek in de stof (server/conceptOrder.js): nieuwe begrippen op volgorde van de stof. */
+  places?: Map<string, ConceptPlace> | null;
   onPractice: (ids: string[]) => void;
   now?: Date;
 }) {
   const { t } = useLanguage();
   const [showAll, setShowAll] = useState(false);
-  const progress = useMemo(() => buildConceptProgress(topics, attempts, now), [topics, attempts, now]);
+  const progress = useMemo(
+    () => buildConceptProgress(topics, attempts, now, places ? (id: string) => places.get(id)?.order ?? null : undefined),
+    [topics, attempts, now, places],
+  );
   const practiced = progress.filter(p => p.attempts > 0).length;
   const practice = pickPracticeSet(progress, 3);
   const shown = showAll ? progress : progress.slice(0, 5);
@@ -57,6 +64,7 @@ export function ConceptProgressCard({ topics, attempts, onPractice, now }: {
       <ul className="space-y-1.5">
         {shown.map(p => (
           <li key={p.id} className="flex items-center gap-3 min-w-0" data-testid={`row-progress-${p.id}`}>
+            {places && <ConceptPlaceDot place={places.get(p.id)} />}
             <span className="min-w-0 flex-1 truncate text-sm text-gray-800" title={p.name}>{p.name}</span>
             {p.mastery != null ? (
               <span className="flex w-28 shrink-0 items-center gap-2">

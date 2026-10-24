@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "हटाना विफल: {0}",
   "visible moet een boolean zijn": "visible boolean होना चाहिए",
   "visibleToStudents moet een boolean zijn": "visibleToStudents boolean होना चाहिए",
+  "Volgorde van de begrippen kon niet worden bepaald": "अवधारणाओं का क्रम निर्धारित नहीं किया जा सका",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "इस अवधारणा के लिए अभी नहीं हो पा रहा है। कोई दूसरी अवधारणा आज़माओ या खुद समझाओ।",
   "Vraag {0} (mcq) mist options": "प्रश्न {0} (mcq) में options नहीं हैं",
   "Vraag {0} mist een tekstveld": "प्रश्न {0} में टेक्स्ट फ़ील्ड नहीं है",

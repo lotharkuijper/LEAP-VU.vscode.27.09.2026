@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "LEAP 로그인 코드",
   "email.auth.magiclink.intro": "이 코드를 사용해 LEAP에 로그인하거나 버튼을 클릭해. 코드는 짧은 시간 동안만 유효해.",
   "email.auth.magiclink.cta": "LEAP에 로그인",
-  "email.auth.codeLabel": "네 코드"
+  "email.auth.codeLabel": "네 코드",
+  "conceptOrder.legendStart": "시작",
+  "conceptOrder.legendEnd": "과정 끝",
+  "conceptOrder.phase.begin": "과정 시작 부분에 나와",
+  "conceptOrder.phase.middle": "과정 중간쯤에 나와",
+  "conceptOrder.phase.end": "과정 끝부분에 나와",
+  "conceptOrder.phase.unknown": "학습 내용에서의 위치를 알 수 없음",
+  "conceptOrder.placeUnit": "{phase}: {total}개 중 {unit}번째 단원({title})에서 처음 나와",
+  "conceptOrder.noUnit": "기타 학습 내용"
 }

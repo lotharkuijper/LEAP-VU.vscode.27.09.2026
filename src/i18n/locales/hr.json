@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Tvoj kod za prijavu u LEAP",
   "email.auth.magiclink.intro": "Upotrijebi ovaj kod za prijavu u LEAP ili klikni gumb. Kod vrijedi kratko.",
   "email.auth.magiclink.cta": "Prijava u LEAP",
-  "email.auth.codeLabel": "Tvoj kod"
+  "email.auth.codeLabel": "Tvoj kod",
+  "conceptOrder.legendStart": "početak",
+  "conceptOrder.legendEnd": "kraj kolegija",
+  "conceptOrder.phase.begin": "Pojavljuje se na početku kolegija",
+  "conceptOrder.phase.middle": "Pojavljuje se sredinom kolegija",
+  "conceptOrder.phase.end": "Pojavljuje se na kraju kolegija",
+  "conceptOrder.phase.unknown": "Mjesto u gradivu nepoznato",
+  "conceptOrder.placeUnit": "{phase}: prvi put u dijelu {unit} od {total} ({title})",
+  "conceptOrder.noUnit": "Ostalo gradivo"
 }

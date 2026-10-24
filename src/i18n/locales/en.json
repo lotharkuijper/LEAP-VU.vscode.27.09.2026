@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Your sign-in code for LEAP",
   "email.auth.magiclink.intro": "Use this code to sign in to LEAP, or click the button. The code is valid for a short time.",
   "email.auth.magiclink.cta": "Sign in to LEAP",
-  "email.auth.codeLabel": "Your code"
+  "email.auth.codeLabel": "Your code",
+  "conceptOrder.legendStart": "start",
+  "conceptOrder.legendEnd": "end of the course",
+  "conceptOrder.phase.begin": "Comes at the start of the course",
+  "conceptOrder.phase.middle": "Comes halfway through the course",
+  "conceptOrder.phase.end": "Comes at the end of the course",
+  "conceptOrder.phase.unknown": "Place in the material unknown",
+  "conceptOrder.placeUnit": "{phase}: first in part {unit} of {total} ({title})",
+  "conceptOrder.noUnit": "Other material"
 }

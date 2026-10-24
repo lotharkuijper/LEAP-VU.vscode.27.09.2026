@@ -519,6 +519,7 @@
   "Verwijderen mislukt: {0}": "Silme başarısız: {0}",
   "visible moet een boolean zijn": "visible boolean olmalı",
   "visibleToStudents moet een boolean zijn": "visibleToStudents boolean olmalı",
+  "Volgorde van de begrippen kon niet worden bepaald": "Kavramların sırası belirlenemedi",
   "Voor dit begrip lukt het nu niet. Probeer een ander begrip of Leg zelf uit.": "Bu kavram için şu an olmuyor. Başka bir kavram dene veya kendin açıkla.",
   "Vraag {0} (mcq) mist options": "Soru {0} (mcq) options içermiyor",
   "Vraag {0} mist een tekstveld": "Soru {0} metin alanı eksik",

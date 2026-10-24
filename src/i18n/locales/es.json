@@ -3158,5 +3158,13 @@
   "email.auth.magiclink.subject": "Tu código de inicio de sesión para LEAP",
   "email.auth.magiclink.intro": "Usa este código para iniciar sesión en LEAP, o haz clic en el botón. El código es válido por poco tiempo.",
   "email.auth.magiclink.cta": "Iniciar sesión en LEAP",
-  "email.auth.codeLabel": "Tu código"
+  "email.auth.codeLabel": "Tu código",
+  "conceptOrder.legendStart": "inicio",
+  "conceptOrder.legendEnd": "fin del curso",
+  "conceptOrder.phase.begin": "Aparece al principio del curso",
+  "conceptOrder.phase.middle": "Aparece a mitad del curso",
+  "conceptOrder.phase.end": "Aparece al final del curso",
+  "conceptOrder.phase.unknown": "Ubicación en el contenido desconocida",
+  "conceptOrder.placeUnit": "{phase}: por primera vez en la unidad {unit} de {total} ({title})",
+  "conceptOrder.noUnit": "Otros contenidos"
 }
