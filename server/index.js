@@ -13249,8 +13249,17 @@ app.get('/api/projects/student-overview', async (req, res) => {
       if (allowed) courseMap.set(c.id, { id: c.id, name: c.name });
     }
 
-    // Cursussen waar Projecten uit staat vallen weg (behalve voor de docent).
+    // Een LEAP-beheerder heeft overal toegang, ook zonder lidmaatschap: alle
+    // cursussen (de frontend toont alleen de actieve). Zo kan de beheerder in
+    // elk project zijn eigen groep starten om te controleren of alles klopt.
+    // (Sinds de toegangsroute van 2026-10-20 kwam hij hier anders leeg uit.)
     const { data: ovProfile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
+    if (ovProfile?.role === 'admin' || ovProfile?.email === SUPERUSER_EMAIL) {
+      const { data: allCourses } = await supabaseAdmin.from('courses').select('id, name');
+      for (const c of (allCourses || [])) if (!courseMap.has(c.id)) courseMap.set(c.id, { id: c.id, name: c.name });
+    }
+
+    // Cursussen waar Projecten uit staat vallen weg (behalve voor de docent).
     const courses = [];
     for (const c of courseMap.values()) {
       if (await courseFeatureOnFor(auth.user, ovProfile, c.id, 'projects')) courses.push(c);

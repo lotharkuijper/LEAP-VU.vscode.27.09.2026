@@ -95,4 +95,10 @@ describe('koppeling', () => {
     const ov = idx.slice(idx.indexOf("app.get('/api/projects/student-overview'"), idx.indexOf("app.get('/api/projects/student-overview'") + 2500);
     expect(ov).not.toMatch(/Open cursussen: actief/);
   });
+  it('maar een LEAP-beheerder krijgt in het projectenoverzicht alle cursussen (eigen groep starten om te controleren)', () => {
+    const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8');
+    const ov = idx.slice(idx.indexOf("app.get('/api/projects/student-overview'"), idx.indexOf("app.post('/api/projects/student-restart'"));
+    expect(ov).toMatch(/ovProfile\?\.role === 'admin' \|\| ovProfile\?\.email === SUPERUSER_EMAIL/);
+    expect(ov).toMatch(/from\('courses'\)\.select\('id, name'\)/);
+  });
 });
