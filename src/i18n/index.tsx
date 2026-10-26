@@ -58,7 +58,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const t = useCallback(
     (key: TranslationKey, vars?: Record<string, string>): string => {
       const k = key as string;
-      const active = dicts[lang];
+      // nl/en altijd uit de module zelf, niet uit de state-kopie: na een
+      // hot-update van nl.json bleef die kopie oud en vielen nieuwe sleutels
+      // voor Nederlandse gebruikers terug op het Engels.
+      const active = eagerDicts[lang] ?? dicts[lang];
       let str =
         (active && active[k]) ??
         eagerDicts.en[k] ??
