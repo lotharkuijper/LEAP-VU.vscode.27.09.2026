@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Pojavljuje se na kraju kolegija",
   "conceptOrder.phase.unknown": "Mjesto u gradivu nepoznato",
   "conceptOrder.placeUnit": "{phase}: prvi put u dijelu {unit} od {total} ({title})",
-  "conceptOrder.noUnit": "Ostalo gradivo"
+  "conceptOrder.noUnit": "Ostalo gradivo",
+  "dashboard.courseLabel": "Tvoj kolegij",
+  "dashboard.switchCourse": "Promijeni kolegij"
 }

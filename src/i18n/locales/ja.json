@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "コースの終わりに出てくる",
   "conceptOrder.phase.unknown": "教材内での位置は不明",
   "conceptOrder.placeUnit": "{phase}: {total}中{unit}番目の単元（{title}）で初めて出てくる",
-  "conceptOrder.noUnit": "その他の教材"
+  "conceptOrder.noUnit": "その他の教材",
+  "dashboard.courseLabel": "あなたのコース",
+  "dashboard.switchCourse": "コースを切り替える"
 }

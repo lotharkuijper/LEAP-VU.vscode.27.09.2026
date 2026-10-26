@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Komt aan het eind van de cursus",
   "conceptOrder.phase.unknown": "Plek in de stof onbekend",
   "conceptOrder.placeUnit": "{phase}: voor het eerst in onderdeel {unit} van {total} ({title})",
-  "conceptOrder.noUnit": "Overige stof"
+  "conceptOrder.noUnit": "Overige stof",
+  "dashboard.courseLabel": "Je cursus",
+  "dashboard.switchCourse": "Wissel van cursus"
 }

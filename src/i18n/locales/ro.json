@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Apare la sfârșitul cursului",
   "conceptOrder.phase.unknown": "Locul în materie este necunoscut",
   "conceptOrder.placeUnit": "{phase}: pentru prima dată în partea {unit} din {total} ({title})",
-  "conceptOrder.noUnit": "Altă materie"
+  "conceptOrder.noUnit": "Altă materie",
+  "dashboard.courseLabel": "Cursul tău",
+  "dashboard.switchCourse": "Schimbă cursul"
 }

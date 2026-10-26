@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Εμφανίζεται στο τέλος του μαθήματος",
   "conceptOrder.phase.unknown": "Άγνωστη θέση στην ύλη",
   "conceptOrder.placeUnit": "{phase}: για πρώτη φορά στην ενότητα {unit} από {total} ({title})",
-  "conceptOrder.noUnit": "Λοιπή ύλη"
+  "conceptOrder.noUnit": "Λοιπή ύλη",
+  "dashboard.courseLabel": "Το μάθημά σου",
+  "dashboard.switchCourse": "Αλλαγή μαθήματος"
 }

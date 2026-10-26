@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Aparece al final del curso",
   "conceptOrder.phase.unknown": "Ubicación en el contenido desconocida",
   "conceptOrder.placeUnit": "{phase}: por primera vez en la unidad {unit} de {total} ({title})",
-  "conceptOrder.noUnit": "Otros contenidos"
+  "conceptOrder.noUnit": "Otros contenidos",
+  "dashboard.courseLabel": "Tu curso",
+  "dashboard.switchCourse": "Cambiar de curso"
 }

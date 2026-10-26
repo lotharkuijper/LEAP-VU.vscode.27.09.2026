@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Dersin sonunda yer alır",
   "conceptOrder.phase.unknown": "Konunun yeri bilinmiyor",
   "conceptOrder.placeUnit": "{phase}: ilk kez {total} bölümden {unit}. bölümde ({title})",
-  "conceptOrder.noUnit": "Diğer konular"
+  "conceptOrder.noUnit": "Diğer konular",
+  "dashboard.courseLabel": "Kursun",
+  "dashboard.switchCourse": "Kurs değiştir"
 }

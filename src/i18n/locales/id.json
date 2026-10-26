@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Muncul di akhir kursus",
   "conceptOrder.phase.unknown": "Posisi dalam materi tidak diketahui",
   "conceptOrder.placeUnit": "{phase}: pertama kali di bagian {unit} dari {total} ({title})",
-  "conceptOrder.noUnit": "Materi lainnya"
+  "conceptOrder.noUnit": "Materi lainnya",
+  "dashboard.courseLabel": "Kursusmu",
+  "dashboard.switchCourse": "Ganti kursus"
 }

@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "出现在课程结束时",
   "conceptOrder.phase.unknown": "在学习内容中的位置未知",
   "conceptOrder.placeUnit": "{phase}：首次出现在 {total} 个单元中的第 {unit} 个（{title}）",
-  "conceptOrder.noUnit": "其他学习内容"
+  "conceptOrder.noUnit": "其他学习内容",
+  "dashboard.courseLabel": "你的课程",
+  "dashboard.switchCourse": "切换课程"
 }

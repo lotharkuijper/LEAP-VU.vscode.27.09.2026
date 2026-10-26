@@ -13,6 +13,7 @@ import {
   Shield,
   Download,
   FileText,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
@@ -409,24 +410,46 @@ export function DashboardPage() {
         <p className="text-sm font-medium text-sky-800/80 mb-1" data-testid="text-greeting">
           {name ? `${greeting}, ${name}` : greeting}
         </p>
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
-          {t('dashboard.heroQuestion')}
-        </h1>
         {activeCourse ? (
-          <p className="mt-3 text-sm text-slate-700" data-testid="text-active-course">
-            {t('dashboard.activeCourse', { name: activeCourse.name })}
-          </p>
+          <>
+            {/* De actieve cursus is de kop van het Dashboard: daar werk je in. */}
+            <div data-testid="text-active-course">
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-700">{t('dashboard.courseLabel')}</p>
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <h1 className="min-w-0 break-words text-3xl md:text-5xl font-bold tracking-tight text-brand-800" data-testid="heading-active-course">
+                  {activeCourse.name}
+                </h1>
+                <Link
+                  to="/choose-course"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-brand-700 hover:text-brand-900 hover:underline"
+                  data-testid="link-switch-course"
+                >
+                  <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
+                  {t('dashboard.switchCourse')}
+                </Link>
+              </div>
+              {activeCourse.description && (
+                <p className="mt-1 text-sm text-slate-600" data-testid="text-active-course-description">{activeCourse.description}</p>
+              )}
+            </div>
+            <p className="mt-5 text-lg md:text-xl font-semibold text-slate-800">{t('dashboard.heroQuestion')}</p>
+          </>
         ) : (
-          <p className="mt-3 text-sm text-slate-700" data-testid="text-no-active-course">
-            {t('dashboard.noActiveCourse')}{' '}
-            <Link
-              to="/choose-course"
-              data-testid="link-choose-course"
-              className="font-semibold text-sky-700 underline hover:text-sky-900"
-            >
-              {t('dashboard.chooseCourse')}
-            </Link>
-          </p>
+          <>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">
+              {t('dashboard.heroQuestion')}
+            </h1>
+            <p className="mt-3 text-sm text-slate-700" data-testid="text-no-active-course">
+              {t('dashboard.noActiveCourse')}{' '}
+              <Link
+                to="/choose-course"
+                data-testid="link-choose-course"
+                className="font-semibold text-sky-700 underline hover:text-sky-900"
+              >
+                {t('dashboard.chooseCourse')}
+              </Link>
+            </p>
+          </>
         )}
       </section>
 

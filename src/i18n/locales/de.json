@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Kommt am Ende des Kurses vor",
   "conceptOrder.phase.unknown": "Stelle im Stoff unbekannt",
   "conceptOrder.placeUnit": "{phase}: erstmals in Abschnitt {unit} von {total} ({title})",
-  "conceptOrder.noUnit": "Weiterer Stoff"
+  "conceptOrder.noUnit": "Weiterer Stoff",
+  "dashboard.courseLabel": "Dein Kurs",
+  "dashboard.switchCourse": "Kurs wechseln"
 }

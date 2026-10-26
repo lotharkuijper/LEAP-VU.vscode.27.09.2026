@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Compare alla fine del corso",
   "conceptOrder.phase.unknown": "Posizione nel materiale sconosciuta",
   "conceptOrder.placeUnit": "{phase}: per la prima volta nell'unità {unit} di {total} ({title})",
-  "conceptOrder.noUnit": "Altro materiale"
+  "conceptOrder.noUnit": "Altro materiale",
+  "dashboard.courseLabel": "Il tuo corso",
+  "dashboard.switchCourse": "Cambia corso"
 }

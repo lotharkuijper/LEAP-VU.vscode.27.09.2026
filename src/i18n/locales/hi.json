@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "पाठ्यक्रम के अंत में आता है",
   "conceptOrder.phase.unknown": "सामग्री में स्थान अज्ञात",
   "conceptOrder.placeUnit": "{phase}: पहली बार भाग {unit} में {total} में से ({title})",
-  "conceptOrder.noUnit": "अन्य सामग्री"
+  "conceptOrder.noUnit": "अन्य सामग्री",
+  "dashboard.courseLabel": "तुम्हारा पाठ्यक्रम",
+  "dashboard.switchCourse": "पाठ्यक्रम बदलो"
 }

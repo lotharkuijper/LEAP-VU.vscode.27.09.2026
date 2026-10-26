@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "يأتي في نهاية المقرر",
   "conceptOrder.phase.unknown": "الموضع في المادة غير معروف",
   "conceptOrder.placeUnit": "{phase}: لأول مرة في الجزء {unit} من {total} ({title})",
-  "conceptOrder.noUnit": "مواد أخرى"
+  "conceptOrder.noUnit": "مواد أخرى",
+  "dashboard.courseLabel": "مقررك",
+  "dashboard.switchCourse": "بدّل المقرر"
 }

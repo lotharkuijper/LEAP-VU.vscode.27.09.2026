@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "З’являється наприкінці курсу",
   "conceptOrder.phase.unknown": "Місце в матеріалі невідоме",
   "conceptOrder.placeUnit": "{phase}: уперше в розділі {unit} з {total} ({title})",
-  "conceptOrder.noUnit": "Інший матеріал"
+  "conceptOrder.noUnit": "Інший матеріал",
+  "dashboard.courseLabel": "Твій курс",
+  "dashboard.switchCourse": "Змінити курс"
 }

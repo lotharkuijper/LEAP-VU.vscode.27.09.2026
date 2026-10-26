@@ -3166,5 +3166,7 @@
   "conceptOrder.phase.end": "Comes at the end of the course",
   "conceptOrder.phase.unknown": "Place in the material unknown",
   "conceptOrder.placeUnit": "{phase}: first in part {unit} of {total} ({title})",
-  "conceptOrder.noUnit": "Other material"
+  "conceptOrder.noUnit": "Other material",
+  "dashboard.courseLabel": "Your course",
+  "dashboard.switchCourse": "Switch course"
 }
