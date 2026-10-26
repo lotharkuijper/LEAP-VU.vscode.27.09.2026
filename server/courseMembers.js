@@ -19,8 +19,8 @@ export function collectMemberUserIds(rows) {
 
 /**
  * Voegt de course_members-rijen samen met hun profiles tot één weergavelijst.
- * De volgorde van `rows` blijft behouden (de route levert ze gesorteerd op
- * joined_at), en een lid zonder bijbehorend profiel valt netjes terug op
+ * De volgorde van `rows` blijft behouden (de route sorteert daarna met
+ * sortCourseMembers), en een lid zonder bijbehorend profiel valt netjes terug op
  * null (email/full_name) en 'student' (member_role/global_role).
  *
  * @param {Array<{ user_id?: string | null, member_role?: string | null, joined_at?: string | null }>} rows
@@ -42,4 +42,15 @@ export function mergeCourseMembers(rows, profiles) {
       global_role: p?.role || 'student',
     };
   });
+}
+
+/**
+ * Volgorde voor Beheer leden: docenten eerst, daarna op naam (of e-mailadres).
+ * course_members heeft geen datum van aanmelding, dus daar sorteren kan niet.
+ */
+export function sortCourseMembers(members) {
+  const label = (m) => String(m.full_name || m.email || '').toLocaleLowerCase('nl');
+  return [...(members || [])].sort((a, b) =>
+    (a.member_role === 'teacher' ? 0 : 1) - (b.member_role === 'teacher' ? 0 : 1)
+    || label(a).localeCompare(label(b), 'nl'));
 }

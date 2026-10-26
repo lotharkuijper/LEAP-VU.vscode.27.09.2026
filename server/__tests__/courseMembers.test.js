@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { collectMemberUserIds, mergeCourseMembers } from '../courseMembers.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { collectMemberUserIds, mergeCourseMembers, sortCourseMembers } from '../courseMembers.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Tests voor GET /api/admin/courses/:id/members (Task #219).
@@ -101,5 +103,22 @@ describe('mergeCourseMembers', () => {
     expect(mergeCourseMembers(null, null)).toEqual([]);
     expect(mergeCourseMembers(undefined, undefined)).toEqual([]);
     expect(mergeCourseMembers([], [{ id: 'x', email: 'x@vu.nl' }])).toEqual([]);
+  });
+});
+
+describe('Beheer leden: volgorde en kolommen (regressie 2026-10-26)', () => {
+  it('docenten eerst, daarna op naam of e-mailadres', () => {
+    const list = sortCourseMembers([
+      { user_id: 'a', member_role: 'student', full_name: 'Zoë', email: 'z@x.nl' },
+      { user_id: 'b', member_role: 'student', full_name: null, email: 'anna@x.nl' },
+      { user_id: 'c', member_role: 'teacher', full_name: 'Piet', email: 'p@x.nl' },
+    ]);
+    expect(list.map((m) => m.user_id)).toEqual(['c', 'b', 'a']);
+  });
+  it('de route vraagt geen joined_at op: course_members heeft die kolom niet (de lijst gaf daardoor een fout)', () => {
+    const idx = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8');
+    const route = idx.slice(idx.indexOf("app.get('/api/admin/courses/:id/members'"), idx.indexOf("app.put('/api/admin/courses/:id/members/:userId'"));
+    expect(route).toMatch(/from\('course_members'\)/);
+    expect(route).not.toMatch(/select\([^)]*joined_at|order\('joined_at'/);
   });
 });

@@ -19,6 +19,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const ActivatePage = lazy(() => import('./pages/ActivatePage').then(m => ({ default: m.ActivatePage })));
 const LtiStartPage = lazy(() => import('./pages/LtiStartPage'));
+const InviteAcceptPage = lazy(() => import('./pages/InviteAcceptPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ChatPage = lazy(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const MyDataPage = lazy(() => import('./pages/MyDataPage').then(m => ({ default: m.MyDataPage })));
@@ -128,6 +129,8 @@ function AppRoutes() {
 
       {/* Landing na de Canvas-link (server/lti.js): wisselt de eenmalige inlogcode in. */}
       <Route path="/lti/start" element={<LtiStartPage />} />
+      {/* Uitnodiging van een docent (server/courseInvitations.js). */}
+      <Route path="/invite" element={<InviteAcceptPage />} />
 
       <Route
         path="/dashboard"

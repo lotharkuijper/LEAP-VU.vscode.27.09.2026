@@ -4,22 +4,27 @@ import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { AdminHint } from '../../components/help/AdminHint';
+import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import {
-  UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users,
+  UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users, Clock,
 } from 'lucide-react';
 
-// Maximale batchgrootte per request — moet gelijk zijn aan MAX_BULK_BATCH in
-// server/bulkAccounts.js. Grotere lijsten splitsen we client-side in stukken.
+// Studenten uitnodigen (server/courseInvitations.js). Maximale batchgrootte per
+// request — gelijk aan MAX_BULK_BATCH in server/bulkAccounts.js; grotere lijsten
+// splitsen we client-side in stukken.
 const CHUNK = 50;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 interface CourseOption { id: string; name: string; }
-type ProvisionStatus = 'created' | 'existed' | 'failed';
+type ProvisionStatus = 'invited' | 'added' | 'alreadyMember' | 'limit' | 'failed';
 interface ProvisionResult { email: string; status: ProvisionStatus; error?: string; }
+type Summary = Record<'invited' | 'added' | 'alreadyMember' | 'limit' | 'failed' | 'invalid' | 'duplicates', number>;
 
 export function AddUsersTab() {
   const { isAdmin, isDocent } = useAuth();
   const { t } = useLanguage();
+  const { activeCourseId } = useActiveCourse();
+  const [courseMode, setCourseMode] = useState<string | null>(null);
 
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [courseId, setCourseId] = useState('');
@@ -29,7 +34,7 @@ export function AddUsersTab() {
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [results, setResults] = useState<ProvisionResult[]>([]);
-  const [summary, setSummary] = useState<{ created: number; existed: number; failed: number; invalid: number; duplicates: number } | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -59,6 +64,21 @@ export function AddUsersTab() {
     })();
     return () => { cancelled = true; };
   }, [isAdmin]);
+
+  // Standaard de actieve cursus, als je daar docent van bent.
+  useEffect(() => {
+    if (!courseId && activeCourseId && courses.some((c) => c.id === activeCourseId)) setCourseId(activeCourseId);
+  }, [courses, activeCourseId, courseId]);
+
+  // Toegangsroute van de gekozen cursus: bij Canvas een korte uitleg.
+  useEffect(() => {
+    let cancelled = false;
+    setCourseMode(null);
+    if (!courseId) return;
+    supabase.from('courses').select('enrollment_mode').eq('id', courseId).maybeSingle()
+      .then(({ data }) => { if (!cancelled) setCourseMode((data as { enrollment_mode?: string } | null)?.enrollment_mode ?? null); });
+    return () => { cancelled = true; };
+  }, [courseId]);
 
   // Client-side voorvertoning: tokeniseer, valideer, ontdubbel. Puur cosmetisch;
   // de server her-valideert en is de bron van waarheid.
@@ -119,20 +139,18 @@ export function AddUsersTab() {
       const chunks: string[][] = [];
       for (let i = 0; i < preview.valid.length; i += CHUNK) chunks.push(preview.valid.slice(i, i + CHUNK));
       const allResults: ProvisionResult[] = [];
-      const agg = { created: 0, existed: 0, failed: 0 };
+      const agg = { invited: 0, added: 0, alreadyMember: 0, limit: 0, failed: 0 };
       for (let ci = 0; ci < chunks.length; ci++) {
         setProgress({ done: ci, total: chunks.length });
-        const res = await fetch('/api/admin/bulk-accounts/provision', {
+        const res = await fetch(`/api/admin/courses/${courseId}/invitations`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ courseId, emails: chunks[ci], redirectBase: window.location.origin }),
+          body: JSON.stringify({ emails: chunks[ci] }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || t('addUsers.err.provisionFailed'));
         allResults.push(...((data.results || []) as ProvisionResult[]));
-        agg.created += data.summary?.created || 0;
-        agg.existed += data.summary?.existed || 0;
-        agg.failed += data.summary?.failed || 0;
+        for (const k of Object.keys(agg) as Array<keyof typeof agg>) agg[k] += data.summary?.[k] || 0;
       }
       setProgress({ done: chunks.length, total: chunks.length });
       setResults(allResults);
@@ -150,9 +168,12 @@ export function AddUsersTab() {
   }
 
   const statusBadge = (s: ProvisionStatus) => {
-    if (s === 'created') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"><CheckCircle className="w-3 h-3" />{t('addUsers.status.created')}</span>;
-    if (s === 'existed') return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"><Info className="w-3 h-3" />{t('addUsers.status.existed')}</span>;
-    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"><XCircle className="w-3 h-3" />{t('addUsers.status.failed')}</span>;
+    const base = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium';
+    if (s === 'invited') return <span className={`${base} bg-green-100 text-green-800`}><CheckCircle className="w-3 h-3" />{t('addUsers.status.invited')}</span>;
+    if (s === 'added') return <span className={`${base} bg-green-100 text-green-800`}><CheckCircle className="w-3 h-3" />{t('addUsers.status.added')}</span>;
+    if (s === 'alreadyMember') return <span className={`${base} bg-blue-100 text-blue-800`}><Info className="w-3 h-3" />{t('addUsers.status.alreadyMember')}</span>;
+    if (s === 'limit') return <span className={`${base} bg-amber-100 text-amber-800`}><Clock className="w-3 h-3" />{t('addUsers.status.limit')}</span>;
+    return <span className={`${base} bg-red-100 text-red-800`}><XCircle className="w-3 h-3" />{t('addUsers.status.failed')}</span>;
   };
 
   return (
@@ -172,10 +193,14 @@ export function AddUsersTab() {
         </p>
       </div>
 
-      {/* E-mail-voorwaarde-banner */}
-      <AdminHint variant="warning" testId="banner-email-prereq">
-        {t('addUsers.emailPrereq')}
-      </AdminHint>
+      <AdminHint variant="tip" testId="text-invite-expiry">{t('addUsers.expiryNote')}</AdminHint>
+
+      {/* Mailinstelling: alleen voor de beheerder van belang. */}
+      {isAdmin && (
+        <AdminHint variant="warning" testId="banner-email-prereq">
+          {t('addUsers.emailPrereq')}
+        </AdminHint>
+      )}
 
       {/* Cursuskeuze */}
       <div>
@@ -194,6 +219,9 @@ export function AddUsersTab() {
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </select>
+        {(courseMode === 'canvas' || courseMode === 'canvas_open') && (
+          <AdminHint variant="intro" className="mt-2" testId="text-invite-canvas-hint">{t('addUsers.canvasHint')}</AdminHint>
+        )}
       </div>
 
       {/* E-mailadressen */}
@@ -284,10 +312,15 @@ export function AddUsersTab() {
       {summary && (
         <div className="space-y-3" data-testid="results-report">
           <div className="flex flex-wrap gap-2 text-sm">
-            <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-800" data-testid="summary-created">{t('addUsers.summaryCreated').replace('{n}', String(summary.created))}</span>
-            <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800" data-testid="summary-existed">{t('addUsers.summaryExisted').replace('{n}', String(summary.existed))}</span>
+            <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-800" data-testid="summary-invited">{t('addUsers.summaryInvited', { n: String(summary.invited) })}</span>
+            <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-800" data-testid="summary-added">{t('addUsers.summaryAdded', { n: String(summary.added) })}</span>
+            {summary.alreadyMember > 0 && <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800" data-testid="summary-already">{t('addUsers.summaryAlreadyMember', { n: String(summary.alreadyMember) })}</span>}
+            {summary.limit > 0 && <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800" data-testid="summary-limit">{t('addUsers.summaryLimit', { n: String(summary.limit) })}</span>}
             {summary.failed > 0 && <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-800" data-testid="summary-failed">{t('addUsers.summaryFailed').replace('{n}', String(summary.failed))}</span>}
           </div>
+          {(summary.invited > 0 || summary.added > 0) && (
+            <p className="text-sm text-gray-600" data-testid="text-mail-note">{t('addUsers.mailNote')}</p>
+          )}
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">

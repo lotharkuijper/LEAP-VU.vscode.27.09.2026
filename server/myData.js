@@ -16,6 +16,7 @@ export const EXPORT_SOURCES = [
   { table: 'profiles', column: 'id', label: 'profiel' },
   { table: 'course_members', column: 'user_id', label: 'cursussen' },
   { table: 'lti_identities', column: 'user_id', label: 'Canvas-koppeling' },
+  { table: 'course_invitations', column: 'user_id', label: 'uitnodigingen voor cursussen' },
   { table: 'system_message_dismissals', column: 'user_id', label: 'weggeklikte systeemberichten' },
   { table: 'student_course_levels', column: 'user_id', label: 'leerniveaus' },
   { table: 'student_achievements', column: 'user_id', label: 'prestaties' },

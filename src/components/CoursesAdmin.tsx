@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText, Send } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -86,7 +86,10 @@ export default function CoursesAdmin() {
     user_id: string; member_role: 'student' | 'teacher';
     email: string | null; full_name: string | null;
     global_role: string;
+    // Uitgenodigd maar nog niet geactiveerd (server/courseInvitations.js).
+    invitation?: { status: 'queued' | 'failed' | 'pending' | 'expired'; expiresAt: string; lastSentAt: string | null } | null;
   }>>([]);
+  const [inviteNotice, setInviteNotice] = useState<string | null>(null);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [memberRoleBusy, setMemberRoleBusy] = useState<string | null>(null);
@@ -158,6 +161,7 @@ export default function CoursesAdmin() {
     setMembersTarget(c);
     setMembersList([]);
     setMembersError(null);
+    setInviteNotice(null);
     setMembersLoading(true);
     const token = session?.access_token;
     if (!token) {
@@ -265,6 +269,39 @@ export default function CoursesAdmin() {
         return;
       }
       setMembersList((prev) => prev.filter((m) => m.user_id !== userId));
+    } catch (err: unknown) {
+      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
+    } finally {
+      setMemberRoleBusy(null);
+    }
+  }
+
+  // Uitnodiging opnieuw sturen of intrekken (alleen voor wie nog niet heeft geactiveerd).
+  async function inviteAction(userId: string, action: 'resend' | 'revoke') {
+    if (!membersTarget) return;
+    const token = session?.access_token;
+    if (!token) { setMembersError(t('admin.users.notLoggedIn')); return; }
+    if (action === 'revoke') {
+      const target = membersList.find((m) => m.user_id === userId);
+      if (!window.confirm(t('coursesAdmin.invite.confirmRevoke', { email: target?.email || '', course: membersTarget.name }))) return;
+    }
+    setMemberRoleBusy(userId);
+    setMembersError(null);
+    setInviteNotice(null);
+    try {
+      const res = await fetch(`/api/admin/courses/${membersTarget.id}/invitations/${userId}${action === 'resend' ? '/resend' : ''}`, {
+        method: action === 'resend' ? 'POST' : 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setMembersError(json.error || t('common.unknownError')); return; }
+      if (action === 'revoke') {
+        setMembersList((prev) => prev.filter((m) => m.user_id !== userId));
+        setInviteNotice(t('coursesAdmin.invite.revoked'));
+      } else {
+        setMembersList((prev) => prev.map((m) => (m.user_id === userId && m.invitation ? { ...m, invitation: { ...m.invitation, status: 'queued' } } : m)));
+        setInviteNotice(t('coursesAdmin.invite.resent'));
+      }
     } catch (err: unknown) {
       setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
     } finally {
@@ -1308,6 +1345,11 @@ export default function CoursesAdmin() {
                   {membersError}
                 </div>
               )}
+              {inviteNotice && (
+                <div className="mb-3 rounded-lg bg-accent-50 border border-accent-200 px-3 py-2 text-sm text-accent-800" data-testid="text-invite-notice">
+                  {inviteNotice}
+                </div>
+              )}
               {membersLoading ? (
                 <div className="flex items-center justify-center py-12 text-gray-500">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -1341,7 +1383,22 @@ export default function CoursesAdmin() {
                         return (
                           <tr key={m.user_id} className="border-b border-gray-100" data-testid={`row-member-${m.user_id}`}>
                             <td className="py-2 px-2">{m.full_name || '—'}</td>
-                            <td className="py-2 px-2 text-gray-600">{m.email || '—'}</td>
+                            <td className="py-2 px-2 text-gray-600">
+                              <div className="min-w-0 break-words">{m.email || '—'}</div>
+                              {m.invitation && (
+                                <span
+                                  className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                    m.invitation.status === 'failed' || m.invitation.status === 'expired'
+                                      ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'
+                                  }`}
+                                  data-testid={`badge-invite-${m.user_id}`}
+                                >
+                                  {t(`coursesAdmin.invite.status.${m.invitation.status}` as 'coursesAdmin.invite.status.pending', {
+                                    date: new Date(m.invitation.expiresAt).toLocaleDateString(),
+                                  })}
+                                </span>
+                              )}
+                            </td>
                             <td className="py-2 px-2">
                               {canEdit ? (
                                 <select
@@ -1374,7 +1431,30 @@ export default function CoursesAdmin() {
                               )}
                             </td>
                             <td className="py-2 px-2 text-right">
-                              {canEdit && (
+                              {canEdit && m.invitation ? (
+                                <div className="flex flex-wrap justify-end gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => inviteAction(m.user_id, 'resend')}
+                                    disabled={memberRoleBusy === m.user_id || m.invitation.status === 'queued'}
+                                    className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded disabled:opacity-50"
+                                    data-testid={`button-resend-invite-${m.user_id}`}
+                                  >
+                                    <Send className="w-3.5 h-3.5" />
+                                    {t('coursesAdmin.invite.resend')}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => inviteAction(m.user_id, 'revoke')}
+                                    disabled={memberRoleBusy === m.user_id}
+                                    className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded disabled:opacity-50"
+                                    data-testid={`button-revoke-invite-${m.user_id}`}
+                                  >
+                                    <UserX className="w-3.5 h-3.5" />
+                                    {t('coursesAdmin.invite.revoke')}
+                                  </button>
+                                </div>
+                              ) : canEdit && (
                                 <button
                                   type="button"
                                   onClick={() => removeMember(m.user_id)}
