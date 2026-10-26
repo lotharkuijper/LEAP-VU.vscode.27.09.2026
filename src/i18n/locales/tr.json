@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Projeler",
   "admin.tabs.courseInfo": "Ders bilgisi",
   "admin.tabs.courseFeatures": "Bileşenler",
-  "admin.tabs.learningLevels": "Öğrenme düzeyleri",
   "admin.tabs.settings": "Ayarlar",
   "admin.learningLevels.title": "Öğrencilerin öğrenme düzeyleri",
   "admin.learningLevels.intro": "{course} dersindeki kaç öğrencinin hangi öğrenme düzeyinde (1–5) çalıştığını gösterir. Öğrenciler düzeylerini kendileri seçer; tek tek öğrencilerin hangi düzeyi seçtiğini bilinçli olarak görmezsin.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: ilk kez {total} bölümden {unit}. bölümde ({title})",
   "conceptOrder.noUnit": "Diğer konular",
   "dashboard.courseLabel": "Kursun",
-  "dashboard.switchCourse": "Kurs değiştir"
+  "dashboard.switchCourse": "Kurs değiştir",
+  "coursesAdmin.row.courseInfoTitle": "Öğrencilerin Dashboard’un üst kısmında gördüğü metin, banner ve indirmeler"
 }

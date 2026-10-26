@@ -822,7 +822,6 @@
   "admin.tabs.projects": "項目",
   "admin.tabs.courseInfo": "課程資訊",
   "admin.tabs.courseFeatures": "功能",
-  "admin.tabs.learningLevels": "學習級別",
   "admin.tabs.settings": "設定",
   "admin.learningLevels.title": "學生嘅學習級別",
   "admin.learningLevels.intro": "{course} 有幾多學生喺邊個學習程度（1–5）學緊。學生會自己揀程度；你係刻意睇唔到個別學生揀咗邊個程度。",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}：首次出現喺第 {unit} 個部分（共 {total} 個）（{title}）",
   "conceptOrder.noUnit": "其他教材",
   "dashboard.courseLabel": "你嘅課程",
-  "dashboard.switchCourse": "切換課程"
+  "dashboard.switchCourse": "切換課程",
+  "coursesAdmin.row.courseInfoTitle": "學生喺佢哋 Dashboard 頂部見到嘅文字、橫額同下載"
 }

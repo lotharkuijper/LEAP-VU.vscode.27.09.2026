@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Proiecte",
   "admin.tabs.courseInfo": "Informații despre curs",
   "admin.tabs.courseFeatures": "Componente",
-  "admin.tabs.learningLevels": "Niveluri de învățare",
   "admin.tabs.settings": "Setări",
   "admin.learningLevels.title": "Nivelurile de învățare ale studenților",
   "admin.learningLevels.intro": "Câți studenți de la {course} lucrează la fiecare nivel de învățare (1–5). Studenții își aleg singuri nivelul; nu vezi în mod intenționat ce nivel alege un student individual.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: pentru prima dată în partea {unit} din {total} ({title})",
   "conceptOrder.noUnit": "Altă materie",
   "dashboard.courseLabel": "Cursul tău",
-  "dashboard.switchCourse": "Schimbă cursul"
+  "dashboard.switchCourse": "Schimbă cursul",
+  "coursesAdmin.row.courseInfoTitle": "Text, banner și descărcări pe care studenții le văd în partea de sus a Dashboardului lor"
 }

@@ -48,12 +48,8 @@ export const ADMIN_SECTIONS = [
     what: 'Groepsprojecten met persona\'s in drie rollen: begeleider, beoordelaar (rubric, feedbackrondes per product) en rolspeler (simulatie, eventueel met verstandhouding en gedragsregels). Ook persona-sjablonen en inleveren.' },
   { tab: 'course_features', labelKey: 'admin.tabs.courseFeatures', audience: 'all', helpGroups: ['courseFeatures'],
     what: 'Onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte. Apart: bijlagen in de chat (afbeeldingen plakken, bestanden meegeven) staan standaard UIT en gaan pas aan na een waarschuwing en een dubbele bevestiging; alleen als de beheerder het platformbreed toestaat. Bijlagen worden niet bewaard.' },
-  { tab: 'course_info', labelKey: 'admin.tabs.courseInfo', audience: 'all', helpGroups: [],
-    what: 'Praktische cursusinformatie (rooster, deadlines) die de chat mag gebruiken voor praktische vragen.' },
-  { tab: 'learning_levels', labelKey: 'admin.tabs.learningLevels', audience: 'all', helpGroups: ['learningLevels'],
-    what: 'Overzicht van de leerniveaus die studenten zelf kiezen (alleen bekijken).' },
-  { tab: 'analytics', labelKey: 'admin.tabs.analytics', audience: 'all', helpGroups: ['analytics'],
-    what: 'Analyse, alleen in totalen (cijfers op minder dan 5 studenten blijven verborgen). Docent: begrippen-thermometer met gemiddelde quizscore per begrip en chatvragen waarvoor de chat geen goed bewijs in het materiaal vond. Beheerder: ook gezondheid en kosten (fouten, responstijd, tokens, inleesproblemen).' },
+  { tab: 'analytics', labelKey: 'admin.tabs.analytics', audience: 'all', helpGroups: ['analytics', 'learningLevels'],
+    what: 'Analytics, alleen in totalen (cijfers op minder dan 5 studenten blijven verborgen). Docent: begrippen-thermometer met gemiddelde quizscore per begrip en chatvragen waarvoor de chat geen goed bewijs in het materiaal vond. Beheerder: ook gezondheid en kosten (fouten, responstijd, tokens, inleesproblemen). Onderaan: de leerniveaus, hoeveel studenten op welk niveau werken (alleen de verdeling, nooit per student).' },
   { tab: 'prompts', labelKey: 'admin.tabs.prompts', audience: 'all', helpGroups: ['chatInstructions'],
     what: 'Chat-instructies: toon en aanpak van de tutor in de chat en bij Ik leg uit, eventueel per cursus.' },
   { tab: 'rag_settings', labelKey: 'admin.tabs.ragSettings', audience: 'all', helpGroups: ['searchSensitivity'],
@@ -78,7 +74,7 @@ export const OTHER_PAGES = [
     what: 'Studenten zien per begrip hun eigen voortgang (alleen voor henzelf) en kunnen "Oefen wat je lastig vindt" kiezen: gespreide herhaling op basis van hun eigen quizscores. De standaardmoeilijkheid volgt hun leerniveau; na "Ik leg uit" kunnen ze direct een quiz over dat begrip starten.' },
   { path: '/chat, /explain, /feedback, /my-data', label: 'Studentenkant: uitleg bij knoppen', helpGroups: ['student'],
     what: 'Bij knoppen waarvan het gevolg niet vanzelf spreekt, staat voor studenten een vraagteken: wat er gebeurt, wat bewaard wordt en wie het ziet. In de chat: leerniveau, Klaar voor een hoger niveau?, Doel (optioneel eigen doel voor een gesprek), Ik werk aan, bijlagen en afsluiten. In Ik leg uit: de twee manieren van oefenen (Leg zelf uit, Verbeter deze uitleg). Verder de prijzenkast en account verwijderen.' },
-  { path: '/admin/courses', label: 'Cursussen beheren', helpGroups: ['courses'], what: 'Cursussen aanmaken, leden beheren (docenten kunnen zelf studenten toevoegen en tot docent bevorderen), beschikbaar maken voor studenten. De toegangsroute (gesloten, Canvas, open registratie, of Canvas + open) stelt alleen de beheerder in.' },
+  { path: '/admin/courses', label: 'Cursussen beheren', helpGroups: ['courses'], what: 'Cursussen aanmaken, leden beheren (docenten kunnen zelf studenten toevoegen en tot docent bevorderen), beschikbaar maken voor studenten. Per cursus de knop Cursus-info: het blok bovenaan het Dashboard van studenten (tekst, banner, bestanden om te downloaden). De toegangsroute (gesloten, Canvas, open registratie, of Canvas + open) stelt alleen de beheerder in.' },
   { path: '/projects', label: 'Projectruimte', what: 'De werkplek van een groep. Alleen de groepsleden zien wat daar gebeurt; docenten niet (privacy). Docenten zien in Projecten alleen wie in welke groep zit. Het contact met een rolspeler herstellen en extra gesprekken toekennen kan alleen een beheerder.' },
 ];
 

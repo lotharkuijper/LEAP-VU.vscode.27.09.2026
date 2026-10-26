@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Projecten",
   "admin.tabs.courseInfo": "Cursus-info",
   "admin.tabs.courseFeatures": "Onderdelen",
-  "admin.tabs.learningLevels": "Leerniveaus",
   "admin.tabs.settings": "Instellingen",
   "admin.learningLevels.title": "Leerniveaus van studenten",
   "admin.learningLevels.intro": "Hoeveel studenten van {course} op welk leerniveau (1–5) werken. Studenten kiezen hun niveau zelf; welk niveau een individuele student kiest, zie je bewust niet.",
@@ -2580,8 +2579,8 @@
   "admin.designAssistant.explainHere": "Wat zie ik hier en wat kan ik doen?",
   "admin.designAssistant.explainHereQuestion": "Ik ben nu bij {place}. Wat zie ik hier, en wat kan ik hier doen voor mijn cursus?",
   "admin.designAssistant.introShort": "Ik denk met je mee terwijl je je cursus inricht. Dit paneel blijft open als je naar een ander onderdeel gaat. Jij beslist; ik verander zelf niets.",
-  "admin.tabs.analytics": "Analyse",
-  "analytics.title": "Analyse",
+  "admin.tabs.analytics": "Analytics",
+  "analytics.title": "Analytics",
   "analytics.intro": "Hoe LEAP in je cursus wordt gebruikt, alleen in totalen. Je ziet nooit wat één student doet: een cijfer dat op minder dan 5 studenten berust, blijft verborgen.",
   "analytics.period": "Periode",
   "analytics.weeks": "{n} weken",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: voor het eerst in onderdeel {unit} van {total} ({title})",
   "conceptOrder.noUnit": "Overige stof",
   "dashboard.courseLabel": "Je cursus",
-  "dashboard.switchCourse": "Wissel van cursus"
+  "dashboard.switchCourse": "Wissel van cursus",
+  "coursesAdmin.row.courseInfoTitle": "Tekst, banner en downloads die studenten bovenaan hun Dashboard zien"
 }

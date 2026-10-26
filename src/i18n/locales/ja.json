@@ -822,7 +822,6 @@
   "admin.tabs.projects": "プロジェクト",
   "admin.tabs.courseInfo": "コース情報",
   "admin.tabs.courseFeatures": "機能",
-  "admin.tabs.learningLevels": "学習レベル",
   "admin.tabs.settings": "設定",
   "admin.learningLevels.title": "学生の学習レベル",
   "admin.learningLevels.intro": "{course}の学生がどの学習レベル（1〜5）で取り組んでいるかの人数。学生は自分でレベルを選ぶよ。個々の学生がどのレベルを選んだかは、意図的に表示されないよ。",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: {total}中{unit}番目の単元（{title}）で初めて出てくる",
   "conceptOrder.noUnit": "その他の教材",
   "dashboard.courseLabel": "あなたのコース",
-  "dashboard.switchCourse": "コースを切り替える"
+  "dashboard.switchCourse": "コースを切り替える",
+  "coursesAdmin.row.courseInfoTitle": "学生がダッシュボード上部に表示されるテキスト、バナー、ダウンロード"
 }

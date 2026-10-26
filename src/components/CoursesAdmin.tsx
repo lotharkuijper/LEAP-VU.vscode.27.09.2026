@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2 } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,7 @@ import { AdminHint } from './help/AdminHint';
 import { ListRow, StatusBadge } from './ui/ListRow';
 import { EnrollmentModeDialog } from './EnrollmentModeDialog';
 import { CanvasLinkDialog } from './CanvasLinkDialog';
+import { CourseInfoDialog } from './CourseInfoDialog';
 import type { EnrollmentMode } from '../services/enrollment.service';
 
 interface CourseRow {
@@ -74,6 +75,7 @@ export default function CoursesAdmin() {
   const [enrollmentFor, setEnrollmentFor] = useState<CourseRow | null>(null);
   // Canvas-link (server/lti.js) voor cursussen met de route Canvas of Canvas + open.
   const [canvasLinkFor, setCanvasLinkFor] = useState<CourseRow | null>(null);
+  const [courseInfoFor, setCourseInfoFor] = useState<CourseRow | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [rowCounts, setRowCounts] = useState<Record<string, DeleteCounts | null>>({});
   const [confirmBulkMembersId, setConfirmBulkMembersId] = useState<string | null>(null);
@@ -356,6 +358,20 @@ export default function CoursesAdmin() {
     openMembersDialog(course);
     const next = new URLSearchParams(searchParams);
     next.delete('manageMembers');
+    setSearchParams(next, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, loadingList, courses, isAdmin, myTeacherCourseIds]);
+
+  // ?courseInfo=<id> opent de Cursus-info van die cursus (oude links naar het
+  // tabblad Cursus-info in Beheer komen hier uit).
+  useEffect(() => {
+    const wanted = searchParams.get('courseInfo');
+    if (!wanted || loadingList || courses.length === 0) return;
+    const course = courses.find((c) => c.id === wanted);
+    if (!course || !(isAdmin || myTeacherCourseIds.has(wanted))) return;
+    setCourseInfoFor(course);
+    const next = new URLSearchParams(searchParams);
+    next.delete('courseInfo');
     setSearchParams(next, { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, loadingList, courses, isAdmin, myTeacherCourseIds]);
@@ -857,6 +873,12 @@ export default function CoursesAdmin() {
                             key: 'members', label: t('admin.users.manageCourseMembers'), icon: Users, tone: 'primary' as const,
                             title: t('coursesAdmin.row.manageMembersTitle'), onClick: () => openMembersDialog(c),
                             disabled: rowBusyId === c.id, testId: `button-manage-members-primary-${c.id}`,
+                          }] : []),
+                          // Cursus-info (wat studenten op het Dashboard over de cursus zien) hoort bij de cursus zelf.
+                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
+                            key: 'courseInfo', label: t('admin.tabs.courseInfo'), icon: BookText, tone: 'primary' as const,
+                            title: t('coursesAdmin.row.courseInfoTitle'), onClick: () => setCourseInfoFor(c),
+                            disabled: rowBusyId === c.id, testId: `button-course-info-${c.id}`,
                           }] : []),
                           // Bij een Canvas-cursus is de Canvas-link de belangrijkste knop: direct na Beheer leden,
                           // zodat hij zichtbaar blijft en niet als eerste in "⋯ Meer" verdwijnt.
@@ -1386,6 +1408,9 @@ export default function CoursesAdmin() {
             </div>
           </div>
         </div>
+      )}
+      {courseInfoFor && (
+        <CourseInfoDialog courseId={courseInfoFor.id} courseName={courseInfoFor.name} onClose={() => setCourseInfoFor(null)} />
       )}
       {canvasLinkFor && (
         <CanvasLinkDialog courseId={canvasLinkFor.id} courseName={canvasLinkFor.name} isAdmin={isAdmin} onClose={() => setCanvasLinkFor(null)} />

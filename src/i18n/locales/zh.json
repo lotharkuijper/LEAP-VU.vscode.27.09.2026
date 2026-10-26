@@ -822,7 +822,6 @@
   "admin.tabs.projects": "项目",
   "admin.tabs.courseInfo": "课程信息",
   "admin.tabs.courseFeatures": "组件",
-  "admin.tabs.learningLevels": "学习等级",
   "admin.tabs.settings": "设置",
   "admin.learningLevels.title": "学生的学习等级",
   "admin.learningLevels.intro": "{course} 中有多少学生在各学习水平（1–5）上学习。学生自行选择自己的水平；你有意看不到单个学生选择了哪个水平。",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}：首次出现在 {total} 个单元中的第 {unit} 个（{title}）",
   "conceptOrder.noUnit": "其他学习内容",
   "dashboard.courseLabel": "你的课程",
-  "dashboard.switchCourse": "切换课程"
+  "dashboard.switchCourse": "切换课程",
+  "coursesAdmin.row.courseInfoTitle": "学生在其仪表板顶部看到的文本、横幅和下载内容"
 }

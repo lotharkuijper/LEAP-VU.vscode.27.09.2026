@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Proyek",
   "admin.tabs.courseInfo": "Info Kursus",
   "admin.tabs.courseFeatures": "Komponen",
-  "admin.tabs.learningLevels": "Tingkat pembelajaran",
   "admin.tabs.settings": "Pengaturan",
   "admin.learningLevels.title": "Tingkat pembelajaran mahasiswa",
   "admin.learningLevels.intro": "Berapa banyak mahasiswa dari {course} yang bekerja pada level belajar mana (1–5). Mahasiswa memilih level mereka sendiri; kamu sengaja tidak dapat melihat level yang dipilih oleh masing-masing mahasiswa.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: pertama kali di bagian {unit} dari {total} ({title})",
   "conceptOrder.noUnit": "Materi lainnya",
   "dashboard.courseLabel": "Kursusmu",
-  "dashboard.switchCourse": "Ganti kursus"
+  "dashboard.switchCourse": "Ganti kursus",
+  "coursesAdmin.row.courseInfoTitle": "Teks, banner, dan unduhan yang dilihat mahasiswa di bagian atas Dasbor mereka"
 }

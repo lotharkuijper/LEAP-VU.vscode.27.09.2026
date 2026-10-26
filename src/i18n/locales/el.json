@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Έργα",
   "admin.tabs.courseInfo": "Πληροφορίες μαθήματος",
   "admin.tabs.courseFeatures": "Στοιχεία",
-  "admin.tabs.learningLevels": "Επίπεδα μάθησης",
   "admin.tabs.settings": "Ρυθμίσεις",
   "admin.learningLevels.title": "Επίπεδα μάθησης φοιτητών",
   "admin.learningLevels.intro": "Πόσοι φοιτητές του {course} εργάζονται σε ποιο μαθησιακό επίπεδο (1–5). Οι φοιτητές επιλέγουν μόνοι τους το επίπεδό τους· συνειδητά δεν βλέπεις ποιο επίπεδο επιλέγει κάθε μεμονωμένος φοιτητής.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: για πρώτη φορά στην ενότητα {unit} από {total} ({title})",
   "conceptOrder.noUnit": "Λοιπή ύλη",
   "dashboard.courseLabel": "Το μάθημά σου",
-  "dashboard.switchCourse": "Αλλαγή μαθήματος"
+  "dashboard.switchCourse": "Αλλαγή μαθήματος",
+  "coursesAdmin.row.courseInfoTitle": "Κείμενο, banner και λήψεις που βλέπουν οι φοιτητές στο επάνω μέρος του Πίνακα ελέγχου τους"
 }

@@ -822,7 +822,6 @@
   "admin.tabs.projects": "프로젝트",
   "admin.tabs.courseInfo": "강좌 정보",
   "admin.tabs.courseFeatures": "구성 요소",
-  "admin.tabs.learningLevels": "학습 수준",
   "admin.tabs.settings": "설정",
   "admin.learningLevels.title": "학생별 학습 수준",
   "admin.learningLevels.intro": "{course}의 학생들이 어떤 학습 수준(1–5)에서 학습하고 있는지 보여줘. 학생들은 자신의 수준을 직접 선택해. 개별 학생이 어떤 수준을 선택했는지는 의도적으로 보이지 않아.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: {total}개 중 {unit}번째 단원({title})에서 처음 나와",
   "conceptOrder.noUnit": "기타 학습 내용",
   "dashboard.courseLabel": "네 강좌",
-  "dashboard.switchCourse": "강좌 변경"
+  "dashboard.switchCourse": "강좌 변경",
+  "coursesAdmin.row.courseInfoTitle": "학생들이 대시보드 상단에서 보는 텍스트, 배너 및 다운로드"
 }

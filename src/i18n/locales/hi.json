@@ -822,7 +822,6 @@
   "admin.tabs.projects": "प्रोजेक्ट",
   "admin.tabs.courseInfo": "कोर्स जानकारी",
   "admin.tabs.courseFeatures": "घटक",
-  "admin.tabs.learningLevels": "सीखने के स्तर",
   "admin.tabs.settings": "सेटिंग्स",
   "admin.learningLevels.title": "छात्रों के सीखने के स्तर",
   "admin.learningLevels.intro": "{course} के कितने छात्र किस सीखने के स्तर (1–5) पर काम कर रहे हैं। छात्र अपना स्तर खुद चुनते हैं; कोई व्यक्तिगत छात्र कौन-सा स्तर चुनता है, यह तुम जानबूझकर नहीं देखते।",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: पहली बार भाग {unit} में {total} में से ({title})",
   "conceptOrder.noUnit": "अन्य सामग्री",
   "dashboard.courseLabel": "तुम्हारा पाठ्यक्रम",
-  "dashboard.switchCourse": "पाठ्यक्रम बदलो"
+  "dashboard.switchCourse": "पाठ्यक्रम बदलो",
+  "coursesAdmin.row.courseInfoTitle": "टेक्स्ट, बैनर और डाउनलोड जिन्हें छात्र अपने डैशबोर्ड के शीर्ष पर देखते हैं"
 }

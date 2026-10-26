@@ -73,9 +73,13 @@ async function downloadInfoFile(courseId: string, documentId: string): Promise<v
   URL.revokeObjectURL(objectUrl);
 }
 
-export default function CursusInfoTab() {
+// Cursus-info staat sinds 2026-10-26 in Cursussen beheren (knop per cursus),
+// dus voor elke cursus; zonder courseId geldt de actieve cursus.
+export default function CursusInfoTab({ courseId, courseName }: { courseId?: string; courseName?: string } = {}) {
   const { t } = useLanguage();
-  const { activeCourseId, activeCourse } = useActiveCourse();
+  const active = useActiveCourse();
+  const activeCourseId = courseId ?? active.activeCourseId;
+  const activeCourse = courseId ? { name: courseName ?? '' } : active.activeCourse;
 
   const [body, setBody] = useState('');
   const [docs, setDocs] = useState<InfoDoc[]>([]);

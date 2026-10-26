@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Projekty",
   "admin.tabs.courseInfo": "Informacje o kursie",
   "admin.tabs.courseFeatures": "Elementy",
-  "admin.tabs.learningLevels": "Poziomy nauki",
   "admin.tabs.settings": "Ustawienia",
   "admin.learningLevels.title": "Poziomy nauki studentów",
   "admin.learningLevels.intro": "Ilu studentów kursu {course} pracuje na którym poziomie uczenia się (1–5). Studenci sami wybierają swój poziom; celowo nie widzisz, jaki poziom wybiera konkretny student.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: po raz pierwszy w części {unit} z {total} ({title})",
   "conceptOrder.noUnit": "Pozostały materiał",
   "dashboard.courseLabel": "Twój kurs",
-  "dashboard.switchCourse": "Zmień kurs"
+  "dashboard.switchCourse": "Zmień kurs",
+  "coursesAdmin.row.courseInfoTitle": "Tekst, baner i pliki do pobrania, które studenci widzą u góry swojego Dashboardu"
 }

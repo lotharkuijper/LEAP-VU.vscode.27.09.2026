@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Проєкти",
   "admin.tabs.courseInfo": "Інформація про курс",
   "admin.tabs.courseFeatures": "Розділи",
-  "admin.tabs.learningLevels": "Рівні навчання",
   "admin.tabs.settings": "Налаштування",
   "admin.learningLevels.title": "Рівні навчання студентів",
   "admin.learningLevels.intro": "Скільки студентів курсу {course} працюють на якому рівні навчання (1–5). Студенти самі обирають свій рівень; який рівень обирає окремий студент, ти свідомо не бачиш.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: уперше в розділі {unit} з {total} ({title})",
   "conceptOrder.noUnit": "Інший матеріал",
   "dashboard.courseLabel": "Твій курс",
-  "dashboard.switchCourse": "Змінити курс"
+  "dashboard.switchCourse": "Змінити курс",
+  "coursesAdmin.row.courseInfoTitle": "Текст, банер і завантаження, які студенти бачать угорі своєї Панелі керування"
 }

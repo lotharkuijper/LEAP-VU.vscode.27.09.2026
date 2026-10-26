@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Projekti",
   "admin.tabs.courseInfo": "Informacije o kolegiju",
   "admin.tabs.courseFeatures": "Dijelovi",
-  "admin.tabs.learningLevels": "Razine učenja",
   "admin.tabs.settings": "Postavke",
   "admin.learningLevels.title": "Razine učenja studenata",
   "admin.learningLevels.intro": "Koliko studenata kolegija {course} radi na kojoj razini učenja (1–5). Studenti sami biraju svoju razinu; namjerno ne vidiš koju je razinu odabrao pojedini student.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: prvi put u dijelu {unit} od {total} ({title})",
   "conceptOrder.noUnit": "Ostalo gradivo",
   "dashboard.courseLabel": "Tvoj kolegij",
-  "dashboard.switchCourse": "Promijeni kolegij"
+  "dashboard.switchCourse": "Promijeni kolegij",
+  "coursesAdmin.row.courseInfoTitle": "Tekst, banner i preuzimanja koja studenti vide na vrhu svoje nadzorne ploče"
 }

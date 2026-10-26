@@ -822,7 +822,6 @@
   "admin.tabs.projects": "Projects",
   "admin.tabs.courseInfo": "Course info",
   "admin.tabs.courseFeatures": "Features",
-  "admin.tabs.learningLevels": "Learning levels",
   "admin.tabs.settings": "Settings",
   "admin.learningLevels.title": "Student learning levels",
   "admin.learningLevels.intro": "How many students of {course} work at which learning level (1–5). Students choose their level themselves; which level an individual student chooses is deliberately not shown.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: first in part {unit} of {total} ({title})",
   "conceptOrder.noUnit": "Other material",
   "dashboard.courseLabel": "Your course",
-  "dashboard.switchCourse": "Switch course"
+  "dashboard.switchCourse": "Switch course",
+  "coursesAdmin.row.courseInfoTitle": "Text, banner and downloads students see at the top of their Dashboard"
 }

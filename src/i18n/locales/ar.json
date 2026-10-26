@@ -822,7 +822,6 @@
   "admin.tabs.projects": "المشاريع",
   "admin.tabs.courseInfo": "معلومات المقرر",
   "admin.tabs.courseFeatures": "المكوّنات",
-  "admin.tabs.learningLevels": "مستويات التعلّم",
   "admin.tabs.settings": "الإعدادات",
   "admin.learningLevels.title": "مستويات تعلّم الطلاب",
   "admin.learningLevels.intro": "عدد طلاب {course} الذين يعملون في كل مستوى تعلّم (1–5). يختار الطلاب مستواهم بأنفسهم؛ ولا ترى عمدًا المستوى الذي اختاره كل طالب على حدة.",
@@ -3168,5 +3167,6 @@
   "conceptOrder.placeUnit": "{phase}: لأول مرة في الجزء {unit} من {total} ({title})",
   "conceptOrder.noUnit": "مواد أخرى",
   "dashboard.courseLabel": "مقررك",
-  "dashboard.switchCourse": "بدّل المقرر"
+  "dashboard.switchCourse": "بدّل المقرر",
+  "coursesAdmin.row.courseInfoTitle": "النص واللافتة والتنزيلات التي يراها الطلاب في أعلى لوحة التحكم الخاصة بهم"
 }
