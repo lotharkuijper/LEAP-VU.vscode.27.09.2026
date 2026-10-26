@@ -8,7 +8,9 @@ import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { supabase } from '../lib/supabase';
 import { evaluateExplanation, llmErrorToDutch, type ExplainFeedbackSections } from '../services/llm.service';
 import { searchRelevantChunksWithStats, buildContextWithCap, dedupeSourcesByDocument, chunkToDisplaySource, ragDocumentDownloadUrl, openRagDocument, fetchConceptEvidence } from '../services/rag.service';
-import { BookOpen, Search, Send, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Trash2, BookText, X, Loader2, History } from 'lucide-react';
+import { BookOpen, Search, Send, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Trash2, BookText, X, Loader2, History, Coffee } from 'lucide-react';
+import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
+import { buildExplainFeedbackExcerpt } from '../lib/explainFeedbackExcerpt';
 import { SourceList } from '../components/SourceList';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
@@ -82,9 +84,12 @@ function FeedbackBlock({
   retrievedSources,
   retrievedStats,
   viewerRole,
+  check,
   t,
   lang,
 }: {
+  /** "Klopt dit wel?": alleen meegeven als het Studiecafé aan staat. */
+  check?: { conceptName: string; explanation: string; courseId: string | null } | null;
   feedback: string;
   sections?: ExplainFeedbackSections | null;
   score?: { total: number; reason: string } | null;
@@ -113,6 +118,34 @@ function FeedbackBlock({
     openRagDocument(s.documentId, s.pageStart ?? s.slideStart).catch((err) => {
       setOpenSourceError(err?.message || tStatic(getActiveLang(), 'services.rag.openFailed'));
     });
+  };
+  // Zet uitleg + feedback in het Studiecafé (categorie check-llm), net als bij de quiz.
+  // Een <a> met target=_blank: de oefening blijft staan en pop-upblokkers houden hem niet tegen.
+  const handleCheck = () => {
+    if (!check) return;
+    stashStudiecafeHandoff({
+      v: 1,
+      courseId: check.courseId,
+      category: 'check-llm',
+      attachment: buildExplainFeedbackExcerpt({
+        conceptName: check.conceptName,
+        explanation: check.explanation,
+        feedback,
+        sections,
+        score,
+        sources: retrievedSources,
+        courseId: check.courseId,
+        labels: {
+          heading: t('explain.check.heading'),
+          yourExplanation: t('explain.check.yourExplanation'),
+          feedback: t('explain.sections.feedback'),
+          score: t('explain.check.score'),
+          related: t('explain.sections.related'),
+          feedforward: t('explain.sections.feedforward'),
+        },
+      }),
+      mode: 'thread',
+    }, { crossTab: true });
   };
   return (
     <div className="chic-card p-6">
@@ -175,6 +208,22 @@ function FeedbackBlock({
           </div>
         );
       })()}
+      {check && (
+        <div className="mt-4">
+          <a
+            href="/studiecafe"
+            target="_blank"
+            rel="noopener"
+            onClick={handleCheck}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100"
+            title={t('explain.check.hint')}
+            data-testid="button-explain-check-llm"
+          >
+            <Coffee className="w-4 h-4" />
+            {t('quiz.checkLLM.label')}
+          </a>
+        </div>
+      )}
       {/\(buiten\s+(?:het\s+|dit\s+|de\s+)?cursusmateriaal\)/i.test(feedback) && (
         <div
           className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3"
@@ -1200,6 +1249,9 @@ export function ExplainPage() {
                   retrievedSources={retrievedSources}
                   retrievedStats={retrievedStats}
                   viewerRole={profile?.role}
+                  check={selectedConcept && explanation.trim() && courseFeatures.visible('studiecafe')
+                    ? { conceptName: conceptName(selectedConcept), explanation, courseId: activeCourse ?? null }
+                    : null}
                   t={t}
                   lang={lang}
                 />

@@ -61,7 +61,9 @@ export function ChatExcerptCard({ attachment, onRemove }: ChatExcerptCardProps) 
         <span className="truncate">
           {attachment.meta?.module === 'quiz'
             ? t('studiecafe.attachment.quizExcerpt')
-            : t('studiecafe.attachment.chatExcerpt')}
+            : attachment.meta?.module === 'explain'
+              ? t('studiecafe.attachment.explainExcerpt')
+              : t('studiecafe.attachment.chatExcerpt')}
         </span>
         <div className="ml-auto flex items-center gap-1 shrink-0">
           <button
