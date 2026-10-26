@@ -1275,10 +1275,14 @@ const tabs = [
   { id: 'settings' as TabType, label: t('admin.tabs.settings'), icon: Settings, show: isAdmin },
 ].filter(tab => tab.show);
 
-// Herinrichting 2026-09-25: alles voor één cursus onder "Mijn cursus", met
-// Cursusmateriaal voorop; systeemzaken apart (admin).
+// Herinrichting 2026-10-26: in de volgorde waarin je een cursus inricht —
+// inhoud, AI-tutor, quiz, openstellen voor studenten, volgen; systeemzaken apart (admin).
 const tabGroups = [
-  { key: 'myCourse', label: t('admin.tabGroups.myCourse'), ids: ['material', 'course_features', 'quiz_sources', 'projects_admin', 'analytics', 'prompts', 'rag_settings', 'imports', 'add_users'] },
+  { key: 'content', label: t('admin.tabGroups.content'), ids: ['material', 'projects_admin'] },
+  { key: 'aiTutor', label: t('admin.tabGroups.aiTutor'), ids: ['prompts', 'rag_settings'] },
+  { key: 'quiz', label: t('admin.tabGroups.quiz'), ids: ['quiz_sources', 'imports'] },
+  { key: 'publish', label: t('admin.tabGroups.publish'), ids: ['course_features', 'add_users'] },
+  { key: 'follow', label: t('admin.tabGroups.follow'), ids: ['analytics'] },
   { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'messages', 'settings'] },
 ].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
  .filter(g => g.items.length > 0);
@@ -1394,14 +1398,16 @@ const tabGroups = [
             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 shadow-sm"
             data-testid="select-admin-tab-mobile"
           >
-            {tabs.map(tab => (
-              <option key={tab.id} value={tab.id}>{tab.label}</option>
+            {tabGroups.map(group => (
+              <optgroup key={group.key} label={group.label}>
+                {group.items.map(tab => <option key={tab.id} value={tab.id}>{tab.label}</option>)}
+              </optgroup>
             ))}
           </select>
         </div>
 
         {/* Desktop: verticale zijbalk */}
-        <nav className="hidden md:block w-52 flex-shrink-0 chic-card overflow-hidden self-start sticky top-4">
+        <nav className="hidden md:block w-60 flex-shrink-0 chic-card overflow-hidden self-start sticky top-4">
           {tabGroups.map((group, gi) => (
             <div key={group.key} className={gi > 0 ? 'border-t border-gray-100' : ''}>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1">

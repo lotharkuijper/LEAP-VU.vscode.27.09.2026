@@ -252,8 +252,8 @@
     <figure><img src="img/uitleg-feedback.png" alt=""><figcaption><b>De feedback</b>, met verwijzingen [1][2][3] naar de passages in het cursusmateriaal.</figcaption></figure>
   </div>
   <p><b>Verbeter deze uitleg.</b> Een tweede manier van oefenen bij Ik leg uit. De student kiest een begrip en krijgt een korte uitleg die LEAP ter plekke maakt uit je cursusmateriaal, met bewust één of meer fouten erin; hoeveel, dat weet de student niet. De student wijst de fouten aan en legt uit wat eraan fout is, en krijgt daarna feedback, de fouten, de juiste uitleg en de bronnen te zien. Een tweede, onafhankelijke controle door het taalmodel keurt elke uitleg eerst goed: alle fouten moeten echte, wezenlijke misvattingen zijn en de rest van de tekst moet kloppen. Jij hoeft niets na te kijken. Omdat AI zich kan vergissen, staat er een waarschuwing bij en kan de student via <i>Klopt dit wel?</i> een twijfelgeval in het Studiecafé zetten. Er wordt niets bewaard, behalve een reflectie in het leerdagboek als de student daarom vraagt.</p>
-  <p>Bij <b>Onderdelen</b> kies je per cursus of studenten <i>Leg zelf uit</i>, <i>Verbeter deze uitleg</i> of allebei krijgen; minstens één van beide blijft aan, of je zet Ik leg uit helemaal uit.</p>
-  <p><b>Formules.</b> Studenten kunnen overal formules in TeX typen, bijvoorbeeld <code>$x^2$</code> of <code>$$\frac{a}{b}$$</code>; die worden altijd netjes weergegeven (bedragen zoals “$10 en $20” niet). In vakken met formules zet je bij <b>Onderdelen</b> de <i>Formule-editor</i> aan: studenten krijgen dan bij al hun tekstvakken een ∑-knop met een visuele editor. Wat je typt staat er meteen opgemaakt (/ maakt een breuk, ^ een macht), en er zijn knoppen voor breuk, wortel, som, integraal, Griekse letters en meer. De formule gaat als tekst mee; de tutor begrijpt hem. Staat standaard uit.</p>
+  <p>Bij <b>Onderdelen aan/uit</b> kies je per cursus of studenten <i>Leg zelf uit</i>, <i>Verbeter deze uitleg</i> of allebei krijgen; minstens één van beide blijft aan, of je zet Ik leg uit helemaal uit.</p>
+  <p><b>Formules.</b> Studenten kunnen overal formules in TeX typen, bijvoorbeeld <code>$x^2$</code> of <code>$$\frac{a}{b}$$</code>; die worden altijd netjes weergegeven (bedragen zoals “$10 en $20” niet). In vakken met formules zet je bij <b>Onderdelen aan/uit</b> de <i>Formule-editor</i> aan: studenten krijgen dan bij al hun tekstvakken een ∑-knop met een visuele editor. Wat je typt staat er meteen opgemaakt (/ maakt een breuk, ^ een macht), en er zijn knoppen voor breuk, wortel, som, integraal, Griekse letters en meer. De formule gaat als tekst mee; de tutor begrijpt hem. Staat standaard uit.</p>
 
   <h2 style="color:var(--quiz)">Quiz — oefenen met ophalen</h2>
   <p>De student kiest een of meer onderwerpen, een vraagtype (meerkeuze, open vraag of casus) en een moeilijkheid. Bij meerkeuze ziet hij direct of het goed is; open antwoorden krijgen feedback, feed-forward en een score van 0–100. Een afgeronde quiz kan als reflectie in het leerdagboek.</p>
@@ -340,10 +340,10 @@
   <p>Een laatste controle: bijvoorbeeld begrippen zonder bron in je materiaal, of een antwoordmodel dat studenten nog kunnen zien. Je kunt hier ook een voorbeeldvraag maken zoals een student die krijgt. Is alles in orde, maak de cursus dan <i>beschikbaar</i> (stap 0).</p>
 
   <h2>Stap 5 — Quizbronnen</h2>
-  <p>In <b>Beheer → Quiz-bronnen</b> bepaal je waar de quizvragen vandaan komen:</p>
+  <p>In <b>Beheer → Bronnen van quizvragen</b> bepaal je waar de quizvragen vandaan komen:</p>
   <ul>
     <li><b>RAG (cursusmateriaal)</b> — vragen op basis van passages uit je leerstof;</li>
-    <li><b>ItemBank</b> — vragen uit een vraagbank, zoals ShareStats (via <i>Imports</i>) of je eigen vragen als CSV-bestand;</li>
+    <li><b>ItemBank</b> — vragen uit een vraagbank, zoals ShareStats (via <i>Vraagbanken importeren</i>) of je eigen vragen als CSV-bestand;</li>
     <li><b>LLM-creatief</b> — vragen die de AI vrij bedenkt over het begrip.</li>
   </ul>
   <figure>
@@ -352,8 +352,8 @@
   </figure>
   <div class="box tip"><h4>Tip</h4><p>Een begrip krijgt alleen vraagbankvragen als je het koppelt aan een onderdeel van de vraagbank én het vraagbank-percentage hoger dan 0 is. Ontbreken er vraagbankvragen, dan vult de AI aan. Meer “cursusmateriaal” betekent vragen die dichter bij jouw stof liggen.</p></div>
 
-  <h2>Stap 6 — Chat-instructies en zoekgevoeligheid</h2>
-  <p><b>Chat-instructies</b> zijn de vaste aanwijzingen die LEAP meekrijgt bij de chat en bij Ik leg uit: toon, aanpak en wat de AI wel of niet mag doen. Per onderdeel (chat en Ik leg uit) schrijf je een eigen instructie voor je cursus, bijvoorbeeld met een vakspecifieke rol en toon. Het veld begint leeg; zolang het leeg is, krijgen studenten het <i>sjabloon</i> van LEAP, en dat zie je aan een waarschuwing. Met <i>Toon sjabloon</i> bekijk je het sjabloon en kopieer je wat je wilt gebruiken; het sjabloon zelf kan alleen de beheerder aanpassen. Een wijziging geldt meteen voor alle studenten — wijzig met zorg.</p>
+  <h2>Stap 6 — Tutor-instructies en zoekgevoeligheid</h2>
+  <p><b>Tutor-instructies</b> zijn de vaste aanwijzingen die LEAP meekrijgt bij de chat en bij Ik leg uit: toon, aanpak en wat de AI wel of niet mag doen. Per onderdeel (chat en Ik leg uit) schrijf je een eigen instructie voor je cursus, bijvoorbeeld met een vakspecifieke rol en toon. Het veld begint leeg; zolang het leeg is, krijgen studenten het <i>sjabloon</i> van LEAP, en dat zie je aan een waarschuwing. Met <i>Toon sjabloon</i> bekijk je het sjabloon en kopieer je wat je wilt gebruiken; het sjabloon zelf kan alleen de beheerder aanpassen. Een wijziging geldt meteen voor alle studenten — wijzig met zorg.</p>
   <p><b>Zoekgevoeligheid AI</b> bepaalt hoe ruim LEAP passages uit je materiaal meeneemt: <i>Ruim</i> (meer passages, soms minder precies), <i>Gebalanceerd</i> (aanbevolen) of <i>Streng</i> (alleen passages die duidelijk over de vraag gaan). Met “Probeer met een begrip” zie je vooraf wat een instelling doet, zonder dat studenten er iets van merken.</p>
 
   <h2>Stap 7 — Projecten en persona's</h2>
@@ -394,7 +394,7 @@
   <p>De <b>Cursus-info</b> is het blok dat studenten bovenaan hun Dashboard zien: een tekst over de cursus, eventueel een banner, en bestanden om te downloaden (bijvoorbeeld de studiehandleiding). Je vindt het bij <b>Cursussen beheren</b>, met de knop Cursus-info in de rij van de cursus. De leerniveaus vind je onder <b>Analytics</b>: daar zie je hoeveel studenten op welk niveau werken. Welk niveau een individuele student kiest, zie je bewust niet: de student blijft de baas over zijn niveau.</p>
 
   <h2>Extra — Bijlagen in de chat (optioneel)</h2>
-  <p>Bij <b>Onderdelen</b> kun je <b>Bijlagen in de chat</b> aanzetten. Studenten kunnen dan in de chat een afbeelding plakken (bijvoorbeeld een schermafbeelding gemaakt met Windows+Shift+S), via het paperclipje een afbeelding of bestand kiezen (PDF, Word, PowerPoint, tekst), of iets naar het chatvenster slepen. Ze vertellen erbij wat ze willen weten. De tutor beschrijft eerst wat hij ziet (“Dit zie ik: …”) en vraagt of dat klopt; daarna gaat het gesprek verder vanuit je cursusmateriaal, zoals bij elke vraag.</p>
+  <p>Bij <b>Onderdelen aan/uit</b> kun je <b>Bijlagen in de chat</b> aanzetten. Studenten kunnen dan in de chat een afbeelding plakken (bijvoorbeeld een schermafbeelding gemaakt met Windows+Shift+S), via het paperclipje een afbeelding of bestand kiezen (PDF, Word, PowerPoint, tekst), of iets naar het chatvenster slepen. Ze vertellen erbij wat ze willen weten. De tutor beschrijft eerst wat hij ziet (“Dit zie ik: …”) en vraagt of dat klopt; daarna gaat het gesprek verder vanuit je cursusmateriaal, zoals bij elke vraag.</p>
   <p>De optie staat standaard <b>uit</b>. Aanzetten gaat pas na een waarschuwing en een tweede bevestiging, omdat bijlagen gevolgen hebben:</p>
   <ul>
     <li><b>Kosten:</b> elke afbeelding en elk bestand kost extra rekenwerk; de tekst van een bestand gaat bij elke vraag opnieuw mee.</li>
@@ -402,7 +402,7 @@
     <li><b>Verlezen:</b> de tutor kan zich vergissen in wat hij ziet; daarom laat hij eerst zien wat hij leest.</li>
   </ul>
   <div class="box"><h4>Niet bewaard</h4><p>LEAP bewaart bijlagen niet. Ze staan alleen in de browser van de student zolang de chat open is; sluit de student de chat (ander of nieuw gesprek, pagina verlaten), dan zijn ze weg. In het gesprek blijft alleen een label staan, plus wat de tutor erover zei. Bijlagen gaan nooit mee naar het Studiecafé. Het taalmodel op de Azure-omgeving van de VU verwerkt ze wel om te antwoorden.</p></div>
-  <p>De beheerder van LEAP kan bijlagen voor heel LEAP uitzetten, bijvoorbeeld als de kosten te hoog worden. Je ziet dan bij Onderdelen “uitgezet door de beheerder”; je eigen keuze blijft bewaard. Bij <b>Analytics</b> zie je hoeveel bijlagen er in je cursus zijn meegegeven (alleen aantallen).</p>
+  <p>De beheerder van LEAP kan bijlagen voor heel LEAP uitzetten, bijvoorbeeld als de kosten te hoog worden. Je ziet dan bij Onderdelen aan/uit “uitgezet door de beheerder”; je eigen keuze blijft bewaard. Bij <b>Analytics</b> zie je hoeveel bijlagen er in je cursus zijn meegegeven (alleen aantallen).</p>
 </section>
 
 <!-- ═══════════════════════════ 5. HANDIG ═══════════════════════════ -->
@@ -466,7 +466,7 @@
     <p>Zet de zoekgevoeligheid op <i>Streng</i> of zet “alleen cursusbronnen” aan, en controleer met “Probeer met een begrip” of er voor die onderwerpen passages worden gevonden. Ontbreken ze, voeg dan materiaal toe.</p>
 
     <h3>Quizvragen passen niet goed bij een begrip.</h3>
-    <p>Verhoog in Quiz-bronnen het aandeel <i>RAG (cursusmateriaal)</i>, of koppel het begrip aan de map waarin de stof erover staat. Met het dekkingsoverzicht zie je waarom een begrip geen vraagbankvragen krijgt.</p>
+    <p>Verhoog in Bronnen van quizvragen het aandeel <i>RAG (cursusmateriaal)</i>, of koppel het begrip aan de map waarin de stof erover staat. Met het dekkingsoverzicht zie je waarom een begrip geen vraagbankvragen krijgt.</p>
 
     <h3>Kan ik het niveau van een student aanpassen?</h3>
     <p>Nee, bewust niet. De student kiest zelf; bij Analytics zie je alleen hoeveel studenten op elk niveau werken. Een student die wil weten of hij verder kan, vraagt dat in de chat via “Klaar voor een hoger niveau?”.</p>
@@ -475,7 +475,7 @@
     <p>Dan is het contact verbroken: de groep kwam op het dieptepunt van de verstandhouding. In een simulatie is dat een bewuste consequentie. Wil je de groep toch een nieuwe kans geven, vraag dan de beheerder van LEAP om het contact te herstellen. Jij kunt zelf niet in de projectruimte van een groep kijken.</p>
 
     <h3>Ik wil de toon van de chat voor mijn vak aanpassen.</h3>
-    <p>Geef je cursus eigen chat-instructies (Beheer → Chat-instructies). Test de wijziging direct zelf in de chat, want hij geldt meteen voor al je studenten.</p>
+    <p>Geef je cursus eigen tutor-instructies (Beheer → Tutor-instructies). Test de wijziging direct zelf in de chat, want hij geldt meteen voor al je studenten.</p>
   </div>
 
   <div class="box tip">

@@ -37,7 +37,7 @@
 ## Subject-neutral (2026-10-15)
 - LEAP is not tied to one subject. UI texts and the fixed LLM instructions in code contain no subject content (no epidemiology or statistics examples); use neutral examples or examples from several fields. server/__tests__/subjectNeutral.test.js enforces this.
 - The general chat and explain instructions in the DB are TEMPLATES (Sjabloon chat-instructie / Sjabloon Ik leg uit): the fallback for courses without their own instruction. Subject content belongs in the per-course instruction. E&B1 has its own copy of the old E&B text.
-- Chat-instructies (2026-10-20, `CoursePromptsPanel`, `server/promptTemplates.js`): per part (chat, explain) the teacher writes an own instruction for the active course. The field starts EMPTY and the template is never put into it; while it is empty a warning says students get the template. "Toon sjabloon" shows the template read-only with a copy button. Only the admin changes a template, and only after "Pas sjabloon aan", via `PUT /api/admin/prompt-templates/:section` (previous text logged in `leap_setting_changes`); the browser never writes templates to `chatbot_prompts`. Quiz prompts are out of scope (left as they are). `server/__tests__/promptTemplates.test.js` guards this.
+- Tutor-instructies (menu name since 2026-10-26; was Chat-instructies) (2026-10-20, `CoursePromptsPanel`, `server/promptTemplates.js`): per part (chat, explain) the teacher writes an own instruction for the active course. The field starts EMPTY and the template is never put into it; while it is empty a warning says students get the template. "Toon sjabloon" shows the template read-only with a copy button. Only the admin changes a template, and only after "Pas sjabloon aan", via `PUT /api/admin/prompt-templates/:section` (previous text logged in `leap_setting_changes`); the browser never writes templates to `chatbot_prompts`. Quiz prompts are out of scope (left as they are). `server/__tests__/promptTemplates.test.js` guards this.
 - Concepts never leak between courses: /api/concepts returns only the course's own concepts (no fallback to concepts without a course; without a course only the manage view sees everything). Query expansion uses only the concept's own aliases, key points and definition, with no static synonym list.
 
 ## Testing expectations
@@ -165,7 +165,7 @@
   - New tables with a user column must be listed in `EXPORT_SOURCES` or `NOT_EXPORTED`; `server/__tests__/myData.test.js` checks this.
 
 ## Course features on/off (2026-10-15)
-- Teachers switch student parts per course in Beheer → Onderdelen (`CourseFeaturesAdminTab`): chat, explain, quiz, projects, journal, studiecafe. `courses.features` stores only what is OFF (`{"quiz": false}`); a missing key means on. Switching off hides, it never deletes.
+- Teachers switch student parts per course in Beheer → Onderdelen aan/uit (`CourseFeaturesAdminTab`): chat, explain, quiz, projects, journal, studiecafe. `courses.features` stores only what is OFF (`{"quiz": false}`); a missing key means on. Switching off hides, it never deletes.
 - One rule everywhere: `server/courseFeatures.js` (server) and `src/lib/courseFeatures.ts` (browser, must stay identical; a test compares them). Course teachers and admins keep using a disabled part, labelled "uit voor studenten".
 - Enforced in three layers:
   - browser: menu, dashboard tiles, `CourseFeatureGate` per page (in `ProtectedRoute`), and links between parts (`useCourseFeatures().visible(f)`);
@@ -235,6 +235,7 @@
 - Report progress as `{ done, total, labelKey }`. Components read a task that is still running through `useTask(kind, key)`, so they show its progress again when the user comes back.
 
 ## Layout
+- The Beheer menu follows the order of setting up a course (2026-10-26, `tabGroups` in `AdminPage`, same order in `ADMIN_SECTIONS`): Inhoud (Cursusmateriaal, Projecten), AI-tutor (Tutor-instructies, Zoekgevoeligheid AI), Quiz (Bronnen van quizvragen, Vraagbanken importeren), Openstellen (Onderdelen aan/uit, Deelnemers toevoegen), Volgen (Analytics); Systeem for admins. Keep new tabs in this logic.
 - List rows in the admin (title + badges + buttons) use `ListRow` / `RowActions` (`src/components/ui/`): buttons that do not fit go into "⋯ More", dangerous actions always sit there, separated and in red. Never build a `flex justify-between` row with a button group that is not allowed to shrink.
 - A `<HelpTip>` and the control it explains form ONE non-wrapping block (`<span className="flex flex-nowrap items-center gap-1">control + HelpTip</span>`) inside a row that may wrap, so the question mark never ends up on another line than its button.
 - Flex children that hold text get `min-w-0`; buttons get `whitespace-nowrap` inside a row that may wrap (`flex-wrap`). Grids inside the admin choose columns by the available space (`grid-cols-[repeat(auto-fill,minmax(min(Xrem,100%),1fr))]`), not by the screen width: the admin content column is much narrower than the screen.

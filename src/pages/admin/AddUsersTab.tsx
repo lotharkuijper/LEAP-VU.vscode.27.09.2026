@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
+import { Link } from 'react-router-dom';
 import { AdminHint } from '../../components/help/AdminHint';
 import {
   UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users,
@@ -162,6 +163,13 @@ export function AddUsersTab() {
           {t('addUsers.title')}
         </h2>
         <AdminHint variant="intro" className="mt-1">{t('addUsers.subtitle')}</AdminHint>
+        {/* Wie al lid is (verwijderen, docent maken, bestaande accounts toevoegen): Beheer leden. */}
+        <p className="mt-2 text-sm text-gray-600" data-testid="text-add-users-members-link">
+          {t('addUsers.membersHint')}{' '}
+          <Link to={courseId ? `/admin/courses?manageMembers=${courseId}` : '/admin/courses'} className="font-medium text-brand-700 underline hover:text-brand-900" data-testid="link-add-users-manage-members">
+            {t('admin.users.manageCourseMembers')}
+          </Link>
+        </p>
       </div>
 
       {/* E-mail-voorwaarde-banner */}

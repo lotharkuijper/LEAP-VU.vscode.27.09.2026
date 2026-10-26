@@ -35,29 +35,31 @@ const FEATURE_NL = { chat: 'Chat', explain: 'Ik leg uit', quiz: 'Quiz', projects
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * De onderdelen van het beheer. `audience`: 'all' = docent en beheerder,
+ * De onderdelen van het beheer, in de volgorde van het menu (sinds 2026-10-26 in
+ * de volgorde van inrichten: Inhoud, AI-tutor, Quiz, Openstellen, Volgen; Systeem).
+ * `audience`: 'all' = docent en beheerder,
  * 'admin' = alleen beheerder. `helpGroups`: groepen hulpteksten (help.<groep>.*)
  * die bij dit onderdeel horen. `tab`: waarde van ?tab= in /admin.
  */
 export const ADMIN_SECTIONS = [
   { tab: 'material', labelKey: 'admin.tabs.material', audience: 'all', helpGroups: ['material', 'concepts'],
     what: 'Bestanden en websites toevoegen met een doel (leerstof, cursusinformatie, projectmateriaal, alleen delen, alleen docenten), verwerking controleren, begrippen (kernbegrippen, dubbelingen, maximum) en de controle "Klaar voor studenten".' },
-  { tab: 'quiz_sources', labelKey: 'admin.tabs.quizSources', audience: 'all', helpGroups: ['quizSources'],
-    what: 'Waar quizvragen vandaan komen: cursusmateriaal (RAG), een vraagbank (ShareStats/CSV) of vrij door de AI, met dekking per begrip.' },
   { tab: 'projects_admin', labelKey: 'admin.tabs.projects', audience: 'all', helpGroups: ['projects', 'personas'],
     what: 'Groepsprojecten met persona\'s in drie rollen: begeleider, beoordelaar (rubric, feedbackrondes per product) en rolspeler (simulatie, eventueel met verstandhouding en gedragsregels). Ook persona-sjablonen en inleveren.' },
-  { tab: 'course_features', labelKey: 'admin.tabs.courseFeatures', audience: 'all', helpGroups: ['courseFeatures'],
-    what: 'Onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte. Apart: bijlagen in de chat (afbeeldingen plakken, bestanden meegeven) staan standaard UIT en gaan pas aan na een waarschuwing en een dubbele bevestiging; alleen als de beheerder het platformbreed toestaat. Bijlagen worden niet bewaard.' },
-  { tab: 'analytics', labelKey: 'admin.tabs.analytics', audience: 'all', helpGroups: ['analytics', 'learningLevels'],
-    what: 'Analytics, alleen in totalen (cijfers op minder dan 5 studenten blijven verborgen). Docent: begrippen-thermometer met gemiddelde quizscore per begrip en chatvragen waarvoor de chat geen goed bewijs in het materiaal vond. Beheerder: ook gezondheid en kosten (fouten, responstijd, tokens, inleesproblemen). Onderaan: de leerniveaus, hoeveel studenten op welk niveau werken (alleen de verdeling, nooit per student).' },
   { tab: 'prompts', labelKey: 'admin.tabs.prompts', audience: 'all', helpGroups: ['chatInstructions'],
-    what: 'Chat-instructies: toon en aanpak van de tutor in de chat en bij Ik leg uit, eventueel per cursus.' },
+    what: 'Tutor-instructies: toon en aanpak van de tutor in de chat en bij Ik leg uit, eventueel per cursus.' },
   { tab: 'rag_settings', labelKey: 'admin.tabs.ragSettings', audience: 'all', helpGroups: ['searchSensitivity'],
     what: 'Zoekgevoeligheid: hoe ruim de AI passages uit het materiaal meeneemt (Ruim/Gebalanceerd/Streng of eigen drempel), per onderdeel en per cursus.' },
+  { tab: 'quiz_sources', labelKey: 'admin.tabs.quizSources', audience: 'all', helpGroups: ['quizSources'],
+    what: 'Waar quizvragen vandaan komen: cursusmateriaal (RAG), een vraagbank (ShareStats/CSV) of vrij door de AI, met dekking per begrip.' },
   { tab: 'imports', labelKey: 'admin.tabs.imports', audience: 'all', helpGroups: [],
     what: 'Vraagbanken importeren (onder andere ShareStats).' },
+  { tab: 'course_features', labelKey: 'admin.tabs.courseFeatures', audience: 'all', helpGroups: ['courseFeatures'],
+    what: 'Onderdelen aan/uit: onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte. Apart: bijlagen in de chat (afbeeldingen plakken, bestanden meegeven) staan standaard UIT en gaan pas aan na een waarschuwing en een dubbele bevestiging; alleen als de beheerder het platformbreed toestaat. Bijlagen worden niet bewaard.' },
   { tab: 'add_users', labelKey: 'admin.tabs.addUsers', audience: 'all', helpGroups: [],
-    what: 'Studenten en docenten aan de cursus toevoegen, ook in bulk.' },
+    what: 'Deelnemers toevoegen: studentaccounts in bulk aanmaken uit een e-maillijst en in één cursus inschrijven. Wie al een account heeft toevoegen, iemand verwijderen of tot docent maken gaat via Cursussen beheren → Beheer leden (er staat een link).' },
+  { tab: 'analytics', labelKey: 'admin.tabs.analytics', audience: 'all', helpGroups: ['analytics', 'learningLevels'],
+    what: 'Analytics, alleen in totalen (cijfers op minder dan 5 studenten blijven verborgen). Docent: begrippen-thermometer met gemiddelde quizscore per begrip en chatvragen waarvoor de chat geen goed bewijs in het materiaal vond. Beheerder: ook gezondheid en kosten (fouten, responstijd, tokens, inleesproblemen). Onderaan: de leerniveaus, hoeveel studenten op welk niveau werken (alleen de verdeling, nooit per student).' },
   { tab: 'users', labelKey: 'admin.tabs.users', audience: 'admin', helpGroups: [],
     what: 'Alle gebruikers van LEAP en hun rol.' },
   { tab: 'messages', labelKey: 'admin.tabs.messages', audience: 'admin', helpGroups: ['systemMessages'],
@@ -189,7 +191,7 @@ export function buildLeapKnowledge({ locale, handbookText, extraDocs = [], role 
   const label = (key) => (locale && locale[key]) || key;
   const lines = ['# LEAP — onderdelen van het beheer (actueel)'];
   lines.push(`De gebruiker is ${role === 'admin' ? 'BEHEERDER (mag alles)' : 'DOCENT (onderdelen gemarkeerd "alleen beheerder" kan deze gebruiker niet zelf; verwijs dan naar de beheerder)'}.`);
-  lines.push('Link naar een onderdeel altijd als markdown-link met precies dit adres, bijvoorbeeld [Quiz-bronnen](/admin?tab=quiz_sources).');
+  lines.push('Link naar een onderdeel altijd als markdown-link met precies dit adres, bijvoorbeeld [Bronnen van quizvragen](/admin?tab=quiz_sources).');
   for (const s of ADMIN_SECTIONS) {
     const who = s.audience === 'admin' ? ' — ALLEEN BEHEERDER' : '';
     lines.push('', `## ${label(s.labelKey)} (/admin?tab=${s.tab})${who}`, s.what);
@@ -243,7 +245,7 @@ export function summarizeCourse(snap, locale = {}) {
     // Onderdelen per cursus (server/courseFeatures.js): adviseer niets wat uit staat zonder dat te zeggen.
     const f = normalizeCourseFeatures(s.course.features);
     const off = COURSE_FEATURES.filter(k => !f[k]).map(k => FEATURE_NL[k]);
-    out.push(`- Onderdelen voor studenten: ${off.length ? `uit: ${off.join(', ')} (aan te zetten in Onderdelen)` : 'alles aan'}`);
+    out.push(`- Onderdelen voor studenten: ${off.length ? `uit: ${off.join(', ')} (aan te zetten in Onderdelen aan/uit)` : 'alles aan'}`);
   }
   const r = s.readiness;
   if (r) {
