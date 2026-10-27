@@ -47,6 +47,9 @@ interface Project {
   rubric_criteria: any[];
   research_question: string;
   submissions_enabled?: boolean | null;
+  /** Groepsindeling: alleen bij 'self' nodigen studenten elkaar uit met de code. */
+  group_mode?: 'self' | 'teacher' | 'canvas' | null;
+  allow_self_signup?: boolean | null;
   preassessment_persona_id?: string | null;
   course_id?: string | null;
 }
@@ -1079,10 +1082,12 @@ export function ProjectRoomPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
+          {(project.group_mode || (project.allow_self_signup === false ? 'teacher' : 'self')) === 'self' && (
           <button onClick={copyInvite} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs font-mono" title={t('room.copyInviteTitle')} data-testid="button-copy-invite">
             <Copy className="w-3.5 h-3.5" />
             {group.invite_code}
           </button>
+          )}
           <span className="flex items-center gap-1 text-gray-600 text-xs">
             <Users className="w-4 h-4" />{members.length}
           </span>

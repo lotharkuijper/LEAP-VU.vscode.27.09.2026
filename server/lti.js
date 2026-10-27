@@ -26,6 +26,7 @@
 
 import { createRemoteJWKSet, jwtVerify, importJWK, exportJWK } from 'jose';
 import { randomBytes } from 'node:crypto';
+import { canvasGroupRef, placeInCanvasGroup } from './projectGroups.js';
 
 export const CLAIM = 'https://purl.imsglobal.org/spec/lti/claim/';
 const CANVAS_MODES = ['canvas', 'canvas_open'];
@@ -81,6 +82,31 @@ export function courseIdFromClaims(claims) {
   }
 }
 
+/** Het LEAP-project uit de Canvas-link (?project=…) of een custom-veld leap_project (2026-10-27). */
+export function projectIdFromClaims(claims) {
+  const custom = claims[`${CLAIM}custom`] || {};
+  if (typeof custom.leap_project === 'string' && custom.leap_project) return custom.leap_project;
+  try {
+    return new URL(String(claims[`${CLAIM}target_link_uri`] || '')).searchParams.get('project') || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * De Canvas-groep van de student, als het project is geopend vanuit een
+ * Canvas-GROEPSOPDRACHT. Canvas vult de custom fields canvas_group_id
+ * ($com.instructure.Group.id) en canvas_group_name ($com.instructure.Group.name)
+ * alleen daar in; anders staat er de letterlijke naam van de variabele.
+ */
+export function canvasGroupFromClaims(claims) {
+  const custom = claims[`${CLAIM}custom`] || {};
+  const id = String(custom.canvas_group_id ?? '').trim();
+  if (!id || id.startsWith('$')) return null;
+  const rawName = String(custom.canvas_group_name ?? '').trim();
+  return { id, name: rawName && !rawName.startsWith('$') ? rawName : null };
+}
+
 /** Exact vergelijken (hoofdletterongevoelig): % en _ zijn in een e-mailadres geen jokertekens. */
 export const likeExact = (s) => String(s).replace(/[\\%_]/g, (c) => '\\' + c);
 
@@ -121,7 +147,8 @@ export function canvasToolConfig(appUrl, publicJwk) {
     oidc_initiation_url: `${base}/lti/login`,
     target_link_uri: `${base}/lti/launch`,
     ...(publicJwk ? { public_jwk: publicJwk } : { public_jwk_url: `${base}/lti/jwks` }),
-    scopes: [],
+    // NRPS: deelnemers (en later de groepsindeling) ophalen. Nog niet gebruikt; vast aangevraagd.
+    scopes: ['https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly'],
     extensions: [{
       domain,
       tool_id: 'leap-vu',
@@ -131,17 +158,24 @@ export function canvasToolConfig(appUrl, publicJwk) {
         text: 'LEAP',
         placements: [
           { placement: 'link_selection', message_type: 'LtiResourceLinkRequest', target_link_uri: `${base}/lti/launch`, windowTarget: '_blank' },
+          // Als (groeps)opdracht: alleen dan stuurt Canvas de groep van de student mee.
+          { placement: 'assignment_selection', message_type: 'LtiResourceLinkRequest', target_link_uri: `${base}/lti/launch`, windowTarget: '_blank' },
           { placement: 'course_navigation', message_type: 'LtiResourceLinkRequest', target_link_uri: `${base}/lti/launch`, windowTarget: '_blank', default: 'disabled' },
         ],
       },
     }],
-    custom_fields: {},
+    custom_fields: {
+      canvas_group_id: '$com.instructure.Group.id',
+      canvas_group_name: '$com.instructure.Group.name',
+      canvas_course_id: '$Canvas.course.id',
+    },
   };
 }
 
 /** De Canvas-link voor één LEAP-cursus. */
-export function canvasLinkFor(appUrl, courseId) {
-  return `${String(appUrl).replace(/\/+$/, '')}/lti/launch?course=${encodeURIComponent(courseId)}`;
+export function canvasLinkFor(appUrl, courseId, projectId = null) {
+  const base = `${String(appUrl).replace(/\/+$/, '')}/lti/launch?course=${encodeURIComponent(courseId)}`;
+  return projectId ? `${base}&project=${encodeURIComponent(projectId)}` : base;
 }
 
 function cookieValue(req, name) {
@@ -229,7 +263,27 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
     );
   }
   await db.from('profiles').update({ last_active_course_id: course.id }).eq('id', userId);
-  return { userId, email, role, courseId: course.id };
+
+  // Project (2026-10-27): link met ?project=…. Groepsindeling 'canvas' + een student
+  // + een Canvas-groep in het bericht → in de LEAP-groep van die Canvas-groep, en
+  // meteen naar de projectkamer. Anders naar de projecten van de cursus.
+  let next = null;
+  const projectId = projectIdFromClaims(claims);
+  if (projectId && UUID.test(projectId)) {
+    const { data: project } = await db.from('projects').select('id, course_id, group_mode, status').eq('id', projectId).maybeSingle();
+    if (project && project.course_id === course.id) {
+      next = '/projects';
+      const group = canvasGroupFromClaims(claims);
+      if (role === 'student' && project.group_mode === 'canvas' && group && project.status !== 'archived') {
+        const groupId = await placeInCanvasGroup(db, {
+          projectId: project.id, userId, ref: canvasGroupRef(platform.issuer, group.id), name: group.name,
+          genInviteCode: () => randomBytes(4).toString('hex').slice(0, 6).toUpperCase(),
+        });
+        next = `/projects/${project.id}/group/${groupId}`;
+      }
+    }
+  }
+  return { userId, email, role, courseId: course.id, next };
 }
 
 /**
@@ -309,7 +363,7 @@ export function registerLtiRoutes(app, express, deps) {
       }
       res.setHeader('Set-Cookie', `leap_lti_state=; Path=/lti; Max-Age=0; SameSite=None${secureCookies(deps.appUrl(req)) ? '; Secure' : ''}`);
       console.log(`[lti] launch ok: ${r.role} → cursus ${r.courseId}`);
-      return res.redirect(303, toStart(req, { token_hash: tokenHash, course: r.courseId }));
+      return res.redirect(303, toStart(req, { token_hash: tokenHash, course: r.courseId, ...(r.next ? { next: r.next } : {}) }));
     } catch (e) {
       console.warn('[lti] launch fout:', e?.message || e);
       return fail(req, res, 'loginFailed');
@@ -329,10 +383,16 @@ export function registerLtiRoutes(app, express, deps) {
     const { data: course } = await db.from('courses').select('id, enrollment_mode').eq('id', courseId).maybeSingle();
     if (!course) return res.status(404).json({ error: 'Cursus niet gevonden' });
     const { data: links } = await db.from('lti_course_links').select('context_title, last_seen').eq('course_id', courseId).order('last_seen', { ascending: false }).limit(5);
+    // ?project=…: link voor één project (als Canvas-groepsopdracht toevoegen).
+    let projectId = null;
+    if (req.query.project && UUID.test(String(req.query.project))) {
+      const { data: project } = await db.from('projects').select('id').eq('id', String(req.query.project)).eq('course_id', courseId).maybeSingle();
+      projectId = project?.id || null;
+    }
     return res.json({
       configured: deps.platforms.length > 0,
       canvasMode: CANVAS_MODES.includes(course.enrollment_mode),
-      link: canvasLinkFor(deps.appUrl(req), courseId),
+      link: canvasLinkFor(deps.appUrl(req), courseId, projectId),
       configUrl: `${deps.appUrl(req)}/lti/config.json`,
       canvasCourses: (links || []).map(l => ({ title: l.context_title, lastSeen: l.last_seen })),
     });

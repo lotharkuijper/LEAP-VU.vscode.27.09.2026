@@ -8,6 +8,7 @@ import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from 'jose';
 import {
   CLAIM, loadPlatforms, roleFromLti, courseIdFromClaims, checkLaunchClaims, createStateStore,
   canvasToolConfig, canvasLinkFor, likeExact, registerLtiRoutes, createRateLimiter, secureCookies,
+  projectIdFromClaims, canvasGroupFromClaims,
 } from '../lti.js';
 
 const ISS = 'https://canvas.test';
@@ -73,7 +74,24 @@ describe('regels', () => {
     const cfg = canvasToolConfig('https://leap.test');
     expect(cfg.oidc_initiation_url).toBe('https://leap.test/lti/login');
     expect(cfg.extensions[0].settings.placements.every(p => p.windowTarget === '_blank')).toBe(true);
-    expect(cfg.scopes).toEqual([]);
+    // Minimaal: alleen leesrecht op deelnemers (NRPS), voor de groepsindeling uit Canvas.
+    expect(cfg.scopes).toEqual(['https://purl.imsglobal.org/spec/lti-nrps/scope/contextmembership.readonly']);
+  });
+  it('groepen uit Canvas (2026-10-27): custom fields, plaatsing als opdracht, link per project', () => {
+    const cfg = canvasToolConfig('https://leap.test');
+    expect(cfg.custom_fields).toEqual({
+      canvas_group_id: '$com.instructure.Group.id',
+      canvas_group_name: '$com.instructure.Group.name',
+      canvas_course_id: '$Canvas.course.id',
+    });
+    expect(cfg.extensions[0].settings.placements.map(p => p.placement)).toContain('assignment_selection');
+    const P = '11111111-1111-4111-8111-111111111111';
+    expect(canvasLinkFor('https://leap.test/', 'c1', P)).toBe(`https://leap.test/lti/launch?course=c1&project=${P}`);
+    expect(projectIdFromClaims({ [`${CLAIM}target_link_uri`]: `https://leap.test/lti/launch?course=c1&project=${P}` })).toBe(P);
+    expect(canvasGroupFromClaims({ [`${CLAIM}custom`]: { canvas_group_id: '481', canvas_group_name: 'Groep 3' } })).toEqual({ id: '481', name: 'Groep 3' });
+    // Niet vanuit een groepsopdracht: Canvas laat de variabele staan.
+    expect(canvasGroupFromClaims({ [`${CLAIM}custom`]: { canvas_group_id: '$com.instructure.Group.id' } })).toBeNull();
+    expect(canvasGroupFromClaims({})).toBeNull();
   });
   it('state-cookie is Secure op https én localhost (anders weigert de browser SameSite=None)', () => {
     expect(secureCookies('https://leap.test')).toBe(true);

@@ -16,9 +16,12 @@ const KNOWN_ERRORS = new Set([
 ]);
 
 /** Pure: leest het #-deel van de landingspagina. */
-export function parseLtiFragment(hash: string): { tokenHash: string | null; course: string | null; error: string | null } {
+export function parseLtiFragment(hash: string): { tokenHash: string | null; course: string | null; error: string | null; next: string | null } {
   const p = new URLSearchParams(String(hash || '').replace(/^#/, ''));
-  return { tokenHash: p.get('token_hash'), course: p.get('course'), error: p.get('error') };
+  // next: alleen een pad binnen de projecten van LEAP (vanuit een Canvas-projectlink).
+  const next = p.get('next');
+  const safeNext = next && /^\/projects(\/[0-9a-f-]{36}\/group\/[0-9a-f-]{36})?$/i.test(next) ? next : null;
+  return { tokenHash: p.get('token_hash'), course: p.get('course'), error: p.get('error'), next: safeNext };
 }
 
 export default function LtiStartPage() {
@@ -30,14 +33,14 @@ export default function LtiStartPage() {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    const { tokenHash, error: err } = parseLtiFragment(window.location.hash);
+    const { tokenHash, error: err, next } = parseLtiFragment(window.location.hash);
     // De code nooit in de adresbalk of geschiedenis laten staan.
     window.history.replaceState(null, '', window.location.pathname);
     if (err || !tokenHash) { setError(err && KNOWN_ERRORS.has(err) ? err : 'loginFailed'); return; }
     (async () => {
       const { error: vErr } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' });
       if (vErr) { setError('loginFailed'); return; }
-      navigate('/dashboard', { replace: true });
+      navigate(next || '/dashboard', { replace: true });
     })();
   }, [navigate]);
 

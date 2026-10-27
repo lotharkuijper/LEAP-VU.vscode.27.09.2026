@@ -18,6 +18,7 @@ import {
   type CourseKnowledge, type KnowledgeCourseDoc, type KnowledgeProjectDoc,
 } from '../../components/PersonaKnowledgeFields';
 import { MATERIAL_KIND_ORDER } from '../../components/material/purposeUi';
+import { ProjectGroupsAdmin } from './ProjectGroupsAdmin';
 import { ListRow } from '../../components/ui/ListRow';
 import { usePreassessments, PreassessorPicker, PreassessmentBadge, PreassessmentModal, DownloadAllButton } from './ProjectPreassessment';
 import type { AvatarConfig } from '../../lib/personaAvatar';
@@ -44,6 +45,8 @@ interface ProjectRow {
   min_group_size: number | null;
   max_group_size: number | null;
   allow_self_signup: boolean | null;
+  /** Groepsindeling (server/projectGroups.js): zelf, docent of via Canvas. */
+  group_mode?: GroupMode | null;
   submissions_enabled: boolean | null;
   preassessment_persona_id?: string | null;
   status: string | null;
@@ -99,17 +102,22 @@ interface ProjectDoc {
   created_at: string;
 }
 
+type GroupMode = 'self' | 'teacher' | 'canvas';
+const CANVAS_ENROLLMENT = ['canvas', 'canvas_open'];
+const groupModeOf = (p: Partial<ProjectRow>): GroupMode =>
+  p.group_mode || (p.allow_self_signup === false ? 'teacher' : 'self');
+
+/** Wie ziet dit veld? Klein label naast het veld in het projectformulier. */
+function Audience({ kind }: { kind: 'students' | 'ai' | 'nobody' }) {
+  const { t } = useLanguage();
+  const tone = kind === 'students' ? 'bg-green-50 text-green-800' : kind === 'ai' ? 'bg-purple-50 text-purple-800' : 'bg-gray-100 text-gray-600';
+  return <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${tone}`}>{t(`admin.projects.audience.${kind}` as 'admin.projects.audience.students')}</span>;
+}
+
 interface KnowledgeOptions {
   courseDocs: KnowledgeCourseDoc[];
   projectDocs: KnowledgeProjectDoc[];
   knownBy: Record<string, Array<{ id: string; name: string }>>;
-}
-
-interface GroupOverview {
-  id: string;
-  name: string;
-  status: string;
-  members: Array<{ name: string | null; email: string | null }>;
 }
 
 const UPLOAD_ACCEPT = '.txt,.md,.markdown,.csv,.tsv,.json,.log,.pdf,.docx,.pptx,.xlsx,.odt,.ods,.odp';
@@ -176,6 +184,14 @@ export function ProjectsAdminTab() {
 function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; onOpenTemplates: () => void }) {
   const { session } = useAuth();
   const { activeCourseId, activeCourse } = useActiveCourse();
+  // Toegangsroute van de cursus: bepaalt of "via Canvas" een keuze is.
+  const [enrollmentMode, setEnrollmentMode] = useState<string | null>(null);
+  useEffect(() => {
+    if (!activeCourseId) { setEnrollmentMode(null); return; }
+    supabase.from('courses').select('enrollment_mode').eq('id', activeCourseId).maybeSingle()
+      .then(({ data }) => setEnrollmentMode((data as { enrollment_mode?: string } | null)?.enrollment_mode || null));
+  }, [activeCourseId]);
+  const isCanvasCourse = CANVAS_ENROLLMENT.includes(enrollmentMode || '');
   const { lang, t } = useLanguage();
   const token = session?.access_token || '';
   const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -241,7 +257,9 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
     } else {
       setEditing({
         title: '', research_question: '', briefing_markdown: '', goals: '',
-        rubric_criteria: [], min_group_size: 1, max_group_size: 5, allow_self_signup: true,
+        rubric_criteria: [], min_group_size: 1, max_group_size: 5,
+        // Canvas-cursus: groepen uit Canvas; anders deelt de docent in.
+        group_mode: CANVAS_ENROLLMENT.includes(enrollmentMode || '') ? 'canvas' : 'teacher',
         submissions_enabled: false,
         course_id: activeCourseId || null, status: 'active',
       });
@@ -268,7 +286,9 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
       course_id: editing.course_id || activeCourseId || null,
       min_group_size: editing.min_group_size ?? 1,
       max_group_size: editing.max_group_size ?? 5,
-      allow_self_signup: editing.allow_self_signup ?? true,
+      group_mode: groupModeOf(editing),
+      // Oude code leest allow_self_signup nog; die volgt de groepsindeling.
+      allow_self_signup: groupModeOf(editing) === 'self',
       submissions_enabled: editing.submissions_enabled ?? false,
       status: editing.status || 'active',
     };
@@ -416,27 +436,27 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
             <h3 className="text-lg font-bold mb-3">{editing.id ? t('admin.projects.editTitle') : t('admin.projects.newTitle')}</h3>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldTitle')}</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldTitle')}<Audience kind="students" /></label>
                 <input value={editing.title || ''} onChange={e => setEditing({ ...editing, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-title" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldQuestion')}</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldQuestion')}<Audience kind="students" /><Audience kind="ai" /></label>
                 <input value={editing.research_question || ''} onChange={e => setEditing({ ...editing, research_question: e.target.value })} placeholder={t('admin.projects.fieldQuestionPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-question" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldDesc')}</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldDesc')}<Audience kind="nobody" /></label>
                 <textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="textarea-project-description" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldGoals')}</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldGoals')}<Audience kind="ai" /></label>
                 <textarea value={editing.goals || ''} onChange={e => setEditing({ ...editing, goals: e.target.value })} rows={3} placeholder={t('admin.projects.fieldGoalsPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="textarea-project-goals" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldBriefing')}</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldBriefing')}<Audience kind="students" /></label>
                 <textarea value={editing.briefing_markdown || ''} onChange={e => setEditing({ ...editing, briefing_markdown: e.target.value })} rows={6} className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono" data-testid="textarea-project-briefing" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldRubric')}</label>
+                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldRubric')}<Audience kind="students" /><Audience kind="ai" /></label>
                 <textarea value={rubricLines} onChange={e => setRubricLines(e.target.value)} rows={4} placeholder={t('admin.projects.rubricPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="textarea-project-rubric" />
                 <p className="text-[10px] text-gray-400 mt-1">{t('admin.projects.rubricHint')}</p>
               </div>
@@ -449,13 +469,23 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                   <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldMaxSize')}</label>
                   <input type="number" min={1} max={20} value={editing.max_group_size ?? 5} onChange={e => setEditing({ ...editing, max_group_size: parseInt(e.target.value) || 5 })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-maxsize" />
                 </div>
-                <div className="flex items-end">
-                  <label className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" checked={editing.allow_self_signup ?? true} onChange={e => setEditing({ ...editing, allow_self_signup: e.target.checked })} data-testid="checkbox-project-selfsignup" />
-                    {t('admin.projects.fieldSelfSignup')}
-                  </label>
-                </div>
               </div>
+              <fieldset className="border-t border-gray-100 pt-3" data-testid="fieldset-group-mode">
+                <legend className="text-xs font-medium text-gray-700 flex items-center gap-1">{t('admin.projects.groupMode.title')}<HelpTip id="projects.groupMode" /></legend>
+                <div className="mt-1 space-y-1">
+                  {(['canvas', 'teacher', 'self'] as GroupMode[]).filter(m => m !== 'canvas' || isCanvasCourse || groupModeOf(editing) === 'canvas').map(m => (
+                    <label key={m} className="flex items-start gap-2 text-sm">
+                      <input type="radio" name="group-mode" className="mt-1" checked={groupModeOf(editing) === m}
+                        onChange={() => setEditing({ ...editing, group_mode: m, allow_self_signup: m === 'self' })}
+                        data-testid={'radio-group-mode-' + m} />
+                      <span>
+                        <span className="font-medium">{t(('admin.projects.groupMode.' + m) as 'admin.projects.groupMode.self')}</span>
+                        <span className="block text-[11px] text-gray-500">{t(('admin.projects.groupMode.' + m + 'Hint') as 'admin.projects.groupMode.selfHint')}</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
               <div className="border-t border-gray-100 pt-3">
                 <label className="flex items-start gap-2 text-sm">
                   <input
@@ -474,8 +504,11 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                 </label>
               </div>
             </div>
+            {error && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert" data-testid="alert-project-form-error">{error}</div>
+            )}
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setEditing(null)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg" data-testid="button-cancel-project">{t('admin.projects.cancelBtn')}</button>
+              <button onClick={() => { setEditing(null); setError(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg" data-testid="button-cancel-project">{t('admin.projects.cancelBtn')}</button>
               <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-40" data-testid="button-save-project">
                 <Save className="w-4 h-4" /> {saving ? t('admin.projects.saving') : t('admin.projects.saveBtn')}
               </button>
@@ -516,17 +549,8 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
   const [importingLib, setImportingLib] = useState(false);
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
-  const [groups, setGroups] = useState<GroupOverview[] | null>(null);
 
-  // Privacy (2026-10-08): een docent ziet wie in welke groep zit, niet wat een
-  // groep in de projectruimte doet.
-  const loadGroups = useCallback(async () => {
-    try {
-      const r = await fetch(`/api/projects/${project.id}/groups-overview`, { headers: { Authorization: `Bearer ${token}` } });
-      if (r.ok) setGroups((await r.json()).groups || []);
-    } catch { /* overzicht is aanvullend */ }
-  }, [project.id, token]);
-  useEffect(() => { void loadGroups(); }, [loadGroups]);
+
 
   const loadSubmissions = useCallback(async () => {
     if (!project.submissions_enabled) { setSubmissions([]); return; }
@@ -999,34 +1023,8 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
         />
       )}
 
-      {/* Groepen: alleen wie erin zit */}
-      <div className="chic-card p-5" data-testid="card-project-groups">
-        <h3 className="font-semibold text-gray-900">{t('admin.projects.groups.title', { count: String(groups?.length ?? 0) })}</h3>
-        <AdminHint variant="intro" className="mb-3">{t('admin.projects.groups.privacy')}</AdminHint>
-        {groups === null ? (
-          <p className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t('common.loading')}</p>
-        ) : groups.length === 0 ? (
-          <p className="text-sm text-gray-500" data-testid="text-no-groups">{t('admin.projects.groups.empty')}</p>
-        ) : (
-          <ul className="grid gap-3 grid-cols-[repeat(auto-fill,minmax(min(16rem,100%),1fr))]">
-            {groups.map(g => (
-              <li key={g.id} className="rounded-lg border border-gray-200 p-3" data-testid={`group-overview-${g.id}`}>
-                <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 truncate font-medium text-gray-900">{g.name}</span>
-                  {g.status === 'finalized' && <span className="flex-shrink-0 text-[10px] text-gray-500">{t('admin.projects.groups.finalized')}</span>}
-                </div>
-                {g.members.length === 0 ? (
-                  <p className="mt-1 text-xs text-gray-400">{t('admin.projects.groups.noMembers')}</p>
-                ) : (
-                  <ul className="mt-1 space-y-0.5 text-xs text-gray-700">
-                    {g.members.map((m, i) => <li key={i} className="truncate">{m.name || m.email}</li>)}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      {/* Groepen: indelen, verplaatsen, Canvas (ProjectGroupsAdmin). Alleen wie erin zit. */}
+      <ProjectGroupsAdmin projectId={project.id} courseId={project.course_id} token={token} />
 
       {/* Persona's */}
       <div className="chic-card p-5">

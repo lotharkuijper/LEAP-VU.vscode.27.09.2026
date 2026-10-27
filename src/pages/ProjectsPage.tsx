@@ -24,6 +24,9 @@ interface OverviewProject {
   activeGroup: { id: string; name: string; invite_code: string; status: string; lastCheckpointAt: string | null } | null;
   /** Afgeronde groep: terugkijken en in het eigen leerdagboek bewaren (alleen lezen). */
   finishedGroup?: { id: string; name: string } | null;
+  /** Groepsindeling: alleen bij 'self' maakt de student zelf een groep (server/projectGroups.js). */
+  group_mode?: 'self' | 'teacher' | 'canvas' | null;
+  allow_self_signup?: boolean | null;
 }
 
 interface OverviewCourse {
@@ -209,6 +212,8 @@ export function ProjectsPage() {
                     // kan hij/zij doorgaan — ongeacht of er een sessie-record bestaat.
                     const inProgress = !!p.activeGroup;
                     const completed = p.sessions.some(s => s.status === 'completed');
+                    const groupMode = p.group_mode || (p.allow_self_signup === false ? 'teacher' : 'self');
+                    const selfGroups = groupMode === 'self';
                     return (
                       <div key={p.id} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-3" data-testid={`overview-project-${p.id}`}>
                         <div>
@@ -249,6 +254,12 @@ export function ProjectsPage() {
                               <ArrowRight className="w-4 h-4" /> {t('projects.viewFinished')}
                             </button>
                           )}
+                          {!selfGroups && !inProgress && !p.finishedGroup && (
+                            <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600" data-testid={'text-group-assigned-' + p.id}>
+                              {t(groupMode === 'canvas' ? 'projects.groupFromCanvas' : 'projects.groupFromTeacher')}
+                            </p>
+                          )}
+                          {selfGroups && (
                           <button
                             onClick={() => startNew(p)}
                             disabled={busyProjectId === p.id || !!inProgress}
@@ -257,7 +268,8 @@ export function ProjectsPage() {
                           >
                             <PlayCircle className="w-4 h-4" /> {t('projects.startNewProject')}
                           </button>
-                          {(inProgress || completed) && (
+                          )}
+                          {selfGroups && (inProgress || completed) && (
                             <button
                               onClick={() => setRestartConfirm(p)}
                               disabled={busyProjectId === p.id}

@@ -153,6 +153,7 @@ import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOU
 import { buildSourcesInstructionBlock, buildNumberedRagContext, numberDocumentSources, buildNoSourcesInstructionBlock } from './citationSources.js';
 import { serverI18nMiddleware, translateServerMessage } from './serverI18n.js';
 import { purposeAllowsModule, MATERIAL_KINDS } from './filePurpose.js';
+import { registerProjectGroupRoutes, studentMayFormGroups, normalizeGroupMode } from './projectGroups.js';
 import { SAVE_SOURCES, checkpointItems, checkpointItemRefs, assessmentRefs, reviewRefs, isSaved, reviewEntry, noteEntry } from './projectJournalSave.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
@@ -10856,7 +10857,7 @@ app.post('/api/projects/groups', async (req, res) => {
 
   try {
     const { data: project } = await supabaseAdmin
-      .from('projects').select('id, title, course_id, allow_self_signup, status').eq('id', projectId).maybeSingle();
+      .from('projects').select('id, title, course_id, allow_self_signup, group_mode, status').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
     if (project.status === 'archived') return res.status(400).json({ error: 'Dit project is gearchiveerd' });
 
@@ -10870,8 +10871,9 @@ app.post('/api/projects/groups', async (req, res) => {
         return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
       }
       if (await rejectIfFeatureOff(res, auth.user, profile, project.course_id, 'projects')) return;
-      if (project.allow_self_signup === false) {
-        return res.status(403).json({ error: 'Self-signup voor dit project staat uit' });
+      // Docent of Canvas deelt in: een student maakt geen eigen groep (projectGroups.js).
+      if (!studentMayFormGroups(project)) {
+        return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });
       }
     }
 
@@ -10935,9 +10937,12 @@ app.post('/api/projects/groups/join', async (req, res) => {
     // mogen aansluiten. Een geldige invite-code is niet voldoende — anders kan
     // een gelekte code een buitenstaander toegang tot de chat geven.
     const { data: project } = await supabaseAdmin
-      .from('projects').select('id, course_id').eq('id', group.project_id).maybeSingle();
+      .from('projects').select('id, course_id, allow_self_signup, group_mode').eq('id', group.project_id).maybeSingle();
     const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = await isStaffForCourse(auth.user, profile, project?.course_id);
+    if (!isStaff && !studentMayFormGroups(project)) {
+        return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });
+    }
     if (!isStaff && project?.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
       return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
     }
@@ -12637,10 +12642,15 @@ app.patch('/api/projects/:projectId', async (req, res) => {
     // cursussen laat groepslidmaatschappen + cursus-toegang inconsistent achter.
     const allowed = ['title', 'research_question', 'description', 'briefing_markdown',
       'goals', 'rubric_criteria', 'min_group_size', 'max_group_size',
-      'allow_self_signup', 'status', 'submissions_enabled'];
+      'allow_self_signup', 'status', 'submissions_enabled', 'group_mode'];
     const patch = {};
     for (const k of allowed) {
       if (k in (req.body || {})) patch[k] = req.body[k];
+    }
+    // allow_self_signup volgt de groepsindeling (oude code leest dat veld nog).
+    if ('group_mode' in patch) {
+      patch.group_mode = normalizeGroupMode(patch.group_mode);
+      patch.allow_self_signup = patch.group_mode === 'self';
     }
     if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Geen wijzigingen' });
     if (patch.min_group_size != null && patch.max_group_size != null
@@ -13344,7 +13354,7 @@ app.get('/api/projects/student-overview', async (req, res) => {
     if (courseIds.length === 0) return res.json({ courses: [] });
 
     const { data: projects } = await supabaseAdmin
-      .from('projects').select('id, title, research_question, course_id, status, briefing_markdown, max_group_size, min_group_size')
+      .from('projects').select('id, title, research_question, course_id, status, briefing_markdown, max_group_size, min_group_size, group_mode, allow_self_signup')
       .in('course_id', courseIds).eq('status', 'active');
     const projectIds = (projects || []).map(p => p.id);
 
@@ -13438,9 +13448,13 @@ app.post('/api/projects/student-restart', async (req, res) => {
   if (!projectId) return res.status(400).json({ error: 'projectId vereist' });
   try {
     const { data: project } = await supabaseAdmin
-      .from('projects').select('id, course_id, status').eq('id', projectId).maybeSingle();
+      .from('projects').select('id, course_id, status, allow_self_signup, group_mode').eq('id', projectId).maybeSingle();
     if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
     if (project.status === 'archived') return res.status(400).json({ error: 'Project is gearchiveerd' });
+    // Een ingedeelde groep verlaat een student niet op eigen houtje; de docent verplaatst.
+    if (!studentMayFormGroups(project) && !(await isStaffForCourse(auth.user, (await profileCache.get(auth.user.id, loadProfileRoleEmail)).data, project.course_id))) {
+        return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });
+    }
 
     const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
@@ -14689,6 +14703,14 @@ registerLtiRoutes(app, express, {
 });
 
 // Studenten uitnodigen voor een cursus, met mail-wachtrij en opruimen (server/courseInvitations.js).
+registerProjectGroupRoutes(app, {
+  supabaseAdmin,
+  authUser,
+  loadProfile: async (id) => (await profileCache.get(id, loadProfileRoleEmail)).data,
+  requireProjectStaff,
+  genInviteCode,
+});
+
 registerCourseInvitationRoutes(app, {
   supabaseAdmin,
   resolveAdminUser,

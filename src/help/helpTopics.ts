@@ -86,6 +86,7 @@ export const HELP_TOPICS = [
   'searchSensitivity.extraction',
   'chatInstructions.perCourse',
   'projects.submissions',
+  'projects.groupMode',
   'projects.preassessment',
   'courses.enrollmentMode',
   'courses.canvasLink',
