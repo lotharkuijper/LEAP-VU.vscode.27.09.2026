@@ -13426,7 +13426,7 @@ app.get('/api/projects/:projectId/documents', async (req, res) => {
     const isStaffDocs = await isStaffForCourse(auth.user, profile, project.course_id);
     let docsQuery = supabaseAdmin
       .from('project_documents')
-      .select('id, filename, byte_size, mime_type, document_ref_id, is_visible_to_students, uploaded_by, created_at')
+      .select('id, filename, byte_size, mime_type, material_kind, document_ref_id, is_visible_to_students, uploaded_by, created_at')
       .eq('project_id', projectId).order('created_at', { ascending: false });
     if (!isStaffDocs) docsQuery = docsQuery.eq('is_visible_to_students', true);
     const { data, error: e } = await docsQuery;
@@ -13668,7 +13668,7 @@ async function createProjectDocumentFromBuffer({ projectId, projectTitle, userId
   if (materialKind) row.material_kind = materialKind;
   const { data, error: e } = await supabaseAdmin
     .from('project_documents').insert(row)
-    .select('id, filename, byte_size, mime_type, document_ref_id, is_visible_to_students, uploaded_by, created_at').single();
+    .select('id, filename, byte_size, mime_type, material_kind, document_ref_id, is_visible_to_students, uploaded_by, created_at').single();
   if (e) throw { status: 500, message: e.message };
   const folderLinkFailed = !isBinaryDownload && text && !data.document_ref_id;
   return { document: data, ...(folderLinkFailed ? { warning: 'Bestand opgeslagen, maar kon niet in de Projectdata-map worden geplaatst (controleer de serverlogs).' } : {}) };

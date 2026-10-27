@@ -90,7 +90,7 @@ export const HELP_TOPICS = [
   'courses.canvasLink',
   'projects.docs',
   'personas.consultationLimits',
-  'personas.hiddenRubric',
+  'personas.knowledge',
 ] as const;
 
 export type HelpId = (typeof HELP_TOPICS)[number];

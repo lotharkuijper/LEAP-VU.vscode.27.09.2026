@@ -12,6 +12,7 @@ import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
 import type { AvatarConfig } from '../../lib/personaAvatar';
 import { PersonaRoleFields, roleFieldsPayload, type ConductRules } from '../../components/PersonaRoleFields';
+import { PersonaKnowledgeFields, knowledgePayload, type CourseKnowledge, type KnowledgeCourseDoc } from '../../components/PersonaKnowledgeFields';
 import { Bot, Trash2, Pencil, Plus, Save, X, Download, Check, ArrowRight, Loader2, Drama } from 'lucide-react';
 
 /** Per sjabloon: de titels van de projecten die er een kopie van hebben. */
@@ -38,8 +39,8 @@ interface CoursePersona {
   avatar_emoji: string;
   avatar?: AvatarConfig | null;
   system_prompt: string;
-  rag_enabled: boolean;
-  rag_folder_ids: string[];
+  course_knowledge?: CourseKnowledge | null;
+  course_knowledge_doc_ids?: string[] | null;
   is_default: boolean;
   persona_type?: string | null;
   reputation_enabled?: boolean | null;
@@ -60,7 +61,9 @@ const EMPTY_FORM = {
   avatar_emoji: '🤖',
   avatar: null as AvatarConfig | null,
   system_prompt: '',
-  rag_enabled: true,
+  // Een nieuw sjabloon kent niets: alleen zijn prompt (PersonaKnowledgeFields).
+  course_knowledge: 'none' as CourseKnowledge,
+  course_knowledge_doc_ids: [] as string[],
   persona_type: 'conversational' as string,
   reputation_enabled: false as boolean,
   conduct_rules: null as ConductRules | null,
@@ -85,6 +88,17 @@ export function PersonaLibraryTab({ onOpenProjects }: {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | 'new' | null>(null);
   const [form, setForm] = useState<typeof EMPTY_FORM & { id?: string }>(EMPTY_FORM);
+  // Cursusbestanden voor "Wat kent deze persona?" (pas laden als de editor opengaat).
+  const [courseDocs, setCourseDocs] = useState<KnowledgeCourseDoc[] | null>(null);
+  useEffect(() => { setCourseDocs(null); }, [activeCourseId]);
+  useEffect(() => {
+    if (!editingId || !activeCourseId || courseDocs) return;
+    fetch(`/api/admin/courses/${activeCourseId}/persona-knowledge`, { headers: authHeader() })
+      .then(r => (r.ok ? r.json() : { courseDocs: [] }))
+      .then(d => setCourseDocs(d.courseDocs || []))
+      .catch(() => setCourseDocs([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingId, activeCourseId, courseDocs]);
   const [saving, setSaving] = useState(false);
   const [fetchTarget, setFetchTarget] = useState<CoursePersona | null>(null);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
@@ -157,7 +171,8 @@ export function PersonaLibraryTab({ onOpenProjects }: {
       avatar_emoji: p.avatar_emoji,
       avatar: p.avatar ?? null,
       system_prompt: p.system_prompt,
-      rag_enabled: p.rag_enabled,
+      course_knowledge: (p.course_knowledge || 'none') as CourseKnowledge,
+      course_knowledge_doc_ids: p.course_knowledge_doc_ids || [],
       persona_type: p.persona_type || 'conversational',
       reputation_enabled: !!p.reputation_enabled,
       conduct_rules: p.conduct_rules ?? null,
@@ -187,7 +202,7 @@ export function PersonaLibraryTab({ onOpenProjects }: {
     try {
       const isNew = editingId === 'new';
       const url = isNew ? '/api/admin/course-personas' : `/api/admin/course-personas/${editingId}`;
-      const payload = { ...form, ...roleFieldsPayload(form) };
+      const payload = { ...form, ...roleFieldsPayload(form), ...knowledgePayload(form, { project: false }) };
       const body = isNew ? { course_id: activeCourseId, ...payload } : payload;
       const res = await fetch(url, {
         method: isNew ? 'POST' : 'PATCH',
@@ -316,7 +331,6 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                       {p.persona_type === 'evaluator' && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.evaluator')}</span>}
                       {p.persona_type === 'roleplayer' && <span className="text-[10px] bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded inline-flex items-center gap-1"><Drama className="w-3 h-3" />{t('admin.personaRole.roleplayer.title')}{p.reputation_enabled ? ` · ${t('admin.personaRole.roleplayer.badgeReputation')}` : ''}</span>}
                       {p.is_default && <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.default')}</span>}
-                      {!p.rag_enabled && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t('admin.personaLib.badge.ragOff')}</span>}
                     </>
                   }
                   meta={
@@ -420,15 +434,13 @@ export function PersonaLibraryTab({ onOpenProjects }: {
                   data-testid="textarea-cp-prompt"
                 />
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.rag_enabled}
-                  onChange={e => setForm({ ...form, rag_enabled: e.target.checked })}
-                  data-testid="checkbox-cp-rag"
-                />
-                {t('admin.personaLib.fieldRag')}
-              </label>
+              <PersonaKnowledgeFields
+                idPrefix="cp"
+                value={form}
+                onChange={v => setForm({ ...form, ...v } as typeof form)}
+                courseDocs={courseDocs}
+                isEvaluator={form.persona_type === 'evaluator'}
+              />
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={cancelEdit} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">

@@ -13,6 +13,11 @@ import { AdminHint } from '../../components/help/AdminHint';
 import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { PersonaAvatarEditor } from '../../components/PersonaAvatarEditor';
 import { PersonaRoleFields, roleFieldsPayload, type ConductRules } from '../../components/PersonaRoleFields';
+import {
+  PersonaKnowledgeFields, knowledgePayload,
+  type CourseKnowledge, type KnowledgeCourseDoc, type KnowledgeProjectDoc,
+} from '../../components/PersonaKnowledgeFields';
+import { MATERIAL_KIND_ORDER } from '../../components/material/purposeUi';
 import { ListRow } from '../../components/ui/ListRow';
 import { usePreassessments, PreassessorPicker, PreassessmentBadge, PreassessmentModal, DownloadAllButton } from './ProjectPreassessment';
 import type { AvatarConfig } from '../../lib/personaAvatar';
@@ -66,9 +71,11 @@ interface ProjectPersona {
   avatar_emoji: string;
   avatar?: AvatarConfig | null;
   system_prompt: string;
-  rag_enabled: boolean;
-  rag_folder_ids: string[];
   sort_order: number;
+  // Wat kent deze persona? (PersonaKnowledgeFields, server/personaKnowledge.js)
+  course_knowledge?: CourseKnowledge | null;
+  course_knowledge_doc_ids?: string[] | null;
+  project_knowledge_doc_ids?: string[] | null;
   persona_type?: string;
   reputation_enabled?: boolean;
   conduct_rules?: ConductRules | null;
@@ -85,10 +92,17 @@ interface ProjectDoc {
   filename: string;
   byte_size: number | null;
   mime_type?: string | null;
+  material_kind?: string | null;
   document_ref_id?: string | null;
   is_visible_to_students: boolean;
   uploaded_by: string | null;
   created_at: string;
+}
+
+interface KnowledgeOptions {
+  courseDocs: KnowledgeCourseDoc[];
+  projectDocs: KnowledgeProjectDoc[];
+  knownBy: Record<string, Array<{ id: string; name: string }>>;
 }
 
 interface GroupOverview {
@@ -96,15 +110,6 @@ interface GroupOverview {
   name: string;
   status: string;
   members: Array<{ name: string | null; email: string | null }>;
-}
-
-interface RubricDoc {
-  id: string;
-  filename: string;
-  byte_size: number | null;
-  is_hidden_rubric?: boolean;
-  visible_to_students?: boolean;
-  created_at: string;
 }
 
 const UPLOAD_ACCEPT = '.txt,.md,.markdown,.csv,.tsv,.json,.log,.pdf,.docx,.pptx,.xlsx,.odt,.ods,.odp';
@@ -482,25 +487,29 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
   );
 }
 
-function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTemplates }: {
+function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
   project: ProjectRow; token: string;
   onBack: () => void; onError: (m: string) => void; onInfo: (m: string) => void;
   /** Naar Projecten → Persona-sjablonen (bv. als er nog geen sjablonen zijn). */
   onOpenTemplates?: () => void;
 }) {
   const { t, lang } = useLanguage();
+  // Meldingen tonen in dit paneel zelf: de meldingen van de lijst staan niet in
+  // beeld zolang dit paneel open is (fouten waren onzichtbaar, 2026-10-27).
+  const onError = (m: string) => setLocalError(m);
+  const onInfo = (m: string) => setLocalInfo(m);
+  const [personaError, setPersonaError] = useState<string | null>(null);
+  const [knowledge, setKnowledge] = useState<KnowledgeOptions | null>(null);
   const [personas, setPersonas] = useState<ProjectPersona[]>([]);
   const [adding, setAdding] = useState(false);
   const [editingPersona, setEditingPersona] = useState<Partial<ProjectPersona> | null>(null);
   const [ppFaceOpen, setPpFaceOpen] = useState(false);
-  useEffect(() => { setPpFaceOpen(false); }, [editingPersona?.id, editingPersona === null]);
+  useEffect(() => { setPpFaceOpen(false); setPersonaError(null); }, [editingPersona?.id, editingPersona === null]);
   const [projectDocs, setProjectDocs] = useState<ProjectDoc[]>([]);
   const [uploadingPDoc, setUploadingPDoc] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [localInfo, setLocalInfo] = useState<string | null>(null);
   const pdocFileRef = useRef<HTMLInputElement>(null);
-  const [rubricDocsMap, setRubricDocsMap] = useState<Record<string, RubricDoc[]>>({});
-  const [uploadingRubric, setUploadingRubric] = useState<string | null>(null);
   const [copying, setCopying] = useState<string | null>(null);
   const [libPersonas, setLibPersonas] = useState<{ id: string; name: string; avatar_emoji: string; persona_type?: string | null }[]>([]);
   const [selectedLibId, setSelectedLibId] = useState('');
@@ -586,32 +595,13 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
     }
   }, [project.id, token]);
 
-  // Voor evaluator-persona's de bestaande rubric-docs ophalen via een
-  // dummy group_id van de eerste groep — de docs zijn echter group-scoped,
-  // dus we tonen alleen het aantal en bieden upload aan via de eerste groep.
-  // Eenvoudiger: rubric-docs worden ZONDER group_id niet opgehaald in
-  // bestaande endpoint. We gebruiken supabase rechtstreeks om alle rijen te
-  // lezen als staff (RLS staat staff toe).
-  const loadRubricDocs = useCallback(async (personaId: string) => {
-    let { data, error } = await supabase
-      .from('project_persona_documents')
-      .select('id, filename, byte_size, is_hidden_rubric, visible_to_students, created_at')
-      .eq('project_id', project.id)
-      .eq('persona_id', personaId)
-      .eq('is_hidden_rubric', true)
-      .order('created_at', { ascending: false });
-    // Defensief: oude DB zonder visible_to_students-kolom.
-    if (error && (/visible_to_students/i.test(error.message || '') || (error as any).code === '42703')) {
-      ({ data } = await supabase
-        .from('project_persona_documents')
-        .select('id, filename, byte_size, is_hidden_rubric, created_at')
-        .eq('project_id', project.id)
-        .eq('persona_id', personaId)
-        .eq('is_hidden_rubric', true)
-        .order('created_at', { ascending: false }));
-    }
-    setRubricDocsMap(prev => ({ ...prev, [personaId]: (data as any) || [] }));
-  }, [project.id]);
+  // Keuzelijsten voor "Wat kent deze persona?" en wie welk document kent.
+  const loadKnowledge = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/projects/${project.id}/persona-knowledge`, { headers: { Authorization: `Bearer ${token}` } });
+      if (r.ok) setKnowledge(await r.json());
+    } catch { /* keuzelijst laadt bij de volgende wijziging opnieuw */ }
+  }, [project.id, token]);
 
   const loadLibPersonas = useCallback(async () => {
     if (!project.course_id) return;
@@ -643,18 +633,24 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
     }
   };
 
-  useEffect(() => { loadPersonas(); loadProjectDocs(); loadLibPersonas(); loadSubmissions(); }, [loadPersonas, loadProjectDocs, loadLibPersonas, loadSubmissions]);
+  useEffect(() => { loadPersonas(); loadProjectDocs(); loadLibPersonas(); loadSubmissions(); loadKnowledge(); }, [loadPersonas, loadProjectDocs, loadLibPersonas, loadSubmissions, loadKnowledge]);
 
-  // Lazy-load rubric-lijst per evaluator-persona.
-  useEffect(() => {
-    personas.filter(p => p.persona_type === 'evaluator').forEach(p => {
-      if (!(p.id in rubricDocsMap)) loadRubricDocs(p.id);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [personas]);
+  // Korte samenvatting per persona in de lijst: wat kent hij?
+  const knowledgeSummary = (p: ProjectPersona) => {
+    const docs = (knowledge?.projectDocs || []).filter(d => (p.project_knowledge_doc_ids || []).includes(d.id));
+    const isEval = p.persona_type === 'evaluator';
+    const course = isEval || !p.course_knowledge || p.course_knowledge === 'none' ? null
+      : p.course_knowledge === 'all' ? t('admin.personaKnowledge.courseAllShort')
+      : t('admin.personaKnowledge.courseSelectedShort', { count: String((p.course_knowledge_doc_ids || []).length) });
+    const parts = [course, ...docs.map(d => d.filename)].filter(Boolean) as string[];
+    return parts.length
+      ? t('admin.personaKnowledge.rowKnows', { list: parts.join(', ') })
+      : t(isEval ? 'admin.personaKnowledge.rowNothingEvaluator' : 'admin.personaKnowledge.rowNothing');
+  };
 
   const savePersona = async () => {
-    if (!editingPersona || !editingPersona.name?.trim()) { onError(t('admin.projects.personas.errorNameRequired')); return; }
+    if (!editingPersona || !editingPersona.name?.trim()) { setPersonaError(t('admin.projects.personas.errorNameRequired')); return; }
+    setPersonaError(null);
     setAdding(true);
     try {
       const isNew = !editingPersona.id;
@@ -669,8 +665,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           system_prompt: editingPersona.system_prompt || '',
           avatar_emoji: editingPersona.avatar_emoji || '🤖',
           avatar: editingPersona.avatar ?? null,
-          rag_enabled: editingPersona.rag_enabled ?? true,
           ...roleFieldsPayload(editingPersona),
+          ...knowledgePayload(editingPersona),
           max_consultations: editingPersona.max_consultations ?? null,
           auto_close_hours: editingPersona.auto_close_hours ?? null,
         }),
@@ -678,9 +674,10 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || t('admin.projects.personas.saveFailed'));
       setEditingPersona(null);
-      await loadPersonas();
+      await Promise.all([loadPersonas(), loadKnowledge()]);
     } catch (e: any) {
-      onError(e.message);
+      // In het venster zelf: daarachter staat de melding buiten beeld.
+      setPersonaError(e.message);
     } finally {
       setAdding(false);
     }
@@ -730,6 +727,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || t('admin.projects.docs.uploadFailed'));
       setProjectDocs(prev => [d.document, ...prev]);
+      void loadKnowledge();
       setLocalInfo(d.warning
         ? t('admin.projects.docs.uploadedNote', { name: file.name, warning: d.warning })
         : t('admin.projects.docs.uploaded', { name: file.name }));
@@ -748,6 +746,25 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
     });
     if (!r.ok) { onError(t('admin.projects.docs.deleteFailed')); return; }
     setProjectDocs(prev => prev.filter(d => d.id !== doc.id));
+    // Persona's die het kenden, kennen het niet meer.
+    await Promise.all([loadPersonas(), loadKnowledge()]);
+  };
+
+  // Soort van een projectdocument (opdracht, literatuur, rubric, data, overig).
+  // Data is nooit kennis van een persona: de server haalt het daar weg.
+  const changeDocKind = async (doc: ProjectDoc, kind: string) => {
+    const r = await fetch(`/api/projects/${project.id}/documents/${doc.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ material_kind: kind || null }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { onError(d.error || t('admin.projects.docs.kindFailed')); return; }
+    setProjectDocs(prev => prev.map(x => x.id === doc.id ? { ...x, material_kind: kind || null } : x));
+    if (Array.isArray(d.forgottenBy) && d.forgottenBy.length) {
+      onInfo(t('admin.projects.docs.forgottenBy', { name: doc.filename, personas: d.forgottenBy.join(', ') }));
+    }
+    await Promise.all([loadPersonas(), loadKnowledge()]);
   };
 
   const toggleDocVisibility = async (doc: ProjectDoc) => {
@@ -761,69 +778,9 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
     if (!r.ok) {
       setProjectDocs(prev => prev.map(d => d.id === doc.id ? { ...d, is_visible_to_students: !next } : d));
       onError(t('admin.projects.docs.visibilityFailed'));
-    }
-  };
-
-  const uploadRubric = async (personaId: string, file: File) => {
-    if (file.size > 15_000_000) { onError(t('admin.projects.personas.rubric.tooLarge')); return; }
-    setUploadingRubric(personaId);
-    try {
-      // Verborgen rubrics zijn project/persona-scoped — geen groep nodig.
-      const fd = new FormData();
-      fd.append('isHiddenRubric', '1');
-      fd.append('file', file, file.name);
-      const r = await fetch(`/api/projects/${project.id}/personas/${personaId}/documents`, {
-        method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd,
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || t('admin.projects.personas.rubric.uploadFailed'));
-      await loadRubricDocs(personaId);
-      onInfo(t('admin.projects.personas.rubric.linked', { name: file.name }));
-    } catch (e: any) {
-      onError(e.message);
-    } finally {
-      setUploadingRubric(null);
-    }
-  };
-
-  const deleteRubric = async (personaId: string, doc: RubricDoc) => {
-    if (!confirm(t('admin.projects.personas.rubric.deleteConfirm', { name: doc.filename }))) return;
-    // Direct supabase.delete is geblokkeerd door ppd_modify=false; gebruik
-    // het server-endpoint dat de juiste autorisatie afhandelt.
-    const r = await fetch(
-      `/api/projects/${project.id}/personas/${personaId}/documents/${doc.id}`,
-      { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      onError(d.error || t('admin.projects.docs.deleteFailed'));
       return;
     }
-    await loadRubricDocs(personaId);
-  };
-
-  const toggleRubricVisibility = async (personaId: string, doc: RubricDoc) => {
-    const next = !doc.visible_to_students;
-    setRubricDocsMap(prev => ({
-      ...prev,
-      [personaId]: (prev[personaId] || []).map(d => d.id === doc.id ? { ...d, visible_to_students: next } : d),
-    }));
-    const r = await fetch(
-      `/api/projects/${project.id}/personas/${personaId}/documents/${doc.id}/visibility`,
-      {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ visibleToStudents: next }),
-      }
-    );
-    if (!r.ok) {
-      setRubricDocsMap(prev => ({
-        ...prev,
-        [personaId]: (prev[personaId] || []).map(d => d.id === doc.id ? { ...d, visible_to_students: !next } : d),
-      }));
-      const d = await r.json().catch(() => ({}));
-      onError(d.error || t('admin.projects.docs.visibilityFailed'));
-    }
+    void loadKnowledge();
   };
 
   return (
@@ -890,13 +847,34 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           <p className="text-xs text-gray-500">{t('admin.projects.docs.noDocs')}</p>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {projectDocs.map(d => (
-              <li key={d.id} className={`py-2 flex items-center gap-3 ${!d.is_visible_to_students ? 'opacity-50' : ''}`} data-testid={`project-doc-${d.id}`}>
-                {d.document_ref_id ? <Database className="w-4 h-4 text-blue-500" /> : <FileText className="w-4 h-4 text-gray-500" />}
-                <div className="flex-1 min-w-0 truncate text-sm">{d.filename}</div>
-                {d.document_ref_id && (
-                  <span className="text-[10px] bg-blue-50 text-blue-600 border border-blue-200 px-1.5 py-0.5 rounded">{t('admin.projects.docs.projectdata')}</span>
-                )}
+            {projectDocs.map(d => {
+              const kOpt = knowledge?.projectDocs.find(k => k.id === d.id);
+              const readers = knowledge?.knownBy[d.id] || [];
+              return (
+              <li key={d.id} className="py-2 flex flex-wrap items-center gap-x-3 gap-y-1" data-testid={`project-doc-${d.id}`}>
+                {kOpt?.isData ? <Database className="w-4 h-4 text-blue-500" /> : <FileText className="w-4 h-4 text-gray-500" />}
+                <div className={`flex-1 min-w-0 basis-40 ${!d.is_visible_to_students ? 'text-gray-500' : ''}`}>
+                  <div className="truncate text-sm">{d.filename}</div>
+                  <div className="text-[11px] text-gray-500" data-testid={`project-doc-readers-${d.id}`}>
+                    {kOpt?.isData
+                      ? t('admin.projects.docs.dataNeverKnown')
+                      : readers.length
+                        ? t('admin.projects.docs.knownBy', { personas: readers.map(r => r.name).join(', ') })
+                        : t('admin.projects.docs.knownByNobody')}
+                  </div>
+                </div>
+                <select
+                  value={d.material_kind || ''}
+                  onChange={e => void changeDocKind(d, e.target.value)}
+                  aria-label={t('admin.projects.docs.kindLabel')}
+                  className="px-1.5 py-1 border border-gray-300 rounded text-xs bg-white"
+                  data-testid={`select-project-doc-kind-${d.id}`}
+                >
+                  <option value="">{t('admin.projects.docs.kindNone')}</option>
+                  {MATERIAL_KIND_ORDER.map(k => (
+                    <option key={k} value={k}>{t(`filePurpose.kind.${k}` as 'filePurpose.kind.other')}</option>
+                  ))}
+                </select>
                 <div className="text-xs text-gray-400">{d.byte_size ? `${Math.round(d.byte_size / 1024)} KB` : ''}</div>
                 <Tooltip label={d.is_visible_to_students
                   ? t('admin.projects.docs.visibleTitle')
@@ -936,7 +914,8 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                   </button>
                 </Tooltip>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
@@ -963,7 +942,9 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
               token={token}
               evaluators={personas.filter(p => p.persona_type === 'evaluator')}
               value={pre.personaId}
-              rubricCount={pre.personaId ? rubricDocsMap[pre.personaId]?.length : undefined}
+              rubricCount={pre.personaId && knowledge
+                ? (personas.find(p => p.id === pre.personaId)?.project_knowledge_doc_ids || []).length
+                : undefined}
               onChange={pre.setPersonaId}
               onError={setLocalError}
               onInfo={setLocalInfo}
@@ -1054,7 +1035,7 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(personas.length) })}<HelpTip id="personas.inProject" /></h3>
             <AdminHint variant="intro" className="flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></AdminHint>
           </div>
-          <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', rag_enabled: true, persona_type: 'conversational' })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
+          <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', persona_type: 'conversational', course_knowledge: 'none', course_knowledge_doc_ids: [], project_knowledge_doc_ids: [] })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
             <Plus className="w-4 h-4" />{t('admin.projects.personas.addBtn')}
           </button>
         </div>
@@ -1103,7 +1084,6 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
           <ul className="divide-y divide-gray-100">
             {personas.map(p => {
               const isEval = p.persona_type === 'evaluator';
-              const rubricList = rubricDocsMap[p.id] || [];
               return (
                 <li key={p.id} className="py-3" data-testid={`pp-row-${p.id}`}>
                   <div className="flex items-start gap-3">
@@ -1129,49 +1109,9 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                       </Tooltip>
                     </div>
                   </div>
-                  {isEval && (
-                    <div className="mt-2 ml-10 bg-purple-50/40 border border-purple-100 rounded-lg p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="text-xs font-medium text-purple-900 flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{t('admin.projects.personas.rubric.title', { count: String(rubricList.length) })}<HelpTip id="personas.hiddenRubric" /></div>
-                        <label className={`inline-flex items-center gap-1 px-2 py-1 text-xs rounded cursor-pointer ${uploadingRubric === p.id ? 'bg-gray-100 text-gray-400' : 'bg-purple-600 text-white hover:bg-purple-700'}`}>
-                          {uploadingRubric === p.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Paperclip className="w-3 h-3" />}
-                          {t('admin.projects.personas.rubric.uploadBtn')}
-                          <input
-                            type="file" accept={UPLOAD_ACCEPT} className="hidden"
-                            onChange={e => { const f = e.target.files?.[0]; if (f) uploadRubric(p.id, f); }}
-                            disabled={uploadingRubric === p.id}
-                            data-testid={`input-upload-rubric-${p.id}`}
-                          />
-                        </label>
-                      </div>
-                      {rubricList.length === 0 ? (
-                        <p className="text-[11px] text-purple-700/70">{t('admin.projects.personas.rubric.noFile')}</p>
-                      ) : (
-                        <ul className="space-y-1">
-                          {rubricList.map(r => (
-                            <li key={r.id} className="flex items-center gap-2 text-xs" data-testid={`rubric-doc-${r.id}`}>
-                              <FileText className="w-3 h-3 text-purple-600" />
-                              <span className="flex-1 truncate">{r.filename}</span>
-                              <Tooltip label={r.visible_to_students ? t('admin.projects.personas.rubric.visibleOn') : t('admin.projects.personas.rubric.visibleOff')}>
-                                <button
-                                  onClick={() => toggleRubricVisibility(p.id, r)}
-                                  className={`p-0.5 rounded flex items-center gap-1 ${r.visible_to_students ? 'text-green-600 hover:bg-green-50' : 'text-gray-400 hover:bg-gray-100'}`}
-                                  data-testid={`button-rubric-visibility-${r.id}`}
-                                >
-                                  {r.visible_to_students ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                                </button>
-                              </Tooltip>
-                              <Tooltip label={t('admin.projects.personas.rubric.deleteTitle')}>
-                                <button onClick={() => deleteRubric(p.id, r)} className="p-0.5 text-red-500 hover:bg-red-50 rounded">
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </Tooltip>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
+                  <p className={`mt-1 ml-[52px] text-[11px] ${isEval && !(p.project_knowledge_doc_ids || []).length ? 'text-amber-800' : 'text-gray-500'}`} data-testid={`pp-knowledge-${p.id}`}>
+                    {knowledgeSummary(p)}
+                  </p>
                 </li>
               );
             })}
@@ -1231,10 +1171,14 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldPrompt')}</label>
                 <textarea value={editingPersona.system_prompt || ''} onChange={e => setEditingPersona({ ...editingPersona, system_prompt: e.target.value })} rows={8} className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono" data-testid="textarea-pp-prompt" />
               </div>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={editingPersona.rag_enabled ?? true} onChange={e => setEditingPersona({ ...editingPersona, rag_enabled: e.target.checked })} data-testid="checkbox-pp-rag" />
-                {t('admin.projects.personas.ragEnabled')}
-              </label>
+              <PersonaKnowledgeFields
+                idPrefix="pp"
+                value={editingPersona}
+                onChange={v => setEditingPersona({ ...editingPersona, ...v } as Partial<ProjectPersona>)}
+                courseDocs={knowledge ? knowledge.courseDocs : null}
+                projectDocs={knowledge ? knowledge.projectDocs : null}
+                isEvaluator={(editingPersona.persona_type || 'conversational') === 'evaluator'}
+              />
               {(editingPersona.persona_type || 'conversational') !== 'evaluator' && (
               <div className="border-t border-gray-100 pt-2 grid grid-cols-2 gap-3">
                 <div>
@@ -1273,8 +1217,13 @@ function ProjectDetailPanel({ project, token, onBack, onError, onInfo, onOpenTem
               </div>
               )}
             </div>
+            {personaError && (
+              <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert" data-testid="alert-persona-error">
+                {personaError}
+              </div>
+            )}
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setEditingPersona(null)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">{t('admin.projects.personas.cancelBtn')}</button>
+              <button onClick={() => { setEditingPersona(null); setPersonaError(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">{t('admin.projects.personas.cancelBtn')}</button>
               <button onClick={savePersona} disabled={adding} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-40" data-testid="button-save-pp">
                 <Save className="w-4 h-4" /> {adding ? t('admin.projects.personas.saving') : t('admin.projects.personas.saveBtn')}
               </button>
