@@ -177,7 +177,7 @@ beforeAll(async () => {
   process.env.VITE_PUBLIC_SUPABASE_URL = 'http://stub.supabase.local';
   process.env.VITE_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
-  delete process.env.SUPABASE_DB_URL; // geen pg-pool nodig
+  process.env.SUPABASE_DB_URL = ''; // geen pg-pool nodig
 
   const mod = await import('../index.js');
   app = mod.app;

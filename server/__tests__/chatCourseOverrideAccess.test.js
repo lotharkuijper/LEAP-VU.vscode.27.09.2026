@@ -111,8 +111,8 @@ beforeAll(async () => {
   process.env.VITE_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
   process.env.VITE_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.SUPABASE_DB_URL;
+  process.env.SUPABASE_ANON_KEY = '';
+  process.env.SUPABASE_DB_URL = '';
 
   vi.resetModules();
   ({ app } = await import('../index.js'));

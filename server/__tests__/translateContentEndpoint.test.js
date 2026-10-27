@@ -110,8 +110,8 @@ function setSharedEnv() {
   process.env.VITE_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
   process.env.VITE_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.SUPABASE_DB_URL;
+  process.env.SUPABASE_ANON_KEY = '';
+  process.env.SUPABASE_DB_URL = '';
 }
 
 beforeAll(async () => {
@@ -129,9 +129,9 @@ beforeAll(async () => {
 
   // ── App ZONDER Azure (503-pad) ───────────────────────────────────────────
   setSharedEnv();
-  delete process.env.AZURE_OPENAI_ENDPOINT;
-  delete process.env.AZURE_OPENAI_API_KEY;
-  delete process.env.AZURE_OPENAI_DEPLOYMENT;
+  process.env.AZURE_OPENAI_ENDPOINT = '';
+  process.env.AZURE_OPENAI_API_KEY = '';
+  process.env.AZURE_OPENAI_DEPLOYMENT = '';
   vi.resetModules();
   appNoAzure = (await import('../index.js')).app;
   serverNoAzure = appNoAzure.listen(0);

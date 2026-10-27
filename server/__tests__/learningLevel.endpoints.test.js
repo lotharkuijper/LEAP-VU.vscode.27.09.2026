@@ -98,14 +98,14 @@ beforeAll(async () => {
   process.env.AZURE_OPENAI_API_KEY = 'test-azure-key';
   process.env.AZURE_OPENAI_DEPLOYMENT = 'gpt-5.5';
   process.env.AZURE_OPENAI_API_VERSION = '2024-10-21';
-  delete process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT;
+  process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT = '';
   process.env.OPENAI_API_KEY = 'test-key';
   process.env.OPENAI_MODEL = 'gpt-5.2';
   process.env.VITE_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
   process.env.VITE_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.SUPABASE_DB_URL;
+  process.env.SUPABASE_ANON_KEY = '';
+  process.env.SUPABASE_DB_URL = '';
 
   vi.resetModules();
   ({ app } = await import('../index.js'));

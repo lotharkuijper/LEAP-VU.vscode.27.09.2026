@@ -36,18 +36,18 @@ beforeAll(async () => {
 
   process.env.NODE_ENV = 'test';
   // Azure bewust NIET configureren → chat moet 503'en, geen fallback.
-  delete process.env.AZURE_OPENAI_ENDPOINT;
-  delete process.env.AZURE_OPENAI_API_KEY;
-  delete process.env.AZURE_OPENAI_API_VERSION;
-  delete process.env.AZURE_OPENAI_DEPLOYMENT;
+  process.env.AZURE_OPENAI_ENDPOINT = '';
+  process.env.AZURE_OPENAI_API_KEY = '';
+  process.env.AZURE_OPENAI_API_VERSION = '';
+  process.env.AZURE_OPENAI_DEPLOYMENT = '';
   // Publieke OpenAI-key WEL aanwezig: bewijst dat de aanwezigheid hiervan geen
   // chat-fallback activeert.
   process.env.OPENAI_API_KEY = 'sk-public-key';
   process.env.OPENAI_MODEL = 'gpt-5.2';
-  delete process.env.VITE_PUBLIC_SUPABASE_URL;
-  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
-  delete process.env.SUPABASE_ANON_KEY;
-  delete process.env.SUPABASE_DB_URL;
+  process.env.VITE_PUBLIC_SUPABASE_URL = '';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = '';
+  process.env.SUPABASE_ANON_KEY = '';
+  process.env.SUPABASE_DB_URL = '';
 
   vi.resetModules();
   ({ app } = await import('../index.js'));

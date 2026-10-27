@@ -168,7 +168,7 @@ beforeAll(async () => {
   process.env.VITE_PUBLIC_SUPABASE_URL = 'http://stub.supabase.local';
   process.env.VITE_PUBLIC_SUPABASE_ANON_KEY = 'anon-key';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-key';
-  delete process.env.SUPABASE_DB_URL; // geen pg-pool nodig
+  process.env.SUPABASE_DB_URL = ''; // geen pg-pool nodig
   // Task #391: heartbeat-interval = de (geklemde) minimum van 1000ms; pacing uit
   // zodat de tests niet onnodig wachten tussen pagina's.
   process.env.WEB_IMPORT_HEARTBEAT_MS = '1000';
