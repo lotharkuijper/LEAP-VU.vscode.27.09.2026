@@ -22,6 +22,8 @@ interface OverviewProject {
   sessions: any[];
   lastSession: any | null;
   activeGroup: { id: string; name: string; invite_code: string; status: string; lastCheckpointAt: string | null } | null;
+  /** Afgeronde groep: terugkijken en in het eigen leerdagboek bewaren (alleen lezen). */
+  finishedGroup?: { id: string; name: string } | null;
 }
 
 interface OverviewCourse {
@@ -236,6 +238,15 @@ export function ProjectsPage() {
                               ) : (
                                 <span>{t('projects.continue2')}</span>
                               )}
+                            </button>
+                          )}
+                          {!inProgress && p.finishedGroup && (
+                            <button
+                              onClick={() => navigate('/projects/' + p.id + '/group/' + p.finishedGroup!.id)}
+                              className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-green-300 text-green-800 text-sm font-medium rounded-lg hover:bg-green-50"
+                              data-testid={'button-view-finished-' + p.id}
+                            >
+                              <ArrowRight className="w-4 h-4" /> {t('projects.viewFinished')}
                             </button>
                           )}
                           <button

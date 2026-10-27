@@ -153,6 +153,7 @@ import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOU
 import { buildSourcesInstructionBlock, buildNumberedRagContext, numberDocumentSources, buildNoSourcesInstructionBlock } from './citationSources.js';
 import { serverI18nMiddleware, translateServerMessage } from './serverI18n.js';
 import { purposeAllowsModule, MATERIAL_KINDS } from './filePurpose.js';
+import { SAVE_SOURCES, checkpointItems, checkpointItemRefs, assessmentRefs, reviewRefs, isSaved, reviewEntry, noteEntry } from './projectJournalSave.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
   groupPendingByUser,
@@ -11100,7 +11101,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
     if (group) {
       const { data: aRows, error: aErr } = await supabaseAdmin
         .from('project_group_assessments')
-        .select('id, persona_id, persona_name, persona_emoji, content, created_at')
+        .select('id, persona_id, persona_name, persona_emoji, content, request_id, created_at')
         .eq('group_id', group.id).order('created_at', { ascending: false });
       if (!aErr) assessments = aRows || [];
     }
@@ -11195,8 +11196,24 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       });
     }
 
+    // Staat dit al in MIJN leerdagboek? (projectJournalSave.js; oude automatische regels tellen mee)
+    const journalSaved = { checkpoints: {}, assessments: {} };
+    {
+      const cpParts = checkpoints.map(cp => ({ cp, items: checkpointItems(cp, { lang: normalizeLang(req.query.lang) }) }));
+      const refs = [
+        ...cpParts.flatMap(({ cp, items }) => items.flatMap(it => checkpointItemRefs(cp, it))),
+        ...assessments.flatMap(a => assessmentRefs({ ...a, group_id: group?.id })),
+      ];
+      const { data: mine } = refs.length
+        ? await supabaseAdmin.from('learning_journal_entries').select('source_ref').eq('user_id', auth.user.id).in('source_ref', refs)
+        : { data: [] };
+      const have = new Set((mine || []).map(e => e.source_ref));
+      for (const { cp, items } of cpParts) journalSaved.checkpoints[cp.id] = items.length > 0 && items.every(it => isSaved(checkpointItemRefs(cp, it), have));
+      for (const a of assessments) journalSaved.assessments[a.id] = isSaved(assessmentRefs({ ...a, group_id: group?.id }), have);
+    }
+
     return res.json({
-      project, group, members, personas, checkpoints, assessments,
+      project, group, members, personas, checkpoints, assessments, journalSaved,
       // Onderdelen van de cursus: de ruimte noemt het leerdagboek alleen als dat aan staat.
       courseFeatures: await loadCourseFeatures(project?.course_id),
       projectDocuments: projectDocs || [],
@@ -12274,125 +12291,68 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
     }
     if (cpErr) return res.status(500).json({ error: cpErr.message });
 
-    // Journal-entry per lid. Dagboek uit in deze cursus: het checkpoint staat
-    // in de projectruimte, maar er komen geen dagboekregels bij.
-    const journalOn = (await loadCourseFeatures(checkpointCourseId)).journal !== false;
-    const { data: members } = journalOn
-      ? await supabaseAdmin.from('project_group_members').select('user_id').eq('group_id', groupId)
-      : { data: [] };
+    // Dagboekteksten bij de groep (2026-10-27). Er gaat NIETS meer automatisch
+    // naar de leerdagboeken van alle groepsleden: de teksten staan bij deze
+    // tussenstand (journal_items, ook leesbaar in de projectruimte) en elk
+    // groepslid bewaart zelf wat het wil ("Bewaar in mijn leerdagboek",
+    // POST /api/projects/groups/:groupId/journal-save).
     const projectTitle = project?.title || '(naamloos project)';
     const titleLabel = kind === 'final' ? `Eindreflectie: ${projectTitle}` : `Projectreflectie: ${projectTitle}`;
     // Dezelfde drie blokken als chat, Ik leg uit en quiz (server/projectJournal.js).
     const entryFields = (kind === 'final' && rubricFeedback)
       ? journalFromRubricFeedback(rubricFeedback, { lang, groupReflection: reflection })
       : (checkpointFields || { content: aiSummary || reflection || '', sections: null });
-
-    if (members && members.length > 0 && (entryFields.content || entryFields.sections)) {
-      const sourceRef = `group_checkpoint:${cp.id}`;
-      const rows = members.map(m => ({
-        user_id: m.user_id,
-        title: titleLabel,
-        content: entryFields.content,
-        sections: entryFields.sections,
-        activity_type: 'project_reflection',
-        source_ref: sourceRef,
-        course_id: checkpointCourseId,
-      }));
-      // Probeer met source_ref; bij ontbrekende kolom val terug zonder.
-      const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert(rows);
-      if (jErr && /source_ref/i.test(jErr.message || '')) {
-        await supabaseAdmin.from('learning_journal_entries').insert(
-          rows.map(({ source_ref, ...rest }) => rest)
-        );
-      }
+    const journalItems = [];
+    if (entryFields.content || entryFields.sections) {
+      journalItems.push({ key: 'main', title: titleLabel, content: entryFields.content, sections: entryFields.sections || null });
     }
 
-    // Cross-agent synthese journal-entry (alleen bij tussentijds checkpoint).
+    // Overzicht over alle gesprekken (alleen bij een tussentijdse stand).
     let synthesisAdded = false;
-    if (kind === 'checkpoint' && members && members.length > 0) {
+    if (kind === 'checkpoint') {
       try {
         const synthesis = await generateCrossAgentSynthesis(groupId, apiKey, lang);
         if (synthesis) {
-          const synthLang = synthesis.lang || lang;
-          const synthEnMode = synthLang !== 'nl';
-          const synthFields = journalFromSynthesis(synthesis, { lang: synthLang });
+          const synthEnMode = (synthesis.lang || lang) !== 'nl';
+          const synthFields = journalFromSynthesis(synthesis, { lang: synthesis.lang || lang });
           if (synthFields.sections) {
-            const synthesisContent = synthFields.content;
-            const synthSourceRef = `group_checkpoint_synthesis:${cp.id}`;
-            const synthRows = members.map(m => ({
-              user_id: m.user_id,
-              title: synthEnMode
-                ? `🔗 Overview across all conversations: ${projectTitle}`
-                : `🔗 Overzicht over alle gesprekken: ${projectTitle}`,
-              content: synthesisContent,
+            journalItems.push({
+              key: 'synthesis',
+              title: synthEnMode ? `🔗 Overview across all conversations: ${projectTitle}` : `🔗 Overzicht over alle gesprekken: ${projectTitle}`,
+              content: synthFields.content,
               sections: synthFields.sections,
-              activity_type: 'project_reflection',
-              source_ref: synthSourceRef,
-              course_id: checkpointCourseId,
-            }));
-            const { error: synthErr } = await supabaseAdmin.from('learning_journal_entries').insert(synthRows);
-            if (synthErr && (synthErr.code === '42703' || /source_ref/i.test(synthErr.message || ''))) {
-              await supabaseAdmin.from('learning_journal_entries').insert(
-                synthRows.map(({ source_ref: _ignored, ...rest }) => rest)
-              );
-            } else if (!synthErr) {
-              synthesisAdded = true;
-            }
+            });
+            synthesisAdded = true;
           }
         }
       } catch (e) {
-        console.error('[checkpoint] synthese journal-entry fout:', e.message);
+        console.error('[checkpoint] synthese fout:', e.message);
       }
     }
 
-    // Per-persona-thread journal-entries:
+    // Samenvatting per persona-gesprek:
     // Pad A: personaSummaries meegestuurd (AI-preview-flow) → gebruik die direct.
-    // Pad B: geen personaSummaries (handmatige reflectie-flow) → genereer 4-regels-samenvatting.
+    // Pad B: geen personaSummaries (handmatige reflectie-flow) → genereer een samenvatting.
     let threadSummariesAdded = 0;
-    if (journalOn) try {
+    try {
       if (hasPersonaSummaries) {
-        // Pad A: sla de door de student bewerkte samenvattingen op als journal-entries.
-        // Haal de geldige thread-ids op voor deze groep zodat een kwaadaardige payload
-        // geen willekeurige threadId kan injecteren.
+        // Alleen gesprekken van deze groep: een payload kan geen willekeurige threadId injecteren.
         const { data: validThreadRows } = await supabaseAdmin
           .from('group_persona_threads').select('id').eq('group_id', groupId);
         const validThreadIds = new Set((validThreadRows || []).map(r => r.id));
-
         for (const s of personaSummaries) {
           if (!s.threadId || !validThreadIds.has(s.threadId)) continue;
           const tFields = journalFromPersonaSummary(s, { lang });
-          const content = tFields.content;
-          if (!content.trim()) continue;
-
-          const sourceRef = `group_thread_checkpoint:${cp.id}:${s.threadId}`;
-          const titleLabel = `${s.avatarEmoji || '💬'} ${s.personaName || 'Gesprek'}`;
-          const tRows = (members || []).map(m => ({
-            user_id: m.user_id,
-            title: titleLabel,
-            content,
-            sections: tFields.sections,
-            activity_type: 'project_reflection',
-            source_ref: sourceRef,
-            course_id: checkpointCourseId,
-          }));
-          if (tRows.length > 0) {
-            const { error: tjErr } = await supabaseAdmin.from('learning_journal_entries').insert(tRows);
-            if (tjErr) {
-              if (tjErr.code === '42703' || /source_ref/i.test(tjErr.message || '')) {
-                await supabaseAdmin.from('learning_journal_entries').insert(
-                  tRows.map(({ source_ref: _ignored, ...rest }) => rest)
-                );
-                threadSummariesAdded += 1;
-              } else if (tjErr.code !== '23505') {
-                console.error('[checkpoint thread summary insert A]', tjErr.message);
-              }
-            } else {
-              threadSummariesAdded += 1;
-            }
-          }
+          if (!tFields.content.trim()) continue;
+          journalItems.push({
+            key: `thread:${s.threadId}`,
+            title: `${s.avatarEmoji || '💬'} ${s.personaName || 'Gesprek'}`,
+            content: tFields.content,
+            sections: tFields.sections || null,
+          });
+          threadSummariesAdded += 1;
         }
       } else {
-        // Pad B: genereer 4-regels-samenvatting per thread (bestaande logica).
         const { data: prevCps } = await supabaseAdmin
           .from('group_checkpoints')
           .select('created_at')
@@ -12401,10 +12361,8 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
           .order('created_at', { ascending: false })
           .limit(1);
         const sinceTs = prevCps && prevCps[0] ? prevCps[0].created_at : '1970-01-01T00:00:00Z';
-
         const { data: threads } = await supabaseAdmin
           .from('group_persona_threads').select('id, persona_id').eq('group_id', groupId);
-
         for (const t of (threads || [])) {
           const { data: newMsgs } = await supabaseAdmin
             .from('group_persona_messages')
@@ -12413,14 +12371,12 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
             .gt('created_at', sinceTs)
             .order('created_at', { ascending: true });
           if (!newMsgs || newMsgs.length === 0) continue;
-
           const { data: persona } = await supabaseAdmin
             .from('project_personas').select('name, avatar_emoji').eq('id', t.persona_id).maybeSingle();
           const personaName = persona?.name || 'Gesprek';
           const transcript = newMsgs.map(m =>
             `${m.role === 'user' ? 'Student' : personaName}: ${(m.content || '').slice(0, 1500)}`
           ).join('\n\n').slice(0, 12000);
-
           let summaryText = '';
           if (AZURE_CHAT_READY) {
             try {
@@ -12439,40 +12395,25 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
             const firstUser = newMsgs.find(m => m.role === 'user');
             summaryText = (firstUser?.content || '(geen samenvatting beschikbaar)').slice(0, 400);
           }
-
-          const sourceRef = `group_thread_checkpoint:${cp.id}:${t.id}`;
-          const titleLabel = `${persona?.avatar_emoji || '💬'} ${personaName}`;
           const sumFields = journalFieldsFromModel(summaryText, lang);
-          const tRows = (members || []).map(m => ({
-            user_id: m.user_id,
-            title: titleLabel,
+          journalItems.push({
+            key: `thread:${t.id}`,
+            title: `${persona?.avatar_emoji || '💬'} ${personaName}`,
             content: sumFields.content,
-            sections: sumFields.sections,
-            activity_type: 'project_reflection',
-            source_ref: sourceRef,
-            course_id: checkpointCourseId,
-          }));
-          if (tRows.length > 0) {
-            const { error: tjErr } = await supabaseAdmin.from('learning_journal_entries').insert(tRows);
-            if (tjErr) {
-              if (tjErr.code === '42703' || /source_ref/i.test(tjErr.message || '')) {
-                await supabaseAdmin.from('learning_journal_entries').insert(
-                  tRows.map(({ source_ref: _ignored, ...rest }) => rest)
-                );
-                threadSummariesAdded += 1;
-              } else if (tjErr.code === '23505') {
-                // Reeds aanwezig — geen fout.
-              } else {
-                console.error('[checkpoint thread summary insert B]', tjErr.message);
-              }
-            } else {
-              threadSummariesAdded += 1;
-            }
-          }
+            sections: sumFields.sections || null,
+          });
+          threadSummariesAdded += 1;
         }
       }
     } catch (e) {
       console.error('[checkpoint thread summaries]', e.message);
+    }
+
+    if (journalItems.length > 0) {
+      const { error: jiErr } = await supabaseAdmin.from('group_checkpoints')
+        .update({ journal_items: journalItems }).eq('id', cp.id);
+      if (jiErr) console.warn('[checkpoint] journal_items niet opgeslagen:', jiErr.message);
+      else cp.journal_items = journalItems;
     }
 
     // BEWUST GEEN DELETE/TRUNCATE op group_persona_messages of group_chat_messages.
@@ -12488,6 +12429,83 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
     return res.json({ checkpoint: cp, threadSummariesAdded, synthesisAdded });
   } catch (err) {
     console.error('[projects/groups/checkpoint]', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/projects/groups/:groupId/journal-save — "Bewaar in mijn leerdagboek"
+// (2026-10-27, server/projectJournalSave.js). Body: { source: 'checkpoint' |
+// 'assessment' | 'review', id, note?, lang }. Schrijft ALLEEN in het dagboek van
+// wie klikt; twee keer bewaren geeft geen dubbele regel. Bij een tussenstand of
+// de eindreflectie mag de student er een eigen reflectie (note) bij zetten.
+app.post('/api/projects/groups/:groupId/journal-save', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  const { groupId } = req.params;
+  const { source, id, note, lang = 'nl' } = req.body || {};
+  if (!SAVE_SOURCES.includes(source) || !id) return res.status(400).json({ error: 'Onbekend onderdeel om te bewaren' });
+  try {
+    if (!(await isGroupMember(groupId, auth.user.id))) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
+    const { data: group } = await supabaseAdmin.from('project_groups').select('id, project_id').eq('id', groupId).maybeSingle();
+    if (!group) return res.status(404).json({ error: 'Groep niet gevonden' });
+    const courseId = await courseIdForProject(group.project_id);
+    if (!(await courseFeatureOnFor(auth.user, null, courseId, 'journal'))) {
+      return res.status(403).json({ error: 'Het leerdagboek staat uit in deze cursus', code: 'journalOff' });
+    }
+    const { data: project } = await supabaseAdmin.from('projects').select('title').eq('id', group.project_id).maybeSingle();
+    const projectTitle = project?.title || '';
+
+    // Onderdelen met hun source_ref (de eerste ref wordt geschreven; de rest is "al bewaard").
+    const parts = [];
+    if (source === 'checkpoint') {
+      const { data: cp } = await supabaseAdmin.from('group_checkpoints').select('*').eq('id', id).eq('group_id', groupId).maybeSingle();
+      if (!cp) return res.status(404).json({ error: 'Tussenstand niet gevonden' });
+      for (const item of checkpointItems(cp, { lang, projectTitle })) {
+        parts.push({ refs: checkpointItemRefs(cp, item), entry: { title: item.title, content: item.content, sections: item.sections || null } });
+      }
+      const own = noteEntry(note, { lang, projectTitle });
+      if (own) parts.push({ refs: [`group_checkpoint:${cp.id}:note`], entry: own });
+    } else if (source === 'assessment') {
+      const { data: a } = await supabaseAdmin.from('project_group_assessments').select('*').eq('id', id).eq('group_id', groupId).maybeSingle();
+      if (!a) return res.status(404).json({ error: 'Beoordeling niet gevonden' });
+      parts.push({
+        refs: assessmentRefs(a),
+        entry: { title: `${a.persona_emoji || '🎓'} ${lang === 'nl' ? 'Beoordeling' : 'Assessment'} — ${a.persona_name || ''}`, ...journalFieldsFromModel(a.content || '', lang) },
+      });
+    } else {
+      const { data: r } = await supabaseAdmin.from('project_document_reviews').select('*').eq('id', id).eq('group_id', groupId).maybeSingle();
+      if (!r) return res.status(404).json({ error: 'Feedback niet gevonden' });
+      const { data: myBadge } = await supabaseAdmin.from('project_review_badges').select('id')
+        .eq('review_id', r.id).eq('user_id', auth.user.id).maybeSingle();
+      parts.push({ refs: reviewRefs(r), entry: reviewEntry(r, { hasBadge: !!myBadge }) });
+    }
+    if (!parts.length) return res.status(404).json({ error: 'Er is niets om te bewaren' });
+
+    const allRefs = parts.flatMap(p => p.refs);
+    const { data: existing } = await supabaseAdmin.from('learning_journal_entries').select('source_ref')
+      .eq('user_id', auth.user.id).in('source_ref', allRefs);
+    const have = new Set((existing || []).map(e => e.source_ref));
+    let saved = 0;
+    let already = 0;
+    for (const p of parts) {
+      if (isSaved(p.refs, have)) { already += 1; continue; }
+      const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert({
+        user_id: auth.user.id,
+        title: p.entry.title,
+        content: p.entry.content,
+        sections: p.entry.sections,
+        activity_type: 'project_reflection',
+        source_ref: p.refs[0],
+        course_id: courseId,
+      });
+      if (!jErr) saved += 1;
+      else if (jErr.code === '23505') already += 1;
+      else return res.status(500).json({ error: jErr.message });
+    }
+    return res.json({ saved, already });
+  } catch (err) {
+    console.error('[projects/journal-save]', err);
     return res.status(500).json({ error: err.message });
   }
 });
@@ -13396,7 +13414,11 @@ app.get('/api/projects/student-overview', async (req, res) => {
         const activeGroupWithCp = activeGroup
           ? { ...activeGroup, lastCheckpointAt: lastCheckpointByGroup.get(activeGroup.id) || null }
           : null;
-        return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp };
+        // Afgeronde groep blijft bereikbaar (alleen lezen): feedback, beoordelingen en
+        // de eindreflectie terugzien en in het eigen leerdagboek bewaren (2026-10-27).
+        const finishedGroup = groups.filter(g => g.status === 'finalized')
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
+        return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup };
       });
       return { course: c, projects: cps };
     });
@@ -14117,7 +14139,6 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
 
   const { data: groupMembers } = await supabaseAdmin
     .from('project_group_members').select('user_id').eq('group_id', groupId);
-  const docReviewCourseId = await courseIdForProject(projectId);
 
   // Task #253: badges. group → elk groepslid; individual → alleen de indiener
   // (mits groepslid). Idempotent via unique(review_id,user_id).
@@ -14138,8 +14159,8 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
     }
   }
 
-  // In het leerdagboek van elk groepslid (idempotent op source_ref).
-  const sourceRef = `document_review:${documentId || productId}:${persona.id}:${inserted.id}`;
+  // Dagboektekst bij het oordeel (2026-10-27): niet meer automatisch in de
+  // dagboeken van alle groepsleden; elk lid bewaart het zelf (journal-save).
   const verdictLabel = VERDICT_LABELS_NL[validation.value.verdict] || validation.value.verdict;
   const gradeStr = Number.isFinite(Number(grade)) ? Number(grade).toFixed(1).replace('.', ',') : null;
   const badgeLabelNl = badge ? (BADGE_LABELS_NL[badge] || badge) : null;
@@ -14151,32 +14172,20 @@ Geef nu je oordeel als JSON-object volgens het eerder beschreven schema.`;
   contentParts.push(`Feedback: ${validation.value.reasoning}`);
   if (feedForward) contentParts.push(`Feed-forward: ${feedForward}`);
   const journalContentBase = contentParts.join('\n\n');
-  const badgeRecipientSet = new Set(badgeRecipients);
-  const rows = (groupMembers || []).map(m => {
-    const hasBadge = badge && badgeRecipientSet.has(m.user_id);
-    return {
-      user_id: m.user_id,
-      title: hasBadge ? `${BADGE_EMOJI[badge] || '🏅'} ${titleBase}` : titleBase,
-      content: hasBadge
-        ? `${journalContentBase}\n\nBadge: ${BADGE_EMOJI[badge] || '🏅'} ${badgeLabelNl}`
-        : journalContentBase,
-      activity_type: 'project_reflection',
-      source_ref: sourceRef,
-      course_id: docReviewCourseId,
-      sections: {
-        summary: '', went_well: [], to_improve: [],
-        feedback: validation.value.reasoning,
-        next_steps: feedForward ? [feedForward] : [],
-      },
-    };
-  });
-  // Dagboek uit in deze cursus: het oordeel staat al bij het ingeleverde werk.
-  if (rows.length > 0 && (await loadCourseFeatures(docReviewCourseId)).journal !== false) {
-    const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert(rows);
-    if (jErr && jErr.code !== '23505') {
-      console.warn('[document_review] journal-spiegeling mislukte:', jErr.message);
-    }
-  }
+  const journalEntry = {
+    title: titleBase,
+    content: journalContentBase,
+    sections: {
+      summary: '', went_well: [], to_improve: [],
+      feedback: validation.value.reasoning,
+      next_steps: feedForward ? [feedForward] : [],
+    },
+    // Wie een badge kreeg, ziet die bij het bewaren in het eigen dagboek.
+    badge: badge ? { emoji: BADGE_EMOJI[badge] || '🏅', label: badgeLabelNl } : null,
+  };
+  const { error: jeErr } = await supabaseAdmin.from('project_document_reviews')
+    .update({ journal_entry: journalEntry }).eq('id', inserted.id);
+  if (jeErr) console.warn('[document_review] dagboektekst niet opgeslagen:', jeErr.message);
 
   return { inserted, badge, awardMode, badgeRecipients };
 }
@@ -14245,7 +14254,7 @@ app.get('/api/projects/:projectId/groups/:groupId/feedback', async (req, res) =>
     if (productIds.length) {
       const { data } = await supabaseAdmin
         .from('project_document_reviews')
-        .select('id, product_id, persona_id, verdict, grade, reasoning, feed_forward, created_at')
+        .select('id, product_id, document_id, persona_id, verdict, grade, reasoning, feed_forward, created_at')
         .in('product_id', productIds);
       reviews = data || [];
     }
@@ -14257,11 +14266,17 @@ app.get('/api/projects/:projectId/groups/:groupId/feedback', async (req, res) =>
       badges = data || [];
     }
     const reviewByProduct = new Map(reviews.map(r => [r.product_id, r]));
+    // Staat dit oordeel al in MIJN leerdagboek? (projectJournalSave.js)
+    const { data: mySaved } = reviews.length
+      ? await supabaseAdmin.from('learning_journal_entries').select('source_ref')
+        .eq('user_id', auth.user.id).in('source_ref', reviews.flatMap(r => reviewRefs(r)))
+      : { data: [] };
+    const mySavedSet = new Set((mySaved || []).map(e => e.source_ref));
     const out = (evaluators || []).map(ev => {
       const items = (products || []).filter(p => p.persona_id === ev.id).map(p => {
         const review = reviewByProduct.get(p.id) || null;
         const badge = review ? (badges.find(b => b.review_id === review.id)?.badge || null) : null;
-        return { productId: p.id, filename: p.filename, createdAt: p.created_at, review, badge };
+        return { productId: p.id, filename: p.filename, createdAt: p.created_at, review, badge, journalSaved: review ? isSaved(reviewRefs(review), mySavedSet) : false };
       });
       const rounds = feedbackRoundsState(ev.max_reviews, items.filter(i => i.review).length);
       return {
@@ -15324,12 +15339,8 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
 
     // Projectmateriaal: alleen wat elke beoordelaar kent (rubricBlock hieronder, personaKnowledge.js).
 
-    const { data: members } = await supabaseAdmin
-      .from('project_group_members').select('user_id').eq('group_id', groupId);
-    const evalCourseId = await courseIdForProject(group.project_id);
-    // Het rapport staat altijd bij de groep (projectruimte); in de leerdagboeken
-    // alleen als het dagboek in deze cursus aan staat.
-    const evalJournalOn = (await loadCourseFeatures(evalCourseId)).journal !== false;
+    // Het rapport staat bij de groep (projectruimte). In het leerdagboek komt het
+    // alleen als een groepslid het zelf bewaart (journal-save, 2026-10-27).
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
@@ -15433,53 +15444,15 @@ Sluit af met een kort kopje "Vervolgstappen" met 2-3 suggesties. Noem GEEN exact
         results.push({ persona: evalPersona.name, ok: true, alreadyExisted: true });
         continue;
       }
-      if (aErr) console.warn('[projects/groups/evaluate] beoordeling bij groep niet opgeslagen:', aErr.message);
-      if (!evalJournalOn) {
-        if (aErr) {
-          results.push({ persona: evalPersona.name, ok: false, error: aErr.message });
-        } else {
-          results.push({ persona: evalPersona.name, ok: true, length: feedback.length });
-        }
+      if (aErr) {
+        console.warn('[projects/groups/evaluate] beoordeling bij groep niet opgeslagen:', aErr.message);
+        results.push({ persona: evalPersona.name, ok: false, error: aErr.message });
         continue;
-      }
-
-      const sourceRef = `group_evaluate:${groupId}:${evalPersona.id}${requestId ? ':' + requestId : ''}`;
-      const titleLabel = `${evalPersona.avatar_emoji || '🎓'} ${lang === 'nl' ? 'Beoordeling' : 'Assessment'} — ${evalPersona.name}`;
-      const rows = (members || []).map(m => ({
-        user_id: m.user_id,
-        title: titleLabel,
-        content: feedback,
-        activity_type: 'project_reflection',
-        source_ref: sourceRef,
-        course_id: evalCourseId,
-      }));
-      if (rows.length > 0) {
-        const { error: jErr } = await supabaseAdmin.from('learning_journal_entries').insert(rows);
-        if (jErr) {
-          // Kolom source_ref ontbreekt nog (oudere DB) → schrijf zonder die kolom.
-          // We controleren expliciet op de Postgres-foutcode 42703 (undefined column).
-          if (jErr.code === '42703' || /source_ref/i.test(jErr.message || '')) {
-            const { error: jErr2 } = await supabaseAdmin.from('learning_journal_entries').insert(
-              rows.map(({ source_ref: _ignored, ...rest }) => rest)
-            );
-            if (jErr2) {
-              results.push({ persona: evalPersona.name, ok: false, error: jErr2.message });
-              continue;
-            }
-          } else if (jErr.code === '23505') {
-            // Unique violation op source_ref → reeds aanwezig, geen fout.
-            results.push({ persona: evalPersona.name, ok: true, alreadyExisted: true });
-            continue;
-          } else {
-            results.push({ persona: evalPersona.name, ok: false, error: jErr.message });
-            continue;
-          }
-        }
       }
       results.push({ persona: evalPersona.name, ok: true, length: feedback.length });
     }
 
-    return res.json({ ok: true, results, journal: evalJournalOn });
+    return res.json({ ok: true, results });
   } catch (err) {
     console.error('[projects/groups/evaluate]', err);
     return res.status(500).json({ error: err.message });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Gavel, Loader2, Upload } from 'lucide-react';
 import { useLanguage } from '../i18n';
 import { PersonaAvatar } from './PersonaAvatar';
+import { SaveToJournalButton } from './projects/SaveToJournalButton';
 
 type Verdict = 'accepted' | 'conditional' | 'rejected';
 type Badge = 'platina' | 'goud' | 'zilver' | 'brons';
@@ -11,6 +12,8 @@ interface FeedbackItem {
   createdAt: string;
   review: { id: string; verdict: Verdict; grade: number | null; reasoning: string; feed_forward: string | null; created_at: string } | null;
   badge: Badge | null;
+  /** Staat dit oordeel al in MIJN leerdagboek? */
+  journalSaved?: boolean;
 }
 interface EvaluatorFeedback {
   personaId: string;
@@ -38,13 +41,15 @@ const BADGE_EMOJI: Record<Badge, string> = { platina: '💎', goud: '🥇', zilv
  * geeft, hoeveel rondes er nog over zijn, een knop om werk in te leveren en de
  * eerdere feedback. Een ronde telt alleen als er echt een oordeel kwam.
  */
-export function ProductFeedbackPanel({ projectId, groupId, token, disabled = false, onInfo }: {
+export function ProductFeedbackPanel({ projectId, groupId, token, disabled = false, onInfo, journalOn = true }: {
   projectId: string;
   groupId: string;
   token: string;
   /** Groep/project afgerond: alleen terugkijken. */
   disabled?: boolean;
   onInfo?: (msg: string) => void;
+  /** Leerdagboek aan in deze cursus: dan "Bewaar in mijn leerdagboek". */
+  journalOn?: boolean;
 }) {
   const { t, lang } = useLanguage();
   const [evaluators, setEvaluators] = useState<EvaluatorFeedback[] | null>(null);
@@ -154,6 +159,14 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
                                 <div className="mt-1 font-medium text-gray-600">{t('room.review.feedForwardLabel')}</div>
                                 <div className="whitespace-pre-wrap">{it.review.feed_forward}</div>
                               </>
+                            )}
+                            {journalOn && (
+                              <SaveToJournalButton
+                                groupId={groupId} token={token} source="review" id={it.review.id}
+                                saved={!!it.journalSaved}
+                                onSaved={() => void load()}
+                                testId={'button-journal-review-' + it.review.id}
+                              />
                             )}
                           </div>
                         )}

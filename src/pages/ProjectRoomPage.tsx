@@ -10,6 +10,7 @@ import { PersonaMessageBody, personaSourcesFrom, type PersonaSourceTarget } from
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { PersonaAvatar } from '../components/PersonaAvatar';
 import { ProductFeedbackPanel } from '../components/ProductFeedbackPanel';
+import { SaveToJournalButton } from '../components/projects/SaveToJournalButton';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { appendQuote, focusAtEnd } from '../lib/chatQuote';
 import { RELATIONSHIP_BADGE, RELATIONSHIP_LEVELS, type RelationshipKey } from '../lib/relationshipLevels';
@@ -90,6 +91,8 @@ interface Checkpoint {
   reflection: string;
   ai_summary: string | null;
   rubric_feedback: any;
+  /** Dagboekteksten bij deze tussenstand (sinds 2026-10-27). */
+  journal_items?: Array<{ key: string; title: string; content: string }> | null;
   created_at: string;
 }
 /** Rapport van "Beoordeling opvragen" (project_group_assessments). */
@@ -233,6 +236,8 @@ export function ProjectRoomPage() {
   const [chatInput, setChatInput] = useState('');
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [assessments, setAssessments] = useState<GroupAssessment[]>([]);
+  // Wat ik zelf al in mijn leerdagboek bewaarde (projectJournalSave.js).
+  const [journalSaved, setJournalSaved] = useState<{ checkpoints: Record<string, boolean>; assessments: Record<string, boolean> }>({ checkpoints: {}, assessments: {} });
   // Leerdagboek aan in de cursus van dit project? Zo niet: niets "naar het dagboek".
   const [journalOn, setJournalOn] = useState(true);
   const [showCheckpointModal, setShowCheckpointModal] = useState<null | 'checkpoint' | 'final'>(null);
@@ -323,6 +328,7 @@ export function ProjectRoomPage() {
       setPersonas(data.personas || []);
       setCheckpoints(data.checkpoints || []);
       setAssessments(data.assessments || []);
+      setJournalSaved(data.journalSaved || { checkpoints: {}, assessments: {} });
       setJournalOn(data.courseFeatures?.journal !== false);
       setProjectMaterials(data.projectDocuments || []);
       setEvaluators(data.evaluators || []);
@@ -893,7 +899,7 @@ export function ProjectRoomPage() {
       if (!r.ok) throw new Error(data.error || t('room.assessmentFailed'));
       const okCount = (data.results || []).filter((x: any) => x.ok).length;
       setInfo(okCount > 0
-        ? t(journalOn ? 'room.assessmentComplete' : 'room.assessmentCompleteRoom', { count: String(okCount) })
+        ? t('room.assessmentCompleteRoom', { count: String(okCount) })
         : t('room.assessmentNoFeedback'));
       setTimeout(() => setInfo(null), 7000);
       setEvaluateRequestId(null);
@@ -1693,6 +1699,7 @@ export function ProjectRoomPage() {
                 groupId={groupId}
                 token={token}
                 disabled={isFinalized}
+                journalOn={journalOn}
                 onInfo={(m) => { setInfo(m); setTimeout(() => setInfo(null), 5000); }}
               />
             )}
@@ -1851,10 +1858,28 @@ export function ProjectRoomPage() {
                           </span>{' '}
                           <span className="text-gray-400">{new Date(cp.created_at).toLocaleDateString(t('common.locale'))}</span>
                         </summary>
-                        <MarkdownMessage
-                          content={cp.ai_summary || cp.reflection || ''}
-                          className="prose prose-sm max-w-none text-xs mt-1 pl-2 border-l-2 border-gray-100 text-gray-700"
-                        />
+                        {cp.journal_items && cp.journal_items.length > 0 ? (
+                          cp.journal_items.map(it => (
+                            <div key={it.key} className="mt-1 pl-2 border-l-2 border-gray-100">
+                              <p className="font-medium text-gray-800">{it.title}</p>
+                              <MarkdownMessage content={it.content} className="prose prose-sm max-w-none text-xs text-gray-700" />
+                            </div>
+                          ))
+                        ) : (
+                          <MarkdownMessage
+                            content={cp.ai_summary || cp.reflection || ''}
+                            className="prose prose-sm max-w-none text-xs mt-1 pl-2 border-l-2 border-gray-100 text-gray-700"
+                          />
+                        )}
+                        {journalOn && group && (
+                          <SaveToJournalButton
+                            groupId={group.id} token={token} source="checkpoint" id={cp.id}
+                            saved={!!journalSaved.checkpoints[cp.id]}
+                            withNote={cp.kind === 'final'}
+                            onSaved={() => setJournalSaved(prev => ({ ...prev, checkpoints: { ...prev.checkpoints, [cp.id]: true } }))}
+                            testId={"button-journal-checkpoint-" + cp.id}
+                          />
+                        )}
                       </details>
                     </li>
                   ))}
@@ -1878,6 +1903,14 @@ export function ProjectRoomPage() {
                           content={a.content}
                           className="prose prose-sm max-w-none text-xs mt-1 pl-2 border-l-2 border-gray-100 text-gray-700"
                         />
+                        {journalOn && group && (
+                          <SaveToJournalButton
+                            groupId={group.id} token={token} source="assessment" id={a.id}
+                            saved={!!journalSaved.assessments[a.id]}
+                            onSaved={() => setJournalSaved(prev => ({ ...prev, assessments: { ...prev.assessments, [a.id]: true } }))}
+                            testId={"button-journal-assessment-" + a.id}
+                          />
+                        )}
                       </details>
                     </li>
                   ))}
@@ -2327,7 +2360,7 @@ export function ProjectRoomPage() {
                     className={`px-4 py-2 text-white rounded-lg text-sm disabled:opacity-40 ${showCheckpointModal === 'final' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                     data-testid="button-submit-checkpoint"
                   >
-                    {submittingCheckpoint ? t('room.pleaseWait') : (showCheckpointModal === 'final' ? t('room.finaliseAndSave') : (journalOn ? t('room.saveToJournal') : t('room.saveCheckpoint')))}
+                    {submittingCheckpoint ? t('room.pleaseWait') : (showCheckpointModal === 'final' ? t('room.finaliseAndSave') : t('room.saveCheckpoint'))}
                   </button>
                 )}
               </div>

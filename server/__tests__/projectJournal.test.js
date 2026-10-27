@@ -65,10 +65,15 @@ describe('de tussenstand-route gebruikt de blokken overal', () => {
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
   const start = src.indexOf("app.post('/api/projects/groups/:groupId/checkpoint'");
   const route = src.slice(start, src.indexOf('\n});\n', start));
-  it('elke dagboekregel krijgt sections mee', () => {
-    const inserts = route.match(/user_id: m\.user_id,[\s\S]*?activity_type: 'project_reflection'/g) || [];
-    expect(inserts.length).toBe(4);
-    for (const block of inserts) expect(block).toMatch(/sections: /);
+  // Sinds 2026-10-27 schrijft de tussenstand niet meer in de dagboeken van alle
+  // groepsleden: de teksten (met blokken) staan bij de tussenstand, en elk lid
+  // bewaart zelf (journal-save, projectJournalSave.test.js).
+  it('schrijft niet in de dagboeken; bewaart de teksten met blokken bij de tussenstand', () => {
+    expect(route).not.toMatch(/from\('learning_journal_entries'\)\.insert/);
+    expect(route).toMatch(/update\(\{ journal_items: journalItems \}\)/);
+    const pushes = route.match(/journalItems\.push\(\{[\s\S]*?\}\);/g) || [];
+    expect(pushes.length).toBe(4);
+    for (const block of pushes) expect(block).toMatch(/sections/);
   });
   it('vrije tekst laat het model direct in blokken schrijven', () => {
     expect((route.match(/journalFormatInstruction\(/g) || []).length).toBe(2);
