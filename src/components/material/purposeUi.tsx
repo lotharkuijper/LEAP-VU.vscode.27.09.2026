@@ -13,7 +13,7 @@ export const PURPOSE_STYLE: Record<Purpose, { icon: LucideIcon; chip: string; ri
   teacher_only: { icon: Lock, chip: 'bg-slate-100 text-slate-800 border-slate-300', ring: 'border-slate-300', dot: 'bg-slate-600' },
 };
 
-export const MATERIAL_KIND_ORDER: MaterialKind[] = ['assignment', 'data', 'literature', 'other'];
+export const MATERIAL_KIND_ORDER: MaterialKind[] = ['assignment', 'literature', 'rubric', 'data', 'other'];
 
 export function PurposeChip({ purpose, label }: { purpose: Purpose; label: string }) {
   const s = PURPOSE_STYLE[purpose];

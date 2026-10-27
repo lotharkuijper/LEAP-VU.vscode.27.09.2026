@@ -462,3 +462,24 @@ export async function processPlainRagDocument(doc, openaiKey, deps = {}) {
     throw err;
   }
 }
+
+// Projectdocumenten als kennis van een persona (2026-10-27, personaKnowledge.js).
+// De tekst staat al in project_documents.content_text; hier alleen opdelen,
+// embedden en opslaan onder de documents-rij van dat projectdocument
+// (document_ref_id). Die rij staat in de projectmap van de cursus, buiten de
+// RAG-mappen: de AI-tutor, quiz en begrippen zien deze fragmenten dus niet.
+export async function indexProjectKnowledgeText({ documentId, title, text }, deps = {}) {
+  const { supabaseAdmin, pgPool, chunkPlainText, embedTextsServer } = deps;
+  const chunkTexts = chunkPlainText(String(text || ''));
+  if (!chunkTexts.length) return 0;
+  const embeddings = await embedTextsServer(chunkTexts.map((t) => buildEmbedInput(title, t)));
+  const rows = chunkTexts.map((t, i) => ({
+    document_id: documentId,
+    content: sanitizeText(t),
+    embedding: embeddings[i],
+    chunk_index: i,
+    metadata: sanitizeMetadata({ source: 'project' }),
+  }));
+  await persistChunksAtomic({ documentId, rows, deps: { supabaseAdmin, pgPool } });
+  return rows.length;
+}

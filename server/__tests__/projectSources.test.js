@@ -38,7 +38,9 @@ describe('persona-chat gebruikt het', () => {
   const start = src.indexOf("app.post('/api/projects/persona-chat'");
   const route = src.slice(start, src.indexOf('\n});\n', start));
   it('projectmateriaal en groepsuploads doorgenummerd; één verwijsblok; zonder bronnen het "geen verwijzingen"-blok', () => {
-    expect(route).toContain("kind: 'project_document'");
+    // Projectdocumenten die de persona kent: genummerd in personaKnowledge.js (sinds 2026-10-27).
+    expect(route).toContain('buildProjectKnowledgeContext(');
+    expect(fs.readFileSync(path.resolve(__dirname, '..', 'personaKnowledge.js'), 'utf8')).toContain("kind: 'project_document'");
     expect(route).toContain("kind: 'persona_document'");
     expect(route).toContain('buildNoSourcesInstructionBlock()');
     expect(route).toMatch(/\$\{sourcesRulesBlock\}\$\{langSuffix\}/);

@@ -86,7 +86,12 @@ import {
   processPptxCore as processPptxCoreImpl,
   processPlainRagDocument as processPlainRagDocumentImpl,
   processDocxCore as processDocxCoreImpl,
+  indexProjectKnowledgeText,
 } from './ragProcessing.js';
+import {
+  knowledgeFieldsFrom, copyKnowledgeFields, filterKnowledgeIds, canBeKnowledge, isDataDocument,
+  loadPersonaProjectDocs, loadEvaluatorMaterial, ensureIndexed, chunkCounts, knownByMap, buildProjectKnowledgeContext,
+} from './personaKnowledge.js';
 import { assignPdfPages } from './pdfPages.js';
 import { extractPdfPageTexts } from './pdfPageText.js';
 import { embeddingsRequestWithRetry, EMBEDDINGS_RATE_LIMIT_MSG } from './embeddingsRetry.js';
@@ -147,7 +152,7 @@ import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import { registerCourseFilesRoutes, recordDocMutation, summarizeWebSync, WEB_SOURCE_PURPOSES } from './courseFiles.js';
 import { buildSourcesInstructionBlock, buildNumberedRagContext, numberDocumentSources, buildNoSourcesInstructionBlock } from './citationSources.js';
 import { serverI18nMiddleware, translateServerMessage } from './serverI18n.js';
-import { purposeAllowsModule } from './filePurpose.js';
+import { purposeAllowsModule, MATERIAL_KINDS } from './filePurpose.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
   groupPendingByUser,
@@ -429,11 +434,16 @@ const RAG_EXTRACTION_DEFAULTS = {
 //   [id, id, ...]     → alleen chunks uit deze folders
 // `module` (optioneel, bv. 'concepts'): sluit documenten uit waarvan het
 // bestandsdoel die module niet toestaat (cursusinformatie levert geen begrippen).
-async function searchChunksServerSide(queryText, threshold, matchCount, allowedFolderIds, expansion, lang = 'nl', module = null) {
+async function searchChunksServerSide(queryText, threshold, matchCount, allowedFolderIds, expansion, lang = 'nl', module = null, opts = {}) {
   if (!AZURE_EMBEDDINGS_READY || !supabaseAdmin) return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery: queryText };
 
   // Expliciet lege toegestane mappen → geen toegang
   if (Array.isArray(allowedFolderIds) && allowedFolderIds.length === 0) {
+    return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery: queryText };
+  }
+  // opts.documentIds: alleen in deze documenten zoeken (kennis van een persona).
+  // Leeg = niets; de mappen dienen dan alleen nog als extra grens.
+  if (Array.isArray(opts.documentIds) && opts.documentIds.length === 0) {
     return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery: queryText };
   }
 
@@ -478,6 +488,13 @@ async function searchChunksServerSide(queryText, threshold, matchCount, allowedF
         .filter(d => !module || purposeAllowsModule(d.purpose, module))
         .map(d => d.id);
       // Geen documenten in de toegestane mappen → niets te vinden.
+      if (filterDocumentIds.length === 0) {
+        return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery };
+      }
+    }
+    if (Array.isArray(opts.documentIds)) {
+      const wanted = new Set(opts.documentIds);
+      filterDocumentIds = filterDocumentIds ? filterDocumentIds.filter(id => wanted.has(id)) : [...wanted];
       if (filterDocumentIds.length === 0) {
         return { matched: [], maxScore: 0, candidatesInAllowed: 0, embedQuery };
       }
@@ -10648,6 +10665,53 @@ async function courseRagFolderIds(courseId) {
   return (ragFolders || []).map(f => f.id);
 }
 
+// ── Kennis van persona's (personaKnowledge.js, 2026-10-27) ─────────────────
+// Leerstof van de cursus die een persona kan kennen: dezelfde documenten als
+// de AI-tutor (RAG-mappen van de cursus, doel leerstof of cursusinformatie).
+async function courseKnowledgeDocs(courseId) {
+  const folders = await courseRagFolderIds(courseId);
+  if (!folders.length) return [];
+  const { data } = await supabaseAdmin.from('documents')
+    .select('id, title, filename, purpose').in('folder_id', folders).order('title');
+  return (data || []).filter(d => purposeAllowsModule(d.purpose, 'project'));
+}
+
+function indexProjectDocForPersona(doc) {
+  return indexProjectKnowledgeText(
+    { documentId: doc.document_ref_id, title: doc.filename, text: doc.content_text },
+    { supabaseAdmin, pgPool, chunkPlainText, embedTextsServer },
+  );
+}
+
+// Na opslaan: gekozen projectdocumenten doorzoekbaar maken (achtergrond; tot dan
+// gaat het begin van het document mee in het gesprek).
+function indexPersonaKnowledgeInBackground(persona) {
+  if (!persona?.project_id) return;
+  loadPersonaProjectDocs(supabaseAdmin, persona)
+    .then(docs => ensureIndexed(supabaseAdmin, docs, indexProjectDocForPersona))
+    .then(({ failed }) => {
+      if (failed.length) console.warn('[persona-knowledge] niet doorzoekbaar:', failed.map(f => `${f.filename}: ${f.error}`).join('; '));
+    })
+    .catch(e => console.warn('[persona-knowledge] indexeren mislukt:', e.message));
+}
+
+// Houdt alleen kennis over die bij deze cursus/dit project hoort (en nooit data).
+async function sanitizePersonaKnowledge(fields, { courseId, projectId = null }) {
+  if (!fields || Object.keys(fields).length === 0) return { fields: fields || {}, dropped: { course: [], project: [] } };
+  const needCourse = Array.isArray(fields.course_knowledge_doc_ids) && fields.course_knowledge_doc_ids.length > 0;
+  const needProject = Array.isArray(fields.project_knowledge_doc_ids) && fields.project_knowledge_doc_ids.length > 0;
+  const [courseDocs, projectDocsRes] = await Promise.all([
+    needCourse ? courseKnowledgeDocs(courseId) : Promise.resolve(null),
+    needProject && projectId
+      ? supabaseAdmin.from('project_documents').select('id, filename, material_kind, content_text').eq('project_id', projectId)
+      : Promise.resolve({ data: needProject ? [] : null }),
+  ]);
+  return filterKnowledgeIds(fields, {
+    courseDocIds: courseDocs ? courseDocs.map(d => d.id) : (needCourse ? [] : null),
+    projectDocs: projectDocsRes?.data ?? null,
+  });
+}
+
 // Fallback-helper voor de persona-chat route: zet een course_persona om naar
 // een project_persona als het project nog geen persona met die naam heeft.
 // Maakt een verse, onafhankelijke kopie (source_persona_id = herkomst, geen FK) conform het
@@ -10683,6 +10747,7 @@ async function ensureProjectPersonaFromCourse(projectId, coursePersonaId) {
       visible_from_phase: cp.visible_from_phase,
       sort_order: sortOrder,
       ...copyRoleFields(cp),
+      ...copyKnowledgeFields(cp),
       cue_emission_enabled: false,
     })
     .select('*').single();
@@ -10919,7 +10984,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       pdQuery,
       supabaseAdmin
         .from('project_personas')
-        .select('id, name, avatar_emoji, avatar, persona_type')
+        .select('id, name, avatar_emoji, avatar, persona_type, project_knowledge_doc_ids')
         .eq('project_id', projectId)
         .eq('persona_type', 'evaluator')
         .order('sort_order'),
@@ -10936,7 +11001,12 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       // (course-fallback-personas zijn nooit evaluator-bronnen).
       evaluatorCount = pp.filter(p => p.persona_type === 'evaluator' && p.id !== project.preassessment_persona_id).length;
       const filtered = isStaff ? pp : pp.filter(p => p.persona_type !== 'evaluator');
-      personas = filtered.map(p => ({ ...p, _source: 'project' }));
+      // Wat een persona kent, is voor de docent; studenten krijgen het niet mee.
+      personas = filtered.map(p => {
+        if (isStaff) return { ...p, _source: 'project' };
+        const { course_knowledge: _ck, course_knowledge_doc_ids: _cd, project_knowledge_doc_ids: _pd, rag_folder_ids: _rf, ...rest } = p;
+        return { ...rest, _source: 'project' };
+      });
     } else if (project.course_id) {
       const { data: cp } = await supabaseAdmin
         .from('course_personas').select('*').eq('course_id', project.course_id).order('is_default', { ascending: false });
@@ -10944,7 +11014,11 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       // evaluatorCount blijft 0: course-fallback-personas worden niet door
       // /evaluate gebruikt — geen UI-knop tonen.
       const filtered = isStaff ? list : list.filter(p => p.persona_type !== 'evaluator');
-      personas = filtered.map(p => ({ ...p, _source: 'course' }));
+      personas = filtered.map(p => {
+        if (isStaff) return { ...p, _source: 'course' };
+        const { course_knowledge: _ck, course_knowledge_doc_ids: _cd, rag_folder_ids: _rf, ...rest } = p;
+        return { ...rest, _source: 'course' };
+      });
     }
     // Default Consultant als er nog niets is.
     if (personas.length === 0) {
@@ -10954,6 +11028,7 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
         avatar_emoji: '🧑‍🏫',
         system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
         rag_enabled: true,
+        course_knowledge: 'all',
         rag_folder_ids: [],
         _source: 'default',
       }];
@@ -10980,35 +11055,23 @@ app.get('/api/projects/:projectId/room', async (req, res) => {
       const evIds = (evRows || []).map(p => p.id);
       // Task #253: voor studenten zichtbaar gemaakte rubrics per evaluator.
       // Staff ziet ook alle rubrics (incl. niet-zichtbare) met hun status.
+      // Sinds 2026-10-27: de rubric van een beoordelaar is een projectdocument
+      // (soort 'rubric') dat hij kent (personaKnowledge.js). Studenten zien
+      // alleen wat de docent zichtbaar maakte; openen gaat via de projectdocument-route.
       const rubricsByPersona = new Map();
-      if (evIds.length > 0) {
+      const rubricIds = [...new Set((evRows || []).flatMap(p => p.project_knowledge_doc_ids || []))];
+      if (evIds.length > 0 && rubricIds.length > 0) {
         let rq = supabaseAdmin
-          .from('project_persona_documents')
-          .select('id, persona_id, filename, byte_size, is_hidden_rubric, visible_to_students, created_at')
-          .eq('project_id', projectId).in('persona_id', evIds)
-          .eq('is_hidden_rubric', true);
-        if (!isStaff) rq = rq.eq('visible_to_students', true);
-        let { data: rubricRows, error: rErr } = await rq.order('created_at', { ascending: false });
-        // Defensief: oude DB zonder visible_to_students-kolom.
-        if (rErr && (rErr.code === '42703' || /visible_to_students/i.test(rErr.message || ''))) {
-          if (isStaff) {
-            ({ data: rubricRows } = await supabaseAdmin
-              .from('project_persona_documents')
-              .select('id, persona_id, filename, byte_size, is_hidden_rubric, created_at')
-              .eq('project_id', projectId).in('persona_id', evIds)
-              .eq('is_hidden_rubric', true)
-              .order('created_at', { ascending: false }));
-          } else {
-            rubricRows = [];
-          }
-        }
-        (rubricRows || []).forEach(d => {
-          const list = rubricsByPersona.get(d.persona_id) || [];
-          list.push({
-            id: d.id, filename: d.filename, byte_size: d.byte_size,
-            visible_to_students: d.visible_to_students === true,
-          });
-          rubricsByPersona.set(d.persona_id, list);
+          .from('project_documents')
+          .select('id, filename, byte_size, is_visible_to_students, material_kind')
+          .eq('project_id', projectId).in('id', rubricIds).eq('material_kind', 'rubric');
+        if (!isStaff) rq = rq.eq('is_visible_to_students', true);
+        const { data: rubricRows } = await rq;
+        const rubricById = new Map((rubricRows || []).map(d => [d.id, d]));
+        (evRows || []).forEach(p => {
+          const list = (p.project_knowledge_doc_ids || []).map(id => rubricById.get(id)).filter(Boolean)
+            .map(d => ({ id: d.id, filename: d.filename, byte_size: d.byte_size, visible_to_students: d.is_visible_to_students === true, source: 'project' }));
+          if (list.length) rubricsByPersona.set(p.id, list);
         });
       }
       // De voorbeoordelaar van het eindproduct is alleen voor de docent.
@@ -11132,6 +11195,7 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         name: 'Consultant',
         system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
         rag_enabled: true,
+        course_knowledge: 'all',
         rag_folder_ids: [],
       };
     } else {
@@ -11264,14 +11328,15 @@ app.post('/api/projects/persona-chat', async (req, res) => {
 
     // Deze stappen hangen niet van elkaar af en lopen tegelijk:
     //  * het bericht van de student opslaan;
-    //  * RAG: chunks zoeken (alleen als persona.rag_enabled). We scopen ALTIJD
-    //    op de cursusfolders — anders zou een persona zonder rag_folder_ids
-    //    (`null`) feitelijk over alle cursussen heen kunnen zoeken;
+    //  * cursusmateriaal zoeken, alleen wat deze persona kent (course_knowledge:
+    //    niets, alles, of gekozen bestanden). Altijd binnen de cursusmappen;
     //  * geüploade documenten voor deze persona — uitsluitend van de huidige
     //    groep, zodat parallelle groepen elkaars uploads niet mengen;
-    //  * project-brede docent-uploads (zichtbaar voor alle groepen + persona's);
+    //  * de projectdocumenten die deze persona kent (personaKnowledge.js),
+    //    doorzocht in fragmenten; nooit databestanden;
     //  * eerder gemaakte afspraken uit afgesloten gesprekken met deze persona.
-    const [, rag, groupDocs, projectDocs, priorAgreements] = await Promise.all([
+    const ragSettingsP = loadRagSettings(project?.course_id || null);
+    const [, rag, groupDocs, projectKnowledge, priorAgreements] = await Promise.all([
       threadId
         ? supabaseAdmin.from('group_persona_messages').insert({
           thread_id: threadId,
@@ -11281,24 +11346,17 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         })
         : null,
       (async () => {
-        if (!persona.rag_enabled) return { context: '', sources: [] };
+        const mode = persona.course_knowledge || 'none';
+        if (mode === 'none') return { context: '', sources: [] };
         const [ragSettings, courseFolders] = await Promise.all([
-          loadRagSettings(project?.course_id || null),
+          ragSettingsP,
           courseRagFolderIds(project?.course_id || null),
         ]);
         const cfg = ragSettings.project;
-        let folderIds;
-        if (Array.isArray(persona.rag_folder_ids) && persona.rag_folder_ids.length > 0) {
-          // Persona-folders intersecten met cursusfolders zodat een verkeerd
-          // ingestelde persona nooit buiten de cursus-scope kan zoeken.
-          const allowed = new Set(courseFolders);
-          folderIds = persona.rag_folder_ids.filter(id => allowed.has(id));
-        } else {
-          folderIds = courseFolders;
-        }
         const { matched } = await searchChunksServerSide(
-          message, cfg.similarity_threshold, cfg.match_count, folderIds,
-          { enabled: cfg.query_expansion_enabled }, lang, 'project'
+          message, cfg.similarity_threshold, cfg.match_count, courseFolders,
+          { enabled: cfg.query_expansion_enabled }, lang, 'project',
+          mode === 'selected' ? { documentIds: persona.course_knowledge_doc_ids || [] } : {}
         );
         // Zelfde bronverwijzingen als de chat: één genummerde bron per
         // document, zodat [n] in het antwoord klikbaar naar het cursusdocument
@@ -11316,15 +11374,23 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         return docs || [];
       })(),
       (async () => {
-        const { data: pdocs } = await supabaseAdmin
-          .from('project_documents')
-          .select('id, filename, content_text')
-          .eq('project_id', project.id)
-          .eq('is_visible_to_students', true)
-          .not('content_text', 'is', null)
-          .order('created_at', { ascending: true })
-          .limit(10);
-        return pdocs || [];
+        if (persona.id === '__default__' || !persona.project_id) return { docs: [], matched: [], unindexed: [] };
+        const docs = await loadPersonaProjectDocs(supabaseAdmin, persona);
+        if (!docs.length) return { docs, matched: [], unindexed: [] };
+        const counts = await chunkCounts(supabaseAdmin, docs.map(d => d.document_ref_id));
+        const indexed = docs.filter(d => d.document_ref_id && (counts[d.document_ref_id] || 0) > 0);
+        const unindexed = docs.filter(d => !indexed.includes(d));
+        // Nog niet doorzoekbaar: begin gaat nu mee, en de fragmenten worden alsnog gemaakt.
+        if (unindexed.some(d => d.document_ref_id)) indexPersonaKnowledgeInBackground(persona);
+        let matched = [];
+        if (indexed.length) {
+          const cfg = (await ragSettingsP).project;
+          ({ matched } = await searchChunksServerSide(
+            message, cfg.similarity_threshold, cfg.match_count, null, null, lang, null,
+            { documentIds: indexed.map(d => d.document_ref_id) }
+          ));
+        }
+        return { docs, matched: matched || [], unindexed };
       })(),
       (async () => {
         if (persona.id === '__default__') return [];
@@ -11339,10 +11405,14 @@ app.post('/api/projects/persona-chat', async (req, res) => {
         return (closedThreads || []).flatMap(t => t.agreements || []).filter(Boolean);
       })(),
     ]);
-    // Alle bronnen doorgenummerd: cursusmateriaal, projectmateriaal van de
-    // docent, uploads van de groep (per document ~6k tekens).
+    // Alle bronnen doorgenummerd: cursusmateriaal, projectdocumenten die deze
+    // persona kent (alleen wat studenten mogen openen krijgt een nummer),
+    // uploads van de groep (per document ~6k tekens).
     const context = rag.context || '';
-    const projectNumbered = numberDocumentSources(projectDocs, { startIndex: (rag.sources || []).length + 1, kind: 'project_document' });
+    const projectNumbered = buildProjectKnowledgeContext({
+      matched: projectKnowledge.matched, docs: projectKnowledge.docs, unindexed: projectKnowledge.unindexed,
+      startIndex: (rag.sources || []).length + 1,
+    });
     const groupNumbered = numberDocumentSources(groupDocs, { startIndex: (rag.sources || []).length + projectNumbered.sources.length + 1, kind: 'persona_document' });
     const ragSources = [...(rag.sources || []), ...projectNumbered.sources, ...groupNumbered.sources];
 
@@ -11352,9 +11422,11 @@ app.post('/api/projects/persona-chat', async (req, res) => {
     const ragBlock = context
       ? `\n\nContext uit cursusmateriaal (elk fragment begint met zijn bronnummer):\n${context}`
       : '';
-    const projectDocBlock = projectNumbered.context
-      ? `\n\nProjectmateriaal van de docent (elk document begint met zijn bronnummer):\n${projectNumbered.context}`
-      : '';
+    const projectDocBlock = (projectNumbered.citedContext
+      ? `\n\nProjectmateriaal dat jij kent (elk fragment begint met zijn bronnummer):\n${projectNumbered.citedContext}`
+      : '') + (projectNumbered.backgroundContext
+      ? `\n\nAchtergrondkennis die alleen jij hebt. Gebruik de inhoud waar het past bij je rol, maar noem geen bron of bestandsnaam en citeer niet letterlijk:\n${projectNumbered.backgroundContext}`
+      : '');
     const docBlock = groupNumbered.context
       ? `\n\nGeüploade documenten van de groep (elk document begint met zijn bronnummer):\n${groupNumbered.context}`
       : '';
@@ -12408,6 +12480,7 @@ app.post('/api/projects/copy-personas-from-library', async (req, res) => {
       sort_order: i,
       // Rol + verstandhouding/gedragsregels/feedbackrondes uit het sjabloon.
       ...copyRoleFields(p),
+      ...copyKnowledgeFields(p),
       cue_emission_enabled: false,
       // Task #252: raadpleeglimiet + auto-close meekopiëren uit de bibliotheek.
       max_consultations: conNormalizeMax(p.max_consultations),
@@ -12549,6 +12622,7 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
         rag_folder_ids: cp.rag_folder_ids, visible_from_phase: cp.visible_from_phase,
         sort_order: nextOrder,
         ...copyRoleFields(cp),
+        ...copyKnowledgeFields(cp),
         cue_emission_enabled: false,
         // Task #252: raadpleeglimiet + auto-close uit de bibliotheek.
         max_consultations: conNormalizeMax(cp.max_consultations),
@@ -12558,7 +12632,9 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
       };
     } else {
       if (!name || !String(name).trim()) return res.status(400).json({ error: 'Naam is vereist' });
+      const { fields: knowledge } = await sanitizePersonaKnowledge(knowledgeFieldsFrom(req.body), { courseId: project.course_id, projectId });
       row = {
+        ...knowledge,
         project_id: projectId, source_persona_id: null,
         name: String(name).trim(),
         avatar_emoji: avatar_emoji || '🤖',
@@ -12599,6 +12675,7 @@ app.post('/api/projects/:projectId/personas', async (req, res) => {
         .from('project_personas').insert(rowNoBadge).select('*').single());
     }
     if (iErr) return res.status(500).json({ error: iErr.message });
+    indexPersonaKnowledgeInBackground(inserted);
     return res.json({ persona: inserted });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -12641,6 +12718,7 @@ app.post('/api/projects/:projectId/personas/from-library/:coursePersonaId', asyn
       visible_from_phase: cp.visible_from_phase,
       sort_order: nextOrder,
       ...copyRoleFields(cp),
+      ...copyKnowledgeFields(cp),
       cue_emission_enabled: false,
       // Task #252: raadpleeglimiet + auto-close uit de bibliotheek.
       max_consultations: conNormalizeMax(cp.max_consultations),
@@ -12672,6 +12750,59 @@ app.post('/api/projects/:projectId/personas/from-library/:coursePersonaId', asyn
   }
 });
 
+// GET /api/projects/:projectId/persona-knowledge — keuzelijsten voor "Wat kent
+// deze persona?" (alleen staff): cursusbestanden, projectdocumenten (met of ze
+// kennis kúnnen zijn) en per document welke persona's het kennen.
+app.get('/api/projects/:projectId/persona-knowledge', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  const { projectId } = req.params;
+  try {
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
+    const access = await requireProjectStaff(projectId, auth.user, profile);
+    if (!access.ok) return res.status(access.status).json({ error: access.error });
+    const [courseDocs, { data: pdocs }, { data: personas }] = await Promise.all([
+      courseKnowledgeDocs(access.project?.course_id),
+      supabaseAdmin.from('project_documents')
+        .select('id, filename, material_kind, is_visible_to_students, content_text, document_ref_id, created_at')
+        .eq('project_id', projectId).order('created_at', { ascending: true }),
+      supabaseAdmin.from('project_personas').select('id, name, project_knowledge_doc_ids').eq('project_id', projectId),
+    ]);
+    const counts = await chunkCounts(supabaseAdmin, (pdocs || []).map(d => d.document_ref_id));
+    return res.json({
+      courseDocs: courseDocs.map(d => ({ id: d.id, title: d.title || d.filename })),
+      projectDocs: (pdocs || []).map(d => ({
+        id: d.id, filename: d.filename, material_kind: d.material_kind,
+        is_visible_to_students: d.is_visible_to_students === true,
+        isData: isDataDocument(d),
+        canBeKnowledge: canBeKnowledge(d),
+        searchable: !!d.document_ref_id && (counts[d.document_ref_id] || 0) > 0,
+      })),
+      knownBy: knownByMap(personas),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/admin/courses/:courseId/persona-knowledge — cursusbestanden voor een sjabloon.
+app.get('/api/admin/courses/:courseId/persona-knowledge', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  const auth = await authUser(req);
+  if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+  try {
+    const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
+    if (!(await isStaffForCourse(auth.user, profile, req.params.courseId))) {
+      return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
+    }
+    const courseDocs = await courseKnowledgeDocs(req.params.courseId);
+    return res.json({ courseDocs: courseDocs.map(d => ({ id: d.id, title: d.title || d.filename })) });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 // PATCH /api/projects/:projectId/personas/:personaId — bewerk één persona.
 app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
@@ -12692,6 +12823,9 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
     // Rol + verstandhouding/gedragsregels/feedbackrondes (alleen meegestuurde velden).
     Object.assign(patch, roleFieldsFrom(req.body, { partial: true }));
     if ('persona_type' in patch) patch.cue_emission_enabled = false;
+    // Wat kent deze persona? (alleen meegestuurde velden; nooit data of andermans documenten)
+    Object.assign(patch, (await sanitizePersonaKnowledge(knowledgeFieldsFrom(req.body, { partial: true }),
+      { courseId: access.project?.course_id, projectId })).fields);
     // Cartoon-gezicht: alleen een opgeschoonde configuratie (null = standaard-robotje).
     if (req.body && 'avatar' in req.body) {
       const avatar = sanitizeAvatar(req.body.avatar);
@@ -12739,6 +12873,7 @@ app.patch('/api/projects/:projectId/personas/:personaId', async (req, res) => {
         .eq('id', personaId).eq('project_id', projectId).select('*').single());
     }
     if (e) return res.status(500).json({ error: e.message });
+    if ('project_knowledge_doc_ids' in patch) indexPersonaKnowledgeInBackground(data);
     // Eén persona = één gezicht: een nieuw gezicht gaat ook naar het sjabloon
     // en naar de kopieën in andere projecten van dezelfde cursus.
     const face = changedFaceFields(before, patch);
@@ -13550,7 +13685,7 @@ app.post('/api/projects/:projectId/documents', docUpload.single('file'), async (
     const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
     const access = await requireProjectStaff(projectId, auth.user, profile);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
-    const materialKind = ['assignment', 'data', 'literature', 'other'].includes(req.body?.material_kind) ? req.body.material_kind : undefined;
+    const materialKind = MATERIAL_KINDS.includes(req.body?.material_kind) ? req.body.material_kind : undefined;
     const result = await createProjectDocumentFromBuffer({
       projectId,
       projectTitle: access.project?.title,
@@ -13632,7 +13767,21 @@ app.get('/api/projects/:projectId/documents/:docId/download', async (req, res) =
 });
 
 // PATCH /api/projects/:projectId/documents/:docId — zichtbaarheid voor studenten
-// en/of soort materiaal (material_kind: assignment/data/literature/other) wijzigen.
+// Haalt een projectdocument weg uit wat persona's kennen (verwijderd, of nu een
+// databestand). Geeft de namen terug van de persona's die het kenden.
+async function forgetProjectDocKnowledge(projectId, docId) {
+  const { data: personas } = await supabaseAdmin.from('project_personas')
+    .select('id, name, project_knowledge_doc_ids').eq('project_id', projectId)
+    .contains('project_knowledge_doc_ids', [docId]);
+  for (const p of personas || []) {
+    await supabaseAdmin.from('project_personas')
+      .update({ project_knowledge_doc_ids: (p.project_knowledge_doc_ids || []).filter(id => id !== docId) })
+      .eq('id', p.id);
+  }
+  return (personas || []).map(p => p.name);
+}
+
+// en/of soort materiaal (material_kind: assignment/data/literature/rubric/other) wijzigen.
 app.patch('/api/projects/:projectId/documents/:docId', async (req, res) => {
   if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
   const auth = await authUser(req);
@@ -13647,7 +13796,7 @@ app.patch('/api/projects/:projectId/documents/:docId', async (req, res) => {
     update.is_visible_to_students = is_visible_to_students;
   }
   if (material_kind !== undefined) {
-    if (material_kind !== null && !['assignment', 'data', 'literature', 'other'].includes(material_kind)) {
+    if (material_kind !== null && !MATERIAL_KINDS.includes(material_kind)) {
       return res.status(400).json({ error: 'Ongeldige material_kind' });
     }
     update.material_kind = material_kind;
@@ -13665,7 +13814,9 @@ app.patch('/api/projects/:projectId/documents/:docId', async (req, res) => {
       .eq('id', docId).eq('project_id', projectId)
       .select(Object.prototype.hasOwnProperty.call(update, 'material_kind') ? 'id, is_visible_to_students, material_kind' : 'id, is_visible_to_students').single();
     if (e) return res.status(500).json({ error: e.message });
-    return res.json({ document: data });
+    // Een databestand is nooit kennis van een persona (personaKnowledge.js).
+    const forgottenBy = update.material_kind === 'data' ? await forgetProjectDocKnowledge(projectId, docId) : [];
+    return res.json({ document: data, forgottenBy });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -13688,6 +13839,7 @@ app.delete('/api/projects/:projectId/documents/:docId', async (req, res) => {
       .from('project_documents').delete()
       .eq('id', docId).eq('project_id', projectId);
     if (e) return res.status(500).json({ error: e.message });
+    await forgetProjectDocKnowledge(projectId, docId);
     // Verwijder ook de bijbehorende rij in documents (binaire bestanden).
     if (docRow?.document_ref_id) {
       await supabaseAdmin.from('documents').delete().eq('id', docRow.document_ref_id);
@@ -13810,15 +13962,10 @@ app.get('/api/projects/:projectId/documents/:docId/reviews', async (req, res) =>
 async function runEvaluatorReview({ project, group, persona, title, text, lang, requesterId, documentId = null, productId = null }) {
   const projectId = project.id;
   const groupId = group.id;
-  // Verborgen rubrics van deze beoordelaar (alleen verborgen — voorkomt
-  // prompt-injection via door studenten geüploade rubric-bestanden).
-  const { data: rubricDocs } = await supabaseAdmin
-    .from('project_persona_documents').select('filename, content_text')
-    .eq('project_id', projectId).eq('persona_id', persona.id)
-    .eq('is_hidden_rubric', true);
-  const rubricBlock = (rubricDocs || []).map(d =>
-    `[Rubric: ${d.filename}]\n${(d.content_text || '').slice(0, 6000)}`
-  ).join('\n\n').slice(0, 20000);
+  // Beoordelingsmateriaal van deze beoordelaar: de projectdocumenten van de
+  // docent die hij kent, in hun geheel (personaKnowledge.js). Nooit uploads van
+  // studenten — voorkomt sturing van het oordeel via een geüpload bestand.
+  const rubricBlock = await loadEvaluatorMaterial(supabaseAdmin, persona);
 
   // Actieve document_review-prompt uit chatbot_prompts (sectie 'project').
   const { data: drPromptRow } = await supabaseAdmin
@@ -15117,12 +15264,7 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
     }
     conversationsBlock = conversationsBlock.slice(0, 30000);
 
-    const { data: pDocs } = await supabaseAdmin
-      .from('project_documents').select('filename, content_text')
-      .eq('project_id', group.project_id);
-    const projectDocsBlock = (pDocs || []).map(d =>
-      `[Projectdocument: ${d.filename}]\n${(d.content_text || '').slice(0, 4000)}`
-    ).join('\n\n').slice(0, 20000);
+    // Projectmateriaal: alleen wat elke beoordelaar kent (rubricBlock hieronder, personaKnowledge.js).
 
     const { data: members } = await supabaseAdmin
       .from('project_group_members').select('user_id').eq('group_id', groupId);
@@ -15152,16 +15294,10 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
           continue;
         }
       }
-      // Belangrijk: alleen verborgen rubrics meenemen — anders zouden door
-      // studenten geüploade documenten de beoordeling kunnen sturen
-      // (prompt-injection van formatieve assessment).
-      const { data: rubricDocs } = await supabaseAdmin
-        .from('project_persona_documents').select('filename, content_text')
-        .eq('project_id', group.project_id).eq('persona_id', evalPersona.id)
-        .eq('is_hidden_rubric', true);
-      const rubricBlock = (rubricDocs || []).map(d =>
-        `[Rubric/criteria: ${d.filename}]\n${(d.content_text || '').slice(0, 8000)}`
-      ).join('\n\n').slice(0, 30000);
+      // Belangrijk: alleen documenten van de docent die deze beoordelaar kent
+      // (personaKnowledge.js) — anders zouden door studenten geüploade
+      // documenten de beoordeling kunnen sturen (prompt-injection).
+      const rubricBlock = await loadEvaluatorMaterial(supabaseAdmin, evalPersona);
 
       const langInstruction = lang === 'nl'
         ? 'BELANGRIJK: Antwoord volledig in het Nederlands.'
@@ -15174,17 +15310,14 @@ app.post('/api/projects/groups/:groupId/evaluate', async (req, res) => {
 ${langInstruction}
 
 ${enMode
-  ? `Below you will find the learning objectives/rubric (for your eyes only — students cannot see this), the project material, and all conversations the group has had with the other personas. Provide a formative assessment per learning objective/criterion. Address the students as "you" (plural).
+  ? `Below you will find the learning objectives, your assessment material (for your eyes only — students cannot see this), and all conversations the group has had with the other personas. Provide a formative assessment per learning objective/criterion. Address the students as "you" (plural).
 
 Project: ${project?.title || '(unnamed)'}
 Intended project deliverable: ${project?.research_question || '(none)'}
 Learning objectives: ${project?.goals || '(none)'}
 
-Hidden rubric/criteria:
-${rubricBlock || '(no rubric file linked; use the learning objectives above)'}
-
-Project material:
-${projectDocsBlock || '(none)'}
+Your assessment material (rubric and documents you know):
+${rubricBlock || '(no material linked; use the learning objectives above)'}
 
 Group conversations:
 ${conversationsBlock || '(no conversations found)'}
@@ -15193,17 +15326,14 @@ Write your assessment as markdown with per criterion:
 - **<criterion name>** (strong / sufficient / needs attention): 2–3 sentences of feedback with a concrete example from the conversations.
 
 End with a short heading "Next steps" with 2-3 suggestions. Do NOT quote exact rubric text and do not spoil the criteria.`
-  : `Je krijgt hieronder de leerdoelen/rubric (alléén voor jou — de studenten zien deze niet), het projectmateriaal, en alle gesprekken die de groep met de andere persona's heeft gevoerd. Geef een formatieve beoordeling per leerdoel/criterium. Spreek de studenten aan met "jullie".
+  : `Je krijgt hieronder de leerdoelen, je beoordelingsmateriaal (alléén voor jou — de studenten zien dit niet), en alle gesprekken die de groep met de andere persona's heeft gevoerd. Geef een formatieve beoordeling per leerdoel/criterium. Spreek de studenten aan met "jullie".
 
 Project: ${project?.title || '(naamloos)'}
 Beoogd projectresultaat: ${project?.research_question || '(geen)'}
 Leerdoelen: ${project?.goals || '(geen)'}
 
-Verborgen rubric/criteria:
-${rubricBlock || '(geen rubric-bestand gekoppeld; gebruik dan de leerdoelen hierboven)'}
-
-Projectmateriaal:
-${projectDocsBlock || '(geen)'}
+Je beoordelingsmateriaal (rubric en documenten die je kent):
+${rubricBlock || '(geen materiaal gekoppeld; gebruik dan de leerdoelen hierboven)'}
 
 Gesprekken van de groep:
 ${conversationsBlock || '(geen gesprekken gevonden)'}
@@ -15338,6 +15468,7 @@ app.post('/api/projects/:projectId/personas/:personaId/copy-to-library', async (
       visible_from_phase: pp.visible_from_phase,
       is_default: false,
       ...copyRoleFields(pp),
+      ...copyKnowledgeFields(pp, { project: false }),
       max_consultations: pp.max_consultations ?? null,
       auto_close_hours: pp.auto_close_hours ?? null,
       // Task #253: badge-toekenningsmodus mee terug naar de bibliotheek.
@@ -15435,7 +15566,9 @@ app.post('/api/admin/course-personas', async (req, res) => {
     if (!(await isStaffForCourse(auth.user, profile, course_id))) {
       return res.status(403).json({ error: 'Alleen docenten van deze cursus kunnen persona-sjablonen aanmaken' });
     }
+    const { fields: knowledge } = await sanitizePersonaKnowledge(knowledgeFieldsFrom(req.body, { project: false }), { courseId: course_id });
     const libRow = {
+      ...knowledge,
       course_id,
       name: String(name).trim(),
       avatar_emoji: avatar_emoji || '🤖',
@@ -15487,6 +15620,8 @@ app.patch('/api/admin/course-personas/:personaId', async (req, res) => {
     if (rag_enabled !== undefined) patch.rag_enabled = rag_enabled;
     if (rag_folder_ids !== undefined) patch.rag_folder_ids = Array.isArray(rag_folder_ids) ? rag_folder_ids : [];
     Object.assign(patch, roleFieldsFrom(req.body, { partial: true }));
+    Object.assign(patch, (await sanitizePersonaKnowledge(knowledgeFieldsFrom(req.body, { partial: true, project: false }),
+      { courseId: found.persona?.course_id })).fields);
     if (req.body && 'max_consultations' in req.body) patch.max_consultations = conNormalizeMax(req.body.max_consultations);
     if (req.body && 'auto_close_hours' in req.body) patch.auto_close_hours = conNormalizeAutoCloseHours(req.body.auto_close_hours);
     if (badge_award_mode !== undefined) patch.badge_award_mode = normalizeBadgeAwardMode(badge_award_mode);

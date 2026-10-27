@@ -1,7 +1,7 @@
 // Typen voor server/filePurpose.js (gedeeld met de frontend).
 export type Purpose = 'course_material' | 'course_info' | 'project' | 'shared' | 'teacher_only';
 export type DocumentPurpose = Exclude<Purpose, 'project'>;
-export type MaterialKind = 'assignment' | 'data' | 'literature' | 'other';
+export type MaterialKind = 'assignment' | 'data' | 'literature' | 'rubric' | 'other';
 export type PurposeModule = 'general' | 'chat' | 'explain' | 'quiz' | 'project' | 'concepts';
 
 export interface PurposeRule {

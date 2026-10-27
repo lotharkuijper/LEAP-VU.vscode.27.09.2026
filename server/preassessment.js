@@ -21,6 +21,7 @@
 import { Zip, ZipPassThrough, ZipDeflate, strToU8, zipSync } from 'fflate';
 import { translate } from './notificationI18n.js';
 import { normalizeLang } from './languages.js';
+import { loadPersonaProjectDocs, buildEvaluatorMaterial } from './personaKnowledge.js';
 
 export const PART_CHARS = 18000;
 export const MAX_ASSESS_CHARS = 200000;
@@ -390,7 +391,7 @@ export function createPreassessmentRunner(deps) {
         .eq('id', sub.project_id).maybeSingle();
       if (!project?.preassessment_persona_id) return;
       const { data: persona } = await db.from('project_personas')
-        .select('id, name, system_prompt, deliverable_label, persona_type')
+        .select('id, project_id, name, system_prompt, deliverable_label, persona_type, project_knowledge_doc_ids')
         .eq('id', project.preassessment_persona_id).eq('project_id', project.id).maybeSingle();
       if (!persona || persona.persona_type !== 'evaluator') return;
       base = { submission_id: sub.id, project_id: project.id, group_id: sub.group_id, persona_id: persona.id };
@@ -398,11 +399,10 @@ export function createPreassessmentRunner(deps) {
 
       if (!modelReady()) throw new Error('Het taalmodel is niet geconfigureerd');
       const { data: group } = await db.from('project_groups').select('name').eq('id', sub.group_id).maybeSingle();
-      // Alleen VERBORGEN rubrics (door de docent geüpload), net als bij de feedbackrondes.
-      const { data: rubricDocs } = await db.from('project_persona_documents')
-        .select('filename, content_text').eq('project_id', project.id).eq('persona_id', persona.id).eq('is_hidden_rubric', true);
-      const rubricText = (rubricDocs || [])
-        .map((d) => `[Rubric: ${d.filename}]\n${String(d.content_text || '').slice(0, 12000)}`).join('\n\n').slice(0, 30000);
+      // Alleen documenten van de docent die deze beoordelaar kent (rubric e.d.),
+      // net als bij de feedbackrondes (personaKnowledge.js).
+      const rubricDocs = await loadPersonaProjectDocs(db, persona);
+      const rubricText = buildEvaluatorMaterial(rubricDocs);
 
       const r = await pgPool.query('SELECT file_bytes FROM project_submissions WHERE id = $1', [sub.id]);
       const buffer = r.rows[0]?.file_bytes;

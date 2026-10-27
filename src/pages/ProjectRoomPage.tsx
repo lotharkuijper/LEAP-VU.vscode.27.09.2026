@@ -136,6 +136,8 @@ interface EvaluatorRubric {
   filename: string;
   byte_size: number | null;
   visible_to_students?: boolean;
+  /** 'project' = projectdocument van soort rubric (sinds 2026-10-27). */
+  source?: 'project';
 }
 interface EvaluatorPersona {
   id: string;
@@ -647,7 +649,10 @@ export function ProjectRoomPage() {
   const downloadRubric = async (personaId: string, rubric: EvaluatorRubric) => {
     if (!projectId || !token) return;
     try {
-      const r = await fetch(`/api/projects/${projectId}/personas/${personaId}/documents/${rubric.id}/download`, {
+      const url0 = rubric.source === 'project'
+        ? `/api/projects/${projectId}/documents/${rubric.id}/download`
+        : `/api/projects/${projectId}/personas/${personaId}/documents/${rubric.id}/download`;
+      const r = await fetch(url0, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!r.ok) {

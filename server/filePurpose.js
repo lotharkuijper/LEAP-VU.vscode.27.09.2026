@@ -14,7 +14,7 @@
 
 export const PURPOSES = ['course_material', 'course_info', 'project', 'shared', 'teacher_only'];
 export const DOCUMENT_PURPOSES = ['course_material', 'course_info', 'shared', 'teacher_only'];
-export const MATERIAL_KINDS = ['assignment', 'data', 'literature', 'other'];
+export const MATERIAL_KINDS = ['assignment', 'data', 'literature', 'rubric', 'other'];
 
 /** Wat een doel betekent — één bron van waarheid voor server-logica en UI-uitleg. */
 export const PURPOSE_RULES = {
