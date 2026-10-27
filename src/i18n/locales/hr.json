@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Spremi sažetak i izbriši razgovor",
   "chat.deleteWithoutSummary": "Samo izbriši (bez unosa u dnevnik)",
   "chat.deleteClosingText": "Upravo ćeš trajno izbrisati razgovor \"{title}\". To se ne može poništiti.",
-  "chat.deleteAskSummary": "Želiš li da asistent za učenje prvo spremi formativni sažetak ovog razgovora u tvoj dnevnik učenja? Taj sažetak možeš kasnije pregledati za refleksiju.",
+  "chat.deleteAskSummary": "Želiš li da asistent za učenje najprije spremi formativni sažetak ovog razgovora u tvoj dnevnik učenja? Ako si razgovor već jednom spremio/la, sažetak će se odnositi na ono što je dodano nakon toga.",
   "explain.title": "Ja objašnjavam",
   "explain.subtitle": "Odaberi pojam i vježbaj s njim: objasni ga sam/a ili poboljšaj objašnjenje. Dobit ćeš detaljne povratne informacije!",
   "explain.searchPlaceholder": "Pretraži pojam...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Privitci",
   "help.student.chat.attachments.body": "Zalijepi snimku zaslona ili dodaj datoteku kako bi o njoj razgovarao/razgovarala s tutorom, i napiši što želiš znati. LEAP ne pohranjuje privitke: ako zatvoriš chat, nestaju.",
   "help.student.chat.close.title": "Završi razgovor",
-  "help.student.chat.close.body": "Sa sažetkom LEAP izrađuje refleksiju u tvom dnevniku učenja: što si radio/radila, što je išlo dobro, što može bolje i tvoj sljedeći korak. Bez sažetka razgovor nestaje. Tvoj nastavnik ne vidi tvoje razgovore ni tvoj dnevnik.",
+  "help.student.chat.close.body": "Sažetkom LEAP stvara refleksiju u tvom dnevniku učenja, a zatim razgovor nestaje. Ako želiš nastaviti kasnije, upotrijebi Spremi u dnevnik učenja: tada razgovor ostaje. Tvoj nastavnik ne vidi tvoje razgovore ni tvoj dnevnik.",
   "help.student.explain.modes.title": "Dva načina vježbanja",
   "help.student.explain.modes.body": "U opciji Objasni sam/a objašnjavaš pojam vlastitim riječima i dobivaš povratne informacije s ocjenom koju vidiš samo ti. U opciji Poboljšaj ovo objašnjenje tražiš pogreške u objašnjenju koje je AI upravo izradio i objašnjavaš što nije točno.",
   "help.student.journal.achievements.title": "Vitrina s nagradama",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Vrsta: —",
   "filePurpose.kind.rubric": "Rubrika",
   "help.personas.knowledge.title": "Što ova persona zna?",
-  "help.personas.knowledge.body": "Odaberi koje datoteke kolegija i projektne dokumente ova persona poznaje. Ništa nije odabrano: slijedi samo vlastite upute. Ocjenjivač čita svoje dokumente u cijelosti. Persona nikada ne poznaje datoteke s podacima. Studenti ne vide ovaj odabir."
+  "help.personas.knowledge.body": "Odaberi koje datoteke kolegija i projektne dokumente ova persona poznaje. Ništa nije odabrano: slijedi samo vlastite upute. Ocjenjivač čita svoje dokumente u cijelosti. Persona nikada ne poznaje datoteke s podacima. Studenti ne vide ovaj odabir.",
+  "chat.saveJournal.button": "Spremi u dnevnik učenja",
+  "chat.saveJournal.saved": "Spremljeno u tvoj dnevnik učenja. Možeš normalno nastaviti s ovim razgovorom; ako ga kasnije ponovno spremiš, refleksija će se odnositi na ono što je dodano nakon toga.",
+  "chat.saveJournal.nothingNew": "Nema ničeg novog otkako si prošli put spremio/la ovaj razgovor.",
+  "chat.saveJournal.failed": "Spremanje u tvoj dnevnik učenja nije uspjelo. Pokušaj ponovno kasnije.",
+  "chat.deleteSummaryAlreadySaved": "Razgovor je izbrisan. Nije bilo ničeg novog od tvog prethodnog spremanja, pa u tvoj dnevnik učenja nije dodana dodatna refleksija.",
+  "help.student.chat.saveJournal.title": "Spremi u dnevnik učenja",
+  "help.student.chat.saveJournal.body": "LEAP stavlja refleksiju o ovom razgovoru u tvoj dnevnik učenja: što si radio/la, što je išlo dobro, što može bolje i koji je tvoj sljedeći korak. Razgovor ostaje, tako da kasnije možeš nastaviti. Sljedeće spremanje odnosit će se na novi dio. Tvoj nastavnik ne vidi tvoj dnevnik."
 }

@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Salva il riepilogo ed elimina la conversazione",
   "chat.deleteWithoutSummary": "Elimina soltanto (nessuna voce nel diario)",
   "chat.deleteClosingText": "Stai per eliminare definitivamente la conversazione \"{title}\". Questa azione non può essere annullata.",
-  "chat.deleteAskSummary": "Vuoi che l'assistente all'apprendimento salvi prima un riepilogo formativo di questa conversazione nel tuo diario di apprendimento? Potrai consultare questo riepilogo in seguito per riflettere.",
+  "chat.deleteAskSummary": "Vuoi che l’assistente all’apprendimento salvi prima un riepilogo formativo di questa conversazione nel tuo diario di apprendimento? Se hai già salvato la conversazione in precedenza, il riepilogo riguarderà ciò che è stato aggiunto dopo.",
   "explain.title": "Spiego io",
   "explain.subtitle": "Scegli un concetto ed esercitati: spiegalo tu o migliora una spiegazione. Riceverai un feedback dettagliato!",
   "explain.searchPlaceholder": "Cerca un concetto...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Allegati",
   "help.student.chat.attachments.body": "Incolla uno screenshot o aggiungi un file per parlarne con il tutor, e scrivi cosa vuoi sapere. LEAP non conserva gli allegati: se chiudi la chat, spariscono.",
   "help.student.chat.close.title": "Chiudere la conversazione",
-  "help.student.chat.close.body": "Con un riassunto, LEAP crea una riflessione nel tuo diario di apprendimento: cosa hai fatto, cosa è andato bene, cosa può migliorare e il tuo prossimo passo. Senza riassunto, la conversazione scompare. Il tuo docente non vede le tue conversazioni né il tuo diario.",
+  "help.student.chat.close.body": "Con un riepilogo, LEAP crea una riflessione nel tuo diario di apprendimento e poi la conversazione scompare. Se vuoi continuare più tardi, usa Salva nel diario di apprendimento: così la conversazione resta disponibile. Il tuo docente non vede le tue conversazioni né il tuo diario.",
   "help.student.explain.modes.title": "Due modi per esercitarti",
   "help.student.explain.modes.body": "Con Spiega tu, spieghi un concetto con parole tue e ricevi un feedback con un punteggio che vedi solo tu. Con Migliora questa spiegazione, cerchi gli errori in una spiegazione appena creata dall'IA e spieghi cosa non va.",
   "help.student.journal.achievements.title": "Bacheca dei premi",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Tipo: —",
   "filePurpose.kind.rubric": "Rubric",
   "help.personas.knowledge.title": "Cosa conosce questa persona?",
-  "help.personas.knowledge.body": "Scegli quali file del corso e documenti di progetto conosce questo personaggio. Nessuna selezione: seguirà solo le proprie istruzioni. Un valutatore legge integralmente i suoi documenti. Un personaggio non conosce mai i file di dati. Gli studenti non vedono questa scelta."
+  "help.personas.knowledge.body": "Scegli quali file del corso e documenti di progetto conosce questo personaggio. Nessuna selezione: seguirà solo le proprie istruzioni. Un valutatore legge integralmente i suoi documenti. Un personaggio non conosce mai i file di dati. Gli studenti non vedono questa scelta.",
+  "chat.saveJournal.button": "Salva nel diario di apprendimento",
+  "chat.saveJournal.saved": "Salvato nel tuo diario di apprendimento. Puoi continuare tranquillamente questa conversazione; se la salvi di nuovo più tardi, la riflessione riguarderà ciò che è stato aggiunto dopo.",
+  "chat.saveJournal.nothingNew": "Non c’è nulla di nuovo da quando hai salvato questa conversazione l’ultima volta.",
+  "chat.saveJournal.failed": "Non è stato possibile salvare nel tuo diario di apprendimento. Riprova più tardi.",
+  "chat.deleteSummaryAlreadySaved": "La conversazione è stata eliminata. Non c’era nulla di nuovo dal tuo ultimo salvataggio, quindi non è stata aggiunta alcuna riflessione extra al tuo diario di apprendimento.",
+  "help.student.chat.saveJournal.title": "Salva nel diario di apprendimento",
+  "help.student.chat.saveJournal.body": "LEAP inserisce nel tuo diario di apprendimento una riflessione su questa conversazione: cosa hai fatto, cosa è andato bene, cosa può migliorare e il tuo prossimo passo. La conversazione resta disponibile, così puoi continuare più tardi. Un salvataggio successivo riguarderà la nuova parte. Il tuo docente non vede il tuo diario."
 }

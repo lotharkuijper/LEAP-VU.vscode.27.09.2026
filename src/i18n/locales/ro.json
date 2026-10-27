@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Salvează rezumatul și șterge conversația",
   "chat.deleteWithoutSummary": "Doar șterge (fără intrare în jurnal)",
   "chat.deleteClosingText": "Ești pe cale să ștergi definitiv conversația „{title}”. Acest lucru nu poate fi anulat.",
-  "chat.deleteAskSummary": "Vrei ca asistentul de învățare să salveze mai întâi un rezumat formativ al acestei conversații în jurnalul tău de învățare? Poți vedea acest rezumat mai târziu pentru a reflecta asupra lui.",
+  "chat.deleteAskSummary": "Vrei ca asistentul de învățare să salveze mai întâi un rezumat formativ al acestei conversații în jurnalul tău de învățare? Dacă ai salvat deja conversația înainte, rezumatul va fi despre ce s-a adăugat după aceea.",
   "explain.title": "Eu explic",
   "explain.subtitle": "Alege un concept și exersează cu el: explică-l tu sau îmbunătățește o explicație. Vei primi feedback detaliat!",
   "explain.searchPlaceholder": "Caută un concept...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Atașamente",
   "help.student.chat.attachments.body": "Lipește o captură de ecran sau adaugă un fișier pentru a discuta despre el cu tutorul și scrie ce vrei să afli. LEAP nu păstrează atașamentele: dacă închizi chatul, ele dispar.",
   "help.student.chat.close.title": "Încheie conversația",
-  "help.student.chat.close.body": "Cu un rezumat, LEAP creează o reflecție în jurnalul tău de învățare: ce ai făcut, ce a mers bine, ce poate fi îmbunătățit și următorul tău pas. Fără rezumat, conversația dispare. Profesorul tău nu vede conversațiile tale și nici jurnalul tău.",
+  "help.student.chat.close.body": "Cu un rezumat, LEAP creează o reflecție în jurnalul tău de învățare, apoi conversația dispare. Dacă vrei să continui mai târziu, folosește Salvează în jurnalul de învățare: atunci conversația rămâne. Profesorul tău nu îți vede conversațiile și jurnalul.",
   "help.student.explain.modes.title": "Două moduri de exersare",
   "help.student.explain.modes.body": "La Explică tu, explici un concept cu propriile cuvinte și primești feedback cu un scor pe care doar tu îl vezi. La Îmbunătățește această explicație, cauți greșelile într-o explicație pe care AI tocmai a creat-o și explici ce nu este corect.",
   "help.student.journal.achievements.title": "Vitrina cu premii",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Tip: —",
   "filePurpose.kind.rubric": "Rubrică",
   "help.personas.knowledge.title": "Ce știe această persona?",
-  "help.personas.knowledge.body": "Alege ce fișiere de curs și documente de proiect cunoaște această persona. Nimic ales: își urmează doar propria instrucțiune. Un evaluator citește documentele sale în întregime. O persona nu cunoaște niciodată fișierele de date. Studenții nu văd această alegere."
+  "help.personas.knowledge.body": "Alege ce fișiere de curs și documente de proiect cunoaște această persona. Nimic ales: își urmează doar propria instrucțiune. Un evaluator citește documentele sale în întregime. O persona nu cunoaște niciodată fișierele de date. Studenții nu văd această alegere.",
+  "chat.saveJournal.button": "Salvează în jurnalul de învățare",
+  "chat.saveJournal.saved": "Salvat în jurnalul tău de învățare. Poți continua această conversație ca de obicei; dacă o salvezi din nou mai târziu, reflecția va fi despre ce s-a adăugat după aceea.",
+  "chat.saveJournal.nothingNew": "Nu este nimic nou de când ai salvat această conversație data trecută.",
+  "chat.saveJournal.failed": "Salvarea în jurnalul tău de învățare nu a reușit. Încearcă din nou mai târziu.",
+  "chat.deleteSummaryAlreadySaved": "Conversația a fost ștearsă. Nu era nimic nou de la salvarea anterioară, așa că nu a fost adăugată nicio reflecție suplimentară în jurnalul tău de învățare.",
+  "help.student.chat.saveJournal.title": "Salvează în jurnalul de învățare",
+  "help.student.chat.saveJournal.body": "LEAP pune o reflecție despre această conversație în jurnalul tău de învățare: ce ai făcut, ce a mers bine, ce poate fi îmbunătățit și următorul tău pas. Conversația rămâne, ca să poți continua mai târziu. Următoarea salvare va fi despre partea nouă. Profesorul tău nu îți vede jurnalul."
 }

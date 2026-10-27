@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Simpan ringkasan dan hapus percakapan",
   "chat.deleteWithoutSummary": "Hapus saja (tanpa entri jurnal)",
   "chat.deleteClosingText": "Kamu akan menghapus percakapan \"{title}\" secara permanen. Tindakan ini tidak dapat dibatalkan.",
-  "chat.deleteAskSummary": "Apakah kamu ingin asisten belajar terlebih dahulu menyimpan ringkasan formatif dari percakapan ini di jurnal belajarmu? Ringkasan itu bisa kamu lihat nanti untuk refleksi.",
+  "chat.deleteAskSummary": "Apakah kamu ingin asisten belajar terlebih dahulu menyimpan ringkasan formatif dari percakapan ini di jurnal belajarmu? Jika kamu sudah pernah menyimpan percakapan ini, ringkasannya akan mencakup hal-hal yang ditambahkan setelah itu.",
   "explain.title": "Saya Menjelaskan",
   "explain.subtitle": "Pilih sebuah konsep dan berlatih dengannya: jelaskan sendiri atau perbaiki sebuah penjelasan. Kamu akan mendapat umpan balik mendetail!",
   "explain.searchPlaceholder": "Cari konsep...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Lampiran",
   "help.student.chat.attachments.body": "Tempel tangkapan layar atau tambahkan file untuk membicarakannya dengan tutor, dan tuliskan apa yang ingin kamu ketahui. LEAP tidak menyimpan lampiran: jika kamu menutup chat, lampiran akan hilang.",
   "help.student.chat.close.title": "Akhiri percakapan",
-  "help.student.chat.close.body": "Dengan ringkasan, LEAP membuat refleksi di jurnal belajarmu: apa yang kamu lakukan, apa yang berjalan baik, apa yang bisa lebih baik, dan langkah berikutnya. Tanpa ringkasan, percakapan akan hilang. Dosenmu tidak melihat percakapan maupun jurnalmu.",
+  "help.student.chat.close.body": "Dengan ringkasan, LEAP membuat refleksi di jurnal belajarmu lalu percakapan akan hilang. Kalau nanti ingin melanjutkan, gunakan Simpan di jurnal belajar: percakapan akan tetap ada. Dosenmu tidak melihat percakapan maupun jurnalmu.",
   "help.student.explain.modes.title": "Dua cara berlatih",
   "help.student.explain.modes.body": "Pada Jelaskan sendiri, kamu menjelaskan sebuah konsep dengan kata-katamu sendiri dan mendapat umpan balik dengan skor yang hanya kamu lihat. Pada Perbaiki penjelasan ini, kamu mencari kesalahan dalam penjelasan yang baru dibuat AI dan menjelaskan apa yang tidak benar.",
   "help.student.journal.achievements.title": "Lemari penghargaan",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Jenis: —",
   "filePurpose.kind.rubric": "Rubrik",
   "help.personas.knowledge.title": "Apa yang diketahui persona ini?",
-  "help.personas.knowledge.body": "Pilih file kursus dan dokumen proyek mana yang diketahui persona ini. Tidak memilih apa pun: ia hanya mengikuti instruksinya sendiri. Penilai membaca dokumennya secara lengkap. Persona tidak pernah mengetahui file data. Mahasiswa tidak melihat pilihan ini."
+  "help.personas.knowledge.body": "Pilih file kursus dan dokumen proyek mana yang diketahui persona ini. Tidak memilih apa pun: ia hanya mengikuti instruksinya sendiri. Penilai membaca dokumennya secara lengkap. Persona tidak pernah mengetahui file data. Mahasiswa tidak melihat pilihan ini.",
+  "chat.saveJournal.button": "Simpan di jurnal belajar",
+  "chat.saveJournal.saved": "Tersimpan di jurnal belajarmu. Kamu bisa melanjutkan percakapan ini seperti biasa; jika nanti kamu menyimpannya lagi, refleksinya akan mencakup hal-hal yang ditambahkan setelah itu.",
+  "chat.saveJournal.nothingNew": "Tidak ada hal baru sejak terakhir kali kamu menyimpan percakapan ini.",
+  "chat.saveJournal.failed": "Gagal menyimpan di jurnal belajarmu. Coba lagi nanti.",
+  "chat.deleteSummaryAlreadySaved": "Percakapan telah dihapus. Tidak ada hal baru sejak penyimpanan terakhirmu, jadi tidak ada refleksi tambahan di jurnal belajarmu.",
+  "help.student.chat.saveJournal.title": "Simpan di jurnal belajar",
+  "help.student.chat.saveJournal.body": "LEAP menambahkan refleksi tentang percakapan ini ke jurnal belajarmu: apa yang kamu lakukan, apa yang berjalan baik, apa yang bisa diperbaiki, dan langkah berikutnya. Percakapan tetap ada, supaya kamu bisa melanjutkannya nanti. Penyimpanan berikutnya akan membahas bagian baru. Dosenmu tidak melihat jurnalmu."
 }

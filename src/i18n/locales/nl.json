@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Samenvatting opslaan en gesprek verwijderen",
   "chat.deleteWithoutSummary": "Alleen verwijderen (geen dagboekvermelding)",
   "chat.deleteClosingText": "Je staat op het punt het gesprek \"{title}\" definitief te verwijderen. Dit kan niet ongedaan worden gemaakt.",
-  "chat.deleteAskSummary": "Wil je dat de leerassistent eerst een formatieve samenvatting van dit gesprek opslaat in je leerdagboek? Die samenvatting kun je later bekijken om op te reflecteren.",
+  "chat.deleteAskSummary": "Wil je dat de leerassistent eerst een formatieve samenvatting van dit gesprek in je leerdagboek opslaat? Heb je het gesprek al eens opgeslagen, dan gaat de samenvatting over wat er daarna bij kwam.",
   "explain.title": "Ik Leg Uit",
   "explain.subtitle": "Kies een begrip en oefen ermee: leg het zelf uit of verbeter een uitleg. Je krijgt gedetailleerde feedback!",
   "explain.searchPlaceholder": "Zoek een begrip...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Bijlagen",
   "help.student.chat.attachments.body": "Plak een schermafbeelding of voeg een bestand toe om er met de tutor over te praten, en schrijf erbij wat je wilt weten. LEAP bewaart bijlagen niet: sluit je de chat, dan zijn ze weg.",
   "help.student.chat.close.title": "Gesprek afsluiten",
-  "help.student.chat.close.body": "Met een samenvatting maakt LEAP een reflectie in je leerdagboek: wat je deed, wat goed ging, wat beter kan en je volgende stap. Zonder samenvatting verdwijnt het gesprek. Je docent ziet je gesprekken en je dagboek niet.",
+  "help.student.chat.close.body": "Met een samenvatting maakt LEAP een reflectie in je leerdagboek en daarna verdwijnt het gesprek. Wil je later verder, gebruik dan Opslaan in leerdagboek: dan blijft het gesprek staan. Je docent ziet je gesprekken en je dagboek niet.",
   "help.student.explain.modes.title": "Twee manieren van oefenen",
   "help.student.explain.modes.body": "Bij Leg zelf uit leg je een begrip in eigen woorden uit en krijg je feedback met een score die alleen jij ziet. Bij Verbeter deze uitleg zoek je de fouten in een uitleg die AI net maakte en leg je uit wat er niet klopt.",
   "help.student.journal.achievements.title": "Prijzenkast",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Soort: —",
   "filePurpose.kind.rubric": "Rubric",
   "help.personas.knowledge.title": "Wat kent deze persona?",
-  "help.personas.knowledge.body": "Kies welke cursusbestanden en projectdocumenten deze persona kent. Niets gekozen: hij volgt alleen zijn eigen instructie. Een beoordelaar leest zijn documenten helemaal. Databestanden kent een persona nooit. Studenten zien deze keuze niet."
+  "help.personas.knowledge.body": "Kies welke cursusbestanden en projectdocumenten deze persona kent. Niets gekozen: hij volgt alleen zijn eigen instructie. Een beoordelaar leest zijn documenten helemaal. Databestanden kent een persona nooit. Studenten zien deze keuze niet.",
+  "chat.saveJournal.button": "Opslaan in leerdagboek",
+  "chat.saveJournal.saved": "Opgeslagen in je leerdagboek. Je kunt gewoon verder met dit gesprek; sla je later weer op, dan gaat de reflectie over wat er daarna bij kwam.",
+  "chat.saveJournal.nothingNew": "Er is niets nieuws sinds je dit gesprek de vorige keer opsloeg.",
+  "chat.saveJournal.failed": "Opslaan in je leerdagboek lukte niet. Probeer het later opnieuw.",
+  "chat.deleteSummaryAlreadySaved": "Het gesprek is verwijderd. Er was niets nieuws sinds je vorige opslag, dus er kwam geen extra reflectie in je leerdagboek.",
+  "help.student.chat.saveJournal.title": "Opslaan in leerdagboek",
+  "help.student.chat.saveJournal.body": "LEAP zet een reflectie op dit gesprek in je leerdagboek: wat je deed, wat goed ging, wat beter kan en je volgende stap. Het gesprek blijft staan, zodat je later verder kunt. Een volgende opslag gaat over het nieuwe deel. Je docent ziet je dagboek niet."
 }

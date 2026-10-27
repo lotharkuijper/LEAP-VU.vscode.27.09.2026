@@ -501,6 +501,31 @@ export function ChatPage() {
     setMessages([]);
   };
 
+  // Tussentijds opslaan in het leerdagboek (server: createChatReflection). Het
+  // gesprek blijft staan; de volgende opslag gaat over wat er daarna bij kwam.
+  const [savingJournal, setSavingJournal] = useState(false);
+  const handleSaveToJournal = async () => {
+    if (!currentConversationId) return;
+    setSavingJournal(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/chat/reflect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: session ? `Bearer ${session.access_token}` : '' },
+        body: JSON.stringify({ conversationId: currentConversationId, lang, courseId: activeCourse }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error || t('chat.saveJournal.failed'));
+      setPageNotice(result.status === 'nothingNew'
+        ? { kind: 'info', message: t('chat.saveJournal.nothingNew') }
+        : { kind: 'success', message: t('chat.saveJournal.saved') });
+    } catch (err: any) {
+      setPageNotice({ kind: 'error', message: String(err.message || t('chat.saveJournal.failed')) });
+    } finally {
+      setSavingJournal(false);
+    }
+  };
+
   const handleDelete = async (conversationId: string, generateSummary: boolean) => {
     setDeleting(true);
     try {
@@ -533,6 +558,8 @@ export function ChatPage() {
           kind: 'warning',
           message: t('chat.deleteSummaryFailed'),
         });
+      } else if (generateSummary && result.summaryAlreadySaved) {
+        setPageNotice({ kind: 'info', message: t('chat.deleteSummaryAlreadySaved') });
       }
     } catch (err: any) {
       setPageNotice({ kind: 'error', message: t('chat.deleteError', { error: String(err.message) }) });
@@ -1084,6 +1111,21 @@ export function ChatPage() {
                     <ChatGoalButton goal={chatGoal} disabled={!currentConversationId} onClick={() => setChatGoalEditing(v => !v)} />
                     <HelpTip id="student.chat.goal" always />
                   </span>
+                  {pageFeatures.visible('journal') && (
+                    <span className="flex flex-nowrap items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handleSaveToJournal}
+                        disabled={!currentConversationId || messages.length === 0 || savingJournal || loading}
+                        className="px-3 py-1.5 text-xs rounded-md border border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 flex items-center gap-1.5 whitespace-nowrap"
+                        data-testid="button-save-journal"
+                      >
+                        {savingJournal ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookText className="w-3.5 h-3.5" />}
+                        {t('chat.saveJournal.button')}
+                      </button>
+                      <HelpTip id="student.chat.saveJournal" always />
+                    </span>
+                  )}
                   <span className="flex flex-nowrap items-center gap-1">
                   <button
                     type="button"

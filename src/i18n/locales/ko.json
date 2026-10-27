@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "요약 저장 후 대화 삭제",
   "chat.deleteWithoutSummary": "삭제만 하기(학습일지 항목 없음)",
   "chat.deleteClosingText": "대화 \"{title}\"을(를) 영구적으로 삭제하려고 해. 이 작업은 되돌릴 수 없어.",
-  "chat.deleteAskSummary": "학습 도우미가 먼저 이 대화의 형성적 요약을 네 학습일지에 저장하길 원해? 나중에 그 요약을 보며 성찰할 수 있어.",
+  "chat.deleteAskSummary": "학습 도우미가 먼저 이 대화의 형성적 요약을 네 학습일지에 저장하게 할까? 이미 대화를 저장한 적이 있다면, 요약은 그 이후에 추가된 내용에 관한 거야.",
   "explain.title": "내가 설명하기",
   "explain.subtitle": "개념을 선택하고 연습해 봐: 직접 설명하거나 설명을 개선할 수 있어. 자세한 피드백을 받을 수 있어!",
   "explain.searchPlaceholder": "개념 검색...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "첨부 파일",
   "help.student.chat.attachments.body": "튜터와 이에 대해 이야기하려면 스크린샷을 붙여넣거나 파일을 추가하고, 무엇을 알고 싶은지 함께 적어. LEAP는 첨부 파일을 저장하지 않아. 채팅을 닫으면 사라져.",
   "help.student.chat.close.title": "대화 종료",
-  "help.student.chat.close.body": "요약을 만들면 LEAP가 학습 일지에 성찰을 생성해: 네가 한 일, 잘된 점, 더 나아질 수 있는 점, 다음 단계. 요약하지 않으면 대화는 사라져. 선생님은 네 대화와 일지를 볼 수 없어.",
+  "help.student.chat.close.body": "요약을 만들면 LEAP이 네 학습일지에 성찰을 남기고, 그다음 대화는 사라져. 나중에 계속하고 싶다면 학습일지에 저장을 사용해. 그러면 대화가 그대로 남아. 선생님은 네 대화와 일지를 볼 수 없어.",
   "help.student.explain.modes.title": "두 가지 연습 방법",
   "help.student.explain.modes.body": "직접 설명하기에서는 개념을 네 말로 설명하고, 너만 볼 수 있는 점수와 함께 피드백을 받아. 이 설명 개선하기에서는 AI가 방금 만든 설명에서 오류를 찾아 무엇이 맞지 않는지 설명해.",
   "help.student.journal.achievements.title": "수상함",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "종류: —",
   "filePurpose.kind.rubric": "루브릭",
   "help.personas.knowledge.title": "이 페르소나는 무엇을 알고 있나요?",
-  "help.personas.knowledge.body": "이 페르소나가 알고 있는 강의 파일과 프로젝트 문서를 선택해. 아무것도 선택하지 않으면 자신의 지시만 따라. 평가자는 자신의 문서를 모두 읽어. 페르소나는 데이터 파일을 절대 알지 못해. 학생들은 이 선택을 볼 수 없어."
+  "help.personas.knowledge.body": "이 페르소나가 알고 있는 강의 파일과 프로젝트 문서를 선택해. 아무것도 선택하지 않으면 자신의 지시만 따라. 평가자는 자신의 문서를 모두 읽어. 페르소나는 데이터 파일을 절대 알지 못해. 학생들은 이 선택을 볼 수 없어.",
+  "chat.saveJournal.button": "학습일지에 저장",
+  "chat.saveJournal.saved": "네 학습일지에 저장했어. 이 대화는 계속 이어갈 수 있어. 나중에 다시 저장하면, 그 이후에 추가된 내용에 대한 성찰이 저장돼.",
+  "chat.saveJournal.nothingNew": "지난번에 이 대화를 저장한 이후 새 내용이 없어.",
+  "chat.saveJournal.failed": "학습일지에 저장하지 못했어. 나중에 다시 시도해.",
+  "chat.deleteSummaryAlreadySaved": "대화가 삭제됐어. 지난번 저장 이후 새 내용이 없어서, 학습일지에 추가 성찰은 남지 않았어.",
+  "help.student.chat.saveJournal.title": "학습일지에 저장",
+  "help.student.chat.saveJournal.body": "LEAP은 이 대화에 대한 성찰을 네 학습일지에 남겨: 네가 무엇을 했는지, 무엇이 잘됐는지, 무엇을 더 잘할 수 있는지, 다음 단계는 무엇인지. 대화는 그대로 남아서 나중에 계속할 수 있어. 다음에 저장하면 새로 추가된 부분에 대한 내용이 저장돼. 선생님은 네 일지를 볼 수 없어."
 }

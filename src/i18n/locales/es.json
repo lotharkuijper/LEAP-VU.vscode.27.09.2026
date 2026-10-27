@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Guardar resumen y eliminar conversación",
   "chat.deleteWithoutSummary": "Solo eliminar (sin entrada en el diario)",
   "chat.deleteClosingText": "Estás a punto de eliminar definitivamente la conversación \"{title}\". Esta acción no se puede deshacer.",
-  "chat.deleteAskSummary": "¿Quieres que el asistente de aprendizaje guarde primero un resumen formativo de esta conversación en tu diario de aprendizaje? Podrás ver ese resumen más tarde para reflexionar.",
+  "chat.deleteAskSummary": "¿Quieres que el asistente de aprendizaje guarde primero un resumen formativo de esta conversación en tu diario de aprendizaje? Si ya has guardado la conversación antes, el resumen tratará sobre lo que se añadió después.",
   "explain.title": "Yo explico",
   "explain.subtitle": "Elige un concepto y practica con él: explícalo tú mismo o mejora una explicación. ¡Recibirás comentarios detallados!",
   "explain.searchPlaceholder": "Busca un concepto...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Archivos adjuntos",
   "help.student.chat.attachments.body": "Pega una captura de pantalla o añade un archivo para hablar de ello con el tutor, y escribe qué quieres saber. LEAP no guarda los archivos adjuntos: si cierras el chat, desaparecen.",
   "help.student.chat.close.title": "Cerrar conversación",
-  "help.student.chat.close.body": "Con un resumen, LEAP crea una reflexión en tu diario de aprendizaje: qué hiciste, qué salió bien, qué puede mejorar y tu siguiente paso. Sin resumen, la conversación desaparece. Tu profesor no ve tus conversaciones ni tu diario.",
+  "help.student.chat.close.body": "Con un resumen, LEAP crea una reflexión en tu diario de aprendizaje y después la conversación desaparece. Si quieres continuar más tarde, usa Guardar en el diario de aprendizaje: así la conversación se mantiene. Tu docente no ve tus conversaciones ni tu diario.",
   "help.student.explain.modes.title": "Dos formas de practicar",
   "help.student.explain.modes.body": "En Explícalo tú mismo explicas un concepto con tus propias palabras y recibes comentarios con una puntuación que solo tú ves. En Mejora esta explicación buscas los errores en una explicación que la IA acaba de crear y explicas qué no encaja.",
   "help.student.journal.achievements.title": "Vitrina de premios",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Tipo: —",
   "filePurpose.kind.rubric": "Rúbrica",
   "help.personas.knowledge.title": "¿Qué sabe esta persona?",
-  "help.personas.knowledge.body": "Elige qué archivos del curso y documentos del proyecto conoce esta persona. Si no eliges nada: solo seguirá sus propias instrucciones. Un evaluador lee sus documentos por completo. Una persona nunca conoce los archivos de datos. Los estudiantes no ven esta opción."
+  "help.personas.knowledge.body": "Elige qué archivos del curso y documentos del proyecto conoce esta persona. Si no eliges nada: solo seguirá sus propias instrucciones. Un evaluador lee sus documentos por completo. Una persona nunca conoce los archivos de datos. Los estudiantes no ven esta opción.",
+  "chat.saveJournal.button": "Guardar en el diario de aprendizaje",
+  "chat.saveJournal.saved": "Guardado en tu diario de aprendizaje. Puedes seguir con esta conversación; si vuelves a guardarla más tarde, la reflexión tratará sobre lo que se añadió después.",
+  "chat.saveJournal.nothingNew": "No hay nada nuevo desde la última vez que guardaste esta conversación.",
+  "chat.saveJournal.failed": "No se pudo guardar en tu diario de aprendizaje. Inténtalo de nuevo más tarde.",
+  "chat.deleteSummaryAlreadySaved": "La conversación se ha eliminado. No había nada nuevo desde la última vez que la guardaste, así que no se añadió ninguna reflexión extra a tu diario de aprendizaje.",
+  "help.student.chat.saveJournal.title": "Guardar en el diario de aprendizaje",
+  "help.student.chat.saveJournal.body": "LEAP incluye una reflexión sobre esta conversación en tu diario de aprendizaje: qué hiciste, qué salió bien, qué puede mejorar y tu siguiente paso. La conversación se mantiene, para que puedas continuar más tarde. La próxima vez que guardes, será sobre la parte nueva. Tu docente no ve tu diario."
 }

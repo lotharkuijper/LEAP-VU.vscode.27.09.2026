@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "儲存摘要並刪除對話",
   "chat.deleteWithoutSummary": "只刪除（唔建立日誌記錄）",
   "chat.deleteClosingText": "你即將永久刪除對話「{title}」。呢個動作無法復原。",
-  "chat.deleteAskSummary": "你想唔想學習助理先將呢段對話嘅形成性摘要儲存到你嘅學習日誌？你之後可以查看呢份摘要作反思。",
+  "chat.deleteAskSummary": "你想唔想學習助手先將呢次對話嘅形成性摘要儲存喺你嘅學習日誌？如果你之前已經儲存過呢次對話，摘要就會涵蓋之後新增嘅內容。",
   "explain.title": "我嚟解釋",
   "explain.subtitle": "揀一個概念嚟練習：自己解釋，或者改善一段解釋。你會收到詳細回饋！",
   "explain.searchPlaceholder": "搜尋概念...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "附件",
   "help.student.chat.attachments.body": "貼上截圖或者加入檔案，畀你同導師討論，並寫低你想知道啲乜。LEAP 唔會儲存附件：你一關閉聊天，附件就會消失。",
   "help.student.chat.close.title": "結束對話",
-  "help.student.chat.close.body": "有摘要嘅話，LEAP 會喺你嘅學習日記建立一段反思：你做咗啲乜、邊啲做得好、邊啲可以做得更好，同埋下一步。冇摘要嘅話，對話就會消失。你嘅老師唔會見到你嘅對話同日記。",
+  "help.student.chat.close.body": "有咗摘要，LEAP 會喺你嘅學習日誌建立一段反思，之後對話就會消失。如果你之後想繼續，用「儲存到學習日誌」：咁對話就會保留。你嘅老師睇唔到你嘅對話同日誌。",
   "help.student.explain.modes.title": "兩種練習方式",
   "help.student.explain.modes.body": "喺「自己解釋」入面，你用自己嘅說話解釋一個概念，然後收到回饋同一個只有你見到嘅分數。喺「改善呢段解釋」入面，你要搵出 AI 啱啱寫嘅解釋入面嘅錯誤，並解釋邊度唔啱。",
   "help.student.journal.achievements.title": "獎勵櫃",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "類型：—",
   "filePurpose.kind.rubric": "評分準則",
   "help.personas.knowledge.title": "呢個 persona 識啲咩？",
-  "help.personas.knowledge.body": "揀選呢個 persona 知道邊啲課程檔案同項目文件。冇揀任何嘢：佢只會跟返佢自己嘅指示。評核員會完整閱讀佢嘅文件。Persona 永遠唔會知道數據檔案。學生睇唔到呢個選擇。"
+  "help.personas.knowledge.body": "揀選呢個 persona 知道邊啲課程檔案同項目文件。冇揀任何嘢：佢只會跟返佢自己嘅指示。評核員會完整閱讀佢嘅文件。Persona 永遠唔會知道數據檔案。學生睇唔到呢個選擇。",
+  "chat.saveJournal.button": "儲存到學習日誌",
+  "chat.saveJournal.saved": "已儲存到你嘅學習日誌。你可以繼續呢次對話；如果之後再儲存，反思就會涵蓋之後新增嘅內容。",
+  "chat.saveJournal.nothingNew": "自從你上次儲存呢次對話之後，冇新內容。",
+  "chat.saveJournal.failed": "儲存到你嘅學習日誌失敗。請稍後再試。",
+  "chat.deleteSummaryAlreadySaved": "對話已刪除。自從你上次儲存之後冇新內容，所以你嘅學習日誌冇新增反思。",
+  "help.student.chat.saveJournal.title": "儲存到學習日誌",
+  "help.student.chat.saveJournal.body": "LEAP 會將呢次對話嘅反思放到你嘅學習日誌：你做咗啲咩、邊啲做得好、邊啲可以做得更好，同埋你下一步。對話會保留，方便你之後繼續。下一次儲存會涵蓋新嘅部分。你嘅老師睇唔到你嘅日誌。"
 }

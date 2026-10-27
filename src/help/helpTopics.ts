@@ -68,6 +68,7 @@ export const HELP_TOPICS = [
   'student.chat.workingOn',
   'student.chat.attachments',
   'student.chat.close',
+  'student.chat.saveJournal',
   'student.explain.modes',
   'student.journal.achievements',
   'student.myData.delete',

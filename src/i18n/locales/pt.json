@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Guardar resumo e eliminar conversa",
   "chat.deleteWithoutSummary": "Eliminar apenas (sem entrada no diário)",
   "chat.deleteClosingText": "Estás prestes a eliminar definitivamente a conversa \"{title}\". Isto não pode ser anulado.",
-  "chat.deleteAskSummary": "Queres que o assistente de aprendizagem guarde primeiro um resumo formativo desta conversa no teu diário de aprendizagem? Poderás consultar esse resumo mais tarde para refletir.",
+  "chat.deleteAskSummary": "Queres que o assistente de aprendizagem guarde primeiro um resumo formativo desta conversa no teu diário de aprendizagem? Se já guardaste a conversa antes, o resumo será sobre o que foi acrescentado depois disso.",
   "explain.title": "Eu Explico",
   "explain.subtitle": "Escolhe um conceito e pratica com ele: explica-o tu mesmo ou melhora uma explicação. Vais receber feedback detalhado!",
   "explain.searchPlaceholder": "Procura um conceito...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Anexos",
   "help.student.chat.attachments.body": "Cola uma captura de ecrã ou adiciona um ficheiro para falares sobre ele com o tutor, e escreve o que queres saber. A LEAP não guarda anexos: se fechares o chat, eles desaparecem.",
   "help.student.chat.close.title": "Encerrar conversa",
-  "help.student.chat.close.body": "Com um resumo, a LEAP cria uma reflexão no teu diário de aprendizagem: o que fizeste, o que correu bem, o que pode melhorar e o teu próximo passo. Sem resumo, a conversa desaparece. O teu professor não vê as tuas conversas nem o teu diário.",
+  "help.student.chat.close.body": "Com um resumo, o LEAP cria uma reflexão no teu diário de aprendizagem e depois a conversa desaparece. Se quiseres continuar mais tarde, usa Guardar no diário de aprendizagem: assim a conversa mantém-se. O teu docente não vê as tuas conversas nem o teu diário.",
   "help.student.explain.modes.title": "Duas formas de praticar",
   "help.student.explain.modes.body": "Em Explica tu mesmo, explicas um conceito por palavras tuas e recebes feedback com uma pontuação que só tu vês. Em Melhora esta explicação, procuras os erros numa explicação que a IA acabou de criar e explicas o que não está correto.",
   "help.student.journal.achievements.title": "Vitrine de prémios",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Tipo: —",
   "filePurpose.kind.rubric": "Rubrica",
   "help.personas.knowledge.title": "O que sabe esta persona?",
-  "help.personas.knowledge.body": "Escolhe que ficheiros da disciplina e documentos do projeto esta persona conhece. Nada escolhido: ela segue apenas a sua própria instrução. Um avaliador lê os seus documentos na íntegra. Uma persona nunca conhece ficheiros de dados. Os estudantes não veem esta escolha."
+  "help.personas.knowledge.body": "Escolhe que ficheiros da disciplina e documentos do projeto esta persona conhece. Nada escolhido: ela segue apenas a sua própria instrução. Um avaliador lê os seus documentos na íntegra. Uma persona nunca conhece ficheiros de dados. Os estudantes não veem esta escolha.",
+  "chat.saveJournal.button": "Guardar no diário de aprendizagem",
+  "chat.saveJournal.saved": "Guardado no teu diário de aprendizagem. Podes continuar esta conversa normalmente; se guardares novamente mais tarde, a reflexão será sobre o que foi acrescentado depois disso.",
+  "chat.saveJournal.nothingNew": "Não há nada de novo desde a última vez que guardaste esta conversa.",
+  "chat.saveJournal.failed": "Não foi possível guardar no teu diário de aprendizagem. Tenta novamente mais tarde.",
+  "chat.deleteSummaryAlreadySaved": "A conversa foi eliminada. Não havia nada de novo desde a vez anterior em que guardaste, por isso não foi acrescentada nenhuma reflexão extra ao teu diário de aprendizagem.",
+  "help.student.chat.saveJournal.title": "Guardar no diário de aprendizagem",
+  "help.student.chat.saveJournal.body": "O LEAP coloca uma reflexão sobre esta conversa no teu diário de aprendizagem: o que fizeste, o que correu bem, o que pode melhorar e o teu próximo passo. A conversa mantém-se, para que possas continuar mais tarde. Um próximo registo será sobre a parte nova. O teu docente não vê o teu diário."
 }

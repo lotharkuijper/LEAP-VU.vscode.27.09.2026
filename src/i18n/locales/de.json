@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Zusammenfassung speichern und Gespräch löschen",
   "chat.deleteWithoutSummary": "Nur löschen (kein Tagebucheintrag)",
   "chat.deleteClosingText": "Du bist dabei, das Gespräch \"{title}\" endgültig zu löschen. Dies kann nicht rückgängig gemacht werden.",
-  "chat.deleteAskSummary": "Möchtest du, dass der Lernassistent zuerst eine formative Zusammenfassung dieses Gesprächs in deinem Lerntagebuch speichert? Diese Zusammenfassung kannst du später ansehen, um darüber zu reflektieren.",
+  "chat.deleteAskSummary": "Möchtest du, dass der Lernassistent zuerst eine formative Zusammenfassung dieses Gesprächs in deinem Lerntagebuch speichert? Wenn du das Gespräch schon einmal gespeichert hast, bezieht sich die Zusammenfassung auf das, was danach hinzugekommen ist.",
   "explain.title": "Ich erkläre",
   "explain.subtitle": "Wähle einen Begriff und übe damit: Erkläre ihn selbst oder verbessere eine Erklärung. Du erhältst detailliertes Feedback!",
   "explain.searchPlaceholder": "Suche nach einem Begriff...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Anhänge",
   "help.student.chat.attachments.body": "Füge einen Screenshot ein oder lade eine Datei hoch, um mit dem Tutor darüber zu sprechen, und schreibe dazu, was du wissen möchtest. LEAP speichert Anhänge nicht: Schließt du den Chat, sind sie weg.",
   "help.student.chat.close.title": "Gespräch abschließen",
-  "help.student.chat.close.body": "Mit einer Zusammenfassung erstellt LEAP eine Reflexion in deinem Lerntagebuch: was du gemacht hast, was gut lief, was besser werden kann und dein nächster Schritt. Ohne Zusammenfassung verschwindet das Gespräch. Dein Dozent sieht weder deine Gespräche noch dein Tagebuch.",
+  "help.student.chat.close.body": "Mit einer Zusammenfassung erstellt LEAP eine Reflexion in deinem Lerntagebuch und danach verschwindet das Gespräch. Möchtest du später weitermachen, nutze „Im Lerntagebuch speichern“: Dann bleibt das Gespräch erhalten. Deine Lehrperson sieht deine Gespräche und dein Tagebuch nicht.",
   "help.student.explain.modes.title": "Zwei Arten zu üben",
   "help.student.explain.modes.body": "Bei Selbst erklären erklärst du einen Begriff in eigenen Worten und erhältst Feedback mit einer Bewertung, die nur du siehst. Bei Diese Erklärung verbessern suchst du die Fehler in einer Erklärung, die die KI gerade erstellt hat, und erklärst, was daran nicht stimmt.",
   "help.student.journal.achievements.title": "Vitrine",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Art: —",
   "filePurpose.kind.rubric": "Rubric",
   "help.personas.knowledge.title": "Was kennt diese Persona?",
-  "help.personas.knowledge.body": "Wähle aus, welche Kursdateien und Projektdokumente diese Persona kennt. Nichts ausgewählt: Sie folgt nur ihrer eigenen Anweisung. Ein Beurteiler liest seine Dokumente vollständig. Datendateien kennt eine Persona nie. Studierende sehen diese Auswahl nicht."
+  "help.personas.knowledge.body": "Wähle aus, welche Kursdateien und Projektdokumente diese Persona kennt. Nichts ausgewählt: Sie folgt nur ihrer eigenen Anweisung. Ein Beurteiler liest seine Dokumente vollständig. Datendateien kennt eine Persona nie. Studierende sehen diese Auswahl nicht.",
+  "chat.saveJournal.button": "Im Lerntagebuch speichern",
+  "chat.saveJournal.saved": "In deinem Lerntagebuch gespeichert. Du kannst einfach mit diesem Gespräch weitermachen; wenn du später wieder speicherst, bezieht sich die Reflexion auf das, was danach hinzugekommen ist.",
+  "chat.saveJournal.nothingNew": "Seit du dieses Gespräch das letzte Mal gespeichert hast, gibt es nichts Neues.",
+  "chat.saveJournal.failed": "Das Speichern in deinem Lerntagebuch hat nicht funktioniert. Versuch es später erneut.",
+  "chat.deleteSummaryAlreadySaved": "Das Gespräch wurde gelöscht. Seit deiner letzten Speicherung gab es nichts Neues, daher wurde keine zusätzliche Reflexion in deinem Lerntagebuch erstellt.",
+  "help.student.chat.saveJournal.title": "Im Lerntagebuch speichern",
+  "help.student.chat.saveJournal.body": "LEAP erstellt eine Reflexion zu diesem Gespräch in deinem Lerntagebuch: was du gemacht hast, was gut gelaufen ist, was besser werden kann und dein nächster Schritt. Das Gespräch bleibt erhalten, sodass du später weitermachen kannst. Eine nächste Speicherung bezieht sich auf den neuen Teil. Deine Lehrperson sieht dein Tagebuch nicht."
 }

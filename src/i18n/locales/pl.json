@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Zapisz podsumowanie i usuń rozmowę",
   "chat.deleteWithoutSummary": "Tylko usuń (bez wpisu w dzienniku nauki)",
   "chat.deleteClosingText": "Za chwilę trwale usuniesz rozmowę „{title}”. Tego nie można cofnąć.",
-  "chat.deleteAskSummary": "Czy chcesz, aby asystent nauki najpierw zapisał formatywne podsumowanie tej rozmowy w twoim dzienniku nauki? To podsumowanie możesz później przejrzeć, aby się nad nim zastanowić.",
+  "chat.deleteAskSummary": "Czy chcesz, aby asystent nauki najpierw zapisał formatywne podsumowanie tej rozmowy w twoim dzienniku nauki? Jeśli rozmowa była już kiedyś zapisana, podsumowanie obejmie to, co doszło później.",
   "explain.title": "Ja wyjaśniam",
   "explain.subtitle": "Wybierz pojęcie i poćwicz z nim: wyjaśnij je samodzielnie albo popraw wyjaśnienie. Otrzymasz szczegółową informację zwrotną!",
   "explain.searchPlaceholder": "Szukaj pojęcia...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Załączniki",
   "help.student.chat.attachments.body": "Wklej zrzut ekranu albo dodaj plik, aby porozmawiać o nim z tutorem, i dopisz, czego chcesz się dowiedzieć. LEAP nie przechowuje załączników: gdy zamkniesz czat, znikną.",
   "help.student.chat.close.title": "Zakończ rozmowę",
-  "help.student.chat.close.body": "Dzięki podsumowaniu LEAP utworzy refleksję w twoim dzienniku nauki: co zrobiłeś, co poszło dobrze, co można poprawić i jaki jest twój następny krok. Bez podsumowania rozmowa zniknie. Twój wykładowca nie widzi twoich rozmów ani dziennika.",
+  "help.student.chat.close.body": "Dzięki podsumowaniu LEAP tworzy refleksję w twoim dzienniku nauki, a potem rozmowa znika. Jeśli chcesz kontynuować później, użyj opcji Zapisz w dzienniku nauki: wtedy rozmowa pozostanie. Twój nauczyciel nie widzi twoich rozmów ani dziennika.",
   "help.student.explain.modes.title": "Dwa sposoby ćwiczenia",
   "help.student.explain.modes.body": "W trybie Wyjaśnij samodzielnie tłumaczysz pojęcie własnymi słowami i otrzymujesz informację zwrotną z wynikiem, który widzisz tylko ty. W trybie Popraw to wyjaśnienie szukasz błędów w wyjaśnieniu, które właśnie stworzyła AI, i wyjaśniasz, co się nie zgadza.",
   "help.student.journal.achievements.title": "Gablota z nagrodami",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Typ: —",
   "filePurpose.kind.rubric": "Kryteria oceny",
   "help.personas.knowledge.title": "Co wie ta persona?",
-  "help.personas.knowledge.body": "Wybierz, które pliki kursu i dokumenty projektu zna ta persona. Nic nie wybrano: będzie postępować tylko zgodnie z własną instrukcją. Oceniający czyta swoje dokumenty w całości. Persona nigdy nie zna plików danych. Studenci nie widzą tego wyboru."
+  "help.personas.knowledge.body": "Wybierz, które pliki kursu i dokumenty projektu zna ta persona. Nic nie wybrano: będzie postępować tylko zgodnie z własną instrukcją. Oceniający czyta swoje dokumenty w całości. Persona nigdy nie zna plików danych. Studenci nie widzą tego wyboru.",
+  "chat.saveJournal.button": "Zapisz w dzienniku nauki",
+  "chat.saveJournal.saved": "Zapisano w twoim dzienniku nauki. Możesz po prostu kontynuować tę rozmowę; jeśli zapiszesz ją później ponownie, refleksja obejmie to, co doszło później.",
+  "chat.saveJournal.nothingNew": "Od czasu, gdy ostatnio zapisałeś/zapisałaś tę rozmowę, nie ma nic nowego.",
+  "chat.saveJournal.failed": "Nie udało się zapisać w twoim dzienniku nauki. Spróbuj ponownie później.",
+  "chat.deleteSummaryAlreadySaved": "Rozmowa została usunięta. Od poprzedniego zapisu nie było nic nowego, więc w twoim dzienniku nauki nie pojawiła się dodatkowa refleksja.",
+  "help.student.chat.saveJournal.title": "Zapisz w dzienniku nauki",
+  "help.student.chat.saveJournal.body": "LEAP umieszcza refleksję na temat tej rozmowy w twoim dzienniku nauki: co zrobiłeś/zrobiłaś, co poszło dobrze, co można poprawić i jaki jest twój następny krok. Rozmowa pozostaje, aby można było kontynuować później. Kolejny zapis będzie dotyczyć nowej części. Twój nauczyciel nie widzi twojego dziennika."
 }

@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "要約を保存して会話を削除",
   "chat.deleteWithoutSummary": "削除のみ（日記への記録なし）",
   "chat.deleteClosingText": "会話「{title}」を完全に削除しようとしています。これは元に戻せません。",
-  "chat.deleteAskSummary": "学習アシスタントに、まずこの会話の形成的な要約を学習日記に保存してほしい？その要約は後で見返して振り返ることができます。",
+  "chat.deleteAskSummary": "学習アシスタントに、この会話の形成的な要約をまず学習日誌に保存してほしい？ 以前にこの会話を保存したことがある場合、要約はその後に追加された内容についてのものになるよ。",
   "explain.title": "私が説明する",
   "explain.subtitle": "概念を選んで練習しよう：自分で説明するか、説明を改善してみて。詳しいフィードバックがもらえるよ！",
   "explain.searchPlaceholder": "概念を検索...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "添付ファイル",
   "help.student.chat.attachments.body": "スクリーンショットを貼り付けるかファイルを追加して、チューターとそれについて話そう。知りたいことも書いてね。LEAPは添付ファイルを保存しないよ：チャットを閉じると消える。",
   "help.student.chat.close.title": "会話を終了",
-  "help.student.chat.close.body": "要約を作成すると、LEAPが学習日記に振り返りを作成するよ：何をしたか、うまくいったこと、改善できること、次のステップ。要約しない場合、会話は消える。先生にはあなたの会話も日記も見えないよ。",
+  "help.student.chat.close.body": "要約を作成すると、LEAP が学習日誌にリフレクションを作成し、その後この会話は消えるよ。後で続きをしたい場合は、［学習日誌に保存］を使ってね。その場合、会話は残るよ。先生はあなたの会話や日誌を見ることはできないよ。",
   "help.student.explain.modes.title": "2つの練習方法",
   "help.student.explain.modes.body": "「自分で説明」では、概念を自分の言葉で説明し、自分だけが見られるスコア付きのフィードバックを受け取るよ。「この説明を改善」では、AIが作ったばかりの説明にある誤りを探し、何が正しくないかを説明するよ。",
   "help.student.journal.achievements.title": "賞品棚",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "種類: —",
   "filePurpose.kind.rubric": "ルーブリック",
   "help.personas.knowledge.title": "このペルソナは何を知っていますか？",
-  "help.personas.knowledge.body": "このペルソナが知っているコースファイルとプロジェクト文書を選択してください。何も選択しない場合：ペルソナは自分自身の指示のみに従います。評価者は自分の文書をすべて読みます。ペルソナがデータファイルを知ることはありません。学生にはこの選択は表示されません。"
+  "help.personas.knowledge.body": "このペルソナが知っているコースファイルとプロジェクト文書を選択してください。何も選択しない場合：ペルソナは自分自身の指示のみに従います。評価者は自分の文書をすべて読みます。ペルソナがデータファイルを知ることはありません。学生にはこの選択は表示されません。",
+  "chat.saveJournal.button": "学習日誌に保存",
+  "chat.saveJournal.saved": "学習日誌に保存したよ。この会話はそのまま続けられるよ。後でまた保存すると、リフレクションはその後に追加された内容についてのものになるよ。",
+  "chat.saveJournal.nothingNew": "前回この会話を保存してから、新しい内容はないよ。",
+  "chat.saveJournal.failed": "学習日誌に保存できなかったよ。後でもう一度試してね。",
+  "chat.deleteSummaryAlreadySaved": "会話は削除されたよ。前回の保存以降に新しい内容はなかったので、学習日誌に追加のリフレクションは作成されなかったよ。",
+  "help.student.chat.saveJournal.title": "学習日誌に保存",
+  "help.student.chat.saveJournal.body": "LEAP はこの会話についてのリフレクションを学習日誌に記録するよ。内容は、あなたがしたこと、うまくいったこと、改善できること、次のステップだよ。会話は残るので、後で続きをできるよ。次に保存すると、新しい部分について記録されるよ。先生はあなたの日誌を見ることはできないよ。"
 }

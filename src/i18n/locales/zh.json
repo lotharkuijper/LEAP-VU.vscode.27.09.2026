@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "保存摘要并删除对话",
   "chat.deleteWithoutSummary": "仅删除（不添加学习日志条目）",
   "chat.deleteClosingText": "你即将永久删除对话“{title}”。此操作无法撤销。",
-  "chat.deleteAskSummary": "你想让学习助手先将此对话的形成性摘要保存到你的学习日志中吗？你之后可以查看该摘要以进行反思。",
+  "chat.deleteAskSummary": "你想让学习助手先把这次对话的形成性总结保存到你的学习日志中吗？如果你之前已经保存过这次对话，摘要将涵盖之后新增的内容。",
   "explain.title": "我来解释",
   "explain.subtitle": "选择一个概念来练习：自己解释，或改进一段解释。你会收到详细反馈！",
   "explain.searchPlaceholder": "搜索概念...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "附件",
   "help.student.chat.attachments.body": "粘贴屏幕截图或添加文件，以便和导师讨论，并写明你想知道什么。LEAP 不会保存附件：关闭聊天后，它们就会消失。",
   "help.student.chat.close.title": "结束对话",
-  "help.student.chat.close.body": "通过摘要，LEAP 会在你的学习日记中生成一条反思：你做了什么、哪些做得好、哪些可以改进，以及你的下一步。没有摘要，对话就会消失。你的教师看不到你的对话和日记。",
+  "help.student.chat.close.body": "通过摘要，LEAP 会在你的学习日志中生成一段反思，然后对话会消失。如果你之后想继续，请使用“保存到学习日志”：这样对话会保留下来。你的老师看不到你的对话和日志。",
   "help.student.explain.modes.title": "两种练习方式",
   "help.student.explain.modes.body": "在“自己解释”中，你用自己的话解释一个概念，并获得反馈和只有你能看到的分数。在“改进这段解释”中，你找出 AI 刚生成的解释中的错误，并说明哪里不对。",
   "help.student.journal.achievements.title": "奖品柜",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "类型：—",
   "filePurpose.kind.rubric": "评分量规",
   "help.personas.knowledge.title": "此角色了解什么？",
-  "help.personas.knowledge.body": "选择此角色了解哪些课程文件和项目文档。未选择任何内容：它只会遵循自己的指令。评审者会完整阅读其文档。角色永远不了解数据文件。学生看不到此选择。"
+  "help.personas.knowledge.body": "选择此角色了解哪些课程文件和项目文档。未选择任何内容：它只会遵循自己的指令。评审者会完整阅读其文档。角色永远不了解数据文件。学生看不到此选择。",
+  "chat.saveJournal.button": "保存到学习日志",
+  "chat.saveJournal.saved": "已保存到你的学习日志。你可以继续这次对话；如果之后再次保存，反思将涵盖之后新增的内容。",
+  "chat.saveJournal.nothingNew": "自从你上次保存这次对话以来，没有新的内容。",
+  "chat.saveJournal.failed": "保存到你的学习日志失败。请稍后重试。",
+  "chat.deleteSummaryAlreadySaved": "对话已删除。自从你上次保存以来没有新的内容，所以你的学习日志中没有新增反思。",
+  "help.student.chat.saveJournal.title": "保存到学习日志",
+  "help.student.chat.saveJournal.body": "LEAP 会把这次对话的反思写入你的学习日志：你做了什么、哪些做得好、哪些可以改进，以及你的下一步。对话会保留，这样你之后可以继续。下一次保存会针对新的部分。你的老师看不到你的日志。"
 }

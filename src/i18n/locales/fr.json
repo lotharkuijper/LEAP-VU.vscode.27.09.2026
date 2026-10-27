@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Enregistrer le résumé et supprimer la conversation",
   "chat.deleteWithoutSummary": "Supprimer uniquement (pas d’entrée dans le journal d’apprentissage)",
   "chat.deleteClosingText": "Tu es sur le point de supprimer définitivement la conversation \"{title}\". Cette action est irréversible.",
-  "chat.deleteAskSummary": "Veux-tu que l’assistant d’apprentissage enregistre d’abord un résumé formatif de cette conversation dans ton journal d’apprentissage ? Tu pourras consulter ce résumé plus tard pour y réfléchir.",
+  "chat.deleteAskSummary": "Veux-tu que l’assistant d’apprentissage enregistre d’abord un résumé formatif de cette conversation dans ton journal d’apprentissage ? Si tu as déjà enregistré la conversation, le résumé portera sur ce qui s’est ajouté depuis.",
   "explain.title": "J’explique",
   "explain.subtitle": "Choisis une notion et entraîne-toi avec : explique-la toi-même ou améliore une explication. Tu recevras un retour détaillé !",
   "explain.searchPlaceholder": "Rechercher une notion...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Pièces jointes",
   "help.student.chat.attachments.body": "Colle une capture d’écran ou ajoute un fichier pour en parler avec le tuteur, et indique ce que tu veux savoir. LEAP ne conserve pas les pièces jointes : si tu fermes le chat, elles disparaissent.",
   "help.student.chat.close.title": "Terminer la conversation",
-  "help.student.chat.close.body": "Avec un résumé, LEAP crée une réflexion dans ton journal d’apprentissage : ce que tu as fait, ce qui s’est bien passé, ce qui peut être amélioré et ta prochaine étape. Sans résumé, la conversation disparaît. Ton enseignant ne voit ni tes conversations ni ton journal.",
+  "help.student.chat.close.body": "Avec un résumé, LEAP crée une réflexion dans ton journal d’apprentissage, puis la conversation disparaît. Si tu veux continuer plus tard, utilise Enregistrer dans le journal d’apprentissage : la conversation restera disponible. Ton enseignant ne voit ni tes conversations ni ton journal.",
   "help.student.explain.modes.title": "Deux façons de s’entraîner",
   "help.student.explain.modes.body": "Avec Explique toi-même, tu expliques une notion avec tes propres mots et tu reçois un retour avec un score que toi seul vois. Avec Améliore cette explication, tu cherches les erreurs dans une explication que l’IA vient de produire et tu expliques ce qui ne va pas.",
   "help.student.journal.achievements.title": "Vitrine de récompenses",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Type : —",
   "filePurpose.kind.rubric": "Rubrique",
   "help.personas.knowledge.title": "Que connaît ce persona ?",
-  "help.personas.knowledge.body": "Choisis quels fichiers de cours et documents de projet ce persona connaît. Rien choisi : il suit uniquement ses propres instructions. Un évaluateur lit ses documents entièrement. Un persona ne connaît jamais les fichiers de données. Les étudiants ne voient pas ce choix."
+  "help.personas.knowledge.body": "Choisis quels fichiers de cours et documents de projet ce persona connaît. Rien choisi : il suit uniquement ses propres instructions. Un évaluateur lit ses documents entièrement. Un persona ne connaît jamais les fichiers de données. Les étudiants ne voient pas ce choix.",
+  "chat.saveJournal.button": "Enregistrer dans le journal d’apprentissage",
+  "chat.saveJournal.saved": "Enregistré dans ton journal d’apprentissage. Tu peux continuer cette conversation normalement ; si tu l’enregistres à nouveau plus tard, la réflexion portera sur ce qui s’est ajouté depuis.",
+  "chat.saveJournal.nothingNew": "Il n’y a rien de nouveau depuis la dernière fois que tu as enregistré cette conversation.",
+  "chat.saveJournal.failed": "L’enregistrement dans ton journal d’apprentissage a échoué. Réessaie plus tard.",
+  "chat.deleteSummaryAlreadySaved": "La conversation a été supprimée. Il n’y avait rien de nouveau depuis ton dernier enregistrement, donc aucune réflexion supplémentaire n’a été ajoutée à ton journal d’apprentissage.",
+  "help.student.chat.saveJournal.title": "Enregistrer dans le journal d’apprentissage",
+  "help.student.chat.saveJournal.body": "LEAP ajoute une réflexion sur cette conversation dans ton journal d’apprentissage : ce que tu as fait, ce qui s’est bien passé, ce qui peut être amélioré et ta prochaine étape. La conversation reste disponible, afin que tu puisses continuer plus tard. Le prochain enregistrement portera sur la nouvelle partie. Ton enseignant ne voit pas ton journal."
 }

@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Save summary and delete conversation",
   "chat.deleteWithoutSummary": "Delete only (no journal entry)",
   "chat.deleteClosingText": "You are about to permanently delete the conversation \"{title}\". This cannot be undone.",
-  "chat.deleteAskSummary": "Would you like the learning assistant to first save a formative summary of this conversation to your learning journal? You can review it later to reflect.",
+  "chat.deleteAskSummary": "Would you like the learning assistant to save a formative summary of this conversation to your learning journal first? If you saved this conversation before, the summary covers what came after.",
   "explain.title": "I Explain",
   "explain.subtitle": "Choose a concept and practise with it: explain it yourself or improve an explanation. You get detailed feedback!",
   "explain.searchPlaceholder": "Search a concept...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Attachments",
   "help.student.chat.attachments.body": "Paste a screenshot or add a file to discuss it with the tutor, and write what you want to know. LEAP does not keep attachments: when you close the chat, they are gone.",
   "help.student.chat.close.title": "Closing a conversation",
-  "help.student.chat.close.body": "With a summary, LEAP writes a reflection in your learning journal: what you did, what went well, what can be better and your next step. Without a summary the conversation disappears. Your teacher does not see your conversations or journal.",
+  "help.student.chat.close.body": "With a summary, LEAP adds a reflection to your learning journal and then the conversation disappears. Want to continue later? Use Save to learning journal instead: the conversation stays. Your teacher does not see your conversations or your journal.",
   "help.student.explain.modes.title": "Two ways of practising",
   "help.student.explain.modes.body": "With Explain it yourself you explain a concept in your own words and get feedback with a score only you see. With Improve this explanation you find the errors in an explanation AI just wrote and explain what is wrong.",
   "help.student.journal.achievements.title": "Trophy cabinet",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Type: —",
   "filePurpose.kind.rubric": "Rubric",
   "help.personas.knowledge.title": "What does this persona know?",
-  "help.personas.knowledge.body": "Choose which course files and project documents this persona knows. Nothing chosen: it only follows its own instructions. An assessor reads its documents in full. A persona never knows data files. Students do not see this choice."
+  "help.personas.knowledge.body": "Choose which course files and project documents this persona knows. Nothing chosen: it only follows its own instructions. An assessor reads its documents in full. A persona never knows data files. Students do not see this choice.",
+  "chat.saveJournal.button": "Save to learning journal",
+  "chat.saveJournal.saved": "Saved to your learning journal. You can simply carry on with this conversation; if you save again later, the reflection covers what came after.",
+  "chat.saveJournal.nothingNew": "Nothing new since you last saved this conversation.",
+  "chat.saveJournal.failed": "Saving to your learning journal failed. Please try again later.",
+  "chat.deleteSummaryAlreadySaved": "The conversation has been deleted. Nothing was new since your last save, so no extra reflection was added to your learning journal.",
+  "help.student.chat.saveJournal.title": "Save to learning journal",
+  "help.student.chat.saveJournal.body": "LEAP adds a reflection on this conversation to your learning journal: what you did, what went well, what could be better and your next step. The conversation stays, so you can continue later. A next save covers the new part. Your teacher does not see your journal."
 }

@@ -263,7 +263,7 @@
   "chat.deleteWithSummary": "Özeti kaydet ve sohbeti sil",
   "chat.deleteWithoutSummary": "Yalnızca sil (günlük kaydı yok)",
   "chat.deleteClosingText": "\"{title}\" sohbetini kalıcı olarak silmek üzeresin. Bu işlem geri alınamaz.",
-  "chat.deleteAskSummary": "Öğrenme asistanının önce bu sohbetin biçimlendirici bir özetini öğrenme günlüğüne kaydetmesini ister misin? Bu özeti daha sonra inceleyip üzerine düşünebilirsin.",
+  "chat.deleteAskSummary": "Öğrenme asistanının önce bu konuşmanın biçimlendirici bir özetini öğrenme günlüğüne kaydetmesini ister misin? Konuşmayı daha önce kaydettiysen, özet bundan sonra eklenenlerle ilgili olur.",
   "explain.title": "Ben Anlatıyorum",
   "explain.subtitle": "Bir kavram seç ve onunla alıştırma yap: kendin açıkla ya da bir açıklamayı iyileştir. Ayrıntılı geri bildirim alacaksın!",
   "explain.searchPlaceholder": "Bir kavram ara...",
@@ -3075,7 +3075,7 @@
   "help.student.chat.attachments.title": "Ekler",
   "help.student.chat.attachments.body": "Tutorla üzerinde konuşmak için bir ekran görüntüsü yapıştır veya bir dosya ekle ve ne öğrenmek istediğini yaz. LEAP ekleri saklamaz: sohbeti kapatırsan kaybolurlar.",
   "help.student.chat.close.title": "Konuşmayı kapat",
-  "help.student.chat.close.body": "Bir özetle LEAP öğrenme günlüğünde bir yansıma oluşturur: ne yaptığın, nelerin iyi gittiği, nelerin daha iyi olabileceği ve sonraki adımın. Özet olmadan konuşma kaybolur. Öğretmenin konuşmalarını ve günlüğünü görmez.",
+  "help.student.chat.close.body": "Özetle LEAP, öğrenme günlüğünde bir yansıma oluşturur ve ardından konuşma kaybolur. Daha sonra devam etmek istersen, Öğrenme günlüğüne kaydet’i kullan: böylece konuşma kalır. Öğretmenin konuşmalarını ve günlüğünü görmez.",
   "help.student.explain.modes.title": "İki alıştırma yöntemi",
   "help.student.explain.modes.body": "Kendin açıkla seçeneğinde bir kavramı kendi sözlerinle açıklarsın ve yalnızca senin gördüğün bir puanla geri bildirim alırsın. Bu açıklamayı iyileştir seçeneğinde ise yapay zekânın az önce oluşturduğu bir açıklamadaki hataları bulur ve neyin yanlış olduğunu açıklarsın.",
   "help.student.journal.achievements.title": "Ödül dolabı",
@@ -3261,5 +3261,12 @@
   "admin.projects.docs.kindNone": "Tür: —",
   "filePurpose.kind.rubric": "Değerlendirme rubriği",
   "help.personas.knowledge.title": "Bu persona ne biliyor?",
-  "help.personas.knowledge.body": "Bu personanın hangi ders dosyalarını ve proje belgelerini bildiğini seç. Hiçbir şey seçilmezse: yalnızca kendi talimatını izler. Bir değerlendirici belgelerinin tamamını okur. Bir persona veri dosyalarını asla bilmez. Öğrenciler bu seçimi görmez."
+  "help.personas.knowledge.body": "Bu personanın hangi ders dosyalarını ve proje belgelerini bildiğini seç. Hiçbir şey seçilmezse: yalnızca kendi talimatını izler. Bir değerlendirici belgelerinin tamamını okur. Bir persona veri dosyalarını asla bilmez. Öğrenciler bu seçimi görmez.",
+  "chat.saveJournal.button": "Öğrenme günlüğüne kaydet",
+  "chat.saveJournal.saved": "Öğrenme günlüğüne kaydedildi. Bu konuşmaya normal şekilde devam edebilirsin; daha sonra tekrar kaydedersen, yansıma bundan sonra eklenenlerle ilgili olur.",
+  "chat.saveJournal.nothingNew": "Bu konuşmayı en son kaydettiğinden beri yeni bir şey yok.",
+  "chat.saveJournal.failed": "Öğrenme günlüğüne kaydedilemedi. Daha sonra tekrar dene.",
+  "chat.deleteSummaryAlreadySaved": "Konuşma silindi. Önceki kaydından beri yeni bir şey yoktu, bu yüzden öğrenme günlüğüne ek bir yansıma eklenmedi.",
+  "help.student.chat.saveJournal.title": "Öğrenme günlüğüne kaydet",
+  "help.student.chat.saveJournal.body": "LEAP, bu konuşmayla ilgili bir yansımayı öğrenme günlüğüne ekler: ne yaptığın, neyin iyi gittiği, neyin daha iyi olabileceği ve sonraki adımın. Konuşma kalır, böylece daha sonra devam edebilirsin. Bir sonraki kayıt yeni bölümle ilgili olur. Öğretmenin günlüğünü görmez."
 }

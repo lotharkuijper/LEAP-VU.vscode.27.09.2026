@@ -1122,6 +1122,178 @@ async function resolveJournalCourseId(courseId, user = null) {
   } catch { return null; }
 }
 
+// Chatreflectie in het leerdagboek (2026-10-27). Ook TUSSENTIJDS: het gesprek
+// blijft dan staan en de student gaat later verder waar hij was. Elke reflectie
+// gaat over wat sinds de vorige opslag van dit gesprek is gezegd (source_ref
+// chat:<gesprek>:<laatste bericht>); het eerdere deel gaat alleen als context
+// mee. Niets nieuws → 'nothingNew', geen tweede regel. Verwijderen met
+// samenvatting gebruikt dezelfde functie.
+async function createChatReflection({ user, conversation, courseId, lang }) {
+  if (!(await courseFeatureOnFor(user, null, courseId, 'journal'))) return { status: 'journalOff' };
+  const { data: msgRows, error: msgError } = await supabaseAdmin
+    .from('messages')
+    .select('id, role, content, retrieved_context, created_at')
+    .eq('conversation_id', conversation.id)
+    .order('created_at', { ascending: true });
+  const msgs = (msgError ? [] : (msgRows || [])).filter(m => m.role !== 'system');
+  const { data: prevEntries } = await supabaseAdmin
+    .from('learning_journal_entries')
+    .select('source_ref, created_at')
+    .eq('user_id', user.id)
+    .like('source_ref', `chat:${conversation.id}:%`)
+    .order('created_at', { ascending: false });
+  const saved = prevEntries || [];
+  const lastSavedId = saved[0]?.source_ref?.split(':')[2] || null;
+  const cut = lastSavedId ? msgs.findIndex(m => m.id === lastSavedId) : -1;
+  const earlier = cut >= 0 ? msgs.slice(0, cut + 1) : [];
+  const fresh = cut >= 0 ? msgs.slice(cut + 1) : msgs;
+  if (!fresh.some(m => m.role === 'user')) return { status: 'nothingNew' };
+  if (!AZURE_CHAT_READY) {
+    console.warn('[chat-reflect] Azure OpenAI niet geconfigureerd — reflectie overgeslagen');
+    return { status: 'failed' };
+  }
+
+  const ragSources = new Set();
+  for (const msg of fresh) {
+    const chunks = msg.retrieved_context?.chunks;
+    if (Array.isArray(chunks)) {
+      for (const chunk of chunks) {
+        if (chunk.documentTitle) ragSources.add(chunk.documentTitle);
+      }
+    }
+  }
+  const userLabel = lang === 'nl' ? 'Jij' : 'You';
+  const tutorLabel = 'Tutor';
+  const asText = (list) => list.map(m => `${m.role === 'user' ? userLabel : tutorLabel}: ${m.content}`).join('\n\n');
+  // Vervolg: het einde van het eerdere deel als context; de reflectie gaat over het nieuwe deel.
+  const chatText = earlier.length
+    ? [
+      lang === 'nl'
+        ? '[Eerder deel van dit gesprek, al opgeslagen in je leerdagboek. Alleen context, niet opnieuw beoordelen.]'
+        : '[Earlier part of this conversation, already saved in your learning journal. Context only, do not assess it again.]',
+      asText(earlier.slice(-6)),
+      '',
+      lang === 'nl'
+        ? '[Nieuw sinds de vorige opslag. Schrijf je reflectie hierover.]'
+        : '[New since the previous save. Write your reflection about this part.]',
+      asText(fresh),
+    ].join('\n')
+    : asText(fresh);
+
+  const sourcesText = ragSources.size > 0
+    ? (lang === 'nl'
+        ? `\n\nGebruikte cursusbronnen in dit gesprek: ${[...ragSources].join(', ')}`
+        : `\n\nCourse sources used in this conversation: ${[...ragSources].join(', ')}`)
+    : '';
+  // Optioneel doel dat de student voor dit gesprek koos (server/chatGoal.js).
+  const goalLine = chatGoalSummaryLine(lastChatGoal(msgs), lang);
+
+  const summaryPrompt = (lang !== 'nl'
+    ? `You are a "critical friend" for a student at VU Amsterdam. Analyse the following study conversation and write a formative reflection report of 5 to 10 lines in English, addressed directly to the student.
+
+Addressing rule (follow STRICTLY):
+- Address the student directly using "you" / "your".
+- NEVER use formulations like "the student", "this student", "the student has" or other third-person references to the student. Write as if giving feedback one-on-one.
+
+Your report contains:
+1. A reasoned formative judgement of what you have demonstrated and learned
+2. Concrete strengths and areas for improvement in your contribution (honest but constructive)
+3. A specific suggestion for further deepening, preferably with reference to available course sources${sourcesText}
+
+Conversation title: "${conversation.title}"
+
+Conversation (lines marked with "You:" are the student you are addressing):
+${chatText}
+
+Write the report directly without salutation. Be concrete, honest and motivating.${goalLine}`
+    : `Je bent een "critical friend" voor een student aan de VU Amsterdam. Analyseer het volgende studiegesprek en schrijf een formatief reflectieverslag van 5 tot 10 regels in het Nederlands, gericht aan de student zelf.
+
+Aanspraakvorm (volg STRIKT):
+- Spreek de student direct aan met "je" / "jij" / "jouw" / "je hebt".
+- Gebruik NOOIT formuleringen als "de student", "deze student", "de student heeft" of andere derde-persoonsverwijzingen naar de student. Schrijf alsof je de feedback één-op-één tegen de student geeft.
+
+Je verslag bevat:
+1. Een beargumenteerd formatief oordeel over wat jij hebt laten zien en geleerd
+2. Concrete sterke punten én verbeterpunten in jouw bijdrage (eerlijk maar opbouwend)
+3. Een specifieke suggestie voor verdere verdieping, bij voorkeur met verwijzing naar beschikbare cursusbronnen${sourcesText}
+
+Gesprekstitel: "${conversation.title}"
+
+Gesprek (regels gemarkeerd met "Jij:" zijn de student aan wie je het verslag richt):
+${chatText}
+
+Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.${goalLine}`) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
+
+  const part = saved.length + 1;
+  const baseTitle = lang === 'nl' ? `Chatreflectie: ${conversation.title}` : `Chat reflection: ${conversation.title}`;
+  const title = part > 1 ? `${baseTitle} (${lang === 'nl' ? 'deel' : 'part'} ${part})` : baseTitle;
+  try {
+    const chatResp = await openaiChatCompletion({
+      model: OPENAI_MODEL,
+      messages: [{ role: 'user', content: summaryPrompt }],
+      ...chatModelParams({ temperature: 0.5, maxTokens: 600 }),
+    });
+    if (!chatResp.ok) {
+      console.error('[chat-reflect] OpenAI fout:', chatResp.status, await chatResp.text());
+      return { status: 'failed' };
+    }
+    const summaryContent = (await chatResp.json()).choices?.[0]?.message?.content;
+    if (!summaryContent) return { status: 'failed' };
+    const journalCourseId = await resolveJournalCourseId(courseId, user);
+    const { data: entry, error: journalError } = await supabaseAdmin
+      .from('learning_journal_entries')
+      .insert({
+        user_id: user.id,
+        title,
+        ...journalFieldsFromModel(summaryContent, lang),
+        activity_type: 'chat_reflection',
+        course_id: journalCourseId,
+        learning_level: await currentLearningLevel(user.id, journalCourseId),
+        source_ref: `chat:${conversation.id}:${fresh[fresh.length - 1].id}`,
+      })
+      .select('id')
+      .single();
+    // Twee keer snel op opslaan gedrukt: de tweede botst op dezelfde source_ref.
+    if (journalError?.code === '23505') return { status: 'nothingNew' };
+    if (journalError) {
+      console.error('[chat-reflect] Journal insert error:', journalError);
+      return { status: 'failed' };
+    }
+    return { status: 'created', journalEntryId: entry.id, part };
+  } catch (err) {
+    console.error('[chat-reflect] Reflectie mislukt:', err.message);
+    return { status: 'failed' };
+  }
+}
+
+// POST /api/chat/reflect — tussentijds opslaan in het leerdagboek; het gesprek blijft staan.
+app.post('/api/chat/reflect', async (req, res) => {
+  if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(401).json({ error: 'Authorization header vereist' });
+  const { conversationId, lang = 'nl', courseId } = req.body || {};
+  if (!conversationId) return res.status(400).json({ error: 'conversationId is vereist' });
+  try {
+    const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: { user }, error: userError } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
+    if (userError || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
+    const { data: conversation } = await supabaseAdmin
+      .from('conversations').select('id, title, user_id').eq('id', conversationId).maybeSingle();
+    if (!conversation) return res.status(404).json({ error: 'Gesprek niet gevonden' });
+    if (conversation.user_id !== user.id) return res.status(403).json({ error: 'Geen toegang tot dit gesprek' });
+    const r = await createChatReflection({ user, conversation, courseId, lang });
+    if (r.status === 'journalOff') return res.status(403).json({ error: 'Het leerdagboek staat uit in deze cursus', code: 'journalOff' });
+    if (r.status === 'failed') return res.status(502).json({ error: 'De reflectie kon niet worden gemaakt. Probeer het later opnieuw.', code: 'failed' });
+    return res.json({ status: r.status, journalEntryId: r.journalEntryId || null, part: r.part || null });
+  } catch (err) {
+    console.error('[chat-reflect] Onverwachte fout:', err);
+    return res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
 // Task #251 — "verwijderen" is sinds Task #250 een definitieve delete (geen
 // soft-delete/archief meer). De canonieke route is /api/chat/delete;
 // /api/chat/archive blijft als alias bestaan zodat oudere clients niet breken.
@@ -1165,128 +1337,14 @@ app.post(['/api/chat/delete', '/api/chat/archive'], async (req, res) => {
       return res.status(403).json({ error: 'Geen toegang tot dit gesprek' });
     }
 
-    let journalEntryId = null;
-
-    // Dagboek uit in deze cursus: geen reflectie maken (de browser biedt het
-    // dan ook niet aan).
-    if (generateSummary && (await courseFeatureOnFor(user, null, courseId, 'journal'))) {
-      const apiKey = process.env.OPENAI_API_KEY;
-
-      const { data: msgs, error: msgError } = await supabaseAdmin
-        .from('messages')
-        .select('role, content, retrieved_context')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-
-      if (!msgError && msgs && msgs.length > 0) {
-        const ragSources = new Set();
-        for (const msg of msgs) {
-          const chunks = msg.retrieved_context?.chunks;
-          if (Array.isArray(chunks)) {
-            for (const chunk of chunks) {
-              if (chunk.documentTitle) ragSources.add(chunk.documentTitle);
-            }
-          }
-        }
-
-        const userLabel = lang === 'nl' ? 'Jij' : 'You';
-        const tutorLabel = 'Tutor';
-        const chatText = msgs
-          .filter(m => m.role !== 'system')
-          .map(m => `${m.role === 'user' ? userLabel : tutorLabel}: ${m.content}`)
-          .join('\n\n');
-
-        const sourcesText = ragSources.size > 0
-          ? (lang === 'nl'
-              ? `\n\nGebruikte cursusbronnen in dit gesprek: ${[...ragSources].join(', ')}`
-              : `\n\nCourse sources used in this conversation: ${[...ragSources].join(', ')}`)
-          : '';
-        // Optioneel doel dat de student voor dit gesprek koos (server/chatGoal.js).
-        const goalLine = chatGoalSummaryLine(lastChatGoal(msgs), lang);
-
-        const summaryPrompt = (lang !== 'nl'
-          ? `You are a "critical friend" for a student at VU Amsterdam. Analyse the following study conversation and write a formative reflection report of 5 to 10 lines in English, addressed directly to the student.
-
-Addressing rule (follow STRICTLY):
-- Address the student directly using "you" / "your".
-- NEVER use formulations like "the student", "this student", "the student has" or other third-person references to the student. Write as if giving feedback one-on-one.
-
-Your report contains:
-1. A reasoned formative judgement of what you have demonstrated and learned
-2. Concrete strengths and areas for improvement in your contribution (honest but constructive)
-3. A specific suggestion for further deepening, preferably with reference to available course sources${sourcesText}
-
-Conversation title: "${conversation.title}"
-
-Conversation (lines marked with "You:" are the student you are addressing):
-${chatText}
-
-Write the report directly without salutation. Be concrete, honest and motivating.${goalLine}`
-          : `Je bent een "critical friend" voor een student aan de VU Amsterdam. Analyseer het volgende studiegesprek en schrijf een formatief reflectieverslag van 5 tot 10 regels in het Nederlands, gericht aan de student zelf.
-
-Aanspraakvorm (volg STRIKT):
-- Spreek de student direct aan met "je" / "jij" / "jouw" / "je hebt".
-- Gebruik NOOIT formuleringen als "de student", "deze student", "de student heeft" of andere derde-persoonsverwijzingen naar de student. Schrijf alsof je de feedback één-op-één tegen de student geeft.
-
-Je verslag bevat:
-1. Een beargumenteerd formatief oordeel over wat jij hebt laten zien en geleerd
-2. Concrete sterke punten én verbeterpunten in jouw bijdrage (eerlijk maar opbouwend)
-3. Een specifieke suggestie voor verdere verdieping, bij voorkeur met verwijzing naar beschikbare cursusbronnen${sourcesText}
-
-Gesprekstitel: "${conversation.title}"
-
-Gesprek (regels gemarkeerd met "Jij:" zijn de student aan wie je het verslag richt):
-${chatText}
-
-Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.${goalLine}`) + journalFormatInstruction(lang) + buildLanguageInstruction(lang);
-
-        if (AZURE_CHAT_READY) {
-          try {
-            const chatResp = await openaiChatCompletion({
-              model: OPENAI_MODEL,
-              messages: [{ role: 'user', content: summaryPrompt }],
-              ...chatModelParams({ temperature: 0.5, maxTokens: 600 }),
-            });
-
-            if (chatResp.ok) {
-              const chatData = await chatResp.json();
-              const summaryContent = chatData.choices?.[0]?.message?.content;
-              if (summaryContent) {
-                const journalCourseId = await resolveJournalCourseId(courseId, user);
-                const { data: entry, error: journalError } = await supabaseAdmin
-                  .from('learning_journal_entries')
-                  .insert({
-                    user_id: user.id,
-                    title: lang === 'nl' ? `Chatreflectie: ${conversation.title}` : `Chat reflection: ${conversation.title}`,
-                    ...journalFieldsFromModel(summaryContent, lang),
-                    activity_type: 'chat_reflection',
-                    course_id: journalCourseId,
-                    learning_level: await currentLearningLevel(user.id, journalCourseId),
-                  })
-                  .select('id')
-                  .single();
-
-                if (journalError) {
-                  console.error('[chat-delete] Journal insert error:', journalError);
-                } else {
-                  journalEntryId = entry.id;
-                  console.log(`[chat-delete] Journal entry aangemaakt: ${journalEntryId}`);
-                }
-              }
-            } else {
-              console.error('[chat-delete] OpenAI fout:', chatResp.status, await chatResp.text());
-            }
-          } catch (chatErr) {
-            console.error('[chat-delete] OpenAI request mislukt:', chatErr.message);
-          }
-        } else {
-          console.warn('[chat-delete] Azure OpenAI niet geconfigureerd — samenvatting overgeslagen');
-        }
-      }
-    }
-
-    const summaryCreated = generateSummary && journalEntryId !== null;
-    const summaryFailed = generateSummary && journalEntryId === null;
+    // Reflectie in het leerdagboek (createChatReflection): alleen over wat nog
+    // niet eerder is opgeslagen; niets nieuws → geen tweede dagboekregel.
+    let reflection = { status: 'skipped' };
+    if (generateSummary) reflection = await createChatReflection({ user, conversation, courseId, lang });
+    const journalEntryId = reflection.journalEntryId || null;
+    const summaryCreated = reflection.status === 'created';
+    const summaryAlreadySaved = reflection.status === 'nothingNew';
+    const summaryFailed = generateSummary && reflection.status === 'failed';
 
     const { error: deleteError } = await supabaseAdmin
       .from('conversations')
@@ -1299,7 +1357,7 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.$
     }
 
     console.log(`[chat-delete] Gesprek ${conversationId} definitief verwijderd (summaryCreated: ${summaryCreated})`);
-    return res.json({ success: true, journalEntryId, summaryCreated, summaryFailed });
+    return res.json({ success: true, journalEntryId, summaryCreated, summaryFailed, summaryAlreadySaved });
   } catch (err) {
     console.error('[chat-delete] Onverwachte fout:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
