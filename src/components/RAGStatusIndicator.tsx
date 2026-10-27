@@ -1,12 +1,22 @@
 import { CheckCircle2, XCircle, Loader2, BookOpen, Info, ShieldCheck } from 'lucide-react';
 import { useRAGStatus } from '../hooks/useRAGStatus';
 import { useLanguage } from '../i18n';
+import { useAuth } from '../contexts/AuthContext';
 
 interface RAGStatusIndicatorProps {
   strictMode?: boolean;
 }
 
-export function RAGStatusIndicator({ strictMode = false }: RAGStatusIndicatorProps) {
+// Alleen voor docenten en beheerders (2026-10-27): studenten hebben niets aan
+// "RAG beschikbaar · n documenten (n chunks)". Wat voor hen telt, de bron bij
+// een antwoord, staat bij het antwoord zelf.
+export function RAGStatusIndicator(props: RAGStatusIndicatorProps) {
+  const { isAdmin, isDocent } = useAuth();
+  if (!isAdmin && !isDocent) return null;
+  return <RAGStatusIndicatorForStaff {...props} />;
+}
+
+function RAGStatusIndicatorForStaff({ strictMode = false }: RAGStatusIndicatorProps) {
   const { isAvailable, documentCount, chunkCount, loading, noCourse, noRagFolders } = useRAGStatus();
   const { t } = useLanguage();
 
