@@ -15,6 +15,10 @@
 //    inschrijving en uitnodiging worden verwijderd, zodat er geen account blijft
 //    staan waar iemand nooit ja tegen zei.
 //
+// Met role 'teacher' ("Docent toevoegen", 2026-10-27) gaat het net zo, maar wordt
+// de persoon docent van de cursus en krijgt hij het docentprofiel; een student
+// van de cursus wordt gepromoveerd. De mail noemt dan de rol van docent.
+//
 // Uitnodigen staat los van de toegangsroute van de cursus (enrollment.js): ook
 // in een Canvas- of gesloten cursus, en ook met een VU-adres. De docent staat
 // ervoor in; wie uitnodigde staat in de mail en in invited_by.
@@ -99,15 +103,16 @@ export function createMailBudget({ perMinute = MAIL_PER_MINUTE, perHour = MAIL_P
 }
 
 /** Bouwt { subject, html, text } voor een uitnodiging (kind 'new') of een melding (kind 'added'). */
-export function buildInvitationEmail({ kind, lang = 'nl', inviterName, courseName, link }) {
+export function buildInvitationEmail({ kind, lang = 'nl', inviterName, courseName, link, asTeacher = false }) {
   const t = (key, vars) => translate(lang, key, vars);
   const vars = { inviter: inviterName || t('email.invite.someone'), course: courseName || '' };
   const group = kind === 'new' ? 'invite' : 'added';
   const subject = t(`email.${group}.subject`, vars);
   const greeting = t('email.digest.greetingNoName');
+  const intro = t(`email.${group}.${asTeacher ? 'introTeacher' : 'intro'}`, vars);
   const paragraphs = kind === 'new'
-    ? [t('email.invite.intro', vars), t('email.invite.howto', vars)]
-    : [t('email.added.intro', vars)];
+    ? [intro, t('email.invite.howto', vars)]
+    : [intro];
   const cta = t(`email.${group}.cta`, vars);
   const footer = kind === 'new'
     ? [t('email.invite.validity', vars), t('email.invite.ignore', vars)]
@@ -179,12 +184,15 @@ export function registerCourseInvitationRoutes(app, deps) {
     return r;
   }
 
-  async function enroll(courseId, userId, { insertOnly }) {
+  async function enroll(courseId, userId, { insertOnly, role = 'student', by = null }) {
     const { error } = await db.from('course_members').upsert(
-      { course_id: courseId, user_id: userId, member_role: 'student', role: 'student' },
+      { course_id: courseId, user_id: userId, member_role: role, role },
       { onConflict: 'course_id,user_id', ignoreDuplicates: !!insertOnly },
     );
-    return error ? error.message : null;
+    if (error) return error.message;
+    // Docent in een cursus = docentprofiel (databaseregels voor projecten en opslag kijken daarnaar).
+    if (role === 'teacher') await deps.promoteTeacherProfile?.(userId, by, courseId);
+    return null;
   }
 
   async function saveInvitation(row) {
@@ -192,11 +200,12 @@ export function registerCourseInvitationRoutes(app, deps) {
     return error ? error.message : null;
   }
 
-  // POST /api/admin/courses/:id/invitations — { emails: string[] } (hoogstens 50 per keer).
+  // POST /api/admin/courses/:id/invitations — { emails: string[], role?: 'student'|'teacher' } (hoogstens 50 per keer).
   app.post('/api/admin/courses/:id/invitations', async (req, res) => {
     const courseId = req.params.id;
     const r = await authorize(req, res, courseId);
     if (!r) return;
+    const role = req.body?.role === 'teacher' ? 'teacher' : 'student';
 
     const { data: course } = await db.from('courses').select('id, name').eq('id', courseId).maybeSingle();
     if (!course) return res.status(404).json({ error: 'Cursus niet gevonden' });
@@ -217,14 +226,27 @@ export function registerCourseInvitationRoutes(app, deps) {
     const lang = normalizeLang(req.get('x-leap-lang') || r.profile?.preferred_lang || 'nl');
     const { data: profs } = await db.from('profiles').select('id, email').in('email', valid);
     const byEmail = new Map((profs || []).map((p) => [String(p.email).toLowerCase(), p.id]));
-    const { data: members } = await db.from('course_members').select('user_id').eq('course_id', courseId);
-    const memberIds = new Set((members || []).map((m) => m.user_id));
+    const { data: members } = await db.from('course_members').select('user_id, member_role').eq('course_id', courseId);
+    const memberRoles = new Map((members || []).map((m) => [m.user_id, m.member_role]));
 
     const results = [];
     for (const email of valid) {
       try {
         let userId = byEmail.get(email);
-        if (userId && memberIds.has(userId)) { results.push({ email, status: 'alreadyMember' }); continue; }
+        if (userId && memberRoles.has(userId)) {
+          // Docent toevoegen voor iemand die al student is: promoveren, geen mail.
+          if (role === 'teacher' && memberRoles.get(userId) !== 'teacher') {
+            const { error: upErr } = await db.from('course_members').update({ member_role: 'teacher', role: 'teacher' })
+              .eq('course_id', courseId).eq('user_id', userId).neq('role', 'superuser');
+            if (upErr) { results.push({ email, status: 'failed', error: upErr.message }); continue; }
+            await deps.promoteTeacherProfile?.(userId, r.user.id, courseId);
+            memberRoles.set(userId, 'teacher');
+            results.push({ email, status: 'promoted' });
+            continue;
+          }
+          results.push({ email, status: 'alreadyMember' });
+          continue;
+        }
         if (room <= 0) { results.push({ email, status: 'limit' }); continue; }
 
         let kind = 'added';
@@ -233,7 +255,7 @@ export function registerCourseInvitationRoutes(app, deps) {
           // Dan krijgt ook deze uitnodiging een activeringslink.
           const { data: au } = await db.auth.admin.getUserById(userId);
           if (isUnusedAccount(au?.user)) kind = 'new';
-          const err = await enroll(courseId, userId, { insertOnly: true });
+          const err = await enroll(courseId, userId, { insertOnly: true, role, by: r.user.id });
           if (err) { results.push({ email, status: 'failed', error: err }); continue; }
         } else {
           const { data: created, error: cErr } = await db.auth.admin.createUser({ email, email_confirm: false, user_metadata: { full_name: '' } });
@@ -242,12 +264,12 @@ export function registerCourseInvitationRoutes(app, deps) {
             const { data: p2 } = await db.from('profiles').select('id').eq('email', email).maybeSingle();
             if (!p2?.id) { results.push({ email, status: 'failed', error: cErr?.message || 'createUser' }); continue; }
             userId = p2.id;
-            const err = await enroll(courseId, userId, { insertOnly: true });
+            const err = await enroll(courseId, userId, { insertOnly: true, role, by: r.user.id });
             if (err) { results.push({ email, status: 'failed', error: err }); continue; }
           } else {
             userId = created.user.id;
             kind = 'new';
-            const err = await enroll(courseId, userId, { insertOnly: false });
+            const err = await enroll(courseId, userId, { insertOnly: false, role, by: r.user.id });
             if (err) { results.push({ email, status: 'failed', error: err }); continue; }
             await db.from('profiles').update({ last_active_course_id: courseId }).eq('id', userId);
           }
@@ -259,7 +281,7 @@ export function registerCourseInvitationRoutes(app, deps) {
         });
         if (saveErr) { results.push({ email, status: 'failed', error: saveErr }); continue; }
         room -= 1;
-        memberIds.add(userId);
+        memberRoles.set(userId, role);
         results.push({ email, status: kind === 'new' ? 'invited' : 'added' });
       } catch (e) {
         results.push({ email, status: 'failed', error: e?.message || 'onbekende fout' });
@@ -270,7 +292,7 @@ export function registerCourseInvitationRoutes(app, deps) {
     return res.json({
       results,
       summary: {
-        invited: count('invited'), added: count('added'), alreadyMember: count('alreadyMember'),
+        invited: count('invited'), added: count('added'), promoted: count('promoted'), alreadyMember: count('alreadyMember'),
         limit: count('limit'), failed: count('failed'), invalid: invalid.length, duplicates,
       },
     });
@@ -375,14 +397,16 @@ export function registerCourseInvitationRoutes(app, deps) {
           continue;
         }
         if (!budget.take()) break;
-        const [{ data: course }, { data: inviter }] = await Promise.all([
+        const [{ data: course }, { data: inviter }, { data: membership }] = await Promise.all([
           db.from('courses').select('name').eq('id', row.course_id).maybeSingle(),
           row.invited_by ? db.from('profiles').select('full_name, email').eq('id', row.invited_by).maybeSingle() : Promise.resolve({ data: null }),
+          db.from('course_members').select('member_role').eq('course_id', row.course_id).eq('user_id', row.user_id).maybeSingle(),
         ]);
         const link = row.kind === 'new' ? `${base}/invite#t=${signInviteToken(row.id, deps.secret)}` : `${base}/dashboard`;
         const mail = buildInvitationEmail({
           kind: row.kind, lang: row.lang, link, courseName: course?.name,
           inviterName: inviter?.full_name?.trim() || inviter?.email || '',
+          asTeacher: membership?.member_role === 'teacher',
         });
         let result;
         try { result = await deps.sendEmail(cfg, { to: row.email, ...mail }); } catch (e) { result = { ok: false, error: e?.message }; }

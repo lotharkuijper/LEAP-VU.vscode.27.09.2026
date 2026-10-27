@@ -113,6 +113,17 @@ describe('profielrol bij docent worden in een cursus', () => {
       expect(body).toMatch(/member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);
     }
   });
+  it('promoveren in Beheer leden zet het profiel ook op het pad met directe databaseverbinding (live, regressie 2026-10-27)', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
+    const start = src.indexOf("app.put('/api/admin/courses/:id/members/:userId'");
+    const body = src.slice(start, src.indexOf('\napp.', start + 10));
+    const pgPath = body.slice(body.indexOf('if (pgPool)'), body.indexOf('// Fallback zonder directe DB-verbinding'));
+    expect(pgPath).toMatch(/COMMIT[\s\S]*member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);
+  });
+  it('"Docent toevoegen" (uitnodigen met role teacher) zet het docentprofiel', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8');
+    expect(src).toMatch(/registerCourseInvitationRoutes\(app, \{[\s\S]*promoteTeacherProfile: promoteCourseTeacherProfile/);
+  });
   it('de databaseregel voor projecten kijkt naar het docentprofiel', () => {
     const sql = fs.readFileSync(path.resolve(__dirname, '..', '..', 'supabase/migrations/20260605120000_projects_strict_course_scope.sql'), 'utf8');
     expect(sql).toMatch(/projects_course_teacher_manage[\s\S]*pr_is_course_teacher\(course_id\)/);

@@ -73,6 +73,12 @@ describe('de mail', () => {
     expect(m.subject).toBe('Sam added you to Biology on LEAP-VU');
     expect(m.text).not.toContain('invite#t=');
   });
+  it('een docent krijgt een mail die de rol van docent noemt', () => {
+    const m = buildInvitationEmail({ kind: 'new', lang: 'nl', inviterName: 'Sam', courseName: 'Projectcursus', link: 'https://x/invite#t=1', asTeacher: true });
+    expect(m.text).toMatch(/als docent/);
+    const s = buildInvitationEmail({ kind: 'new', lang: 'nl', inviterName: 'Sam', courseName: 'Projectcursus', link: 'https://x/invite#t=1' });
+    expect(s.text).not.toMatch(/als docent/);
+  });
   it('namen worden veilig in de HTML gezet', () => {
     const m = buildInvitationEmail({ kind: 'new', lang: 'nl', inviterName: '<b>X</b>', courseName: 'A & B', link: 'https://x/invite#t=1' });
     expect(m.html).not.toContain('<b>X</b>');
@@ -92,12 +98,18 @@ describe('koppeling', () => {
   it('uitnodigen kan in elke cursus en met elk adres (ook Canvas, gesloten, VU-adres): de docent staat ervoor in', () => {
     expect(src).not.toMatch(/enrollment_mode|isBlockedEmail|isSelfJoinable/);
   });
-  it('een uitgenodigde wordt altijd student, nooit docent', () => {
-    expect(src).toMatch(/member_role: 'student', role: 'student'/);
-    expect(src).not.toMatch(/member_role: 'teacher'/);
+  it('een uitgenodigde wordt student, tenzij uitdrukkelijk als docent toegevoegd (role teacher)', () => {
+    expect(src).toMatch(/const role = req\.body\?\.role === 'teacher' \? 'teacher' : 'student';/);
+    expect(src).toMatch(/role = 'student'/);
   });
-  it('een bestaande inschrijving wordt nooit overschreven (een docent blijft docent)', () => {
-    expect(route("'/api/admin/courses/:id/invitations'", "'/api/admin/courses/:id/invitations/:userId/resend'")).toMatch(/enroll\(courseId, userId, \{ insertOnly: true \}\)/);
+  it('docent worden zet ook het docentprofiel (anders lopen projecten vast op de databaseregels)', () => {
+    expect(route('async function enroll', 'async function saveInvitation')).toMatch(/if \(role === 'teacher'\) await deps\.promoteTeacherProfile/);
+    expect(src).toMatch(/deps\.promoteTeacherProfile\?\.\(userId, r\.user\.id, courseId\);[\s\S]{0,120}status: 'promoted'/);
+  });
+  it('een bestaande inschrijving wordt nooit overschreven en een docent nooit gedegradeerd', () => {
+    const post = route("'/api/admin/courses/:id/invitations'", "'/api/admin/courses/:id/invitations/:userId/resend'");
+    expect(post).toMatch(/enroll\(courseId, userId, \{ insertOnly: true, role, by: r\.user\.id \}\)/);
+    expect(post).toMatch(/if \(role === 'teacher' && memberRoles\.get\(userId\) !== 'teacher'\)/);
   });
   it('daglimiet voor docenten, niet voor beheerders', () => {
     expect(src).toMatch(/if \(!r\.isAdmin\) \{[\s\S]*?DAILY_INVITE_LIMIT/);

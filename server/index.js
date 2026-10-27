@@ -3710,7 +3710,9 @@ app.put('/api/admin/courses/:id/members/:userId', async (req, res) => {
         [member_role, courseId, userId]
       );
       await client.query('COMMIT');
-      return res.json({ ok: true, user_id: userId, course_id: courseId, member_role });
+      // Ook op dit pad (live: directe databaseverbinding) het docentprofiel zetten.
+      const profileRole = member_role === 'teacher' ? await promoteCourseTeacherProfile(userId, r.user?.id, courseId) : null;
+      return res.json({ ok: true, user_id: userId, course_id: courseId, member_role, ...(profileRole ? { profileRole } : {}) });
     } catch (txErr) {
       try { await client.query('ROLLBACK'); } catch { /* ignore */ }
       console.error('[admin members PUT] tx error', txErr.message);
@@ -14476,6 +14478,7 @@ registerCourseInvitationRoutes(app, {
   getEmailConfig,
   sendEmail,
   forgetUser: (id) => { userCache.forgetUser(id); profileCache.invalidate(id); },
+  promoteTeacherProfile: promoteCourseTeacherProfile,
   startTimers: !process.env.VITEST,
 });
 

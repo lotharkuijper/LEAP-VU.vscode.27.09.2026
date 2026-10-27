@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText, Send } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText, Send, UserPlus } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -93,6 +93,12 @@ export default function CoursesAdmin() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [memberRoleBusy, setMemberRoleBusy] = useState<string | null>(null);
+  // "Docent toevoegen" in Beheer leden (via de uitnodigingsroute met role teacher).
+  const [teacherEmail, setTeacherEmail] = useState('');
+  const [teacherBusy, setTeacherBusy] = useState(false);
+  const [focusTeacherField, setFocusTeacherField] = useState(false);
+  // Net aangemaakte cursus: vervolgstappen tonen.
+  const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
 
   // Bevestigingsdialoog voor het verwijderen van een cursus.
   const [deleteTarget, setDeleteTarget] = useState<CourseRow | null>(null);
@@ -157,11 +163,41 @@ export default function CoursesAdmin() {
     }
   }
 
-  async function openMembersDialog(c: CourseRow) {
+  async function addTeacher() {
+    if (!membersTarget) return;
+    const email = teacherEmail.trim();
+    if (!email) return;
+    const token = session?.access_token;
+    if (!token) { setMembersError(t('admin.users.notLoggedIn')); return; }
+    setTeacherBusy(true);
+    setMembersError(null);
+    setInviteNotice(null);
+    try {
+      const res = await fetch(`/api/admin/courses/${membersTarget.id}/invitations`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails: [email], role: 'teacher' }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) { setMembersError(json.error || t('common.unknownError')); return; }
+      if (json.summary?.invalid) { setMembersError(t('coursesAdmin.addTeacher.invalid')); return; }
+      const status = json.results?.[0]?.status as string | undefined;
+      if (status === 'failed') { setMembersError(json.results[0].error || t('common.unknownError')); return; }
+      setInviteNotice(t(`coursesAdmin.addTeacher.result.${status || 'added'}` as 'coursesAdmin.addTeacher.result.added', { email }));
+      setTeacherEmail('');
+      await openMembersDialog(membersTarget, { keepNotice: true });
+    } catch (err: unknown) {
+      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
+    } finally {
+      setTeacherBusy(false);
+    }
+  }
+
+  async function openMembersDialog(c: CourseRow, opts: { keepNotice?: boolean } = {}) {
     setMembersTarget(c);
     setMembersList([]);
     setMembersError(null);
-    setInviteNotice(null);
+    if (!opts.keepNotice) setInviteNotice(null);
     setMembersLoading(true);
     const token = session?.access_token;
     if (!token) {
@@ -417,6 +453,7 @@ export default function CoursesAdmin() {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
+    setCreatedCourseId(null);
     const trimmed = name.trim();
     if (!trimmed) {
       setError(t('coursesAdmin.errors.nameRequired'));
@@ -443,6 +480,7 @@ export default function CoursesAdmin() {
         return;
       }
       setSuccessMsg(t('coursesAdmin.create.success', { name: trimmed }));
+      setCreatedCourseId(json.course?.id ?? null);
       setName('');
       setDescription('');
       await Promise.all([loadCourses(), refreshCourses()]);
@@ -767,6 +805,46 @@ export default function CoursesAdmin() {
               <span>{successMsg}</span>
             </div>
           )}
+          {(() => {
+            const created = createdCourseId ? courses.find((c) => c.id === createdCourseId) : null;
+            if (!created) return null;
+            return (
+              <div className="rounded-md border border-brand-100 bg-brand-50 px-3 py-3 space-y-2" data-testid="panel-course-next-steps">
+                <p className="text-sm font-medium text-brand-900">{t('coursesAdmin.nextSteps.title')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setFocusTeacherField(true); void openMembersDialog(created); }}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
+                    data-testid="button-next-add-teacher"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    {t('coursesAdmin.nextSteps.addTeacher')}
+                  </button>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => setEnrollmentFor(created)}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
+                      data-testid="button-next-enrollment"
+                    >
+                      <DoorOpen className="w-4 h-4" />
+                      {t('coursesAdmin.nextSteps.enrollment')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void goToAdminTab(created.id, 'material')}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
+                    data-testid="button-next-material"
+                  >
+                    <FolderOpen className="w-4 h-4" />
+                    {t('coursesAdmin.nextSteps.material')}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
 
           <button
             type="submit"
@@ -1312,7 +1390,7 @@ export default function CoursesAdmin() {
       {membersTarget && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setMembersTarget(null)}
+          onClick={() => { setMembersTarget(null); setFocusTeacherField(false); }}
           data-testid="dialog-manage-members"
         >
           <div
@@ -1331,7 +1409,7 @@ export default function CoursesAdmin() {
               <Tooltip label={t('common.close')} side="bottom">
                 <button
                   type="button"
-                  onClick={() => setMembersTarget(null)}
+                  onClick={() => { setMembersTarget(null); setFocusTeacherField(false); }}
                   className="p-1 hover:bg-gray-100 rounded"
                   data-testid="button-close-members-dialog"
                 >
@@ -1349,6 +1427,40 @@ export default function CoursesAdmin() {
                 <div className="mb-3 rounded-lg bg-accent-50 border border-accent-200 px-3 py-2 text-sm text-accent-800" data-testid="text-invite-notice">
                   {inviteNotice}
                 </div>
+              )}
+              {(isAdmin || myTeacherCourseIds.has(membersTarget.id)) && (
+                <form
+                  onSubmit={(e) => { e.preventDefault(); void addTeacher(); }}
+                  className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3"
+                  data-testid="form-add-teacher"
+                >
+                  <label htmlFor="add-teacher-email" className="block text-sm font-medium text-gray-800">
+                    {t('coursesAdmin.addTeacher.label')}
+                  </label>
+                  <p className="text-xs text-gray-600 mb-2">{t('coursesAdmin.addTeacher.hint')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <input
+                      id="add-teacher-email"
+                      type="email"
+                      value={teacherEmail}
+                      onChange={(e) => setTeacherEmail(e.target.value)}
+                      placeholder={t('coursesAdmin.addTeacher.placeholder')}
+                      autoFocus={focusTeacherField}
+                      className="min-w-0 flex-1 basis-56 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={teacherBusy}
+                      data-testid="input-add-teacher"
+                    />
+                    <button
+                      type="submit"
+                      disabled={teacherBusy || !teacherEmail.trim()}
+                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300"
+                      data-testid="button-add-teacher"
+                    >
+                      {teacherBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+                      {t('coursesAdmin.addTeacher.submit')}
+                    </button>
+                  </div>
+                </form>
               )}
               {membersLoading ? (
                 <div className="flex items-center justify-center py-12 text-gray-500">
@@ -1479,7 +1591,7 @@ export default function CoursesAdmin() {
             <div className="px-6 py-3 border-t border-gray-200 flex justify-end">
               <button
                 type="button"
-                onClick={() => setMembersTarget(null)}
+                onClick={() => { setMembersTarget(null); setFocusTeacherField(false); }}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
                 data-testid="button-close-members-dialog-footer"
               >
