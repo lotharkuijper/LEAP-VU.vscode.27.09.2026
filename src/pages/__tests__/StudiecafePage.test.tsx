@@ -40,6 +40,14 @@ vi.mock('../../lib/supabase', () => ({
   },
 }));
 
+// Deze tests gaan over de stand MET Supabase Realtime. Zet die vast: anders volgt
+// de test VITE_PUBLIC_REALTIME uit de lokale .env (op Azure 'off', zonder
+// Realtime). De stand zonder Realtime (periodiek verversen) test liveUpdates.test.ts.
+vi.mock('../../lib/liveUpdates', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../lib/liveUpdates')>();
+  return { ...actual, REALTIME_ENABLED: true, liveUpdates: (s: any, r: () => void, p: number) => actual.liveUpdates(s, r, p, true) };
+});
+
 import { StudiecafePage } from '../StudiecafePage';
 import { LanguageProvider } from '../../i18n';
 import { translations } from '../../i18n/translations';

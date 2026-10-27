@@ -73,7 +73,9 @@ export default defineConfig({
     testTimeout: 15000,
     // De endpoint-suites booten in `beforeAll` de volledige Express-app
     // (`await import('../index.js')` + `app.listen`); dat duurt onder belasting
-    // langer dan de standaard 10s. 30s voorkomt valse hook-timeouts.
-    hookTimeout: 30000,
+    // langer dan de standaard 10s. Draaien server- en component-tests samen op
+    // een machine met veel kernen, dan laden tientallen workers die app tegelijk
+    // en is 30s soms te krap (2026-10-27); 90s voorkomt valse hook-timeouts.
+    hookTimeout: 90000,
   },
 });
