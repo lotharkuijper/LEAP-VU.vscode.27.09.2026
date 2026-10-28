@@ -52,12 +52,26 @@ export function isSelfJoinable(course) {
  * Pure: controleer een registratieverzoek. `openCourseIds` = ids van cursussen
  * die nu via open registratie te kiezen zijn. Geeft { ok, code?, courseIds? }.
  */
+// Wegwerp-adressen (2026-10-28): open registratie is de ingang voor misbruik van het
+// taalmodel; een adres dat over een uur niet meer bestaat, is geen echte deelnemer.
+export const DISPOSABLE_DOMAINS = Object.freeze([
+  'mailinator.com', 'guerrillamail.com', 'guerrillamail.info', 'sharklasers.com', 'grr.la', '10minutemail.com',
+  '10minutemail.net', 'tempmail.com', 'temp-mail.org', 'tempmail.net', 'yopmail.com', 'yopmail.fr', 'trashmail.com',
+  'getnada.com', 'dispostable.com', 'maildrop.cc', 'mailnesia.com', 'mintemail.com', 'throwawaymail.com',
+  'fakeinbox.com', 'emailondeck.com', 'moakt.com', 'tempail.com', 'mohmal.com', 'burnermail.io', 'mail.tm',
+]);
+export function isDisposableEmail(mail) {
+  const domain = String(mail || '').toLowerCase().split('@')[1] || '';
+  return DISPOSABLE_DOMAINS.some((d) => domain === d || domain.endsWith('.' + d));
+}
+
 export function validateRegistration({ fullName, email, password, courseIds }, openCourseIds, domains = blockedDomains()) {
   const name = String(fullName || '').trim();
   const mail = String(email || '').trim().toLowerCase();
   if (!name) return { ok: false, code: 'nameRequired' };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return { ok: false, code: 'invalidEmail' };
   if (isBlockedEmail(mail, domains)) return { ok: false, code: 'vuEmail' };
+  if (isDisposableEmail(mail)) return { ok: false, code: 'disposableEmail' };
   if (String(password || '').length < MIN_PASSWORD_LENGTH) return { ok: false, code: 'passwordTooShort' };
   const wanted = [...new Set((Array.isArray(courseIds) ? courseIds : []).map(String))];
   if (wanted.length === 0) return { ok: false, code: 'courseRequired' };
@@ -89,17 +103,19 @@ const MESSAGES = {
   courseRequired: 'Kies minstens één cursus',
   tooManyCourses: 'Kies hoogstens 10 cursussen',
   courseNotOpen: 'Een van de gekozen cursussen is niet (meer) open voor aanmelding',
+  disposableEmail: 'Met een wegwerp-e-mailadres kun je je niet aanmelden. Gebruik een e-mailadres dat je blijft gebruiken.',
 };
 
 /**
  * Routes. deps: supabaseAdmin, createAnonClient(), requireAuthUser, isAdminProfile(profile),
- * appOrigin(req), onMembershipChanged(userId).
+ * appOrigin(req), onMembershipChanged(userId), onOpenRegistration(userId) (tokenbudget, server/tokenBudget.js).
  */
 export function registerEnrollmentRoutes(app, deps) {
   const { supabaseAdmin: db, createAnonClient, requireAuthUser, isAdminProfile, appOrigin, onMembershipChanged = () => {} } = deps;
   // Hoogstens 20 geldige registraties per uur per adres (een zaal op één netwerk
   // moet kunnen); typefouten tellen niet mee.
-  const registerLimiter = createRateLimiter({ limit: 20, windowMs: 60 * 60 * 1000 });
+  // Hoogstens 10 aanmeldingen per IP-adres per uur (tegen nep-accounts, 2026-10-28).
+  const registerLimiter = createRateLimiter({ limit: 10, windowMs: 60 * 60 * 1000 });
 
   async function openCourses() {
     const { data, error } = await db.from('courses')
@@ -148,6 +164,8 @@ export function registerEnrollmentRoutes(app, deps) {
       const rows = v.courseIds.map((courseId) => ({ user_id: user.id, course_id: courseId }));
       const { error: pErr } = await db.from('pending_course_enrollments').upsert(rows, { onConflict: 'user_id,course_id', ignoreDuplicates: true });
       if (pErr) console.error('[open registratie] aanmelding in afwachting niet bewaard:', pErr.message);
+      // Tokenbudget: dit account kwam via open registratie binnen.
+      await deps.onOpenRegistration?.(user.id);
       return res.json({ ok: true, needsConfirmation: !data.session });
     } catch (err) {
       return res.status(500).json({ error: err?.message || String(err) });

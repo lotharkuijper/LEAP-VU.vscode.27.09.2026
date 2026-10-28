@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "فقط مدرّس هذه الدورة يمكنه تغيير الظهور",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "فقط evaluator-persona's يمكنها إصدار أحكام",
   "Alleen groepsleden mogen documenten uploaden": "فقط أعضاء المجموعة يمكنهم رفع المستندات",
+  "Alleen voor de beheerder": "للمدير فقط",
   "Alleen-lezen ShareStats-endpoints toegestaan": "يُسمح فقط بنقاط نهاية ShareStats للقراءة فقط",
   "answers is vereist (array)": "answers مطلوب (array)",
   "answers.length moet gelijk zijn aan questions.length": "يجب أن يكون answers.length مساويًا لـ questions.length",

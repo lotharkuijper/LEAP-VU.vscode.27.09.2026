@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "Only a teacher of this course may change visibility",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "Only evaluator personas can give judgments",
   "Alleen groepsleden mogen documenten uploaden": "Only group members may upload documents",
+  "Alleen voor de beheerder": "Admin only",
   "Alleen-lezen ShareStats-endpoints toegestaan": "Read-only ShareStats endpoints allowed",
   "answers is vereist (array)": "answers is required (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length must equal questions.length",

@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "このコースの教師だけが表示設定を変更できます",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "evaluator-persona だけが判定を出せます",
   "Alleen groepsleden mogen documenten uploaden": "グループメンバーだけがドキュメントをアップロードできます",
+  "Alleen voor de beheerder": "管理者のみ",
   "Alleen-lezen ShareStats-endpoints toegestaan": "読み取り専用 ShareStats-endpoints が許可されています",
   "answers is vereist (array)": "answers は必須です（array）",
   "answers.length moet gelijk zijn aan questions.length": "answers.length は questions.length と同じである必要があります",

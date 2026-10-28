@@ -12,6 +12,7 @@ import { SourceList, type SourceItem } from '../components/SourceList';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
 import { ChatGoalButton, ChatGoalBar, goalFromMessages } from '../components/chat/ChatGoal';
+import { TokenBudgetBadge } from '../components/TokenBudgetBadge';
 import { HelpTip } from '../components/help/HelpTip';
 import { FormulaButton } from '../components/formula/FormulaButton';
 import { MathText } from '../components/MathText';
@@ -1140,6 +1141,7 @@ export function ChatPage() {
                   </button>
                   <HelpTip id="student.chat.readiness" always />
                   </span>
+                  <TokenBudgetBadge />
                 </div>
               </div>
               <ChatGoalBar

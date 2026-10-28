@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "केवल इस कोर्स का शिक्षक दृश्यता बदल सकता है",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "केवल evaluator-persona's निर्णय दे सकते हैं",
   "Alleen groepsleden mogen documenten uploaden": "केवल समूह सदस्य दस्तावेज़ अपलोड कर सकते हैं",
+  "Alleen voor de beheerder": "केवल व्यवस्थापक के लिए",
   "Alleen-lezen ShareStats-endpoints toegestaan": "केवल पढ़ने वाले ShareStats-endpoints अनुमत हैं",
   "answers is vereist (array)": "answers आवश्यक है (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length questions.length के बराबर होना चाहिए",

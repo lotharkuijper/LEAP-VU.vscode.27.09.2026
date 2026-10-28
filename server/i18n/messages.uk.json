@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "Лише викладач цього курсу може змінювати видимість",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "Лише evaluator-persona's можуть надавати оцінки",
   "Alleen groepsleden mogen documenten uploaden": "Лише учасники групи можуть завантажувати документи",
+  "Alleen voor de beheerder": "Лише для адміністратора",
   "Alleen-lezen ShareStats-endpoints toegestaan": "Дозволено ShareStats-endpoints лише для читання",
   "answers is vereist (array)": "answers є обов’язковим (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length має дорівнювати questions.length",

@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "Hanya dosen kursus ini yang boleh mengubah visibilitas",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "Hanya persona evaluator yang bisa memberikan penilaian",
   "Alleen groepsleden mogen documenten uploaden": "Hanya anggota grup yang boleh mengunggah dokumen",
+  "Alleen voor de beheerder": "Hanya untuk admin",
   "Alleen-lezen ShareStats-endpoints toegestaan": "Endpoint ShareStats hanya-baca diizinkan",
   "answers is vereist (array)": "answers wajib (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length harus sama dengan questions.length",

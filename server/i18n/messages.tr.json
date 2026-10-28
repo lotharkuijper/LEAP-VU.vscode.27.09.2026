@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "Yalnızca bu dersin öğretim görevlisi görünürlüğü değiştirebilir",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "Yalnızca evaluator-persona'lar değerlendirme verebilir",
   "Alleen groepsleden mogen documenten uploaden": "Yalnızca grup üyeleri belge yükleyebilir",
+  "Alleen voor de beheerder": "Yalnızca yönetici için",
   "Alleen-lezen ShareStats-endpoints toegestaan": "Yalnızca salt okunur ShareStats endpointlerine izin verilir",
   "answers is vereist (array)": "answers gerekli (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length questions.length ile aynı olmalı",

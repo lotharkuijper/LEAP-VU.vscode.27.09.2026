@@ -57,6 +57,7 @@ export const HELP_TOPICS = [
   'courseFeatures.attachments',
   // Bijlagen in de chat: hoofdschakelaar van de beheerder (Instellingen)
   'chatAttachments.platform',
+  'tokenBudget.settings',
   // Systeemberichten van de beheerder (Beheer → Berichten)
   'systemMessages.compose',
   // Quiz (student)
@@ -69,6 +70,7 @@ export const HELP_TOPICS = [
   'student.chat.attachments',
   'student.chat.close',
   'student.chat.saveJournal',
+  'student.tokenBudget',
   'student.explain.modes',
   'student.journal.achievements',
   'student.myData.delete',

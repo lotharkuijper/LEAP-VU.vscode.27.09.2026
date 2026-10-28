@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "Doar un profesor al acestui curs poate modifica vizibilitatea",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "Doar persona-urile evaluatoare pot emite judecăți",
   "Alleen groepsleden mogen documenten uploaden": "Doar membrii grupului pot încărca documente",
+  "Alleen voor de beheerder": "Doar pentru administrator",
   "Alleen-lezen ShareStats-endpoints toegestaan": "Sunt permise endpointurile ShareStats doar pentru citire",
   "answers is vereist (array)": "answers este obligatoriu (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length trebuie să fie egal cu questions.length",

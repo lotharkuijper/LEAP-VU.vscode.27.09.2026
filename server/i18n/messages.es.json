@@ -44,6 +44,7 @@
   "Alleen een docent van deze cursus mag de zichtbaarheid wijzigen": "Solo un docente de este curso puede cambiar la visibilidad",
   "Alleen evaluator-persona's kunnen oordelen afgeven": "Solo las personas evaluadoras pueden emitir juicios",
   "Alleen groepsleden mogen documenten uploaden": "Solo los miembros del grupo pueden subir documentos",
+  "Alleen voor de beheerder": "Solo para el administrador",
   "Alleen-lezen ShareStats-endpoints toegestaan": "Endpoints de ShareStats solo de lectura permitidos",
   "answers is vereist (array)": "answers es obligatorio (array)",
   "answers.length moet gelijk zijn aan questions.length": "answers.length debe ser igual a questions.length",

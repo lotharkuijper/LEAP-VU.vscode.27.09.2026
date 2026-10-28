@@ -27,6 +27,7 @@ import { useContentTranslation } from '../hooks/useContentTranslation';
 import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { featureForPath } from '../lib/courseFeatures';
 import { FeatureOffBadge } from '../components/CourseFeatureGate';
+import { TokenBudgetBadge } from '../components/TokenBudgetBadge';
 
 type TileKey = 'chat' | 'explain' | 'quiz' | 'project';
 
@@ -427,6 +428,7 @@ export function DashboardPage() {
                   <ArrowLeftRight className="h-4 w-4" aria-hidden="true" />
                   {t('dashboard.switchCourse')}
                 </Link>
+                <TokenBudgetBadge />
               </div>
               {activeCourse.description && (
                 <p className="mt-1 text-sm text-slate-600" data-testid="text-active-course-description">{activeCourse.description}</p>

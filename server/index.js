@@ -154,6 +154,7 @@ import { buildSourcesInstructionBlock, buildNumberedRagContext, numberDocumentSo
 import { serverI18nMiddleware, translateServerMessage } from './serverI18n.js';
 import { purposeAllowsModule, MATERIAL_KINDS } from './filePurpose.js';
 import { registerProjectGroupRoutes, studentMayFormGroups, normalizeGroupMode } from './projectGroups.js';
+import { installTokenBudget } from './tokenBudget.js';
 import { SAVE_SOURCES, checkpointItems, checkpointItemRefs, assessmentRefs, reviewRefs, isSaved, reviewEntry, noteEntry } from './projectJournalSave.js';
 import { registerStudiecafeRoutes, createOrphanCourseAccessCleanupRunner, scheduleOrphanCourseAccessCleanup } from './studiecafe.js';
 import {
@@ -163,6 +164,7 @@ import {
   buildDigestEmail,
   getEmailConfig,
   sendEmail,
+  escapeHtml,
 } from './notifications.js';
 import { registerAuthEmailHook } from './authEmailHook.js';
 import { convertOfficeToPdf, queueConversion, normalizeExt, CONVERT_TO_PDF_EXT, DOCX_PAGED_EXT, NATIVE_PDF_EXT, TEXT_EXT, renditionCachePath, renditionSourceKey, renditionSourceType, resolveSofficeBin } from './documentRender.js';
@@ -313,6 +315,28 @@ const loadProfileRoleEmail = (id) => supabaseAdmin.from('profiles').select('role
 // Analytics: geaggregeerde tellers, losse module (zie server/analytics/index.js).
 // Staat vóór de routes zodat de meting elk /api-verzoek ziet.
 installAnalytics(app, { getDb: () => supabaseAdmin, authUser, isStaffForCourse, isLeapAdmin });
+
+// Tokenbudget voor accounts uit open registratie (server/tokenBudget.js): meet het
+// verbruik per open account en houdt AI-verzoeken tegen boven de dag-/weeklimiet
+// of de noodrem voor alle open accounts samen. Andere accounts merken er niets van.
+const tokenBudget = installTokenBudget(app, {
+  getDb: () => supabaseAdmin,
+  getUser: async (authHeader) => (await authUser({ headers: { authorization: authHeader } })).user || null,
+  requireAdmin: async (req, res) => {
+    const a = await requireAuthUser(req, res);
+    if (!a) return null;
+    if (!isLeapAdmin(a.profile)) { res.status(403).json({ error: 'Alleen voor de beheerder' }); return null; }
+    return a.user;
+  },
+  sendAlert: async ({ subject, text }) => {
+    const cfg = await getEmailConfig();
+    if (!cfg) return;
+    const { data: admins } = await supabaseAdmin.from('profiles').select('email').eq('role', 'admin');
+    for (const a of admins || []) {
+      if (a.email) await sendEmail(cfg, { to: a.email, subject, text, html: `<p>${escapeHtml(text)}</p>` });
+    }
+  },
+});
 
 // === Azure OpenAI (chat/completions) ===
 // Alle chat-/completion-aanroepen lopen via de Azure OpenAI-resource van de VU
@@ -14607,6 +14631,7 @@ registerEnrollmentRoutes(app, {
   requireAuthUser,
   isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
   appOrigin: (req) => process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || req.get('origin') || `${req.protocol}://${req.get('host')}`,
+  onOpenRegistration: (userId) => tokenBudget.markOpenAccount(userId),
 });
 
 // Sjablonen voor de cursusinstructies: docenten lezen, alleen de beheerder wijzigt (server/promptTemplates.js).
