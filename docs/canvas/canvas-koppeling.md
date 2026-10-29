@@ -10,9 +10,8 @@ LEAP vraagt alleen: een vast Canvas-id van de gebruiker, naam, e-mailadres, rol,
 
 ## Stap 1: LEAP-beheerder
 
-1. Maak de sleutel van LEAP: `node scripts/lti-keygen.mjs`.
-2. Zet de uitvoer in Key Vault als `LTI_TOOL_PRIVATE_JWK` (geheim).
-3. Geef de Canvas-beheerders het adres van de configuratie: `https://leap.vu-edulab.nl/lti/config.json`.
+1. Geef de Canvas-beheerders het adres van de configuratie: `https://leap.vu-edulab.nl/lti/config.json`.
+2. Later (pas nodig om deelnemers en groepen uit Canvas op te halen, niet om in te loggen): maak de sleutel van LEAP met `node scripts/lti-keygen.mjs` en zet de uitvoer in Key Vault als `LTI_TOOL_PRIVATE_JWK` (geheim).
 
 ## Stap 2: Canvas-beheerders
 
@@ -31,18 +30,22 @@ LEAP vraagt alleen: een vast Canvas-id van de gebruiker, naam, e-mailadres, rol,
 
 ## Stap 3: LEAP-beheerder
 
-Zet in de instellingen van de app (Key Vault / containerinstellingen):
+Ga in LEAP naar **Beheer → Instellingen → Canvas-koppeling** en klik op **Canvas-omgeving toevoegen**:
 
-```
-LTI_PLATFORMS=[{"issuer":"https://canvas.instructure.com","clientId":"<Client ID>","deploymentIds":["<Deployment ID>"],"authUrl":"https://sso.canvaslms.com/api/lti/authorize_redirect","jwksUrl":"https://sso.canvaslms.com/api/lti/security/jwks"}]
-```
+- Uitgever: `https://canvas.instructure.com` (voor Canvas van Instructure, ook voor vud.instructure.com en vu.instructure.com);
+- Client ID en Deployment ID: van de Canvas-beheerders;
+- de twee adressen leeg laten: LEAP vult die van de Canvas-cloud in.
 
-Controleer de adressen (`issuer`, `authUrl`, `jwksUrl`) met de Canvas-beheerders: bij een eigen of test-omgeving kunnen ze afwijken. Na een herstart meldt de serverlog `[lti] Canvas-koppeling actief`.
+Opslaan, en de koppeling werkt meteen (geen herstart, geen Key Vault: niets hiervan is geheim).
+
+Twijfel je over de gegevens? Klik in Canvas één keer op LEAP. De poging wordt geweigerd, maar verschijnt in hetzelfde scherm onder *Onlangs geweigerd*, met precies wat Canvas meestuurde. Klik op **Neem over** en sla op.
+
+Een omgeving kan ook nog in de serveromgeving staan (`LTI_PLATFORMS`, JSON-lijst met `issuer`, `clientId`, `deploymentIds`, `authUrl`, `jwksUrl`); die gaat voor en is in het scherm alleen te zien.
 
 ## Per cursus
 
 1. De LEAP-beheerder zet de toegangsroute van de cursus op **Canvas** (of Canvas + open).
-2. De docent kopieert de **Canvas-link** en zet die in Canvas als module-item → Externe tool → LEAP, met "In een nieuw tabblad laden".
+2. De docent kopieert de **Canvas-link** en zet die in Canvas als module-item: + bij een module → **External Tool** → LEAP. Canvas vult bij URL zelf `…/lti/launch` in; **vervang dat door de Canvas-link** (die eindigt op `?course=…`). Vink "Load in a new tab" aan. Zonder `?course=…` weet LEAP niet om welke cursus het gaat.
 
 ## Per project met groepen uit Canvas
 

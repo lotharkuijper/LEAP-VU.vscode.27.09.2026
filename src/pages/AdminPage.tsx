@@ -17,6 +17,7 @@ import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
 import { CourseFeaturesAdminTab } from './admin/CourseFeaturesAdminTab';
 import { ChatAttachmentsPlatformPanel } from './admin/ChatAttachmentsPlatformPanel';
 import { TokenBudgetPanel } from './admin/TokenBudgetPanel';
+import { CanvasPlatformsPanel } from './admin/CanvasPlatformsPanel';
 import { SystemMessagesAdminTab } from './admin/SystemMessagesAdminTab';
 import { AnalyticsAdminTab } from '../features/analytics/AnalyticsAdminTab';
 import { AddUsersTab } from './admin/AddUsersTab';
@@ -2718,6 +2719,7 @@ const tabGroups = [
               <div className="space-y-4">
                 <ChatAttachmentsPlatformPanel />
                 <TokenBudgetPanel />
+                <CanvasPlatformsPanel />
                 <div className="p-4 border border-gray-200 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-2">{t('admin.settings.apiConfig')}</h3>
                   <AdminHint variant="intro">

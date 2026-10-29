@@ -58,6 +58,7 @@ export const HELP_TOPICS = [
   // Bijlagen in de chat: hoofdschakelaar van de beheerder (Instellingen)
   'chatAttachments.platform',
   'tokenBudget.settings',
+  'canvasPlatforms.settings',
   // Systeemberichten van de beheerder (Beheer → Berichten)
   'systemMessages.compose',
   // Quiz (student)

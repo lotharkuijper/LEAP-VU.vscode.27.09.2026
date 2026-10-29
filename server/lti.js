@@ -21,8 +21,10 @@
 //   LTI_PLATFORMS        JSON-lijst [{ issuer, clientId, deploymentIds[], authUrl, jwksUrl }]
 //                        of de losse variabelen LTI_ISSUER, LTI_CLIENT_ID,
 //                        LTI_DEPLOYMENT_IDS (komma's), LTI_AUTH_URL, LTI_JWKS_URL
+//                        óf (sinds 2026-10-29) door de beheerder in Beheer → Instellingen
+//                        (chatbot_prompts PLATFORMS_KEY; niet geheim). Beide tellen.
 //   LTI_TOOL_PRIVATE_JWK de sleutel van LEAP (JSON, RS256), via Key Vault
-//                        (aanmaken: node scripts/lti-keygen.mjs)
+//                        (aanmaken: node scripts/lti-keygen.mjs); niet nodig om in te loggen
 
 import { createRemoteJWKSet, jwtVerify, importJWK, exportJWK } from 'jose';
 import { randomBytes } from 'node:crypto';
@@ -56,6 +58,86 @@ export function loadPlatforms(env = process.env) {
     }];
   }
   return [];
+}
+
+// Canvas-omgevingen die de beheerder in LEAP zelf instelt (Beheer → Instellingen,
+// 2026-10-29). Niets hiervan is geheim (uitgever, Client ID, Deployment ID en
+// openbare adressen van Canvas), dus het staat in chatbot_prompts en niet in Key
+// Vault. De sleutel van LEAP zelf (LTI_TOOL_PRIVATE_JWK) blijft in Key Vault; die
+// is voor inloggen via Canvas niet nodig.
+export const PLATFORMS_KEY = '__lti_platforms__';
+
+/** Standaardadressen van de Canvas-cloud van Instructure bij een uitgever. */
+export function canvasEndpoints(issuer) {
+  const host = (() => { try { return new URL(String(issuer)).host; } catch { return ''; } })();
+  const sso = host === 'canvas.test.instructure.com' ? 'sso.test.canvaslms.com'
+    : host === 'canvas.beta.instructure.com' ? 'sso.beta.canvaslms.com'
+    : host === 'canvas.instructure.com' ? 'sso.canvaslms.com' : null;
+  return sso ? { authUrl: `https://${sso}/api/lti/authorize_redirect`, jwksUrl: `https://${sso}/api/lti/security/jwks` } : null;
+}
+
+const httpsUrl = (s) => { try { const u = new URL(String(s).trim()); return u.protocol === 'https:' ? u.toString().replace(/\/+$/, '') : null; } catch { return null; } };
+
+/** Eén ingevoerde Canvas-omgeving controleren en aanvullen; null = onbruikbaar. */
+export function normalizePlatform(p) {
+  if (!p || typeof p !== 'object') return null;
+  const issuer = httpsUrl(p.issuer);
+  const clientId = String(p.clientId ?? '').trim();
+  if (!issuer || !/^[\w.:-]{1,128}$/.test(clientId)) return null;
+  const defaults = canvasEndpoints(issuer) || {};
+  const authUrl = httpsUrl(p.authUrl || '') || defaults.authUrl;
+  const jwksUrl = httpsUrl(p.jwksUrl || '') || defaults.jwksUrl;
+  if (!authUrl || !jwksUrl) return null;
+  const raw = Array.isArray(p.deploymentIds) ? p.deploymentIds : String(p.deploymentIds ?? '').split(',');
+  const deploymentIds = [...new Set(raw.map(d => String(d).trim()).filter(d => /^[\w.:-]{1,200}$/.test(d)))];
+  return { issuer, clientId, deploymentIds, authUrl, jwksUrl };
+}
+
+/**
+ * Alle Canvas-omgevingen: uit de serveromgeving (LTI_PLATFORMS) plus wat de
+ * beheerder in LEAP heeft opgeslagen. list() is synchroon (voor de launch);
+ * refresh() leest de database opnieuw (bij start en na opslaan).
+ */
+export function createPlatformRegistry({ envPlatforms = [], getDb }) {
+  let saved = [];
+  const key = (p) => `${p.issuer}|${p.clientId}`;
+  return {
+    list() {
+      const env = envPlatforms.map(p => ({ ...p, source: 'env' }));
+      const seen = new Set(env.map(key));
+      return [...env, ...saved.filter(p => !seen.has(key(p))).map(p => ({ ...p, source: 'leap' }))];
+    },
+    env: () => envPlatforms,
+    saved: () => saved,
+    async refresh() {
+      try {
+        const { data } = await getDb().from('chatbot_prompts').select('content').eq('name', PLATFORMS_KEY).maybeSingle();
+        const parsed = data?.content ? JSON.parse(data.content) : [];
+        saved = (Array.isArray(parsed) ? parsed : []).map(normalizePlatform).filter(Boolean);
+      } catch (e) {
+        console.warn('[lti] Canvas-omgevingen niet gelezen:', e?.message || e);
+      }
+      return saved;
+    },
+    set(list) { saved = list; },
+  };
+}
+
+/** Recente pogingen van een onbekende Canvas-omgeving (procesgeheugen), zodat de beheerder ze kan overnemen. */
+export function createUnknownLog(max = 5) {
+  const items = [];
+  const clip = (s) => String(s ?? '').slice(0, 200);
+  return {
+    add({ iss, clientId, deploymentId }, now = new Date()) {
+      if (!httpsUrl(iss || '')) return; // rommel niet bewaren
+      const entry = { issuer: clip(iss), clientId: clip(clientId), deploymentId: clip(deploymentId), at: now.toISOString() };
+      const i = items.findIndex(x => x.issuer === entry.issuer && x.clientId === entry.clientId && x.deploymentId === entry.deploymentId);
+      if (i >= 0) items.splice(i, 1);
+      items.unshift(entry);
+      items.length = Math.min(items.length, max);
+    },
+    list: () => items.slice(),
+  };
 }
 
 export function findPlatform(platforms, issuer, clientId) {
@@ -295,6 +377,9 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
 export function registerLtiRoutes(app, express, deps) {
   const db = deps.supabaseAdmin;
   const states = deps.states || createStateStore();
+  const registry = deps.registry || null;
+  const platforms = () => (registry ? registry.list() : deps.platforms || []);
+  const unknown = deps.unknownLog || createUnknownLog();
   const jwksCache = new Map();
   const getJwks = deps.getJwks || ((p) => {
     if (!jwksCache.has(p.jwksUrl)) jwksCache.set(p.jwksUrl, createRemoteJWKSet(new URL(p.jwksUrl)));
@@ -309,8 +394,12 @@ export function registerLtiRoutes(app, express, deps) {
   // 1. OIDC-start: Canvas → LEAP (GET of POST).
   const login = (req, res) => {
     const q = { ...(req.query || {}), ...(req.body || {}) };
-    const platform = findPlatform(deps.platforms, q.iss, q.client_id);
-    if (!platform) return fail(req, res, 'unknownPlatform');
+    const platform = findPlatform(platforms(), q.iss, q.client_id);
+    if (!platform) {
+      unknown.add({ iss: q.iss, clientId: q.client_id, deploymentId: q.lti_deployment_id });
+      console.warn(`[lti] onbekende Canvas-omgeving: iss=${String(q.iss || '').slice(0, 120)} client_id=${String(q.client_id || '').slice(0, 64)}`);
+      return fail(req, res, 'unknownPlatform');
+    }
     if (!q.login_hint) return fail(req, res, 'badRequest');
     const state = randomBytes(24).toString('base64url');
     const nonce = randomBytes(24).toString('base64url');
@@ -335,7 +424,7 @@ export function registerLtiRoutes(app, express, deps) {
     if (!saved) return fail(req, res, 'expired');
     // De state hoort bij deze browser (cookie uit stap 1).
     if (cookieValue(req, 'leap_lti_state') !== String(state)) return fail(req, res, 'stateMismatch');
-    const platform = findPlatform(deps.platforms, saved.issuer, saved.clientId);
+    const platform = findPlatform(platforms(), saved.issuer, saved.clientId);
     if (!platform) return fail(req, res, 'unknownPlatform');
     let claims;
     try {
@@ -348,6 +437,7 @@ export function registerLtiRoutes(app, express, deps) {
     }
     if (claims.nonce !== saved.nonce) return fail(req, res, 'nonceMismatch');
     const bad = checkLaunchClaims(claims, platform);
+    if (bad === 'unknownDeployment') unknown.add({ iss: platform.issuer, clientId: platform.clientId, deploymentId: claims[`${CLAIM}deployment_id`] });
     if (bad) return fail(req, res, bad);
     try {
       const r = await processLaunch(db, db.auth.admin, { claims, platform });
@@ -390,12 +480,51 @@ export function registerLtiRoutes(app, express, deps) {
       projectId = project?.id || null;
     }
     return res.json({
-      configured: deps.platforms.length > 0,
+      configured: platforms().length > 0,
       canvasMode: CANVAS_MODES.includes(course.enrollment_mode),
       link: canvasLinkFor(deps.appUrl(req), courseId, projectId),
       configUrl: `${deps.appUrl(req)}/lti/config.json`,
       canvasCourses: (links || []).map(l => ({ title: l.context_title, lastSeen: l.last_seen })),
     });
+  });
+
+  // 4b. Beheerder: Canvas-omgevingen in LEAP zelf instellen (Beheer → Instellingen).
+  app.get('/api/admin/lti-platforms', async (req, res) => {
+    if (!deps.requireAdmin || !(await deps.requireAdmin(req, res))) { if (!res.headersSent) res.status(404).end(); return; }
+    return res.json({
+      env: (registry ? registry.env() : deps.platforms || []).map(({ issuer, clientId, deploymentIds }) => ({ issuer, clientId, deploymentIds })),
+      saved: registry ? registry.saved() : [],
+      active: platforms().length,
+      recentUnknown: unknown.list(),
+      toolKey: !!deps.toolKey?.publicJwk,
+      configUrl: `${deps.appUrl(req)}/lti/config.json`,
+      loginUrl: `${deps.appUrl(req)}/lti/login`,
+      launchUrl: `${deps.appUrl(req)}/lti/launch`,
+    });
+  });
+  app.put('/api/admin/lti-platforms', express.json(), async (req, res) => {
+    const admin = deps.requireAdmin ? await deps.requireAdmin(req, res) : null;
+    if (!admin) { if (!res.headersSent) res.status(404).end(); return; }
+    if (!registry) return res.status(503).json({ error: 'Niet beschikbaar' });
+    const input = Array.isArray(req.body?.platforms) ? req.body.platforms.slice(0, 10) : null;
+    if (!input) return res.status(400).json({ error: 'Ongeldige invoer' });
+    const next = input.map(normalizePlatform);
+    if (next.some(p => !p)) return res.status(400).json({ error: 'Vul bij elke Canvas-omgeving een geldige uitgever (https) en Client ID in; bij een eigen Canvas-installatie ook de twee adressen.', code: 'ltiPlatformInvalid' });
+    const content = JSON.stringify(next);
+    const { data: row } = await db.from('chatbot_prompts').select('id, content').eq('name', PLATFORMS_KEY).maybeSingle();
+    const { error } = row
+      ? await db.from('chatbot_prompts').update({ content }).eq('id', row.id)
+      : await db.from('chatbot_prompts').insert({ name: PLATFORMS_KEY, content, is_active: false });
+    if (error) return res.status(500).json({ error: error.message });
+    try {
+      await db.from('leap_setting_changes').insert({
+        course_id: null, setting: PLATFORMS_KEY,
+        value: { from: row?.content ? JSON.parse(row.content) : null, to: next }, changed_by: admin.id,
+      });
+    } catch { /* logboek is aanvullend */ }
+    registry.set(next);
+    console.log(`[lti] Canvas-omgevingen bijgewerkt: ${next.map(p => p.issuer).join(', ') || '(geen)'}`);
+    return res.json({ saved: next, active: platforms().length });
   });
 
   // 5. Inloggen zonder wachtwoord met een code per e-mail, alleen voor accounts die via Canvas zijn aangemaakt.

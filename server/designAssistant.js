@@ -64,7 +64,7 @@ export const ADMIN_SECTIONS = [
     what: 'Alle gebruikers van LEAP en hun rol.' },
   { tab: 'messages', labelKey: 'admin.tabs.messages', audience: 'admin', helpGroups: ['systemMessages'],
     what: 'Systeemberichten aan alle gebruikers, alle studenten, alle docenten of de leden van één cursus. Ze staan op het Dashboard tot iemand ze wegklikt of tot de einddatum; bij "Dashboard" in het menu staat zolang een rood uitroepteken. Eenrichtingsverkeer; de beheerder ziet alleen totalen (ontvangers, weggeklikt).' },
-  { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: ['chatAttachments', 'tokenBudget'],
+  { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: ['chatAttachments', 'tokenBudget', 'canvasPlatforms'],
     what: 'Systeeminstellingen van LEAP, waaronder de hoofdschakelaar voor bijlagen in de chat (afbeeldingen en bestanden; standaard uit, noodrem voor alle cursussen) en het tokenbudget voor accounts uit open registratie (week- en daglimiet per account, noodrem voor alle open accounts samen).' },
 ];
 

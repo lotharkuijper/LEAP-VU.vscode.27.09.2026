@@ -8,7 +8,7 @@ import { generateKeyPair, exportJWK, createLocalJWKSet, SignJWT } from 'jose';
 import {
   CLAIM, loadPlatforms, roleFromLti, courseIdFromClaims, checkLaunchClaims, createStateStore,
   canvasToolConfig, canvasLinkFor, likeExact, registerLtiRoutes, createRateLimiter, secureCookies,
-  projectIdFromClaims, canvasGroupFromClaims,
+  projectIdFromClaims, canvasGroupFromClaims, normalizePlatform, canvasEndpoints, createPlatformRegistry, PLATFORMS_KEY,
 } from '../lti.js';
 
 const ISS = 'https://canvas.test';
@@ -248,6 +248,71 @@ describe('launch vanuit Canvas', () => {
   it('onbekende Canvas-omgeving wordt niet doorgestuurd', async () => {
     const r = await req('GET', '/lti/login?iss=https%3A%2F%2Fevil.test&client_id=x&login_hint=x');
     expect(new URLSearchParams(new URL(r.headers.location).hash.slice(1)).get('error')).toBe('unknownPlatform');
+  });
+});
+
+describe('Canvas-omgevingen instellen in LEAP (2026-10-29)', () => {
+  it('controleert invoer en vult de adressen van de Canvas-cloud aan', () => {
+    expect(normalizePlatform({ issuer: 'https://canvas.instructure.com/', clientId: ' 104020000000000409 ', deploymentIds: '732:f952a58c, 732:f952a58c' })).toEqual({
+      issuer: 'https://canvas.instructure.com', clientId: '104020000000000409', deploymentIds: ['732:f952a58c'],
+      authUrl: 'https://sso.canvaslms.com/api/lti/authorize_redirect', jwksUrl: 'https://sso.canvaslms.com/api/lti/security/jwks',
+    });
+    expect(canvasEndpoints('https://canvas.test.instructure.com').authUrl).toBe('https://sso.test.canvaslms.com/api/lti/authorize_redirect');
+    expect(normalizePlatform({ issuer: 'http://canvas.instructure.com', clientId: '1' })).toBeNull();
+    expect(normalizePlatform({ issuer: 'https://eigen.canvas.nl', clientId: '1' })).toBeNull(); // eigen installatie: adressen verplicht
+    expect(normalizePlatform({ issuer: 'https://eigen.canvas.nl', clientId: '1', authUrl: 'https://eigen.canvas.nl/a', jwksUrl: 'https://eigen.canvas.nl/j' })).toMatchObject({ deploymentIds: [] });
+  });
+
+  it('beheerder slaat een omgeving op; daarna lukt de launch zonder herstart, en een onbekende poging is over te nemen', async () => {
+    await new Promise(r => server.close(r));
+    state.db.chatbot_prompts = [];
+    state.db.leap_setting_changes = [];
+    const registry = createPlatformRegistry({ envPlatforms: [], getDb: () => db });
+    const db = fakeDb();
+    let isAdmin = true;
+    const app = express();
+    app.use(express.json());
+    registerLtiRoutes(app, express, {
+      supabaseAdmin: db, registry, appUrl: () => 'http://leap.local', toolKey: null, getJwks: () => jwks,
+      requireAuthUser: async () => ({ user: { id: 'admin' }, profile: { role: 'admin' } }),
+      requireAdmin: async (_q, res) => (isAdmin ? { id: 'admin' } : (res.status(403).json({ error: 'nee' }), null)),
+      isStaffForCourse: async () => true, createAnonClient: () => ({}), rateLimit: createRateLimiter({ max: 3 }),
+    });
+    server = app.listen(0);
+    await new Promise(r => server.once('listening', r));
+
+    // Nog niets ingesteld: Canvas klopt aan en wordt geweigerd, maar LEAP onthoudt wie het was.
+    const first = await req('GET', `/lti/login?iss=${encodeURIComponent(ISS)}&client_id=${CLIENT}&lti_deployment_id=${DEP}&login_hint=x`);
+    expect(new URLSearchParams(new URL(first.headers.location).hash.slice(1)).get('error')).toBe('unknownPlatform');
+    await req('GET', '/lti/login?iss=rommel&client_id=x&login_hint=x');
+    const before = JSON.parse((await req('GET', '/api/admin/lti-platforms')).body);
+    expect(before.active).toBe(0);
+    expect(before.recentUnknown).toEqual([expect.objectContaining({ issuer: ISS, clientId: CLIENT, deploymentId: DEP })]);
+
+    const bad = await req('PUT', '/api/admin/lti-platforms', { body: { platforms: [{ issuer: 'geen-url', clientId: 'x' }] } });
+    expect(bad.status).toBe(400);
+    const put = await req('PUT', '/api/admin/lti-platforms', { body: { platforms: [{ issuer: ISS, clientId: CLIENT, deploymentIds: DEP, authUrl: platform.authUrl, jwksUrl: platform.jwksUrl }] } });
+    expect(put.status).toBe(200);
+    expect(JSON.parse(state.db.chatbot_prompts[0].content)[0]).toMatchObject({ issuer: ISS, clientId: CLIENT, deploymentIds: [DEP] });
+    expect(state.db.leap_setting_changes[0]).toMatchObject({ setting: PLATFORMS_KEY, changed_by: 'admin' });
+
+    const { frag } = await launch();
+    expect(frag.get('token_hash')).toBe('hash-for-student@example.org');
+
+    // Na een herstart leest LEAP de opgeslagen omgeving weer in.
+    const fresh = createPlatformRegistry({ envPlatforms: [], getDb: () => db });
+    await fresh.refresh();
+    expect(fresh.list()).toEqual([expect.objectContaining({ issuer: ISS, source: 'leap' })]);
+
+    isAdmin = false;
+    expect((await req('GET', '/api/admin/lti-platforms')).status).toBe(403);
+    expect((await req('PUT', '/api/admin/lti-platforms', { body: { platforms: [] } })).status).toBe(403);
+  });
+
+  it('omgeving uit de serveromgeving gaat voor; een ingestelde omgeving telt erbij', () => {
+    const reg = createPlatformRegistry({ envPlatforms: [platform], getDb: () => null });
+    reg.set([{ ...platform, deploymentIds: [] }, { ...platform, clientId: 'tweede' }]);
+    expect(reg.list().map(p => `${p.clientId}:${p.source}`)).toEqual(['client-1:env', 'tweede:leap']);
   });
 });
 

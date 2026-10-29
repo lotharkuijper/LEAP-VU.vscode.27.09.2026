@@ -64,7 +64,7 @@ export function CanvasLinkDialog({ courseId, courseName, isAdmin, onClose }: {
 
         {info && (
           <div className="space-y-4">
-            {!info.configured && <AdminHint variant="warning" testId="warning-lti-not-configured">{t('canvasLink.notConfigured')}</AdminHint>}
+            {!info.configured && <AdminHint variant="warning" testId="warning-lti-not-configured">{t(isAdmin ? 'canvasLink.notConfiguredAdmin' : 'canvasLink.notConfigured')}</AdminHint>}
             {!info.canvasMode && <AdminHint variant="warning">{t('canvasLink.notCanvasMode')}</AdminHint>}
 
             <div>
@@ -85,6 +85,7 @@ export function CanvasLinkDialog({ courseId, courseName, isAdmin, onClose }: {
                 <li>{t('canvasLink.step2')}</li>
                 <li>{t('canvasLink.step3')}</li>
               </ol>
+              <p className="mt-2 text-xs text-gray-600">{t('canvasLink.urlNote')}</p>
             </div>
 
             {info.canvasCourses.length > 0 && (
