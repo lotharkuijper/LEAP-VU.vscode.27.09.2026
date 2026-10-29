@@ -1,4 +1,4 @@
-// Controle van "Studenten uitnodigen" (server/courseInvitations.js) tegen de echte
+// Controle van "Studenten uitnodigen" (server/courses/courseInvitations.js) tegen de echte
 // database en de draaiende API (poort 3001). Maakt een tijdelijke cursus en
 // tijdelijke accounts aan en ruimt alles weer op. Er gaat geen echte mail uit
 // zolang lokaal geen mailinstelling is geladen (status wordt dan "failed").

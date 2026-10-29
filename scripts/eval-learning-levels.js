@@ -20,7 +20,7 @@
 //
 // Twee modi:
 //   1) Direct via Azure (standaard). Gebruikt dezelfde env-config als
-//      server/index.js (AZURE_OPENAI_*). Spiegelt de prompt-opbouw van
+//      server/lib/azureOpenai.js (AZURE_OPENAI_*). Spiegelt de prompt-opbouw van
 //      /api/chat (FALLBACK_SYSTEM_PROMPT + leerniveau-blok + taal-instructie).
 //   2) Via de live HTTP-endpoint /api/chat. Zet CHAT_EVAL_BASE_URL (bijv.
 //      http://localhost:3001) en CHAT_EVAL_TOKEN (een geldig Supabase-JWT).
@@ -290,7 +290,7 @@ async function run() {
     const overall = !identical && jargonUp;
     console.log(overall
       ? '✔ Het leerniveau heeft een merkbaar effect op het antwoord.'
-      : '⚠ Het niveau-effect is zwak of afwezig — controleer de descriptors in server/learningLevel.js.');
+      : '⚠ Het niveau-effect is zwak of afwezig — controleer de descriptors in server/chat/learningLevel.js.');
     console.log('');
     console.log('Let op: LLM-output is niet-deterministisch. Draai een paar keer of');
     console.log('met meerdere vragen (QUESTION=...) voordat je conclusies trekt.');

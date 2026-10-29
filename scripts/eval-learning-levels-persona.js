@@ -20,10 +20,10 @@
 //
 // Twee modi:
 //   1) Direct via Azure (standaard). Gebruikt dezelfde env-config als
-//      server/index.js (AZURE_OPENAI_*). Spiegelt de prompt-opbouw van
+//      server/lib/azureOpenai.js (AZURE_OPENAI_*). Spiegelt de prompt-opbouw van
 //      /api/projects/persona-chat: persona.system_prompt + leerniveau-blok +
 //      taal-instructie. De persona-prompt is instelbaar via PERSONA_PROMPT;
-//      standaard de "__default__" consultant-prompt uit server/index.js, zodat
+//      standaard de "__default__" consultant-prompt uit server/projects/personaRoutes.js, zodat
 //      het script zonder DB/echte persona draait. Relatie-/RAG-/documentblokken
 //      zitten hier bewust niet in — die zijn voor deze niveau-test niet relevant.
 //   2) Via de live HTTP-endpoint /api/projects/persona-chat. Dit loopt écht door
@@ -39,7 +39,7 @@ import { buildLevelInstructionBlock, LEVEL_LABELS, clampLevel } from '../server/
 import { buildLanguageInstruction } from '../server/i18n/languages.js';
 
 // Standaard-persona = de "__default__" consultant uit /api/projects/persona-chat
-// (server/index.js). Overschrijf met PERSONA_PROMPT om een eigen persona te
+// (server/projects/personaRoutes.js). Overschrijf met PERSONA_PROMPT om een eigen persona te
 // spiegelen.
 const DEFAULT_PERSONA_PROMPT = process.env.PERSONA_PROMPT
   || 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten epi/biostat. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".';
@@ -318,7 +318,7 @@ async function run() {
     const overall = !identical && jargonUp;
     console.log(overall
       ? '✔ Het leerniveau heeft een merkbaar effect op het persona-antwoord.'
-      : '⚠ Het niveau-effect is zwak of afwezig — controleer de descriptors in server/learningLevel.js en de prompt-opbouw in /api/projects/persona-chat.');
+      : '⚠ Het niveau-effect is zwak of afwezig — controleer de descriptors in server/chat/learningLevel.js en de prompt-opbouw in /api/projects/persona-chat.');
     console.log('');
     console.log('Let op: LLM-output is niet-deterministisch. Draai een paar keer of');
     console.log('met meerdere vragen (QUESTION=...) voordat je conclusies trekt.');

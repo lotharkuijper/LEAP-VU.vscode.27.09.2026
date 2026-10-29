@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// IJking van de BEOORDELING bij "Verbeter deze uitleg" (server/flawedExplanations.js),
+// IJking van de BEOORDELING bij "Verbeter deze uitleg" (server/explain/flawedExplanations.js),
 // tegen het echte model. Schrijft niets weg. Per begrip maakt het script een echte
 // oefening en stuurt er vier gesimuleerde antwoorden op in:
 //   A  alle fouten gevonden en goed uitgelegd      → verwacht: gevonden = totaal, niets onterecht

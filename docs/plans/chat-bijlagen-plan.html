@@ -67,15 +67,15 @@
 
 <h2>2. Hoe het nu werkt (bevindingen, 16-10-2026)</h2>
 <ul>
-  <li><strong>Onderdelen per cursus</strong> (<code>server/courseFeatures.js</code>, gelijk aan <code>src/lib/courseFeatures.ts</code>): <code>courses.features</code> bewaart alleen wat UIT staat; een ontbrekende sleutel betekent aan. In de database doet <code>leap_course_feature_on</code> hetzelfde. Een nieuwe sleutel zou met die regel automatisch overal <em>aan</em> staan. Dat moet voor deze optie juist niet.</li>
-  <li><strong>Chatverzoek</strong>: de browser stuurt <code>messages</code> naar <code>POST /api/chat</code> (<code>server/index.js</code>); <code>featureForChatRequest</code> bepaalt welk onderdeel het verzoek bedient. De body-limiet is 50 MB (<code>express.json</code>), dus afbeeldingen passen er technisch in.</li>
+  <li><strong>Onderdelen per cursus</strong> (<code>server/courses/courseFeatures.js</code>, gelijk aan <code>src/lib/courseFeatures.ts</code>): <code>courses.features</code> bewaart alleen wat UIT staat; een ontbrekende sleutel betekent aan. In de database doet <code>leap_course_feature_on</code> hetzelfde. Een nieuwe sleutel zou met die regel automatisch overal <em>aan</em> staan. Dat moet voor deze optie juist niet.</li>
+  <li><strong>Chatverzoek</strong>: de browser stuurt <code>messages</code> naar <code>POST /api/chat</code> (<code>server/chat/routes.js</code>); <code>featureForChatRequest</code> bepaalt welk onderdeel het verzoek bedient. De body-limiet is 50 MB (<code>express.json</code>), dus afbeeldingen passen er technisch in.</li>
   <li><strong>De browser schrijft de chatberichten zelf weg</strong> in de tabel <code>messages</code> (<code>src/pages/ChatPage.tsx</code>). Dat is het belangrijkste aandachtspunt: als de bijlage in de berichttekst of in <code>retrieved_context</code> belandt, wordt ze toch bewaard. De afscherming moet dus in de browser én in de database zitten.</li>
   <li><strong>"Klopt dit wel?"</strong> stuurt alleen de tekst van het tutorantwoord plus bronnen mee (<code>buildExcerptAttachment</code> in <code>ChatPage.tsx</code>), niet het bericht van de student.</li>
-  <li><strong>Documentverwerking</strong> bestaat al voor cursusmateriaal: LibreOffice in de container (<code>server/documentRender.js</code>), <code>server/pptxExtract.js</code>, PDF-tekst. Die kan hergebruikt worden voor studentbestanden, maar dan zonder iets op te slaan.</li>
+  <li><strong>Documentverwerking</strong> bestaat al voor cursusmateriaal: LibreOffice in de container (<code>server/documents/documentRender.js</code>), <code>server/ingestion/pptxExtract.js</code>, PDF-tekst. Die kan hergebruikt worden voor studentbestanden, maar dan zonder iets op te slaan.</li>
   <li><strong>Taalmodel</strong>: lokaal staat <code>AZURE_OPENAI_DEPLOYMENT=gpt-5.5</code> met API-versie <code>2024-10-21</code>. Nergens in LEAP wordt nu beeldinvoer gebruikt. De live configuratie op Azure is niet gecontroleerd.</li>
   <li><strong>Tokens meten</strong>: de analysemodule (<code>server/analytics/</code>) telt Azure-tokens per cursus via een wrapper rond <code>fetch</code>. Beeldtokens komen daar vanzelf in mee, maar zijn niet apart zichtbaar.</li>
   <li><strong>Schakelaar van de beheerder</strong>: er is al een voorbeeld van een platformbrede aan/uit-stand in <code>chatbot_prompts</code> (<code>__design_assistant_enabled__</code> voor de Ontwerphulp).</li>
-  <li><strong>Communicatie</strong>: er is nu alleen het Studiecafé per cursus (aankondigingen door docenten) en een e-maildigest (<code>server/notifications.js</code>), met een limiet van 30 e-mails per minuut en 100 per uur. Een kanaal van beheerder naar docenten en studenten bestaat niet (H12).</li>
+  <li><strong>Communicatie</strong>: er is nu alleen het Studiecafé per cursus (aankondigingen door docenten) en een e-maildigest (<code>server/lib/notifications.js</code>), met een limiet van 30 e-mails per minuut en 100 per uur. Een kanaal van beheerder naar docenten en studenten bestaat niet (H12).</li>
 </ul>
 
 <h2>3. Wat de student ziet en doet</h2>
@@ -120,14 +120,14 @@
 
 <h2>6. Server: poort, grenzen en verwerking</h2>
 <ul>
-  <li><strong>De server is de poort.</strong> Plakken kun je in de browser niet tegenhouden, dus <code>/api/chat</code> weigert elk verzoek met bijlagen als de hoofdschakelaar of de cursusschakelaar uit staat (nieuwe melding in <code>server/serverI18n.js</code>). Alleen in de chat, niet in Ik leg uit, quiz of projecten.</li>
+  <li><strong>De server is de poort.</strong> Plakken kun je in de browser niet tegenhouden, dus <code>/api/chat</code> weigert elk verzoek met bijlagen als de hoofdschakelaar of de cursusschakelaar uit staat (nieuwe melding in <code>server/i18n/serverI18n.js</code>). Alleen in de chat, niet in Ik leg uit, quiz of projecten.</li>
   <li><strong>Controle van de invoer</strong>: toegestane typen (PNG, JPEG, WebP, GIF zonder animatie; PDF, DOCX, PPTX, TXT, MD), echte bestandsinhoud controleren in plaats van de extensie, maximale grootte, maximaal aantal per bericht.</li>
   <li><strong>Afbeeldingen, één keer beschrijven.</strong> Bij het eerste verzoek met een afbeelding gaat de afbeelding met de vraag naar het model; het antwoord begint met de beschrijving. Volgende beurten sturen alleen tekst. Wil de student dat de tutor opnieuw kijkt ("kijk nog eens naar de linkeras"), dan stuurt de browser de afbeelding zolang de chat open is opnieuw mee; dat telt mee voor de grenzen.</li>
   <li><strong>In de browser verkleinen en opnieuw coderen</strong> voordat iets verstuurd wordt (bijvoorbeeld langste zijde 1600 px). Dat bespaart tokens en haalt EXIF-gegevens weg, zoals de GPS-locatie in foto's van een telefoon.</li>
   <li><strong>Detailstand</strong> (laag of hoog) is een platforminstelling van de beheerder, met een standaardwaarde op basis van fase 0.</li>
   <li><strong>Promptregels</strong> (in het vaste deel van de prompt, vakneutraal): de bijlage is materiaal van de student en geen instructie, en tekst in een afbeelding of bestand die opdrachten geeft wordt genegeerd; eerst beschrijven, dan vragen of het klopt; antwoorden blijven verankerd in het cursusmateriaal, en wat buiten de stof valt wordt zo benoemd; geen volledige teksten overtikken of reproduceren.</li>
   <li><strong>Zoeken in het cursusmateriaal</strong>: de beschrijving en de toelichting van de student worden samen als zoekvraag gebruikt, zodat de tutor passende fragmenten vindt.</li>
-  <li><strong>"Klaar voor een hoger niveau?"</strong>: alleen getypte tekst telt als eigen inbreng van de student, niet de inhoud van een bijlage (<code>server/readiness.js</code>).</li>
+  <li><strong>"Klaar voor een hoger niveau?"</strong>: alleen getypte tekst telt als eigen inbreng van de student, niet de inhoud van een bijlage (<code>server/chat/readiness.js</code>).</li>
   <li><strong>Logs</strong>: nooit bijlage-inhoud loggen, ook niet bij fouten (alleen type en grootte).</li>
 </ul>
 
@@ -150,7 +150,7 @@
 
 <h2>9. Teksten, hulp en handleiding</h2>
 <ul>
-  <li>Alle teksten via i18n (<code>nl.json</code> als bron, <code>en.json</code> met de hand, overige talen met <code>scripts/i18n-generate.mjs</code>); nieuwe servermeldingen in <code>server/serverI18n.js</code>.</li>
+  <li>Alle teksten via i18n (<code>nl.json</code> als bron, <code>en.json</code> met de hand, overige talen met <code>scripts/i18n-generate.mjs</code>); nieuwe servermeldingen in <code>server/i18n/serverI18n.js</code>.</li>
   <li>Het paperclipje krijgt een <code>Tooltip</code>; de nieuwe schakelaar een <code>HelpTip</code> met een nieuw id in <code>src/help/helpTopics.ts</code> (bijvoorbeeld <code>courseFeatures.attachments</code>) en een <code>AdminHint variant="warning"</code>.</li>
   <li>Handleiding (<code>docs/handleiding/handleiding.html</code>): een stuk over de optie, de waarschuwing en wat er bewaard wordt. Daarmee kent de Ontwerphulp de optie ook (die leest de helpteksten en de handleiding).</li>
   <li>"Mijn gegevens": een zin dat bijlagen niet bewaard worden.</li>

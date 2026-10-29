@@ -9,7 +9,7 @@
 //  * `new Error('…')` — die komen via err.message vaak in een JSON-respons;
 //  * constanten die op _MSG eindigen (const X_MSG = '…').
 // Template-literals met ${…} worden sjablonen met {0}, {1}, … — de middleware
-// (server/serverI18n.js) vult bij het vertalen de echte waarden weer in.
+// (server/i18n/serverI18n.js) vult bij het vertalen de echte waarden weer in.
 //
 // Gebruik:  node scripts/extract-server-messages.mjs          (schrijft het bestand)
 //           node scripts/extract-server-messages.mjs --check  (faalt als het bestand verouderd is)

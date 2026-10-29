@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Meting leerlijn (server/courseUnits.js) tegen het echte model. Schrijft niets
+// Meting leerlijn (server/courses/courseUnits.js) tegen het echte model. Schrijft niets
 // weg. Een vraag uit een VROEG onderdeel, drie varianten van de systeemprompt:
 //   A  zonder leerlijn
 //   B  met leerlijn; het LATE onderdeel is nog niet geoefend
