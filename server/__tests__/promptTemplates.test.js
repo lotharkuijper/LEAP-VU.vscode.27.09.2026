@@ -6,7 +6,7 @@ import express from 'express';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { registerPromptTemplateRoutes, courseIdsWithOwnPrompt, validateTemplateContent } from '../promptTemplates.js';
+import { registerPromptTemplateRoutes, courseIdsWithOwnPrompt, validateTemplateContent } from '../prompts/promptTemplates.js';
 
 const root = path.resolve(__dirname, '..', '..');
 

@@ -2,12 +2,9 @@
 // zet ALLEEN de genoemde begrippen van deze cursus op zichtbaar of verborgen.
 // Anders dan set-approval mag het nooit begrippen raken die niet in beeld waren.
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
+import { routeSource } from './helpers/serverSource.js';
 
-const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
-const route = src.slice(src.indexOf("app.post('/api/admin/concepts/visibility'"));
-const body = route.slice(0, route.indexOf('\n});\n'));
+const body = routeSource("app.post('/api/admin/concepts/visibility'");
 
 describe('POST /api/admin/concepts/visibility', () => {
   it('bestaat en is alleen voor beheerder of docent van de cursus', () => {

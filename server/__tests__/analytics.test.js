@@ -7,6 +7,7 @@ import {
   K_MIN, weekStart, periodStart, matchConcepts, buildConceptThermometer, weeklyQuizSeries,
   summarizeIngestion, summarizePlatform, featureOf,
 } from '../analytics/aggregate.js';
+import { serverFiles, fileSource } from './helpers/serverSource.js';
 import { createCollector, analyticsMiddleware, installFetchMeter, recordTokens, isLlmUrl } from '../analytics/collector.js';
 
 const root = path.resolve(__dirname, '..', '..');
@@ -272,6 +273,15 @@ describe('losse module', () => {
     expect(src.match(/^import .*'\.\/analytics\//gm)).toHaveLength(1);
     expect(src.match(/installAnalytics\(/g)).toHaveLength(1);
     expect(src).not.toMatch(/analytics_counters|recordTokens|analyticsMiddleware/);
+  });
+  it('geen andere servermodule raakt analytics (sinds de opsplitsing van server/index.js)', () => {
+    const others = serverFiles().filter((f) => f !== 'server/index.js' && !f.startsWith('server/analytics/'));
+    expect(others.length).toBeGreaterThan(50);
+    for (const f of others) {
+      const other = fileSource(f);
+      expect(other, f).not.toMatch(/from '[^']*analytics\/|import\([^)]*analytics\//);
+      expect(other, f).not.toMatch(/installAnalytics|analytics_counters|recordTokens|analyticsMiddleware/);
+    }
   });
   it('de tabel bevat geen kolom die naar een persoon wijst', () => {
     const sql = fs.readFileSync(path.join(root, 'supabase/migrations/20261009100000_analytics_counters.sql'), 'utf8');

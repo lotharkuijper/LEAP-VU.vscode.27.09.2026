@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeChatConfig } from '../chatConfig.js';
+import { computeChatConfig } from '../chat/chatConfig.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Veiligheidsregressietest (Task #249): chat moet ALTIJD via de Azure

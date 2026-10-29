@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   extractMessages, buildTranslator, translateBody, normalizeLang, serverI18nMiddleware, translateServerMessage,
-} from '../serverI18n.js';
+} from '../i18n/serverI18n.js';
 
 // 2026-09-27: servermeldingen kwamen altijd in het Nederlands, ook als de
 // interface in een andere taal stond. De middleware vertaalt ze nu.

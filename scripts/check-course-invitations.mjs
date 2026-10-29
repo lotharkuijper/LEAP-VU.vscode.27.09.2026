@@ -6,7 +6,7 @@
 //   node --env-file=.env scripts/check-course-invitations.mjs
 import { createHmac } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { registerCourseInvitationRoutes, signInviteToken } from '../server/courseInvitations.js';
+import { registerCourseInvitationRoutes, signInviteToken } from '../server/courses/courseInvitations.js';
 
 const API = process.env.CHECK_API || 'http://localhost:3001';
 const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_PUBLIC_SUPABASE_URL;

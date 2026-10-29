@@ -8,7 +8,7 @@ import { PersonaAvatarEditor, currentPartValue, setPartValue, stepPart } from '.
 import { AVATAR_STYLES, resolveAvatar, loadStyle, avatarDataUriSync, type AvatarConfig } from '../../lib/personaAvatar';
 // JS zonder type-declaraties; vandaar de ts-ignore.
 // @ts-ignore
-import { sanitizeAvatar } from '../../../server/personaAvatar.js';
+import { sanitizeAvatar } from '../../../server/projects/personaAvatar.js';
 import nl from '../../i18n/locales/nl.json';
 
 afterEach(cleanup);

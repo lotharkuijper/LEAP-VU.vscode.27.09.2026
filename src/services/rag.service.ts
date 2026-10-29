@@ -3,7 +3,7 @@ import { getAccessibleFolders } from './permissions.service';
 import { generateEmbeddings } from './llm.service';
 import { STORAGE_CONFIG } from '../config/storage.config';
 import { expandQuery, type QueryExpansionOptions } from './queryExpansion';
-import { purposeAllowsModule } from '../../server/filePurpose.js';
+import { purposeAllowsModule } from '../../server/rag/filePurpose.js';
 import { tStatic } from '../i18n/translations';
 import { getActiveLang } from '../i18n/activeLang';
 

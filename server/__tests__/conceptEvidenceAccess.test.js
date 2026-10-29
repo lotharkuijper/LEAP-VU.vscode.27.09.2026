@@ -4,7 +4,7 @@ import pg from 'pg';
 import {
   filterEvidenceByAccess,
   registerConceptEvidenceRoutes,
-} from '../conceptEvidence.js';
+} from '../concepts/conceptEvidence.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Cursus-isolatie van bron-bewijs (Task #244). Twee verdedigingslagen:

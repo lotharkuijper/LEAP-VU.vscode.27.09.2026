@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHmac } from 'node:crypto';
-import { countVerifiedPriorStudentMessages, turnSignature, evaluateReadiness, MIN_STUDENT_MESSAGES } from '../readiness.js';
+import { countVerifiedPriorStudentMessages, turnSignature, evaluateReadiness, MIN_STUDENT_MESSAGES } from '../chat/readiness.js';
 import { buildConceptThermometer, perStudentAverage } from '../analytics/aggregate.js';
 
 const root = path.resolve(__dirname, '..', '..');
@@ -79,16 +79,19 @@ describe('databaseregels voor leergegevens (migratie)', () => {
   });
   it('de browser wijzigt zelf geen dagboekregels of quizpogingen (anders breekt dit)', () => {
     const offenders = [];
+    let scanned = 0;
     const walk = (d) => {
       for (const f of fs.readdirSync(d, { withFileTypes: true })) {
         const p = path.join(d, f.name);
         if (f.isDirectory()) { if (f.name !== '__tests__') walk(p); continue; }
         if (!/\.(tsx?|jsx?)$/.test(f.name)) continue;
         const src = fs.readFileSync(p, 'utf8');
+        scanned++;
         if (/from\('(learning_journal_entries|quiz_attempts)'\)\s*\.update\(/.test(src)) offenders.push(p);
       }
     };
     walk(path.join(root, 'src'));
+    expect(scanned).toBeGreaterThan(100); // recursief door alle submappen, anders zegt dit niets
     expect(offenders).toEqual([]);
   });
   it('terugdraaiscript bestaat en de API herlaadt het schema', () => {

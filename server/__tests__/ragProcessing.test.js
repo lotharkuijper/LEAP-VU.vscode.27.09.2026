@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { processPptxCore, processPlainRagDocument, processDocxCore } from '../ragProcessing.js';
-import { assignPdfPages } from '../pdfPages.js';
-import { chunkPlainText } from '../chunking.js';
+import { processPptxCore, processPlainRagDocument, processDocxCore } from '../ingestion/ragProcessing.js';
+import { assignPdfPages } from '../ingestion/pdfPages.js';
+import { chunkPlainText } from '../rag/chunking.js';
 
 // Mini-mock van supabaseAdmin: legt elke documents-status-update vast zodat we
 // kunnen verifiëren dat de fail-safe het document op 'failed' zet.

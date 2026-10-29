@@ -3,12 +3,11 @@
 // de andere vensters zinloos doorliepen. Mislukte vensters verdwenen bovendien
 // stil (alleen in de serverlog).
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { mapLimit } from '../conceptConsolidation.js';
+import { mapLimit } from '../concepts/conceptConsolidation.js';
+import { functionSource } from './helpers/serverSource.js';
 
-const src = fs.readFileSync(path.join(__dirname, '..', 'index.js'), 'utf8');
-const handler = src.slice(src.indexOf('async function callOpenAI(prompt'), src.indexOf("console.error('[extract-concepts] Unexpected error:'"));
+// De hele extractie-handler (callOpenAI is een geneste functie daarin).
+const handler = functionSource('extractConceptsHandler');
 
 describe('begrippenextractie is bestand tegen haperingen', () => {
   it('callOpenAI vangt netwerkfouten en probeert vaker opnieuw (ook bij 5xx)', () => {

@@ -7,8 +7,8 @@
 //   - het oordeel wijzigt geen verstandhouding (relationship_delta telt niet mee).
 
 import { describe, it, expect } from 'vitest';
-import { validateReviewResponse, canRequestDocumentReview, feedbackRoundsState } from '../documentReview.js';
-import { reputationActive, roleFieldsFrom } from '../personaRoles.js';
+import { validateReviewResponse, canRequestDocumentReview, feedbackRoundsState } from '../projects/documentReview.js';
+import { reputationActive, roleFieldsFrom } from '../projects/personaRoles.js';
 
 describe('feedback vragen bij een beoordelaar', () => {
   it('alleen staff of groepsleden', () => {

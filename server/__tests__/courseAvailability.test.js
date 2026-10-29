@@ -4,7 +4,7 @@ import {
   parseStudentVisible,
   memberCanAccessCourse,
   canAccessCourseContent,
-} from '../courseAvailability.js';
+} from '../courses/courseAvailability.js';
 
 describe('authorizeAvailabilityChange', () => {
   it('staat admin altijd toe (elke cursus)', () => {

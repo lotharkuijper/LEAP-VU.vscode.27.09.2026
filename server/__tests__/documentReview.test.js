@@ -6,7 +6,7 @@ import {
   normalizeBadgeAwardMode,
   VERDICTS,
   BADGE_TIERS,
-} from '../documentReview.js';
+} from '../projects/documentReview.js';
 
 describe('validateReviewResponse', () => {
   it('accepteert geldig object met alle velden', () => {

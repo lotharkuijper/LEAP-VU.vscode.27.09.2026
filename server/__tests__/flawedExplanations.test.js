@@ -10,8 +10,9 @@ import {
   normalizeErrorType, pickErrorCount, structuralCheck, matchVerification, makeExercise,
   sealExercise, openExercise, parseEvaluation, createDailyLimiter, registerFlawedExplanationRoutes,
   TOKEN_TTL_MS, generateSystem, VERIFY_SYSTEM, evaluationSystem,
-} from '../flawedExplanations.js';
-import { normalizeCourseFeatures, explainPartOn, explainPartsValid, mergeCourseFeatures, parseCourseFeaturesPatch } from '../courseFeatures.js';
+} from '../explain/flawedExplanations.js';
+import { routeSource } from './helpers/serverSource.js';
+import { normalizeCourseFeatures, explainPartOn, explainPartsValid, mergeCourseFeatures, parseCourseFeaturesPatch } from '../courses/courseFeatures.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const SECRET = 'test-secret';
@@ -133,9 +134,8 @@ describe('onderdelen van Ik leg uit', () => {
     expect(explainPartsValid({ explainSelf: false })).toBe(true);
   });
   it('de server weigert "beide uit" en Leg zelf uit controleert zijn eigen schakelaar', () => {
-    const src = fs.readFileSync(path.join(root, 'server/index.js'), 'utf8');
-    expect(src).toMatch(/explainNeedsOnePart/);
-    expect(src).toMatch(/rejectIfFeatureOff\(res, auth\.user, auth\.profile, scopeCourseId, 'explainSelf'\)/);
+    expect(routeSource("app.patch('/api/courses/:id/features'")).toMatch(/explainNeedsOnePart/);
+    expect(routeSource("app.post('/api/explain/evaluate'")).toMatch(/rejectIfFeatureOff\(res, auth\.user, auth\.profile, scopeCourseId, 'explainSelf'\)/);
   });
   it('browser en server kennen dezelfde onderdelen', () => {
     const ts = fs.readFileSync(path.join(root, 'src/lib/courseFeatures.ts'), 'utf8');

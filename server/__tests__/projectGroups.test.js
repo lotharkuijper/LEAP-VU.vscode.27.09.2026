@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { allServerSource, fileSource, functionSource, routeSource } from './helpers/serverSource.js';
 import {
   normalizeGroupMode, defaultGroupMode, studentMayFormGroups, canvasGroupRef, cleanGroupName, splitIntoGroups,
-} from '../projectGroups.js';
+} from '../projects/projectGroups.js';
 
 // Groepsindeling per project (2026-10-27): 'self' (studenten vormen zelf groepen),
 // 'teacher' (docent deelt in, open cursussen) of 'canvas' (groepen uit Canvas).
 // Bij 'teacher' en 'canvas' doorbreekt een student de indeling niet zelf.
 
 const root = path.resolve(__dirname, '..', '..');
-const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
-const route = (start) => { const i = idx.indexOf(start); return idx.slice(i, idx.indexOf('\n});\n', i)); };
+const route = (start) => routeSource(start);
 
 describe('regels', () => {
   it('standaard: Canvas-cursus → via Canvas, anders deelt de docent in', () => {
@@ -51,18 +51,17 @@ describe('koppeling', () => {
     expect(route("app.post('/api/projects/student-restart'")).toMatch(GUARD);
   });
   it('de beheerroutes zijn alleen voor de docent van het project (requireProjectStaff)', () => {
-    const src = fs.readFileSync(path.join(root, 'server', 'projectGroups.js'), 'utf8');
+    const src = fileSource('server/projects/projectGroups.js');
     expect(src).toMatch(/const access = await deps\.requireProjectStaff\(req\.params\.projectId, auth\.user, profile\);/);
     expect((src.match(/const s = await staff\(req, res\);/g) || []).length).toBe(6);
-    expect(idx).toMatch(/registerProjectGroupRoutes\(app, \{/);
+    expect((allServerSource().match(/registerProjectGroupRoutes\(app, \{/g) || []).length).toBe(1);
   });
   it('een docent die verplaatst gaat voor: Canvas zet een student die al in een groep zit niet terug', () => {
-    const src = fs.readFileSync(path.join(root, 'server', 'projectGroups.js'), 'utf8');
-    const fn = src.slice(src.indexOf('export async function placeInCanvasGroup'), src.indexOf('export function registerProjectGroupRoutes'));
+    const fn = functionSource('placeInCanvasGroup');
     expect(fn).toMatch(/const existing = await activeGroupOf\(db, projectId, userId\);\s*if \(existing\) return existing;/);
   });
   it('de Canvas-launch plaatst alleen een student, alleen bij groepsindeling via Canvas', () => {
-    const lti = fs.readFileSync(path.join(root, 'server', 'lti.js'), 'utf8');
+    const lti = fs.readFileSync(path.join(root, 'server', 'lti', 'lti.js'), 'utf8');
     expect(lti).toMatch(/role === 'student' && project\.group_mode === 'canvas' && group/);
   });
   it('migratie met terugdraaiscript', () => {

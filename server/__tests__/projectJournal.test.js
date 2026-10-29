@@ -1,9 +1,8 @@
 // Projectregels in het leerdagboek in dezelfde drie blokken als chat, Ik leg
 // uit en quiz (2026-10-09).
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary, splitSteps } from '../projectJournal.js';
+import { routeSource } from './helpers/serverSource.js';
+import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary, splitSteps } from '../projects/projectJournal.js';
 
 describe('eindreflectie (rubriek-oordeel)', () => {
   const rf = {
@@ -62,9 +61,7 @@ it('splitSteps', () => {
 });
 
 describe('de tussenstand-route gebruikt de blokken overal', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
-  const start = src.indexOf("app.post('/api/projects/groups/:groupId/checkpoint'");
-  const route = src.slice(start, src.indexOf('\n});\n', start));
+  const route = routeSource("app.post('/api/projects/groups/:groupId/checkpoint'");
   // Sinds 2026-10-27 schrijft de tussenstand niet meer in de dagboeken van alle
   // groepsleden: de teksten (met blokken) staan bij de tussenstand, en elk lid
   // bewaart zelf (journal-save, projectJournalSave.test.js).

@@ -1,14 +1,13 @@
 // "Ik leg uit": vier vaste blokken, vaste meetlat, verwante begrippen alleen uit
-// de cursus (server/explainFeedback.js). Kalibratie tegen het echte model op
+// de cursus (server/explain/explainFeedback.js). Kalibratie tegen het echte model op
 // 2026-10-15 (prospectief cohortonderzoek): uitstekend 100, redelijk 85,
 // verward met patiënt-controleonderzoek 40, fout 30.
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
+import { routeSource } from './helpers/serverSource.js';
 import {
   cleanKeyPoints, rankRelatedConcepts, explainFormatInstruction, parseExplainFeedback,
   explainFeedbackMarkdown, buildExplainUserMessage,
-} from '../explainFeedback.js';
+} from '../explain/explainFeedback.js';
 
 const related = [
   { id: 'r1', name: 'patiënt-controleonderzoek' },
@@ -101,10 +100,9 @@ describe('instructie en context', () => {
   });
 });
 
-describe('server/index.js', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8');
+describe('server (route)', () => {
   it('de route beoordeelt én slaat op (score komt van de server, niet uit de browser)', () => {
-    const route = src.slice(src.indexOf("app.post('/api/explain/evaluate'"), src.indexOf("app.delete('/api/explain/:id'"));
+    const route = routeSource("app.post('/api/explain/evaluate'");
     expect(route).toContain("rejectIfFeatureOff(res, auth.user, auth.profile, scopeCourseId, 'explain')");
     expect(route).toContain('explainFormatInstruction(');
     expect(route).toContain("from('student_explanations')");

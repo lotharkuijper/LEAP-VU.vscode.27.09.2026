@@ -4,7 +4,7 @@ import {
   parseRetryWaitMs,
   isRateLimitStatus,
   EMBEDDINGS_RATE_LIMIT_MSG,
-} from '../embeddingsRetry.js';
+} from '../lib/embeddingsRetry.js';
 
 // Bouw een nep-Response met optionele Retry-After-header en JSON-body.
 function makeResp({ ok = true, status = 200, body = {}, retryAfter = null }) {

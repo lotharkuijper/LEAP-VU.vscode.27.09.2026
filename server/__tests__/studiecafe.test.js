@@ -34,7 +34,7 @@ import {
   MAX_ATTACHMENTS,
   MAX_ATTACHMENT_CONTENT_LEN,
   MAX_ATTACHMENT_SOURCES,
-} from '../studiecafe.js';
+} from '../studiecafe/studiecafe.js';
 
 describe('sanitizeCategory', () => {
   it('laat geldige categorieën door', () => {

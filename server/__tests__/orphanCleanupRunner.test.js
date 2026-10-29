@@ -19,7 +19,7 @@ import {
   buildOrphanCourseAccessCleanupSql,
   ORPHAN_CLEANUP_TABLE_LABELS,
   ORPHAN_CLEANUP_STARTUP_DELAY_MS,
-} from '../studiecafe.js';
+} from '../studiecafe/studiecafe.js';
 
 const SUPERUSER = 'superuser@example.com';
 

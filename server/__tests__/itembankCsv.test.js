@@ -4,7 +4,7 @@ import {
   parseItembankCsv,
   normalizeCorrectLetter,
   csvRowToQuizQuestion,
-} from '../itembankCsv.js';
+} from '../quiz/itembankCsv.js';
 
 describe('parseCsv', () => {
   it('parses simple rows', () => {

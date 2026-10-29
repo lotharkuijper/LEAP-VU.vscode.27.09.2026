@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import http from 'http';
-import { buildLevelInstructionBlock } from '../learningLevel.js';
-import { REASONING_TOKEN_HEADROOM } from '../openaiSampling.js';
+import { buildLevelInstructionBlock } from '../chat/learningLevel.js';
+import { REASONING_TOKEN_HEADROOM } from '../lib/openaiSampling.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Endpoint-test (Task #301) die bewaakt dat het adaptieve leerniveau-blok

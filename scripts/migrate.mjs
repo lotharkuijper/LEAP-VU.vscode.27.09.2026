@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import pg from 'pg';
-import { planMigrations, needsBaseline } from '../server/migrationPlan.js';
+import { planMigrations, needsBaseline } from '../server/lib/migrationPlan.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(root, '.env'), quiet: true });

@@ -2,8 +2,8 @@
 // twee keer werd gemaakt en het oordeel over de verstandhouding daarna pas
 // startte. Na het venster mag de bevestiging het taalmodel niet opnieuw nodig hebben.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createClosePrep, generateThreadSummary, messagesFingerprint } from '../threadClosePrep.js';
-import { applyConversationJudgement, precomputeJudgement } from '../threadClose.js';
+import { createClosePrep, generateThreadSummary, messagesFingerprint } from '../projects/threadClosePrep.js';
+import { applyConversationJudgement, precomputeJudgement } from '../projects/threadClose.js';
 import { makeFakeRelationshipSupabase } from './helpers/fakeRelationshipSupabase.js';
 
 const msgs = [

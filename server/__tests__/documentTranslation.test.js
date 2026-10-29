@@ -10,7 +10,7 @@ import {
   buildTranslationPrompt,
   MAX_SOURCE_CHARS,
   TRANSLATION_FORMAT_VERSION,
-} from '../documentTranslation.js';
+} from '../documents/documentTranslation.js';
 
 describe('documentTranslation helpers', () => {
   describe('language allowlist', () => {

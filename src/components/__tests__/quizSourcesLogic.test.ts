@@ -12,7 +12,7 @@ import {
 // server-persist identieke gehele uitkomsten geven. Het server-bestand is plain
 // JS zonder type-declaraties; vandaar de ts-ignore.
 // @ts-ignore
-import { normalizeMix as serverNormalizeMix } from '../../../server/quizSourcesMix.js';
+import { normalizeMix as serverNormalizeMix } from '../../../server/quiz/quizSourcesMix.js';
 
 const COURSE = 'course-1';
 

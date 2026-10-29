@@ -1,18 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { functionSource, routeSource } from './helpers/serverSource.js';
 import {
   checkpointItems, checkpointItemRefs, assessmentRefs, reviewRefs, isSaved, reviewEntry, noteEntry, NOTE_MAX_CHARS,
-} from '../projectJournalSave.js';
+} from '../projects/projectJournalSave.js';
 
 // Project → leerdagboek alleen op verzoek van de student (2026-10-27). Groeps-
 // teksten staan bij de groep; elk lid bewaart zelf in het EIGEN dagboek.
 
 const root = path.resolve(__dirname, '..', '..');
-const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
 const route = (start) => {
-  const i = idx.indexOf(start);
-  return idx.slice(i, idx.indexOf('\n});\n', i));
+  return routeSource(start);
 };
 
 describe('onderdelen en source_refs', () => {
@@ -51,7 +50,7 @@ describe('koppeling in de server', () => {
   it('tussenstand, feedbackronde en "Beoordeling opvragen" schrijven niet meer in de dagboeken', () => {
     expect(route("app.post('/api/projects/groups/:groupId/checkpoint'")).not.toMatch(/learning_journal_entries'\)\.insert/);
     expect(route("app.post('/api/projects/groups/:groupId/evaluate'")).not.toMatch(/learning_journal_entries'\)\.insert/);
-    const review = idx.slice(idx.indexOf('async function runEvaluatorReview'), idx.indexOf('async function countFeedbackRounds'));
+    const review = functionSource('runEvaluatorReview');
     expect(review).not.toMatch(/learning_journal_entries/);
     expect(review).toMatch(/update\(\{ journal_entry: journalEntry \}\)/);
   });
@@ -63,7 +62,7 @@ describe('koppeling in de server', () => {
     expect(save).not.toMatch(/members\.map/);
   });
   it('een afgerond project blijft bereikbaar voor de student', () => {
-    expect(idx).toMatch(/const finishedGroup = groups\.filter\(g => g\.status === 'finalized'\)/);
+    expect(route("app.get('/api/projects/student-overview'")).toMatch(/const finishedGroup = groups\.filter\(g => g\.status === 'finalized'\)/);
   });
   it('migratie met terugdraaiscript', () => {
     expect(fs.existsSync(path.join(root, 'supabase', 'migrations', '20261027140000_project_journal_on_request.sql'))).toBe(true);

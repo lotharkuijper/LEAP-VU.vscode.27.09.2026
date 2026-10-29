@@ -1,6 +1,6 @@
 // Client voor het cursusmateriaal-beheer met bestandsdoelen (server/courseFiles.js).
 import { supabase } from '../lib/supabase';
-import type { Purpose, MaterialKind, PurposeSuggestion } from '../../server/filePurpose.js';
+import type { Purpose, MaterialKind, PurposeSuggestion } from '../../server/rag/filePurpose.js';
 
 export type { Purpose, MaterialKind, PurposeSuggestion };
 

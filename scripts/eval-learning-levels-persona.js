@@ -35,8 +35,8 @@
 //        PERSONA_EVAL_PERSONA_ID (uuid van een conversational project_persona,
 //                                 of "__default__")
 
-import { buildLevelInstructionBlock, LEVEL_LABELS, clampLevel } from '../server/learningLevel.js';
-import { buildLanguageInstruction } from '../server/languages.js';
+import { buildLevelInstructionBlock, LEVEL_LABELS, clampLevel } from '../server/chat/learningLevel.js';
+import { buildLanguageInstruction } from '../server/i18n/languages.js';
 
 // Standaard-persona = de "__default__" consultant uit /api/projects/persona-chat
 // (server/index.js). Overschrijf met PERSONA_PROMPT om een eigen persona te

@@ -1,11 +1,12 @@
-// Studenten uitnodigen voor een cursus (server/courseInvitations.js, 2026-10-26).
+// Studenten uitnodigen voor een cursus (server/courses/courseInvitations.js, 2026-10-26).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { allServerSource, routeSource } from './helpers/serverSource.js';
 import {
   signInviteToken, verifyInviteToken, inviteExpiresAt, invitationStatus, isUnusedAccount,
   createMailBudget, buildInvitationEmail, INVITE_VALID_DAYS,
-} from '../courseInvitations.js';
+} from '../courses/courseInvitations.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const ID = '0573893c-c5a4-4517-bfa4-03cdbf48d8d4';
@@ -87,7 +88,7 @@ describe('de mail', () => {
 });
 
 describe('koppeling', () => {
-  const src = fs.readFileSync(path.join(root, 'server', 'courseInvitations.js'), 'utf8');
+  const src = fs.readFileSync(path.join(root, 'server', 'courses', 'courseInvitations.js'), 'utf8');
   const route = (from, to) => src.slice(src.indexOf(from), to ? src.indexOf(to) : undefined);
   it('alleen een beheerder of een docent van déze cursus nodigt uit, trekt in of stuurt opnieuw', () => {
     expect(src).toMatch(/if \(!r\.isAdmin && !\(await deps\.isCourseTeacher\(r\.user\.id, courseId\)\)\)/);
@@ -124,10 +125,10 @@ describe('koppeling', () => {
     expect(route("'/api/invitations/accept'", 'async function deleteIfOrphaned')).toMatch(/generateLink\(\{ type, email: au\.user\.email \}\)/);
   });
   it('de server gebruikt de module voor Beheer leden, en de migratie heeft een terugdraaiscript', () => {
-    const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8');
-    expect(idx).toMatch(/registerCourseInvitationRoutes\(app, \{/);
-    expect(idx).toMatch(/m\.invitation = pending\.get\(m\.user_id\) \|\| null/);
-    expect(idx).not.toMatch(/'\/api\/admin\/bulk-accounts\/provision'/);
+    const all = allServerSource();
+    expect(all).toMatch(/registerCourseInvitationRoutes\(app, \{/);
+    expect(routeSource("app.get('/api/admin/courses/:id/members'")).toMatch(/m\.invitation = pending\.get\(m\.user_id\) \|\| null/);
+    expect(all).not.toMatch(/'\/api\/admin\/bulk-accounts\/provision'/);
     expect(fs.existsSync(path.join(root, 'supabase', 'rollback', '20261026120000_course_invitations_down.sql'))).toBe(true);
   });
 });

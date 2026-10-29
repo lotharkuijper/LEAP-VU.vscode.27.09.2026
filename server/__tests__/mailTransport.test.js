@@ -6,7 +6,7 @@ import {
   sendEmailViaAcs,
   parseAcsConnectionString,
   acsSignedHeaders,
-} from '../notifications.js';
+} from '../lib/notifications.js';
 
 const KEY = crypto.randomBytes(32).toString('base64');
 const CONN = `endpoint=https://vu-leap-acs.europe.communication.azure.com/;accesskey=${KEY}`;

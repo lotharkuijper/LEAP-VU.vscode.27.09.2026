@@ -11,7 +11,7 @@ import {
   summarizeUserNotifications,
   buildDigestEmail,
   computeAnnouncementAudience,
-} from '../notifications.js';
+} from '../lib/notifications.js';
 
 describe('normalizeNotificationPrefs', () => {
   it('valt terug op alles-aan bij ontbrekende rij (opt-out-model)', () => {

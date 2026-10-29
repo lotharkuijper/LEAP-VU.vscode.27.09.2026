@@ -10,7 +10,7 @@ import {
   BANNER_HEIGHT_DEFAULT,
   BANNER_OPACITY_DEFAULT,
   BANNER_ALT_MAX,
-} from '../courseBanner.js';
+} from '../courses/courseBanner.js';
 
 // Bouw een buffer met magic-bytes gevolgd door opvulling (>= 12 bytes totaal).
 function bufOf(bytes) {

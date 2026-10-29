@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planPurposeChange, buildReadinessWarnings, docsChangedSinceConcepts, summarizeWebSync, buildWebSourceList } from '../courseFiles.js';
+import { planPurposeChange, buildReadinessWarnings, docsChangedSinceConcepts, summarizeWebSync, buildWebSourceList } from '../documents/courseFiles.js';
 
 describe('planPurposeChange', () => {
   it('leerstof ↔ cursusinformatie: alleen het label, fragmenten blijven; naar cursusinfo vervalt het bewijs', () => {

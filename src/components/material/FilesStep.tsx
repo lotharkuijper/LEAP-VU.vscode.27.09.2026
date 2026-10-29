@@ -14,7 +14,7 @@ import {
   type Purpose,
   type WebSource,
 } from '../../services/course-files.service';
-import { suggestPurpose } from '../../../server/filePurpose.js';
+import { suggestPurpose } from '../../../server/rag/filePurpose.js';
 import { PURPOSE_ORDER, PURPOSE_STYLE, formatBytes } from './purposeUi';
 import { PurposePicker, type PurposeValue } from './PurposePicker';
 import { WebSourceRow } from './WebSourceRow';

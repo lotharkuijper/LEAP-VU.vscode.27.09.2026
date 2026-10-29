@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pickReusableRagFolder, ensureCourseRagFolderWith } from '../ragFolder.js';
+import { pickReusableRagFolder, ensureCourseRagFolderWith } from '../rag/ragFolder.js';
 
 describe('pickReusableRagFolder', () => {
   const courseA = 'course-a';

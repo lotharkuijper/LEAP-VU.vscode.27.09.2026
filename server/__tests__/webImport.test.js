@@ -14,7 +14,7 @@ import {
   filterSafeAddresses,
   createPinnedLookup,
   fetchPage,
-} from '../webImport.js';
+} from '../ingestion/webImport.js';
 
 describe('decodeHtmlEntities', () => {
   it('decodeert named, decimaal en hex entiteiten', () => {

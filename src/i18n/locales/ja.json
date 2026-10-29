@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "この Canvas 連携は LEAP に登録されていません。",
   "lti.error.loginFailed": "ログインに失敗しました。Canvas でもう一度リンクをクリックしてね。",
   "lti.error.badRequest": "Canvas からのリクエストが不完全でした。",
+  "lti.error.accountConflict": "このメールアドレスのLEAPアカウントはすでに存在しますが、Canvasに自動的に連携できませんでした（アドレスがまだ確認されていないか、一致しません）。まず一度LEAPに通常どおりログインしてからもう一度試すか、管理者にサポートを依頼してください。",
   "login.code.link": "Canvas 経由で LEAP に来た？メールで届くコードでログイン",
   "login.code.intro": "Canvas のリンクから LEAP に来た？メールアドレスを入力してね。メールでコードが届き、パスワードなしでログインできます。",
   "login.code.emailLabel": "メールアドレス",

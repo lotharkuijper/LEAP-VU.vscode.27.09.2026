@@ -5,7 +5,7 @@ import path from 'node:path';
 import {
   installTokenBudget, isAiRequest, normalizeSettings, budgetState, weekStartDay, amsterdamDay,
   isLlmUrl, DEFAULT_SETTINGS, TOKENS_PER_HOUR, SETTINGS_KEY,
-} from '../tokenBudget.js';
+} from '../account/tokenBudget.js';
 
 // Tokenbudget voor accounts uit open registratie (2026-10-28).
 
@@ -185,11 +185,11 @@ describe('installTokenBudget', () => {
 describe('aansluiting', () => {
   const src = (f) => fs.readFileSync(path.join(process.cwd(), f), 'utf8');
   it('open registratie markeert het account', () => {
-    expect(src('server/enrollment.js')).toMatch(/onOpenRegistration\?\.\(/);
+    expect(src('server/courses/enrollment.js')).toMatch(/onOpenRegistration\?\.\(/);
     expect(src('server/index.js')).toMatch(/onOpenRegistration: \(userId\) => tokenBudget\.markOpenAccount\(userId\)/);
   });
   it('wegwerpadressen worden geweigerd', async () => {
-    const { isDisposableEmail } = await import('../enrollment.js');
+    const { isDisposableEmail } = await import('../courses/enrollment.js');
     expect(isDisposableEmail('a@mailinator.com')).toBe(true);
     expect(isDisposableEmail('a@gmail.com')).toBe(false);
   });

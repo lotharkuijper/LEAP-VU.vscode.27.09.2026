@@ -1,10 +1,7 @@
-// Optioneel doel in de chat (server/chatGoal.js, 2026-10-20).
+// Optioneel doel in de chat (server/chat/chatGoal.js, 2026-10-20).
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { cleanChatGoal, buildChatGoalBlock, lastChatGoal, chatGoalSummaryLine, CHAT_GOAL_MAX } from '../chatGoal.js';
-
-const root = path.resolve(__dirname, '..', '..');
+import { routeSource, functionSource } from './helpers/serverSource.js';
+import { cleanChatGoal, buildChatGoalBlock, lastChatGoal, chatGoalSummaryLine, CHAT_GOAL_MAX } from '../chat/chatGoal.js';
 
 describe('doel van de student', () => {
   it('één regel, ingekort; leeg = geen doel', () => {
@@ -32,10 +29,12 @@ describe('doel van de student', () => {
     expect(chatGoalSummaryLine('A', 'nl')).toMatch(/"A"/);
   });
   it('de server gebruikt het doel in de tutorchat en in de reflectie', () => {
-    const src = fs.readFileSync(path.join(root, 'server/index.js'), 'utf8');
-    expect(src).toMatch(/buildChatGoalBlock\(req\.body\?\.chatGoal, lang\)/);
-    expect(src).toMatch(/chatGoalSummaryLine\(lastChatGoal\(msgs\), lang\)/);
+    const chatRoute = routeSource("app.post('/api/chat',");
+    expect(chatRoute).toMatch(/buildChatGoalBlock\(req\.body\?\.chatGoal, lang\)/);
+    expect(functionSource('createChatReflection')).toMatch(/chatGoalSummaryLine\(lastChatGoal\(msgs\), lang\)/);
     // Het doelblok staat vóór het taal-/niveaublok.
-    expect(src.indexOf('buildChatGoalBlock(req.body?.chatGoal')).toBeLessThan(src.indexOf('systemContent += langSuffix;'));
+    const goal = chatRoute.indexOf('buildChatGoalBlock(req.body?.chatGoal');
+    expect(goal).toBeGreaterThan(0);
+    expect(goal).toBeLessThan(chatRoute.indexOf('systemContent += langSuffix;'));
   });
 });

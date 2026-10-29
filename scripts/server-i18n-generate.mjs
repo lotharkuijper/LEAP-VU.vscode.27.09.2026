@@ -12,7 +12,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { computeChatConfig } from '../server/chatConfig.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR = path.join(root, 'server', 'i18n');

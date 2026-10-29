@@ -4,7 +4,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import express from 'express';
-import { EXPORT_SOURCES, NOT_EXPORTED, buildExport, registerMyDataRoutes } from '../myData.js';
+import { EXPORT_SOURCES, NOT_EXPORTED, buildExport, registerMyDataRoutes } from '../account/myData.js';
 
 const root = path.resolve(__dirname, '..', '..');
 
@@ -25,9 +25,10 @@ function tablesWithUserColumns() {
 describe('welke gegevens zijn "van mij"', () => {
   it('elke tabel met een gebruikerskolom is bewust ingedeeld (export of niet)', () => {
     const known = new Set([...EXPORT_SOURCES.map(s => s.table), ...NOT_EXPORTED]);
+    expect(tablesWithUserColumns().size).toBeGreaterThan(10); // de migraties zijn echt gelezen
     const missing = [...tablesWithUserColumns()].filter(t => !known.has(t));
     // Faalt deze test? Er is een tabel met persoonlijke gegevens bijgekomen:
-    // zet hem in EXPORT_SOURCES of (met reden) in NOT_EXPORTED in server/myData.js.
+    // zet hem in EXPORT_SOURCES of (met reden) in NOT_EXPORTED in server/account/myData.js.
     expect(missing).toEqual([]);
   });
   it('de leerdossier-onderdelen zitten erin', () => {

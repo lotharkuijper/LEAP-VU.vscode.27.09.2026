@@ -26,8 +26,8 @@
 //      http://localhost:3001) en CHAT_EVAL_TOKEN (een geldig Supabase-JWT).
 //      Dan loopt de vraag écht door de server-route i.p.v. een spiegel.
 
-import { buildLevelInstructionBlock, LEVEL_LABELS, clampLevel } from '../server/learningLevel.js';
-import { buildLanguageInstruction } from '../server/languages.js';
+import { buildLevelInstructionBlock, LEVEL_LABELS, clampLevel } from '../server/chat/learningLevel.js';
+import { buildLanguageInstruction } from '../server/i18n/languages.js';
 
 const FALLBACK_SYSTEM_PROMPT = `Je bent een Socratische tutor voor epidemiologie en biostatistiek aan de VU Amsterdam. Je begeleidt studenten door een balans van korte uitleg en uitdagende vragen.
 

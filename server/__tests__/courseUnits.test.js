@@ -1,4 +1,4 @@
-// Leerlijn (server/courseUnits.js, migratie 20261016130000): voorstel uit
+// Leerlijn (server/courses/courseUnits.js, migratie 20261016130000): voorstel uit
 // bestandsnamen, anker, geoefende onderdelen en het blok voor de tutorchat.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -6,7 +6,8 @@ import path from 'node:path';
 import {
   orderKeyFromName, titleFromName, proposeUnits, parseLeerlijnInput, unitOfConcept, anchorUnit, relationTo,
   practiceByUnit, practicedUnitIds, buildLeerlijnBlock,
-} from '../courseUnits.js';
+} from '../courses/courseUnits.js';
+import { routeSource, functionSource } from './helpers/serverSource.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8').replace(/\r\n/g, '\n');
@@ -112,14 +113,14 @@ describe('blok voor de tutorchat', () => {
 });
 
 describe('koppeling in de server', () => {
-  const src = read('server/index.js');
   it('alleen in de tutorchat, vóór het taal-/niveaublok, en een storing breekt de chat niet', () => {
+    const src = routeSource("app.post('/api/chat',");
     const block = src.indexOf('systemContent += await leerlijnBlockFor(');
     const lang = src.indexOf('systemContent += langSuffix;', block);
     expect(block).toBeGreaterThan(0);
     expect(lang).toBeGreaterThan(block);
     expect(src.slice(block - 200, block)).toMatch(/purpose === 'tutor_chat' && courseId/);
-    expect(src).toMatch(/\[leerlijn\] blok overgeslagen/);
+    expect(functionSource('leerlijnBlockFor')).toMatch(/\[leerlijn\] blok overgeslagen/);
   });
   it('tabellen alleen via de server, met terugdraaiscript', () => {
     const up = read('supabase/migrations/20261016130000_course_units.sql');

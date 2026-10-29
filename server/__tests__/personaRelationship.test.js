@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   clampLevel, levelKey, levelLabel, isBroken, nextLevel, appendHistory, hasHistoryRef,
   sanitizeEventNote, lastReason, buildReputationPromptBlock, buildConductJudgeMessages, validateConductJudgement,
-} from '../personaRelationship.js';
-import { normalizePersonaType, isChatPersona, reputationActive, sanitizeConductRules, roleFieldsFrom, copyRoleFields, normalizeMaxReviews, clampStartLevel } from '../personaRoles.js';
+} from '../projects/personaRelationship.js';
+import { normalizePersonaType, isChatPersona, reputationActive, sanitizeConductRules, roleFieldsFrom, copyRoleFields, normalizeMaxReviews, clampStartLevel } from '../projects/personaRoles.js';
 
 describe('rollen', () => {
   it('drie rollen; onbekend wordt begeleider', () => {

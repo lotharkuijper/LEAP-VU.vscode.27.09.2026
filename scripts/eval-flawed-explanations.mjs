@@ -16,8 +16,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-import { computeChatConfig } from '../server/chatConfig.js';
-import { makeExercise as prodMakeExercise, sourcesText as srcText, MAX_ATTEMPTS } from '../server/flawedExplanations.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
+import { makeExercise as prodMakeExercise, sourcesText as srcText, MAX_ATTEMPTS } from '../server/explain/flawedExplanations.js';
 
 const PER_COURSE = Number(process.argv[2] || 20);
 const OUT = process.argv[3] || 'eval-output';

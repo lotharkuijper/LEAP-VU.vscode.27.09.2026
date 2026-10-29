@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isUnsupportedSamplingParamError, isEmptyOrTruncatedCompletion, postChatCompletionWithRetry } from '../openaiSampling.js';
+import { isUnsupportedSamplingParamError, isEmptyOrTruncatedCompletion, postChatCompletionWithRetry } from '../lib/openaiSampling.js';
 
 // Bouwt een nep-fetch dat de opgegeven antwoorden (in volgorde) teruggeeft en
 // elke aanroep + verstuurde body registreert.
@@ -165,7 +165,7 @@ describe('postChatCompletionWithRetry', () => {
 
 describe('completionTokenBudget', () => {
   it('geeft reasoning-modellen ruimte bovenop de bedoelde lengte; andere modellen niet', async () => {
-    const { completionTokenBudget, REASONING_TOKEN_HEADROOM } = await import('../openaiSampling.js');
+    const { completionTokenBudget, REASONING_TOKEN_HEADROOM } = await import('../lib/openaiSampling.js');
     expect(completionTokenBudget(700, true)).toBe(700 + REASONING_TOKEN_HEADROOM);
     expect(completionTokenBudget(700, false)).toBe(700);
     expect(completionTokenBudget(undefined, true)).toBeUndefined();

@@ -249,7 +249,7 @@ describe('POST /api/translate-content — cache-first', () => {
   it('geeft gecachte tekst terug ZONDER Azure-call bij een volledige cache-hit', async () => {
     // Hash-onafhankelijk: de stub geeft álle gevraagde hashes als hit terug.
     // We zetten daarom de cache-rij met dezelfde hash die de server berekent.
-    const { hashContentSource } = await import('../documentTranslation.js');
+    const { hashContentSource } = await import('../documents/documentTranslation.js');
     const hash = hashContentSource('Onderzoeksvraag', 'plain');
     h.state.cacheRows = [{ source_hash: hash, translated_text: 'Research question' }];
     const fetchMock = mockFetch(async () => makeResp(200, chatCompletion('niet gebruiken')));
@@ -323,7 +323,7 @@ describe('POST /api/translate-content — cache-miss roept Azure aan en upsert',
   });
 
   it('combineert cache-hits met verse misses in één antwoord', async () => {
-    const { hashContentSource } = await import('../documentTranslation.js');
+    const { hashContentSource } = await import('../documents/documentTranslation.js');
     const cachedHash = hashContentSource('Onderzoeksvraag', 'plain');
     h.state.cacheRows = [{ source_hash: cachedHash, translated_text: 'Research question' }];
     const fetchMock = mockFetch(async () => makeResp(200, batchCompletion({ t0: 'Briefing' })));
@@ -379,7 +379,7 @@ describe('POST /api/translate-content — 503 alleen bij echte misses', () => {
   });
 
   it('geeft 200 (geen 503) wanneer Azure ontbreekt maar alles uit cache komt', async () => {
-    const { hashContentSource } = await import('../documentTranslation.js');
+    const { hashContentSource } = await import('../documents/documentTranslation.js');
     const hash = hashContentSource('Onderzoeksvraag', 'plain');
     h.state.cacheRows = [{ source_hash: hash, translated_text: 'Research question' }];
     const fetchMock = mockFetch(async () => makeResp(200, chatCompletion('niet gebruiken')));

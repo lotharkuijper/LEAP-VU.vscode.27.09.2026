@@ -844,9 +844,15 @@ export async function evaluateCasusAnswer(
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   let response: Response;
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+    } catch {}
     response = await fetch('/api/embeddings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ texts }),
     });
   } catch (error: any) {

@@ -16,11 +16,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import { backfillDocxPages } from '../server/pageBackfill.js';
+import { backfillDocxPages } from '../server/ingestion/pageBackfill.js';
 import {
   convertOfficeToPdf, resolveSofficeBin, renditionCachePath, renditionSourceKey, CONVERT_TO_PDF_EXT, normalizeExt,
-} from '../server/documentRender.js';
-import { extractPdfPageTexts } from '../server/pdfPageText.js';
+} from '../server/documents/documentRender.js';
+import { extractPdfPageTexts } from '../server/ingestion/pdfPageText.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 dotenv.config({ path: path.join(root, '.env'), quiet: true });

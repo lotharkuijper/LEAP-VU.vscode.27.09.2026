@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeCourseFeatures, featureForPath, featureView, COURSE_FEATURES, OPT_IN_FEATURES } from '../courseFeatures';
-import * as server from '../../../server/courseFeatures.js';
+import * as server from '../../../server/courses/courseFeatures.js';
 
 describe('onderdelen per cursus (browser)', () => {
   it('zelfde lijst en regels als de server', () => {

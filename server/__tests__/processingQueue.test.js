@@ -1,9 +1,8 @@
 // Regressie: 157 bestanden tegelijk geüpload → 157 verwerkingen tegelijk →
 // Azure-snelheidslimiet → 63 "inlezen mislukt" (Microbiologie, 2026-10-16).
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { createProcessingQueue } from '../processingQueue.js';
+import { fileSource, functionSource } from './helpers/serverSource.js';
+import { createProcessingQueue } from '../ingestion/processingQueue.js';
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 async function settle(n = 20) { for (let i = 0; i < n; i++) await tick(); }
@@ -71,8 +70,8 @@ describe('wachtrij voor het inlezen', () => {
   });
 
   it('uploads en "opnieuw inlezen" lopen via de wachtrij, niet los', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'courseFiles.js'), 'utf8');
-    const start = src.slice(src.indexOf('function startProcessing'), src.indexOf('async function loadDoc'));
+    const src = fileSource('server/documents/courseFiles.js');
+    const start = functionSource('startProcessing');
     expect(start).toMatch(/processingQueue\.enqueue\(/);
     expect(start).not.toMatch(/processRagDocumentById\(/);
     expect(src).toMatch(/\/reprocess'/);

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { collectMemberUserIds, mergeCourseMembers, sortCourseMembers } from '../courseMembers.js';
+import { routeSource } from './helpers/serverSource.js';
+import { collectMemberUserIds, mergeCourseMembers, sortCourseMembers } from '../courses/courseMembers.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Tests voor GET /api/admin/courses/:id/members (Task #219).
@@ -116,8 +115,7 @@ describe('Beheer leden: volgorde en kolommen (regressie 2026-10-26)', () => {
     expect(list.map((m) => m.user_id)).toEqual(['c', 'b', 'a']);
   });
   it('de route vraagt geen joined_at op: course_members heeft die kolom niet (de lijst gaf daardoor een fout)', () => {
-    const idx = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8');
-    const route = idx.slice(idx.indexOf("app.get('/api/admin/courses/:id/members'"), idx.indexOf("app.put('/api/admin/courses/:id/members/:userId'"));
+    const route = routeSource("app.get('/api/admin/courses/:id/members'");
     expect(route).toMatch(/from\('course_members'\)/);
     expect(route).not.toMatch(/select\([^)]*joined_at|order\('joined_at'/);
   });

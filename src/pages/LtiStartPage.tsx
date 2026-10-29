@@ -13,6 +13,7 @@ type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 const KNOWN_ERRORS = new Set([
   'noEmail', 'noRole', 'courseUnknown', 'courseNotCanvas', 'courseInactive', 'expired', 'stateMismatch',
   'invalidToken', 'nonceMismatch', 'unknownPlatform', 'unknownDeployment', 'loginFailed', 'badRequest',
+  'accountConflict',
 ]);
 
 /** Pure: leest het #-deel van de landingspagina. */

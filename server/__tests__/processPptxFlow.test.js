@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { zipSync, strToU8 } from 'fflate';
-import { processPptxCore } from '../ragProcessing.js';
-import { extractPptxStructured, splitLongSections, fallbackChunks } from '../pptxExtract.js';
+import { processPptxCore } from '../ingestion/ragProcessing.js';
+import { extractPptxStructured, splitLongSections, fallbackChunks } from '../ingestion/pptxExtract.js';
 
 // Aanvullende end-to-end-dekking voor de PowerPoint-verwerkingsflow
 // (processPptxCore uit ragProcessing.js). ragProcessing.test.js dekt de

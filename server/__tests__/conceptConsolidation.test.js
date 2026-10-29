@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
+import { routeSource, functionSource } from './helpers/serverSource.js';
 import {
   buildDocumentWindows, conceptKey, mergeByKey, parseSynonymGroups, applySynonymGroups,
   selectConcepts, overlapPenalty, planSureMerges, mapLimit, WINDOW_CHARS, isUsableConceptName,
   buildMergeSuggestions, buildDuplicateSuggestionPrompt,
-} from '../conceptConsolidation.js';
+} from '../concepts/conceptConsolidation.js';
 
 describe('buildDocumentWindows — de hele cursus wordt gelezen (regressie E&B1: 5% gezien)', () => {
   it('elk document komt voor, in chunk-volgorde, en grote documenten worden in stukken gedeeld', () => {
@@ -273,15 +272,15 @@ describe('mapLimit', () => {
   });
 });
 
-describe('extract-concepts: minimum en maximum in de route (server/index.js)', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
+describe('extract-concepts: minimum en maximum in de route (extractConceptsHandler)', () => {
+  const handler = functionSource('extractConceptsHandler');
   it('de reserve bevat alleen kandidaten met bewijs, en aangevulde begrippen worden "te beoordelen"', () => {
-    expect(src).toMatch(/if \(r\.matchedCount >= 1\) reserveResults\.push\(r\)/);
-    expect(src).toMatch(/c\.__topUp \? \{ review_status: 'needs_review' \}/);
-    expect(src).toMatch(/selectConcepts\(dedupedResults, \{\s*min: extractionSettings\.min_concepts,\s*max: extractionSettings\.max_concepts,/);
+    expect(handler).toMatch(/if \(r\.matchedCount >= 1\) reserveResults\.push\(r\)/);
+    expect(handler).toMatch(/c\.__topUp \? \{ review_status: 'needs_review' \}/);
+    expect(handler).toMatch(/selectConcepts\(dedupedResults, \{\s*min: extractionSettings\.min_concepts,\s*max: extractionSettings\.max_concepts,/);
   });
   it('een minimum boven het maximum wordt geweigerd; een tekort wordt gemeld', () => {
-    expect(src).toMatch(/minC > maxC[\s\S]{0,200}min_above_max/);
-    expect(src).toMatch(/shortBy: selection\.shortBy/);
+    expect(routeSource("app.put('/api/rag-settings'")).toMatch(/minC > maxC[\s\S]{0,200}min_above_max/);
+    expect(handler).toMatch(/shortBy: selection\.shortBy/);
   });
 });
