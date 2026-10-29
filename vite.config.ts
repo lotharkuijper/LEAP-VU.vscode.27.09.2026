@@ -77,5 +77,11 @@ export default defineConfig({
     // een machine met veel kernen, dan laden tientallen workers die app tegelijk
     // en is 30s soms te krap (2026-10-27); 90s voorkomt valse hook-timeouts.
     hookTimeout: 90000,
+    // Node 25+ has its own (empty) global localStorage that hides the jsdom one,
+    // so component tests that store the UI language silently fell back to
+    // English. Switch Node's version off where the flag exists.
+    execArgv: process.allowedNodeEnvironmentFlags.has('--experimental-webstorage')
+      ? ['--no-experimental-webstorage']
+      : [],
   },
 });
