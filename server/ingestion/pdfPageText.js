@@ -45,6 +45,7 @@ export async function extractPdfPageTexts(pdfBuffer) {
     }
     return pages;
   } finally {
-    await pdf.destroy().catch(() => {});
+    // pdf.js 6: the document is closed through its loading task.
+    await pdf.loadingTask.destroy().catch(() => {});
   }
 }

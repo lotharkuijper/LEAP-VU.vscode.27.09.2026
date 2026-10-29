@@ -349,7 +349,7 @@ export function DocumentViewer({ documentId, title, lang, onClose, onContextChan
       pdfRef.current = null;
       // destroy() levert een promise; vang een eventuele rejection af zodat er
       // geen unhandled rejection ontstaat die de iframe-foutmelding triggert.
-      if (pdf) { Promise.resolve(pdf.destroy()).catch(() => {}); }
+      if (pdf) { Promise.resolve(pdf.loadingTask.destroy()).catch(() => {}); }
     };
   }, [documentId]); // eslint-disable-line react-hooks/exhaustive-deps
 

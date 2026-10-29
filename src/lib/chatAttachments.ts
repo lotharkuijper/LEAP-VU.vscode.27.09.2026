@@ -132,7 +132,7 @@ export async function renderPdfPages(file: Blob, maxPages: number, maxSide: numb
       out.push(canvas.toDataURL('image/jpeg', 0.85));
     }
   } finally {
-    await pdf.destroy();
+    await pdf.loadingTask.destroy();
   }
   return out;
 }
