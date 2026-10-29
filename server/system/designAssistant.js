@@ -356,7 +356,7 @@ export const PROMPT_KEY = '__design_assistant_prompt__';
  * POST /api/admin/design-assistant/chat               { courseId, messages, lang } → { reply }
  */
 export function registerDesignAssistantRoutes(app, deps) {
-  const { supabaseAdmin, authUser, isStaffForCourse, isAdminProfile, chat, buildLanguageInstruction, normalizeLang, apiBase } = deps;
+  const { supabaseAdmin, authUser, getProfile, isStaffForCourse, isAdminProfile, chat, buildLanguageInstruction, normalizeLang, apiBase } = deps;
 
   async function readSetting(name) {
     const { data } = await supabaseAdmin.from('chatbot_prompts').select('id, content').eq('name', name).maybeSingle();
@@ -376,7 +376,7 @@ export function registerDesignAssistantRoutes(app, deps) {
     return row ? row.content !== 'false' : true;
   }
   async function profileOf(userId) {
-    const { data } = await supabaseAdmin.from('profiles').select('role, email').eq('id', userId).maybeSingle();
+    const { data } = await getProfile(userId);
     return data || null;
   }
 

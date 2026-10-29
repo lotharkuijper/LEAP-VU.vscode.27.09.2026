@@ -54,6 +54,7 @@ export function registerSystemRoutes(app) {
   registerDesignAssistantRoutes(app, {
     supabaseAdmin,
     authUser,
+    getProfile: (id) => profileCache.get(id, loadProfileRoleEmail),
     isStaffForCourse,
     isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
     buildLanguageInstruction,

@@ -39,6 +39,7 @@ beforeAll(async () => {
       ? { user: authState.user }
       : { error: { status: 401, body: { error: 'Niet geauthenticeerd' } } }),
     isStaffForCourse: async () => staffState,
+    getProfile: async () => ({ data: { role: 'student', email: 'x@example.org' } }),
     setRelationshipLevel: (args) => setRelationshipLevelImpl({ supabaseAdmin: fakeSupabase }, args),
     levelKey,
     reputationActive,

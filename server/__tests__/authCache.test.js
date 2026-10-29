@@ -95,7 +95,7 @@ describe('de server gebruikt de cache overal', () => {
   // de controle loopt daarom over ALLE servermodules, niet één bestand.
   // Twee modules die al vóór de opsplitsing los stonden vragen het profiel nog
   // rechtstreeks op; die vielen ook vroeger buiten deze controle.
-  const PRE_SPLIT_EXCEPTIONS = ['server/projects/relationshipAdjust.js', 'server/system/designAssistant.js'];
+  const PRE_SPLIT_EXCEPTIONS = [];
   it('geen losse inlogcontroles of profielvragen meer buiten de cache', () => {
     const src = allServerSource();
     expect(src.match(/await callerClient\.auth\.getUser\(\)/g)).toBeNull();

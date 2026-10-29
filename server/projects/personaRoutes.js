@@ -1467,6 +1467,7 @@ export function registerProjectPersonaRoutes(app) {
   registerRelationshipAdjustRoute(app, {
     supabaseAdmin,
     authUser,
+    getProfile: (id) => profileCache.get(id, loadProfileRoleEmail),
     // Privacy: docenten zien groepen niet meer; corrigeren doet de beheerder.
     isStaffForCourse: async (_user, profile) => isLeapAdmin(profile),
     setRelationshipLevel,

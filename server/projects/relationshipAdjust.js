@@ -15,6 +15,7 @@ export function registerRelationshipAdjustRoute(app, deps) {
   const {
     supabaseAdmin,
     authUser,
+    getProfile, // (userId) => { data } via the auth cache (server/lib/auth.js)
     isStaffForCourse,
     setRelationshipLevel,
     levelKey,
@@ -39,8 +40,7 @@ export function registerRelationshipAdjustRoute(app, deps) {
       const { data: project } = await supabaseAdmin
         .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
       if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-      const { data: profile } = await supabaseAdmin
-        .from('profiles').select('role, email').eq('id', auth.user.id).maybeSingle();
+      const { data: profile } = await getProfile(auth.user.id);
       const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
       if (!isStaff) return res.status(403).json({ error: 'Alleen een beheerder mag de verstandhouding aanpassen' });
 
