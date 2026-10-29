@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText, Send, UserPlus } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText, Send, UserPlus, Archive } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,6 +21,7 @@ import { AdminHint } from './help/AdminHint';
 import { ListRow, StatusBadge } from './ui/ListRow';
 import { EnrollmentModeDialog } from './EnrollmentModeDialog';
 import { CanvasLinkDialog } from './CanvasLinkDialog';
+import { CourseEditionDialog } from './CourseEditionDialog';
 import { CourseInfoDialog } from './CourseInfoDialog';
 import type { EnrollmentMode } from '../services/enrollment.service';
 
@@ -75,6 +76,7 @@ export default function CoursesAdmin() {
   const [enrollmentFor, setEnrollmentFor] = useState<CourseRow | null>(null);
   // Canvas-link (server/lti.js) voor cursussen met de route Canvas of Canvas + open.
   const [canvasLinkFor, setCanvasLinkFor] = useState<CourseRow | null>(null);
+  const [editionFor, setEditionFor] = useState<CourseRow | null>(null);
   const [courseInfoFor, setCourseInfoFor] = useState<CourseRow | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [rowCounts, setRowCounts] = useState<Record<string, DeleteCounts | null>>({});
@@ -1010,6 +1012,12 @@ export default function CoursesAdmin() {
                             onClick: () => toggleAvailability(c), busy: rowBusyId === c.id,
                             testId: `button-toggle-availability-${c.id}`,
                           }] : []),
+                          // Nieuwe editie (jaargang): vorige studenten worden oud-deelnemer, projecten en Studiecafé naar het archief.
+                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
+                            key: 'edition', label: t('editions.action'), icon: Archive, tone: 'primary' as const,
+                            title: t('editions.actionTitle'), onClick: () => setEditionFor(c),
+                            disabled: rowBusyId === c.id, testId: `button-course-edition-${c.id}`,
+                          }] : []),
                           ...(isAdmin ? [{
                             key: 'enrollment', label: t('enrollment.action'), icon: DoorOpen, tone: 'primary' as const,
                             title: t('enrollment.actionTitle'), onClick: () => setEnrollmentFor(c),
@@ -1603,6 +1611,9 @@ export default function CoursesAdmin() {
       )}
       {courseInfoFor && (
         <CourseInfoDialog courseId={courseInfoFor.id} courseName={courseInfoFor.name} onClose={() => setCourseInfoFor(null)} />
+      )}
+      {editionFor && (
+        <CourseEditionDialog courseId={editionFor.id} courseName={editionFor.name} currentUserId={user?.id || null} onClose={() => setEditionFor(null)} />
       )}
       {canvasLinkFor && (
         <CanvasLinkDialog courseId={canvasLinkFor.id} courseName={canvasLinkFor.name} isAdmin={isAdmin} onClose={() => setCanvasLinkFor(null)} />

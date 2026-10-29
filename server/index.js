@@ -142,6 +142,7 @@ import { registerFlawedExplanationRoutes } from './flawedExplanations.js';
 import { buildChatGoalBlock, lastChatGoal, chatGoalSummaryLine } from './chatGoal.js';
 import { registerLtiRoutes, loadPlatforms, loadToolKey, createPlatformRegistry, createRateLimiter as createLtiRateLimiter } from './lti.js';
 import { loadConceptOrder } from './conceptOrder.js';
+import { registerCourseEditionRoutes, isCourseAlumnus } from './courseEditions.js';
 import { registerCrossLingualRoute } from './crossLingual.js';
 import { registerMyDataRoutes } from './myData.js';
 import { registerCourseInvitationRoutes, pendingInvitationsForCourse } from './courseInvitations.js';
@@ -9345,8 +9346,18 @@ async function userHasCourseMembership(userId, courseId) {
       .eq('user_id', userId)
       .eq('course_id', courseId)
       .maybeSingle();
-    return !!data;
+    if (data) return true;
+    // Oud-deelnemer van een vorige editie: houdt leestoegang (server/courseEditions.js).
+    return await isCourseAlumnus(supabaseAdmin, userId, courseId);
   } catch { return false; }
+}
+
+// Actief lid (geen oud-deelnemer van een vorige editie): voor meedoen aan projecten.
+async function userIsActiveCourseMember(userId, courseId) {
+  if (!courseId) return true;
+  if (!(await isCourseAlumnus(supabaseAdmin, userId, courseId))) return true;
+  const { data } = await supabaseAdmin.from('course_members').select('user_id').eq('user_id', userId).eq('course_id', courseId).maybeSingle();
+  return !!data;
 }
 
 // Helper: vereis admin/docent. Geeft op fout een response en `null` terug.
@@ -10899,6 +10910,9 @@ app.post('/api/projects/groups', async (req, res) => {
       if (!studentMayFormGroups(project)) {
         return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });
       }
+      if (!(await userIsActiveCourseMember(auth.user.id, project.course_id))) {
+        return res.status(403).json({ error: 'Je hoort bij een vorige editie van deze cursus en kunt niet meer meedoen aan nieuwe projecten', code: 'alumni' });
+      }
     }
 
     const inviteCode = genInviteCode();
@@ -10969,6 +10983,9 @@ app.post('/api/projects/groups/join', async (req, res) => {
     }
     if (!isStaff && project?.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
       return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
+    }
+    if (!isStaff && project?.course_id && !(await userIsActiveCourseMember(auth.user.id, project.course_id))) {
+      return res.status(403).json({ error: 'Je hoort bij een vorige editie van deze cursus en kunt niet meer meedoen aan nieuwe projecten', code: 'alumni' });
     }
     if (!isStaff && (await rejectIfFeatureOff(res, auth.user, profile, project?.course_id, 'projects'))) return;
 
@@ -13358,6 +13375,17 @@ app.get('/api/projects/student-overview', async (req, res) => {
       });
       if (allowed) courseMap.set(c.id, { id: c.id, name: c.name });
     }
+    // Oud-deelnemer van een vorige editie (server/courseEditions.js): alleen de
+    // afgeronde groepen van toen, geen nieuwe projecten.
+    const alumniCourseIds = new Set();
+    const { data: alumniRows } = await supabaseAdmin
+      .from('course_alumni').select('course_id, courses(id, name, student_visible)').eq('user_id', auth.user.id);
+    for (const a of (alumniRows || [])) {
+      const c = a.courses;
+      if (!c?.id || courseMap.has(c.id) || c.student_visible === false) continue;
+      alumniCourseIds.add(c.id);
+      courseMap.set(c.id, { id: c.id, name: c.name });
+    }
 
     // Een LEAP-beheerder heeft overal toegang, ook zonder lidmaatschap: alle
     // cursussen (de frontend toont alleen de actieve). Zo kan de beheerder in
@@ -13379,7 +13407,7 @@ app.get('/api/projects/student-overview', async (req, res) => {
 
     const { data: projects } = await supabaseAdmin
       .from('projects').select('id, title, research_question, course_id, status, briefing_markdown, max_group_size, min_group_size, group_mode, allow_self_signup')
-      .in('course_id', courseIds).eq('status', 'active');
+      .in('course_id', courseIds).in('status', ['active', 'archived']);
     const projectIds = (projects || []).map(p => p.id);
 
     let sessions = [];
@@ -13452,9 +13480,12 @@ app.get('/api/projects/student-overview', async (req, res) => {
         // de eindreflectie terugzien en in het eigen leerdagboek bewaren (2026-10-27).
         const finishedGroup = groups.filter(g => g.status === 'finalized')
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
-        return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup };
-      });
-      return { course: c, projects: cps };
+        return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup, archived: p.status === 'archived' };
+      })
+        // Gearchiveerde projecten (vorige editie) en cursussen waarvan je oud-deelnemer
+        // bent: alleen zichtbaar als terugblik op je eigen afgeronde groep.
+        .filter(p => (p.status === 'active' && !alumniCourseIds.has(c.id)) || p.finishedGroup);
+      return { course: c, projects: cps, alumni: alumniCourseIds.has(c.id) };
     });
     return res.json({ courses: result });
   } catch (err) {
@@ -14602,6 +14633,8 @@ registerMyDataRoutes(app, {
 // Ontwerphulp: optionele chatbot voor docenten in het beheer (server/designAssistant.js).
 // Systeemberichten van de beheerder op het Dashboard (server/systemMessages.js).
 registerSystemMessageRoutes(app, { supabaseAdmin, requireAuthUser, isLeapAdmin });
+// Nieuwe editie van een cursus: vorige jaargang wordt oud-deelnemer, projecten en Studiecafé naar het archief.
+registerCourseEditionRoutes(app, { supabaseAdmin, requireAuthUser, isStaffForCourse });
 
 // Leerlijn: volgorde van de stof per cursus (server/courseUnits.js).
 // Voorbeoordeling van het ingeleverde eindproduct (server/preassessment.js).

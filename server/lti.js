@@ -329,9 +329,25 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
     { onConflict: 'issuer,subject' },
   );
 
+  // Canvas-cursus van een vorige editie (server/courseEditions.js): wie daar
+  // vandaan komt, wordt geen (actief) lid of docent meer, maar oud-deelnemer.
+  let retired = false;
+  if (context.id) {
+    const { data: link } = await db.from('lti_course_links').select('retired_at')
+      .eq('issuer', platform.issuer).eq('context_id', String(context.id)).eq('course_id', course.id).maybeSingle();
+    retired = !!link?.retired_at;
+  }
+
   // Lidmaatschap: Canvas-docent wordt docent; een student wordt nooit "terug" gezet als hij al docent is.
   const { data: member } = await db.from('course_members').select('member_role').eq('course_id', course.id).eq('user_id', userId).maybeSingle();
-  if (!member) {
+  if (retired) {
+    if (!member) {
+      await db.from('course_alumni').upsert(
+        { course_id: course.id, user_id: userId, former_role: role, since: stamp },
+        { onConflict: 'course_id,user_id', ignoreDuplicates: true },
+      );
+    }
+  } else if (!member) {
     const { error } = await db.from('course_members').insert({ course_id: course.id, user_id: userId, member_role: role });
     if (error) return { error: 'membershipFailed', detail: error.message };
   } else if (role === 'teacher' && member.member_role !== 'teacher') {
