@@ -31,6 +31,12 @@ DECLARE
   v_basiscursus_rag_id       UUID;
   v_basiscursus_projectdata_id UUID;
 BEGIN
+  -- Toegevoegd 2026-10-30: deze migratie ordent alleen bestaande rijen van de
+  -- productiedatabase. Op een nieuwe (lege) database is er niets te ordenen.
+  IF NOT EXISTS (SELECT 1 FROM document_folders WHERE id = v_root_id) THEN
+    RAISE NOTICE 'reorganize_document_folders: geen bestaande mappen, overgeslagen';
+    RETURN;
+  END IF;
 
   -- ── Stap 1: verwijder de twee lege "Documenten" root-mappen ──────────────
   DELETE FROM document_folders WHERE id IN (
