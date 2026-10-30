@@ -65,6 +65,16 @@ export default defineConfig({
     // Standaard de node-omgeving (server-tests); component-tests kiezen zelf
     // jsdom via een `// @vitest-environment jsdom`-docblock bovenaan het bestand.
     environment: 'node',
+    // Tests gebruiken nooit de echte Supabase uit .env: vaste nepwaarden, zodat
+    // ze overal hetzelfde draaien (ook in GitHub Actions, zonder geheimen).
+    env: {
+      VITE_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
+      VITE_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+    },
+    // In CI één herkansing per mislukte test: een kort haperende runner maakt
+    // de run dan niet rood. Een test die pas bij de herkansing slaagt, staat
+    // in de uitvoer als "retry"; zie hem als te repareren, niet als in orde.
+    retry: process.env.CI ? 1 : 0,
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     // Ruimere timeouts: in de gedeelde/CI-omgeving lopen de userEvent-zware

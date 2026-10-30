@@ -59,7 +59,7 @@ Stack: React + TypeScript + Vite (`src/`), Node/Express 5 (`server/`), self-host
 - No user-visible text exists only in Dutch. UI strings go through i18n with `src/i18n/locales/nl.json` as the source; server messages through `server/i18n/serverI18n.js`. Prompts sent to the model are not UI text.
 
 ### Deploying
-- **A push to `main` is a production deploy** (GitHub Actions → Azure), including database migrations. The workflow does not run the tests; run them before anything reaches `main`.
+- **A push to `main` is a production deploy** (GitHub Actions → Azure), including database migrations. The deploy itself runs no tests; the `Tests` workflow (`.github/workflows/test.yml`) runs on every pull request and branch push. After pushing, check it (`gh pr checks --watch`); when it is red, follow the `fix-ci` skill and fix the cause before merging. Never skip or weaken a test to get green.
 - The app runs as one always-on replica. State in process memory (jobs, limits, LTI state) must move to the database before scaling out.
 - Supabase Realtime and Edge Functions do not exist on Azure: use `src/lib/liveUpdates.ts` and Express routes.
 

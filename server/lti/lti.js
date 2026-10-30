@@ -287,10 +287,6 @@ function stateCookie(state, secure) {
   return `leap_lti_state=${encodeURIComponent(state)}; Path=/lti; HttpOnly; Max-Age=600; SameSite=None${secure ? '; Secure; Partitioned' : ''}`;
 }
 
-/**
- * Account, lidmaatschap en koppelingen voor een geldige launch.
- * Geeft { userId, email, role, courseId } of { error }.
- */
 /** True als het inlogaccount `userId` precies dit e-mailadres heeft en het bevestigd is. */
 export async function verifiedLoginEmail(admin, userId, email) {
   try {
@@ -303,6 +299,10 @@ export async function verifiedLoginEmail(admin, userId, email) {
   }
 }
 
+/**
+ * Account, lidmaatschap en koppelingen voor een geldige launch.
+ * Geeft { userId, email, role, courseId } of { error }.
+ */
 export async function processLaunch(db, admin, { claims, platform, now = new Date(), promoteTeacher = null }) {
   const email = String(claims.email || '').trim().toLowerCase();
   if (!email || !email.includes('@')) return { error: 'noEmail' };
