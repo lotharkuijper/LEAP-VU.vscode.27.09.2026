@@ -4,7 +4,7 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 
-// Landingspagina na een klik op de Canvas-link (server/lti.js). De server zet
+// Landingspagina na een klik op de Canvas-link (server/lti/lti.js). De server zet
 // in het #-deel een eenmalige inlogcode (token_hash) en de cursus, of een
 // foutcode. De code wordt meteen ingewisseld voor een gewone LEAP-sessie en
 // daarna uit de adresbalk gehaald.
@@ -13,6 +13,7 @@ type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 const KNOWN_ERRORS = new Set([
   'noEmail', 'noRole', 'courseUnknown', 'courseNotCanvas', 'courseInactive', 'expired', 'stateMismatch',
   'invalidToken', 'nonceMismatch', 'unknownPlatform', 'unknownDeployment', 'loginFailed', 'badRequest',
+  'accountConflict',
 ]);
 
 /** Pure: leest het #-deel van de landingspagina. */

@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} notions au total pour ce cours ({1} nouvelles/mises à jour, {2} déjà présentes){3}{4}{5}{6}",
+  "accountConflict": "accountConflict",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Client admin indisponible",
   "Admin client not available": "Client admin indisponible",

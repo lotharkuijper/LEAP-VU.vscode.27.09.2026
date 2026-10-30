@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Koneksi Canvas ini tidak dikenal oleh LEAP.",
   "lti.error.loginFailed": "Gagal masuk. Klik tautannya sekali lagi di Canvas.",
   "lti.error.badRequest": "Permintaan dari Canvas tidak lengkap.",
+  "lti.error.accountConflict": "Sudah ada akun LEAP dengan alamat email ini yang tidak dapat ditautkan otomatis ke Canvas (alamatnya belum dikonfirmasi atau berbeda). Masuk dulu ke LEAP seperti biasa satu kali, lalu coba lagi, atau minta bantuan administrator.",
   "login.code.link": "Masuk ke LEAP lewat Canvas? Masuk dengan kode melalui email",
   "login.code.intro": "Apakah kamu masuk ke LEAP lewat tautan di Canvas? Masukkan alamat emailmu; kamu akan menerima kode melalui email dan masuk tanpa kata sandi.",
   "login.code.emailLabel": "Alamat email",
