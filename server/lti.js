@@ -287,10 +287,6 @@ function stateCookie(state, secure) {
   return `leap_lti_state=${encodeURIComponent(state)}; Path=/lti; HttpOnly; Max-Age=600; SameSite=None${secure ? '; Secure; Partitioned' : ''}`;
 }
 
-/**
- * Account, lidmaatschap en koppelingen voor een geldige launch.
- * Geeft { userId, email, role, courseId } of { error }.
- */
 /** True als het inlogaccount `userId` precies dit e-mailadres heeft en het bevestigd is. */
 export async function verifiedLoginEmail(admin, userId, email) {
   try {
@@ -303,6 +299,37 @@ export async function verifiedLoginEmail(admin, userId, email) {
   }
 }
 
+/**
+ * Een docent nodigde deze student uit (LEAP maakte het account; nog nooit
+ * gebruikt) en de student klikt eerst in Canvas. Canvas staat in voor het
+ * adres: bevestig het en koppel. Het wachtwoord wordt vervangen door een
+ * willekeurig, zodat niemand die het adres eerder zelf registreerde erin kan;
+ * de student logt in via Canvas of met een code per e-mail.
+ */
+export async function claimInvitedAccount(db, admin, userId, email) {
+  try {
+    const { data, error } = await admin.getUserById(userId);
+    const u = data?.user;
+    if (error || !u) return false;
+    if (String(u.email || '').trim().toLowerCase() !== email) return false;
+    if (u.email_confirmed_at || u.confirmed_at || u.last_sign_in_at) return false;
+    const { data: inv } = await db.from('course_invitations').select('id')
+      .eq('user_id', userId).eq('kind', 'new').is('accepted_at', null).limit(1);
+    if (!inv || !inv[0]) return false;
+    const { error: upErr } = await admin.updateUserById(userId, {
+      email_confirm: true,
+      password: randomBytes(32).toString('base64url'),
+    });
+    return !upErr;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Account, lidmaatschap en koppelingen voor een geldige launch.
+ * Geeft { userId, email, role, courseId } of { error }.
+ */
 export async function processLaunch(db, admin, { claims, platform, now = new Date(), promoteTeacher = null }) {
   const email = String(claims.email || '').trim().toLowerCase();
   if (!email || !email.includes('@')) return { error: 'noEmail' };
@@ -336,7 +363,8 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
       // bevestigd: profiles.email kan de eigenaar zelf wijzigen, en een
       // onbevestigde registratie op iemands adres mag diens Canvas-login niet
       // overnemen.
-      if (!(await verifiedLoginEmail(admin, prof[0].id, email))) return { error: 'accountConflict' };
+      if (!(await verifiedLoginEmail(admin, prof[0].id, email))
+          && !(await claimInvitedAccount(db, admin, prof[0].id, email))) return { error: 'accountConflict' };
       userId = prof[0].id;
     }
   }
@@ -480,7 +508,7 @@ export function registerLtiRoutes(app, express, deps) {
         console.warn('[lti] inlogcode maken mislukt:', error?.message);
         return fail(req, res, 'loginFailed');
       }
-      res.setHeader('Set-Cookie', `leap_lti_state=; Path=/lti; Max-Age=0; SameSite=None${secureCookies(deps.appUrl(req)) ? '; Secure' : ''}`);
+      res.setHeader('Set-Cookie', `leap_lti_state=; Path=/lti; Max-Age=0; SameSite=None${secureCookies(deps.appUrl(req)) ? '; Secure; Partitioned' : ''}`);
       console.log(`[lti] launch ok: ${r.role} → cursus ${r.courseId}`);
       return res.redirect(303, toStart(req, { token_hash: tokenHash, course: r.courseId, ...(r.next ? { next: r.next } : {}) }));
     } catch (e) {

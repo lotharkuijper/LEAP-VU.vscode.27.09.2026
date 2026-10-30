@@ -114,14 +114,16 @@ let server, state, otpCalls;
 function fakeDb() {
   const tables = state.db;
   const match = (r, f) => Object.entries(f.eq).every(([k, v]) => String(r[k]) === String(v))
+    && f.isNull.every((k) => r[k] == null)
     && (!f.ilike || String(r[f.ilike[0]]).toLowerCase() === String(f.ilike[1]).replace(/\\(.)/g, '$1').toLowerCase());
   const from = (t) => {
-    const f = { eq: {}, ilike: null };
+    const f = { eq: {}, ilike: null, isNull: [] };
     const rows = () => (tables[t] ||= []).filter(r => match(r, f));
     const b = {
       select: () => b, order: () => b, limit: () => b,
       eq: (k, v) => { f.eq[k] = v; return b; },
       ilike: (k, v) => { f.ilike = [k, v]; return b; },
+      is: (k, v) => { if (v === null) f.isNull.push(k); return b; },
       maybeSingle: async () => ({ data: rows()[0] || null, error: null }),
       then: (res) => res({ data: rows(), error: null }),
       insert: async (row) => { (tables[t] ||= []).push({ ...row }); return { error: null }; },
@@ -140,6 +142,7 @@ function fakeDb() {
     from,
     auth: { admin: {
       createUser: async ({ email }) => { const id = `u-${(tables.profiles || []).length + 1}`; (tables.profiles ||= []).push({ id, email }); state.auth[id] = { id, email, email_confirmed_at: 'now' }; return { data: { user: { id } }, error: null }; },
+      updateUserById: async (id, attrs) => { state.authUpdates.push({ id, attrs }); if (state.auth[id] && attrs.email_confirm) state.auth[id].email_confirmed_at = 'now'; return { error: null }; },
       getUserById: async (id) => ({ data: state.auth[id] ? { user: state.auth[id] } : null, error: state.auth[id] ? null : { message: 'not found' } }),
       generateLink: async ({ email }) => ({ data: { properties: { hashed_token: `hash-for-${email}` } }, error: null }),
     } },
@@ -175,7 +178,7 @@ beforeEach(async () => {
   state = { db: {
     courses: [{ id: COURSE, is_active: true, enrollment_mode: 'canvas' }],
     profiles: [], lti_identities: [], course_members: [], lti_course_links: [],
-  }, auth: {} };
+  }, auth: {}, authUpdates: [] };
   promoted = [];
   const app = express();
   app.use(express.json());
@@ -224,6 +227,17 @@ describe('launch vanuit Canvas', () => {
     expect(state.db.course_members[0].member_role).toBe('teacher');
     // Cursusdocent ⇒ ook het profiel docent (project-/opslagregels in de database).
     expect(promoted).toEqual([{ userId: 'bestaand', courseId: COURSE }]);
+  });
+  it('een uitgenodigde student die eerst in Canvas klikt, wordt gekoppeld (adres bevestigd, wachtwoord vervangen)', async () => {
+    state.db.profiles.push({ id: 'uitgenodigd', email: 'student@example.org' });
+    state.auth.uitgenodigd = { id: 'uitgenodigd', email: 'student@example.org', email_confirmed_at: null, last_sign_in_at: null };
+    state.db.course_invitations = [{ user_id: 'uitgenodigd', kind: 'new', accepted_at: null }];
+    const { frag } = await launch();
+    expect(frag.get('error')).toBeNull();
+    expect(state.db.lti_identities[0]).toMatchObject({ user_id: 'uitgenodigd' });
+    expect(state.authUpdates).toHaveLength(1);
+    expect(state.authUpdates[0].attrs.email_confirm).toBe(true);
+    expect(typeof state.authUpdates[0].attrs.password).toBe('string');
   });
   it('koppelt niet aan een account met een onbevestigd of ander inlogadres (overname voorkomen)', async () => {
     // a) iemand registreerde zich op dit adres maar bevestigde het nooit
