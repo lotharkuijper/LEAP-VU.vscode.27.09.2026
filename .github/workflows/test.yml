@@ -36,7 +36,9 @@ jobs:
           node-version: 22
           cache: npm
       - name: Afhankelijkheden
-        run: npm ci --no-audit --no-fund
+        # Zelfde npm-versie als de Dockerfile (npm 11); npm 10 van Node 22 leest
+        # het lockbestand anders en weigert dan.
+        run: npm install -g npm@11 && npm ci --no-audit --no-fund
       - name: Tests (server en frontend)
         # github-actions-reporter zet mislukte tests als aantekening bij de
         # regel in de pull request; default houdt de leesbare log.
