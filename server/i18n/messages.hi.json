@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} अवधारणाएँ इस कोर्स के लिए कुल ({1} नई/अपडेट की गई, {2} पहले से मौजूद){3}{4}{5}{6}",
+  "accountConflict": "accountConflict",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Admin client उपलब्ध नहीं है",
   "Admin client not available": "Admin client उपलब्ध नहीं है",

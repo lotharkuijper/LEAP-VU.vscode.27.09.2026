@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "呢個 Canvas 連接未喺 LEAP 登記。",
   "lti.error.loginFailed": "登入唔成功。請喺 Canvas 再撳一次連結。",
   "lti.error.badRequest": "Canvas 嘅請求唔完整。",
+  "lti.error.accountConflict": "已有一個使用呢個電郵地址嘅 LEAP 帳戶，但未能自動連結到 Canvas（地址尚未確認或唔一致）。請先正常登入 LEAP 一次，然後再試多次，或者向管理員求助。",
   "login.code.link": "經 Canvas 入咗 LEAP？用電郵代碼登入",
   "login.code.intro": "你係咪經 Canvas 入面條連結入咗 LEAP？輸入你嘅電郵地址；你會收到電郵代碼，唔使密碼就可以登入。",
   "login.code.emailLabel": "電郵地址",

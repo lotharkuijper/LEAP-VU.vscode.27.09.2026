@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "이 과정의 총 {0}개 용어({1}개 신규/업데이트, {2}개 이미 있음){3}{4}{5}{6}",
+  "accountConflict": "계정 충돌",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Admin client를 사용할 수 없어",
   "Admin client not available": "Admin client not available",

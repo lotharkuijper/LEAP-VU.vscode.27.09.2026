@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "LEAP 不认识此 Canvas 关联。",
   "lti.error.loginFailed": "登录失败。请在 Canvas 中再次点击该链接。",
   "lti.error.badRequest": "来自 Canvas 的请求不完整。",
+  "lti.error.accountConflict": "此电子邮件地址已存在一个 LEAP 帐户，但无法自动关联到 Canvas（该地址尚未确认或不一致）。请先正常登录一次 LEAP，然后重试，或向管理员寻求帮助。",
   "login.code.link": "通过 Canvas 进入 LEAP？使用电子邮件验证码登录",
   "login.code.intro": "你是通过 Canvas 中的链接进入 LEAP 的吗？请输入你的电子邮件地址；你会通过电子邮件收到验证码，并可无需密码登录。",
   "login.code.emailLabel": "电子邮件地址",

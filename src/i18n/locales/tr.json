@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Bu Canvas bağlantısı LEAP tarafından bilinmiyor.",
   "lti.error.loginFailed": "Oturum açılamadı. Canvas’ta bağlantıya bir kez daha tıkla.",
   "lti.error.badRequest": "Canvas’tan gelen istek eksikti.",
+  "lti.error.accountConflict": "Bu e-posta adresiyle zaten bir LEAP hesabı var ve Canvas’a otomatik olarak bağlanamadı (adres henüz doğrulanmamış ya da farklı). Önce LEAP’e bir kez normal şekilde giriş yapıp sonra tekrar dene veya yöneticiden yardım iste.",
   "login.code.link": "Canvas üzerinden LEAP’e mi geldin? E-posta ile kod kullanarak giriş yap",
   "login.code.intro": "Canvas’taki bağlantı üzerinden LEAP’e mi geldin? E-posta adresini gir; e-posta ile bir kod alacak ve şifresiz giriş yapacaksın.",
   "login.code.emailLabel": "E-posta adresi",

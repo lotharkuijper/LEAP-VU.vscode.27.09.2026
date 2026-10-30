@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "이 Canvas 연결은 LEAP에 알려져 있지 않아.",
   "lti.error.loginFailed": "로그인에 실패했어. Canvas에서 링크를 한 번 더 클릭해.",
   "lti.error.badRequest": "Canvas의 요청이 불완전했어.",
+  "lti.error.accountConflict": "이 이메일 주소로 이미 LEAP 계정이 있지만 Canvas에 자동으로 연결할 수 없었어(주소가 아직 확인되지 않았거나 일치하지 않아). 먼저 LEAP에 한 번 일반 로그인을 한 뒤 다시 시도하거나, 관리자에게 도움을 요청해.",
   "login.code.link": "Canvas를 통해 LEAP에 왔어? 이메일 코드로 로그인해",
   "login.code.intro": "Canvas의 링크를 통해 LEAP에 왔어? 이메일 주소를 입력하면 이메일로 코드를 받고 비밀번호 없이 로그인할 수 있어.",
   "login.code.emailLabel": "이메일 주소",

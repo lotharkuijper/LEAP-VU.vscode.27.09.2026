@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Deze Canvas-koppeling is niet bij LEAP bekend.",
   "lti.error.loginFailed": "Inloggen lukte niet. Klik in Canvas nog een keer op de link.",
   "lti.error.badRequest": "Het verzoek van Canvas was onvolledig.",
+  "lti.error.accountConflict": "Er bestaat al een LEAP-account met dit e-mailadres dat niet automatisch aan Canvas gekoppeld kon worden (het adres is nog niet bevestigd of wijkt af). Log eerst één keer gewoon in LEAP in en probeer het daarna opnieuw, of vraag de beheerder om hulp.",
   "login.code.link": "Via Canvas in LEAP gekomen? Log in met een code per e-mail",
   "login.code.intro": "Kwam je via de link in Canvas in LEAP? Vul je e-mailadres in; je krijgt een code per e-mail en logt in zonder wachtwoord.",
   "login.code.emailLabel": "E-mailadres",

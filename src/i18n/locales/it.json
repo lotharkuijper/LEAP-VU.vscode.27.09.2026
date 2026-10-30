@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Questo collegamento Canvas non è noto a LEAP.",
   "lti.error.loginFailed": "Accesso non riuscito. Clicca di nuovo sul link in Canvas.",
   "lti.error.badRequest": "La richiesta di Canvas era incompleta.",
+  "lti.error.accountConflict": "Esiste già un account LEAP con questo indirizzo e-mail che non è stato possibile collegare automaticamente a Canvas (l’indirizzo non è ancora stato confermato o è diverso). Accedi prima a LEAP una volta normalmente e poi riprova, oppure chiedi aiuto all’amministratore.",
   "login.code.link": "Arrivato su LEAP tramite Canvas? Accedi con un codice via e-mail",
   "login.code.intro": "Sei arrivato su LEAP tramite il link in Canvas? Inserisci il tuo indirizzo e-mail; riceverai un codice via e-mail e accederai senza password.",
   "login.code.emailLabel": "Indirizzo e-mail",

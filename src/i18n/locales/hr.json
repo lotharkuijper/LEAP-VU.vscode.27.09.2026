@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Ova Canvas integracija nije poznata LEAP-u.",
   "lti.error.loginFailed": "Prijava nije uspjela. Još jednom klikni poveznicu u Canvasu.",
   "lti.error.badRequest": "Zahtjev iz Canvasa bio je nepotpun.",
+  "lti.error.accountConflict": "Već postoji LEAP račun s ovom e-mail adresom koji se nije mogao automatski povezati s Canvasom (adresa još nije potvrđena ili se razlikuje). Najprije se jednom prijavi izravno u LEAP i zatim pokušaj ponovno ili zatraži pomoć administratora.",
   "login.code.link": "Došao/la si u LEAP putem Canvasa? Prijavi se kodom putem e-pošte",
   "login.code.intro": "Došao/la si u LEAP putem poveznice u Canvasu? Unesi svoju e-adresu; dobit ćeš kod putem e-pošte i prijaviti se bez lozinke.",
   "login.code.emailLabel": "E-adresa",
