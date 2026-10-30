@@ -35,10 +35,23 @@ function normalizeOfficeText(value) {
   return String(value).trim();
 }
 
+// officeparser 8 geeft een AST zonder toText(); de tekst komt uit
+// `await ast.to('text')`. Zonder dat viel normalizeOfficeText bij tabellen en
+// dia's terug op JSON.stringify en kwam er ruwe AST-code in de fragmenten.
+// preserveLayout: false = platte tekst (één tabelcel per regel, geen
+// opgevulde rasters), zoals officeparser 6 die gaf.
+async function officeAstToText(data) {
+  if (data && typeof data.to === 'function') {
+    const { value } = await data.to('text', { includeImages: false, textConfig: { preserveLayout: false } });
+    return normalizeOfficeText(value);
+  }
+  return normalizeOfficeText(data);
+}
+
 export const parseOfficeAsync = (buffer) => new Promise((resolve, reject) => {
   officeParserPkg.parseOffice(buffer, (data, err) => {
     if (err) reject(err);
-    else resolve(normalizeOfficeText(data));
+    else officeAstToText(data).then(resolve, reject);
   });
 });
 
