@@ -1,48 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
-    "allow": [
-      "Bash(npx vitest run *)",
-      "Bash(npm run typecheck)",
-      "Bash(npm run lint)",
-      "Bash(node scripts/extract-server-messages.mjs --check)",
-      "Bash(npm run db:local)",
-      "Bash(bash scripts/local-db/test.sh *)"
-    ],
-    "ask": [
-      "Bash(git push *)",
-      "Bash(gh pr merge *)",
-      "Bash(npm audit fix *)",
-      "Bash(az * create *)",
-      "Bash(az * delete *)",
-      "Bash(az * update *)",
-      "Bash(az * set *)",
-      "Bash(az * add *)",
-      "Bash(az * remove *)",
-      "Bash(az * assign *)",
-      "Bash(az * restart *)",
-      "Bash(az * start *)",
-      "Bash(az * stop *)",
-      "Bash(az * deploy *)",
-      "Bash(az * up *)",
-      "Bash(az * purge *)",
-      "Bash(az * import *)",
-      "Bash(az * revoke *)",
-      "Bash(az * regenerate *)",
-      "Bash(az * renew *)",
-      "Bash(az * keys list *)",
-      "Bash(az * credential *)",
-      "Bash(az * show-connection-string *)",
-      "Bash(az deployment *)",
-      "Bash(az rest *)",
-      "Edit(/supabase/migrations/**)",
-      "Edit(/.github/workflows/**)",
-      "Bash(az * secret *)",
-      "Bash(az * appsettings *)",
-      "Bash(az account get-access-token*)",
-      "Bash(az * grant *)",
-      "Bash(az * rotate *)"
-    ],
     "deny": [
       "Read(.env)",
       "Read(.env.local)",
@@ -52,12 +10,7 @@
       "Read(.env.development*)",
       "Read(*.pem)",
       "Read(*.key)",
-      "Read(db-backups/**)",
-      "Bash(git push *--force*main*)",
-      "Bash(git push *main*--force*)",
-      "Bash(git push *-f *main*)",
-      "Bash(git push *main* -f*)",
-      "Bash(git push *+main*)"
+      "Read(db-backups/**)"
     ]
   }
 }

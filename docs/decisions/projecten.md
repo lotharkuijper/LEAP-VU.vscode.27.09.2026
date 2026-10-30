@@ -1,19 +1,12 @@
----
-paths:
-  - "server/projects/**"
-  - "src/pages/{ProjectRoomPage,ProjectsPage}.tsx"
-  - "src/components/projects/**"
-  - "src/components/{PersonaAvatar,PersonaAvatarEditor,PersonaKnowledgeFields,PersonaMessageBody,PersonaRoleFields,ProductFeedbackPanel}.tsx"
-  - "src/pages/admin/{ProjectGroupsAdmin,ProjectPreassessment,ProjectsAdminTab,PersonaLibraryTab}.tsx"
-  - "src/lib/{personaAvatar,relationshipLevels}.ts"
-  - "scripts/check-preassessment.mjs"
----
+# Projecten, groepen en persona's
 
-# Projects, groups and project bots (personas)
+Besluiten en werking van LEAP op dit gebied, zoals ze in de oude CLAUDE.md stonden. Geen instructies die altijd gelden, maar naslag: lees dit als je aan dit onderdeel werkt, en werk het bij als een besluit verandert.
 
-Group content (group chat, persona conversations, sessions, feedback, relationship, group files) is for group members and LEAP admins only: `isLeapAdmin(profile)` plus membership (`isGroupMember` in `server/projects/access.js`), never `isStaffForCourse`. Full privacy model: `privacy-and-integrity.md`.
+## Projects, groups and project bots (personas)
 
-## Project bots (personas)
+Group content (group chat, persona conversations, sessions, feedback, relationship, group files) is for group members and LEAP admins only: `isLeapAdmin(profile)` plus membership (`isGroupMember` in `server/projects/access.js`), never `isStaffForCourse`. Full privacy model: `docs/decisions/privacy-en-data.md`.
+
+### Project bots (personas)
 - Three roles in `persona_type`:
   - `conversational` = Begeleider (guide);
   - `evaluator` = Beoordelaar (feedback on submitted work with a hidden rubric, `max_reviews` rounds per group, `deliverable_label`);
@@ -39,14 +32,14 @@ Group content (group chat, persona conversations, sessions, feedback, relationsh
   - Only course teachers and LEAP admins see it (submissions are deliberately shared work). Students only see a notice that it happens. The pre-assessor is excluded from student feedback rounds, the room's evaluator list and "Beoordeling opvragen", so its rubric stays with the teacher.
   - Downloads: per submission a Word file (`…/preassessment.docx`), per project one zip (`…/submissions-export.zip`: per group the product + pre-assessment, plus an overview CSV). Check with `node --env-file=.env scripts/check-preassessment.mjs [--long]` (real model, test account, cleans up).
 
-## Learning levels and journals in projects
+### Learning levels and journals in projects
 - Learning levels play no role in projects. The project room has no level selector or readiness button, and the persona chat ignores `learningLevel`.
 - Since 2026-10-27 the project NEVER writes to the journals of all group members. The texts stay with the group (`group_checkpoints.journal_items`, `project_document_reviews.journal_entry`, `project_group_assessments`; migration `20261027140000_project_journal_on_request` + rollback) and each member saves what they want to their OWN journal with "Bewaar in mijn leerdagboek" (`POST /api/projects/groups/:groupId/journal-save`, `server/projects/projectJournalSave.js`; one `source_ref` per item and user, older automatic refs count as saved; at the final reflection a member can add an own reflection). A finished group stays reachable read-only (`finishedGroup` in the student overview). `server/__tests__/projectJournalSave.test.js` and `server/__tests__/projectJournal.test.js` guard this.
-- Project texts (interim checkpoint, final reflection, overview across conversations, summary per persona conversation, evaluator feedback rounds, "Beoordeling opvragen") use the journal blocks; structured input is converted without an extra LLM call (`server/projects/projectJournal.js`). See `learning-journal-achievements.md`.
-- Evaluator reports ("Beoordeling opvragen") are stored in `project_group_assessments` and shown in the project room; a member can save them to their own journal only when the journal switch is on (see `course-features.md`).
+- Project texts (interim checkpoint, final reflection, overview across conversations, summary per persona conversation, evaluator feedback rounds, "Beoordeling opvragen") use the journal blocks; structured input is converted without an extra LLM call (`server/projects/projectJournal.js`). See `docs/decisions/leren-met-ai.md`.
+- Evaluator reports ("Beoordeling opvragen") are stored in `project_group_assessments` and shown in the project room; a member can save them to their own journal only when the journal switch is on (see `docs/decisions/cursusmateriaal-en-rag.md`).
 
-## Project groups (2026-10-27)
+### Project groups (2026-10-27)
 - Each project has `group_mode` (`server/projects/projectGroups.js`, migration `20261027160000_project_group_modes` + rollback): `canvas` (default for canvas/canvas_open courses), `teacher` (default for open courses) or `self` (students form groups with an invite code; the old behaviour). `allow_self_signup` is kept in sync (= self) for old code.
 - With `canvas` or `teacher` a student can never create, join, leave or restart a group (`studentMayFormGroups` guards `POST /api/projects/groups`, `/groups/join`, `/student-restart`; the UI hides those actions). The course teacher/admin manages groups via `/api/projects/:projectId/group-admin` (`ProjectGroupsAdmin`: create, rename, delete empty, assign/move, auto-divide unassigned students).
 - The browser never creates or changes `project_groups` or `project_group_members` itself; the server does it with all checks (migration `20261030100000_security_hardening`). A teacher is never put into a student group via the server, and group management responses never contain invite codes; invite codes come from a cryptographic random source.
-- Canvas group assignments (project link with `&project=<p>`): see `canvas-lti.md`. `server/__tests__/projectGroups.test.js`, `server/__tests__/lti.test.js`.
+- Canvas group assignments (project link with `&project=<p>`): see `docs/decisions/toegang-en-canvas.md`. `server/__tests__/projectGroups.test.js`, `server/__tests__/lti.test.js`.

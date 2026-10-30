@@ -1,6 +1,6 @@
 ---
 name: tidy-workspace
-description: Check Claude's own working environment for this repo - auto-memory, CLAUDE.md and rules, local git leftovers, stray secret-file copies, old branches, stashes, local test containers and growing files - and give a short Dutch report with suggested clean-up actions. Report first; nothing is changed or deleted without explicit confirmation.
+description: Check Claude's own working environment for this repo - auto-memory, CLAUDE.md, local git leftovers, stray secret-file copies, old branches, stashes, local test containers and growing files - and give a short Dutch report with suggested clean-up actions. Report first; nothing is changed or deleted without explicit confirmation.
 disable-model-invocation: true
 ---
 
@@ -20,11 +20,11 @@ Hard limits for the whole skill:
 2. For `MEMORY.md` and every topic file: lines, size, last-modified date. `MEMORY.md` is loaded every session but only the first 200 lines / 25 KB; it should be a short index (one line per memory).
 3. Read each memory and classify it:
    - **stale**: mentions files, commands, branches or settings that no longer exist (check with `ls`/`grep`), or states as "open" something the code shows is done;
-   - **contradicted**: conflicts with `CLAUDE.md` or `.claude/rules/` (the repo wins);
+   - **contradicted**: conflicts with `CLAUDE.md` or `docs/decisions/` (the repo wins);
    - **duplicate**: says the same as another memory or as a rule;
-   - **durable rule**: a project rule that every contributor needs; propose moving it into the matching `.claude/rules/<topic>.md` (a repo change, so it needs a commit);
+   - **durable rule**: a project rule that every contributor needs; propose adding it in one line to `CLAUDE.md` (if it truly applies to every task) or to the matching `docs/decisions/` file (a repo change, so it needs a commit);
    - **keep**.
-4. Instruction files: `wc -l CLAUDE.md` (target under 200 lines), `CLAUDE.local.md` if present (personal, git-ignored), and `wc -m .claude/rules/*.md` (a path rule over ~40,000 characters gets cut off). Flag dated feature sections that crept back into `CLAUDE.md`; they belong in `.claude/rules/` or `docs/`.
+4. Instruction files: `wc -l CLAUDE.md` (it should stay a short, stable overview of ~50 lines) and `CLAUDE.local.md` if present (personal, git-ignored). Flag feature details, file paths or dated sections that crept into `CLAUDE.md`; they belong in `docs/decisions/` or `docs/README.md`.
 
 ### b. Local repository
 Run from the repo root:
@@ -54,7 +54,7 @@ Write a report of at most ~40 lines with three headings: **Geheugen en instructi
 Then stop and wait.
 
 ## Phase 3: act only on confirmed numbers
-- Memory: edit or delete only the confirmed memory files; keep `MEMORY.md` a one-line-per-entry index and update it in the same step. Moving a rule into `.claude/rules/` is a repo change: show the diff and leave the commit to the user.
+- Memory: edit or delete only the confirmed memory files; keep `MEMORY.md` a one-line-per-entry index and update it in the same step. Moving something into `CLAUDE.md` or `docs/` is a repo change: show the diff and leave the commit to the user.
 - Branches: `git branch -d <name>` (the safe form; if git refuses, report it instead of forcing).
 - Stashes: `git stash drop stash@{n}` only for confirmed entries; show `git stash show --stat` first.
 - Untracked files: delete exactly the confirmed paths (`rm <path>`), not `git clean -f`.

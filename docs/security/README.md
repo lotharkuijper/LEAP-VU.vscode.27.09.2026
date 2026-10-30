@@ -48,8 +48,8 @@ voor de beheerder van LEAP en voor Claude Code.
 ## Veilig verder werken
 
 - **Elke wijziging aan inloggen, routes, databaseregels, uploads, Canvas,
-  externe adressen of geheimen**: volg de skill `.claude/skills/secure-change`
-  en laat de agent `security-reviewer` meekijken voordat het naar `main` gaat.
+  externe adressen of geheimen**: laat de agent `security-reviewer`
+  (`.claude/agents/`) meekijken voordat het naar `main` gaat.
 - **Nieuwe of gewijzigde databaseregels**: altijd een migratie mét rollback,
   en eerst testen op de lokale testdatabase (`npm run db:local`,
   `scripts/local-db/test.sh`). Nooit rechtstreeks in de productiedatabase.

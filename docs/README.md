@@ -187,6 +187,8 @@ Azure. Zie [`scripts/local-db/README.md`](../scripts/local-db/README.md).
 | `docs/README.md` | Deze kaart. |
 | `docs/architecture.md` | Architectuur in één pagina, met tekening. |
 | `docs/security/` | Beveiliging: wie mag wat, en hoe dat is afgedwongen. |
+| `docs/decisions/` | Productbesluiten per onderwerp (privacy, cursusmateriaal, chat/uitleg/quiz, projecten, toegang en Canvas, techniek). Bijwerken als een besluit verandert. |
+| `.claude/` | Instellingen voor Claude Code: twee review-agents (beveiliging, onderhoudbaarheid), de skill `tidy-workspace` en `settings.json` (houdt `.env` buiten beeld). |
 | `docs/reference/` | Naslag: `kennisnotities.md` (niet-voor-de-hand-liggende valkuilen) en `superuser-system.md` (oud, deels verouderd). |
 | `docs/handleiding/` | De handleiding voor docenten (HTML + PDF) en het stappenplan voor projecten. De Ontwerphulp leest deze bestanden. |
 | `docs/canvas/` | Instructie voor de Canvas-beheerders van de VU. |

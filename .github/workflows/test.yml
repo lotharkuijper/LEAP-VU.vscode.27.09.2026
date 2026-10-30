@@ -9,8 +9,7 @@ name: Tests
 # servercode en de frontend-build. De typecheck en de frontend-lint hebben nog
 # oude meldingen en staan er daarom (nog) niet in.
 #
-# Mislukt deze workflow, dan: `gh run view <id> --log-failed` (of de skill
-# fix-ci), de oorzaak lokaal nadoen en die repareren. Nooit een test
+# Mislukt deze workflow, dan: `gh run view <id> --log-failed`, de oorzaak lokaal nadoen en die repareren. Nooit een test
 # overslaan of afzwakken om groen te krijgen.
 on:
   pull_request:
