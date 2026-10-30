@@ -15,8 +15,8 @@ LEAP vraagt alleen: een vast Canvas-id van de gebruiker, naam, e-mailadres, rol,
 
 ## Stap 2: Canvas-beheerders
 
-1. Admin → Developer Keys → **+ LTI Key** → Method: **Enter URL** → `https://leap.vu-edulab.nl/lti/config.json`.
-2. Controleer: Privacy Level **Public** (anders stuurt Canvas geen e-mailadres en kan LEAP geen account maken). Placements: *Link Selection*, *Assignment Selection* (en eventueel *Course Navigation*), openen in een nieuw venster.
+1. Admin → Developer Keys → **+ LTI Key** → Method: **Enter URL** → `https://leap.vu-edulab.nl/lti/config.json`. Vul bij **Redirect URIs** precies `https://leap.vu-edulab.nl/lti/launch` in (verplicht; Canvas neemt dit niet over uit de configuratie en vergelijkt letterlijk).
+2. Controleer: Privacy Level **Public** (anders stuurt Canvas geen e-mailadres en kan LEAP geen account maken). Placements: *Link Selection*, *Assignment Selection* (en eventueel *Course Navigation*). Let op: "openen in een nieuw venster" geldt in Canvas alleen voor *Course Navigation*; bij module-items en opdrachten moet de docent zelf "Load in a new tab" aanvinken (zie hieronder).
    Custom Fields (staan al in de configuratie; bij een handmatig gemaakte key zelf invullen):
    ```
    canvas_group_id=$com.instructure.Group.id
@@ -45,7 +45,8 @@ Een omgeving kan ook nog in de serveromgeving staan (`LTI_PLATFORMS`, JSON-lijst
 ## Per cursus
 
 1. De LEAP-beheerder zet de toegangsroute van de cursus op **Canvas** (of Canvas + open).
-2. De docent kopieert de **Canvas-link** en zet die in Canvas als module-item: + bij een module → **External Tool** → LEAP. Canvas vult bij URL zelf `…/lti/launch` in; **vervang dat door de Canvas-link** (die eindigt op `?course=…`). Vink "Load in a new tab" aan. Zonder `?course=…` weet LEAP niet om welke cursus het gaat.
+2. De docent kopieert de **Canvas-link** en zet die in Canvas als module-item: + bij een module → **External Tool** → LEAP. Canvas vult bij URL zelf `…/lti/launch` in; **vervang dat door de Canvas-link** (die eindigt op `?course=…`). Vink **"Load in a new tab"** aan: in Safari en de Canvas-app werkt inloggen binnen het Canvas-venster niet. Zonder `?course=…` weet LEAP niet om welke cursus het gaat.
+   De **Studentweergave** van Canvas (testleerling) geeft geen e-mailadres door; test daarom met een echt studentaccount.
 
 ## Per project met groepen uit Canvas
 
