@@ -10,7 +10,7 @@ import { applyConversationJudgement, precomputeJudgement } from './threadClose.j
 import { createClosePrep, generateThreadSummary } from './threadClosePrep.js';
 
 // Gesprek afsluiten: neerslag en oordeel worden tussen het venster en de
-// bevestiging bewaard (server/threadClosePrep.js), zodat de klik op
+// bevestiging bewaard (server/projects/threadClosePrep.js), zodat de klik op
 // "Gesprek afsluiten" niet opnieuw op het taalmodel hoeft te wachten.
 export const threadClosePrep = createClosePrep();
 

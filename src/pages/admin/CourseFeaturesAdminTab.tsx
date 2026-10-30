@@ -10,7 +10,7 @@ import { CourseAttachmentsSetting } from './CourseAttachmentsSetting';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
-// Onderdelen per cursus aan/uit (src/lib/courseFeatures.ts, server/courseFeatures.js).
+// Onderdelen per cursus aan/uit (src/lib/courseFeatures.ts, server/courses/courseFeatures.js).
 // Elke schakelaar wordt direct opgeslagen; uitzetten verbergt, er wordt niets gewist.
 
 const ICONS: Record<CourseFeature, typeof MessageSquare> = {

@@ -45,7 +45,7 @@ interface ProjectRow {
   min_group_size: number | null;
   max_group_size: number | null;
   allow_self_signup: boolean | null;
-  /** Groepsindeling (server/projectGroups.js): zelf, docent of via Canvas. */
+  /** Groepsindeling (server/projects/projectGroups.js): zelf, docent of via Canvas. */
   group_mode?: GroupMode | null;
   submissions_enabled: boolean | null;
   preassessment_persona_id?: string | null;
@@ -75,7 +75,7 @@ interface ProjectPersona {
   avatar?: AvatarConfig | null;
   system_prompt: string;
   sort_order: number;
-  // Wat kent deze persona? (PersonaKnowledgeFields, server/personaKnowledge.js)
+  // Wat kent deze persona? (PersonaKnowledgeFields, server/projects/personaKnowledge.js)
   course_knowledge?: CourseKnowledge | null;
   course_knowledge_doc_ids?: string[] | null;
   project_knowledge_doc_ids?: string[] | null;

@@ -47,3 +47,12 @@ describe('migraties bouwen een nieuwe database vanaf nul', () => {
     expect(read('supabase/migrations/20260608100000_profiles_last_active_course_baseline.sql')).toMatch(/ADD COLUMN IF NOT EXISTS last_active_course_id/);
   });
 });
+
+describe('Studiecafé-aankondigingen blijven binnen de cursus', () => {
+  it('de doelgroep zijn de leden van de cursus, niet alle studenten van het platform', async () => {
+    const { functionSource } = await import('./helpers/serverSource.js');
+    const fn = functionSource('announcementAudience');
+    expect(fn).toMatch(/from\('course_members'\)/);
+    expect(fn).not.toMatch(/from\('profiles'\)/);
+  });
+});

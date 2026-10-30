@@ -91,7 +91,7 @@ async function currentLearningLevel(userId, courseId) {
   } catch { return null; }
 }
 
-// ── "Klaar voor een hoger niveau?" → feestje + achievement (zie server/readiness.js) ──
+// ── "Klaar voor een hoger niveau?" → feestje + achievement (zie server/chat/readiness.js) ──
 // Onderwerpen = goedgekeurde begrippen van de cursus (gegrond in het cursusmateriaal).
 async function loadReadinessTopics(courseId) {
   if (!supabaseAdmin || !courseId) return [];
@@ -222,7 +222,7 @@ async function createChatReflection({ user, conversation, courseId, lang }) {
         ? `\n\nGebruikte cursusbronnen in dit gesprek: ${[...ragSources].join(', ')}`
         : `\n\nCourse sources used in this conversation: ${[...ragSources].join(', ')}`)
     : '';
-  // Optioneel doel dat de student voor dit gesprek koos (server/chatGoal.js).
+  // Optioneel doel dat de student voor dit gesprek koos (server/chat/chatGoal.js).
   const goalLine = chatGoalSummaryLine(lastChatGoal(msgs), lang);
 
   const summaryPrompt = (lang !== 'nl'
@@ -334,7 +334,7 @@ const courseOverviewBlock = createCourseOverview({
   materialDocuments: (courseId) => courseMaterialDocuments(courseId),
 });
 
-// ── Bijlagen in de chat (server/chatAttachments.js) ──────────────────────────
+// ── Bijlagen in de chat (server/chat/chatAttachments.js) ──────────────────────────
 // Platforminstelling van de beheerder (chatbot_prompts-rij, standaard UIT), 15 s
 // onthouden. Leesfout = uit: een storing mag bijlagen nooit per ongeluk aanzetten.
 const ATTACHMENTS_OFF_MSG = 'Bijlagen zijn in deze chat niet beschikbaar';
@@ -376,7 +376,6 @@ export function registerChatRoutes(app) {
   app.post('/api/chat', async (req, res) => {
     const auth = await requireAuthUser(req, res);
     if (!auth) return;
-    const apiKey = process.env.OPENAI_API_KEY;
     if (!AZURE_CHAT_READY) {
       return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
     }
@@ -408,7 +407,7 @@ export function registerChatRoutes(app) {
     if (chatFeature && courseId
         && (await rejectIfFeatureOff(res, auth.user, auth.profile, courseId, chatFeature))) return;
 
-    // Bijlagen in de chat (server/chatAttachments.js): alleen in de tutorchat van
+    // Bijlagen in de chat (server/chat/chatAttachments.js): alleen in de tutorchat van
     // een cursus, alleen als de beheerder én de cursus het toestaan. LEAP bewaart
     // ze niet en logt nooit de inhoud; ze gaan alleen mee in dit ene verzoek.
     let attachmentParts = { images: [], files: [] };
@@ -553,17 +552,17 @@ export function registerChatRoutes(app) {
       if (chatSourcesBlock) systemContent += chatSourcesBlock;
       // Bijlagen: instructie + bestandstekst, vóór het taal-/niveaublok.
       systemContent += attachmentSystemBlock(attachmentParts);
-      // Cursusoverzicht (server/courseOverview.js): naam, opbouw en begrippen,
+      // Cursusoverzicht (server/courses/courseOverview.js): naam, opbouw en begrippen,
       // voor oriëntatievragen ("waar gaat deze cursus over?").
       if (req.body?.purpose === 'tutor_chat' && courseId) {
         systemContent += await courseOverviewBlock(courseId);
       }
-      // Leerlijn (server/courseUnits.js): terugverwijzen naar voorafgaande
+      // Leerlijn (server/courses/courseUnits.js): terugverwijzen naar voorafgaande
       // onderdelen, spaarzaam vooruit, behalve naar wat de student al oefende.
       if (req.body?.purpose === 'tutor_chat' && courseId) {
         systemContent += await leerlijnBlockFor(auth.user.id, courseId, sources, req.body?.leerlijnUnitId);
       }
-      // Optioneel doel van de student voor dit gesprek (server/chatGoal.js).
+      // Optioneel doel van de student voor dit gesprek (server/chat/chatGoal.js).
       if (req.body?.purpose === 'tutor_chat') systemContent += buildChatGoalBlock(req.body?.chatGoal, lang);
       systemContent += langSuffix;
       finalMessages = [{ role: 'system', content: systemContent }, ...userMessages];
@@ -838,7 +837,7 @@ export function registerChatRoutes(app) {
     }
   });
 
-  // ── Bijlagen in de chat: routes (server/chatAttachments.js) ──────────────────
+  // ── Bijlagen in de chat: routes (server/chat/chatAttachments.js) ──────────────────
   // GET /api/chat/attachments/config?courseId=… — mag ik hier bijlagen meegeven?
   app.get('/api/chat/attachments/config', async (req, res) => {
     const auth = await requireAuthUser(req, res);

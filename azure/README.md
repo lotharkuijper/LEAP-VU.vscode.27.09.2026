@@ -58,9 +58,9 @@ De namen staan in `scripts/config.sh`.
   die altijd aan staat.
 - **Migraties.** `node scripts/run-sql.mjs <bestand>` werkt nog steeds, maar is op Azure niet
   meer nodig: `scripts/migrate.mjs` houdt in de tabel `leap_migrations` bij wat al is
-  uitgevoerd. De migraties zijn niet bedoeld om een lege database mee op te bouwen (de
-  volgorde van de oudste klopt daarvoor niet); een nieuwe omgeving begint met een kopie
-  van de bestaande database (`migrate-data.sh`).
+  uitgevoerd. Sinds oktober 2026 bouwen de migraties ook een lege database vanaf nul op
+  (getest met `npm run db:local`, zie `scripts/local-db/README.md`); voor een nieuwe
+  omgeving met de bestaande gegevens blijft `migrate-data.sh` de weg.
 
 ## Eerste keer opzetten
 

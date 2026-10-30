@@ -71,7 +71,7 @@ const app = express();
 // Proxy trust, CORS limited to the app's own origin, safe default headers.
 applyHttpSecurity(app);
 
-// Account-e-mails bij hosting op Azure (zie server/authEmailHook.js). Staat
+// Account-e-mails bij hosting op Azure (zie server/account/authEmailHook.js). Staat
 // vóór express.json(): de handtekening gaat over de onbewerkte body.
 registerAuthEmailHook(app, express, {
   secret: process.env.AUTH_EMAIL_HOOK_SECRET,
@@ -94,14 +94,14 @@ registerAuthEmailHook(app, express, {
 app.use(express.json({ limit: '50mb' }));
 
 // Meldingen (error/message/…) in JSON-responsen vertalen naar de taal van de
-// gebruiker (header X-LEAP-Lang). Zie server/serverI18n.js.
+// gebruiker (header X-LEAP-Lang). Zie server/i18n/serverI18n.js.
 app.use(serverI18nMiddleware);
 
 // Analytics: geaggregeerde tellers, losse module (zie server/analytics/index.js).
 // Staat vóór de routes zodat de meting elk /api-verzoek ziet.
 installAnalytics(app, { getDb: () => supabaseAdmin, authUser, isStaffForCourse, isLeapAdmin });
 
-// Tokenbudget voor accounts uit open registratie (server/tokenBudget.js): meet het
+// Tokenbudget voor accounts uit open registratie (server/account/tokenBudget.js): meet het
 // verbruik per open account en houdt AI-verzoeken tegen boven de dag-/weeklimiet
 // of de noodrem voor alle open accounts samen. Andere accounts merken er niets van.
 const tokenBudget = installTokenBudget(app, {
@@ -157,7 +157,7 @@ registerProjectPersonaRoutes(app);
 
 registerProjectDocumentRoutes(app);
 
-// Toegangsroute per cursus en open registratie (server/enrollment.js).
+// Toegangsroute per cursus en open registratie (server/courses/enrollment.js).
 registerEnrollmentRoutes(app, {
   supabaseAdmin,
   createAnonClient: () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } }),

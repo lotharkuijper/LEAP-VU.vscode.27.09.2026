@@ -108,7 +108,7 @@ const MESSAGES = {
 
 /**
  * Routes. deps: supabaseAdmin, createAnonClient(), requireAuthUser, isAdminProfile(profile),
- * appOrigin(req), onMembershipChanged(userId), onOpenRegistration(userId) (tokenbudget, server/tokenBudget.js).
+ * appOrigin(req), onMembershipChanged(userId), onOpenRegistration(userId) (tokenbudget, server/account/tokenBudget.js).
  */
 export function registerEnrollmentRoutes(app, deps) {
   const { supabaseAdmin: db, createAnonClient, requireAuthUser, isAdminProfile, appOrigin, onMembershipChanged = () => {} } = deps;

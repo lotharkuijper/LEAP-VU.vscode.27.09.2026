@@ -25,7 +25,7 @@ export const DEFAULT_MIX: SourceMix = { pct_rag: 50, pct_itembank: 0, pct_llm: 5
 
 // Client-preview van de server-`normalizeMix`: zo ziet de docent vóór het
 // opslaan welke percentages er straks echt worden bewaard. Moet exact dezelfde
-// gehele uitkomsten geven als server/quizSourcesMix.js voor gehele invoer.
+// gehele uitkomsten geven als server/quiz/quizSourcesMix.js voor gehele invoer.
 export function normalizeMixPreview(mix: SourceMix): SourceMix {
   const r0 = Math.max(0, Math.min(100, mix.pct_rag || 0));
   const i0 = Math.max(0, Math.min(100, mix.pct_itembank || 0));

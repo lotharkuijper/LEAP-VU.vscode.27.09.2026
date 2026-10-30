@@ -68,7 +68,7 @@ async function courseIdForProject(projectId) {
 
 // Helper: genereert cross-agent synthese op basis van afgesloten gesprekken.
 // Geeft null terug als er minder dan 2 afgesloten gesprekken zijn.
-async function generateCrossAgentSynthesis(groupId, apiKey, lang = 'nl') {
+async function generateCrossAgentSynthesis(groupId, lang = 'nl') {
   const enMode = lang !== 'nl';
   const { data: closedThreads } = await supabaseAdmin
     .from('group_persona_threads')
@@ -160,7 +160,6 @@ export function registerProjectRoomRoutes(app) {
       // Leerdagboek uit in de cursus van dit project: geen projectreflectie.
       if (await rejectIfFeatureOff(res, user, null, await courseIdForProject(row.project_id), 'journal')) return;
 
-      const apiKey = process.env.OPENAI_API_KEY;
       if (!AZURE_CHAT_READY) {
         return res.status(503).json({
           error: 'De samenvatting kon niet worden opgesteld.',
@@ -732,7 +731,6 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
       if (!(await isGroupMember(groupId, auth.user.id))) {
         return res.status(403).json({ error: 'Geen toegang tot deze groep' });
       }
-      const apiKey = process.env.OPENAI_API_KEY;
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 
       // Gebruik berichten ná de laatste checkpoint.
@@ -805,7 +803,7 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
       // Cross-agent synthese (alleen als ≥ 2 afgesloten gesprekken).
       let synthesis = null;
       try {
-        synthesis = await generateCrossAgentSynthesis(groupId, apiKey, lang);
+        synthesis = await generateCrossAgentSynthesis(groupId, lang);
       } catch (e) {
         console.error('[checkpoint-preview] synthese fout:', e.message);
       }
@@ -869,7 +867,6 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
         .eq('id', group.project_id).maybeSingle();
       const checkpointCourseId = await courseIdForProject(group.project_id);
 
-      const apiKey = process.env.OPENAI_API_KEY;
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 
       const rubric = Array.isArray(project?.rubric_criteria) ? project.rubric_criteria : [];
@@ -1013,7 +1010,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       // POST /api/projects/groups/:groupId/journal-save).
       const projectTitle = project?.title || '(naamloos project)';
       const titleLabel = kind === 'final' ? `Eindreflectie: ${projectTitle}` : `Projectreflectie: ${projectTitle}`;
-      // Dezelfde drie blokken als chat, Ik leg uit en quiz (server/projectJournal.js).
+      // Dezelfde drie blokken als chat, Ik leg uit en quiz (server/projects/projectJournal.js).
       const entryFields = (kind === 'final' && rubricFeedback)
         ? journalFromRubricFeedback(rubricFeedback, { lang, groupReflection: reflection })
         : (checkpointFields || { content: aiSummary || reflection || '', sections: null });
@@ -1026,7 +1023,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       let synthesisAdded = false;
       if (kind === 'checkpoint') {
         try {
-          const synthesis = await generateCrossAgentSynthesis(groupId, apiKey, lang);
+          const synthesis = await generateCrossAgentSynthesis(groupId, lang);
           if (synthesis) {
             const synthEnMode = (synthesis.lang || lang) !== 'nl';
             const synthFields = journalFromSynthesis(synthesis, { lang: synthesis.lang || lang });
@@ -1149,7 +1146,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
   });
 
   // POST /api/projects/groups/:groupId/journal-save — "Bewaar in mijn leerdagboek"
-  // (2026-10-27, server/projectJournalSave.js). Body: { source: 'checkpoint' |
+  // (2026-10-27, server/projects/projectJournalSave.js). Body: { source: 'checkpoint' |
   // 'assessment' | 'review', id, note?, lang }. Schrijft ALLEEN in het dagboek van
   // wie klikt; twee keer bewaren geeft geen dubbele regel. Bij een tussenstand of
   // de eindreflectie mag de student er een eigen reflectie (note) bij zetten.
@@ -1291,7 +1288,6 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       // Het rapport staat bij de groep (projectruimte). In het leerdagboek komt het
       // alleen als een groepslid het zelf bewaart (journal-save, 2026-10-27).
 
-      const apiKey = process.env.OPENAI_API_KEY;
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 
       const results = [];

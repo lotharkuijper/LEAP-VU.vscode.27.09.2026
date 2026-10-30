@@ -69,7 +69,7 @@ async function defaultAllowedDocumentIds(courseId: string, role: Role): Promise<
     .select('id, purpose')
     .in('folder_id', scoped)
     .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
-  // Cursusinformatie levert geen quizbewijs (zie server/filePurpose.js).
+  // Cursusinformatie levert geen quizbewijs (zie server/rag/filePurpose.js).
   return new Set((data || [])
     .filter((d: { purpose?: string | null }) => purposeAllowsModule(d.purpose, 'quiz'))
     .map((d: { id: string }) => d.id));

@@ -1,4 +1,4 @@
-// Canvas-koppeling via LTI 1.3 (server/lti.js, 2026-10-23). Een nep-Canvas met
+// Canvas-koppeling via LTI 1.3 (server/lti/lti.js, 2026-10-23). Een nep-Canvas met
 // een eigen sleutelpaar ondertekent echte berichten; de routes draaien in een
 // echte Express-app met een kleine nep-database.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';

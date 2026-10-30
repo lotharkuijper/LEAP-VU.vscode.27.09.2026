@@ -1,4 +1,4 @@
-// Systeemberichten van de beheerder (server/systemMessages.js, migratie 20261016120000).
+// Systeemberichten van de beheerder (server/system/systemMessages.js, migratie 20261016120000).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';

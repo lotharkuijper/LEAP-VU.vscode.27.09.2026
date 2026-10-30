@@ -1,5 +1,5 @@
 // Projectregels in het leerdagboek in dezelfde drie blokken als chat, Ik leg
-// uit en quiz (zie server/journalSections.js): samenvatting, feedback (wat ging
+// uit en quiz (zie server/journal/journalSections.js): samenvatting, feedback (wat ging
 // goed / wat kan beter) en vervolgstappen (2026-10-09).
 //
 // Bij een tussenstand of eindreflectie (POST /api/projects/groups/:id/checkpoint)

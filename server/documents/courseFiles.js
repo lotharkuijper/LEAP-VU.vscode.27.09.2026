@@ -282,7 +282,7 @@ export function registerCourseFilesRoutes(app, deps) {
 
   // Eén wachtrij voor alle uploads: hoogstens een paar documenten tegelijk,
   // zodat een grote upload de snelheidslimiet van Azure niet overschrijdt
-  // (server/processingQueue.js).
+  // (server/ingestion/processingQueue.js).
   const processingQueue = createProcessingQueue({
     run: (docId) => processRagDocumentById(docId, 'nl'),
     concurrency: 2,

@@ -7,7 +7,7 @@ import { HelpTip } from '../../components/help/HelpTip';
 import { DEFAULT_LIMITS, type AttachmentLimits } from '../../lib/chatAttachments';
 
 // Hoofdschakelaar van de beheerder voor bijlagen in de chat
-// (GET/PUT /api/admin/chat-attachments, server/chatAttachments.js).
+// (GET/PUT /api/admin/chat-attachments, server/chat/chatAttachments.js).
 // Uit = de noodrem voor alle cursussen; de keuze per cursus blijft bewaard.
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];

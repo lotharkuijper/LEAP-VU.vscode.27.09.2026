@@ -38,7 +38,7 @@ export function registerSystemRoutes(app) {
     });
   });
 
-  // Mijn gegevens: eigen gegevens downloaden en het eigen account verwijderen (server/myData.js).
+  // Mijn gegevens: eigen gegevens downloaden en het eigen account verwijderen (server/account/myData.js).
   registerMyDataRoutes(app, {
     supabaseAdmin,
     authUser,
@@ -47,8 +47,8 @@ export function registerSystemRoutes(app) {
     onDeleted: (id) => { userCache.forgetUser(id); profileCache.invalidate(id); },
   });
 
-  // Ontwerphulp: optionele chatbot voor docenten in het beheer (server/designAssistant.js).
-  // Systeemberichten van de beheerder op het Dashboard (server/systemMessages.js).
+  // Ontwerphulp: optionele chatbot voor docenten in het beheer (server/system/designAssistant.js).
+  // Systeemberichten van de beheerder op het Dashboard (server/system/systemMessages.js).
   registerSystemMessageRoutes(app, { supabaseAdmin, requireAuthUser, isLeapAdmin });
 
   registerDesignAssistantRoutes(app, {

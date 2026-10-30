@@ -333,7 +333,7 @@ export function registerCourseRoutes(app) {
     }
 
     const members = sortCourseMembers(mergeCourseMembers(rows, profs));
-    // Uitgenodigd maar nog niet geactiveerd (server/courseInvitations.js).
+    // Uitgenodigd maar nog niet geactiveerd (server/courses/courseInvitations.js).
     const pending = await pendingInvitationsForCourse(supabaseAdmin, courseId);
     for (const m of members) m.invitation = pending.get(m.user_id) || null;
     return res.json({ members });
@@ -706,7 +706,7 @@ export function registerCourseRoutes(app) {
     }
   });
 
-  // ── Bulk-accounts (Task #271): e-mailadressen uit een bestand halen. Uitnodigen zelf: server/courseInvitations.js.
+  // ── Bulk-accounts (Task #271): e-mailadressen uit een bestand halen. Uitnodigen zelf: server/courses/courseInvitations.js.
   // POST /api/admin/bulk-accounts/parse-file — leest een geüpload bestand
   // (.csv/.txt of office-formaat .xlsx/.docx/.pdf/…) en vist er e-mailadressen uit.
   // Alleen voor staff (admin of docent ergens). Geeft een ontdubbelde lijst terug;
@@ -936,7 +936,7 @@ export function registerCourseRoutes(app) {
     }
   });
 
-  // Onderdelen per cursus aan/uit (server/courseFeatures.js). Zelfde rechten als
+  // Onderdelen per cursus aan/uit (server/courses/courseFeatures.js). Zelfde rechten als
   // de beschikbaarheid: beheerder of docent van deze cursus. Body:
   // { features: { quiz: false, … } } — alleen de genoemde onderdelen veranderen.
   app.patch('/api/courses/:id/features', async (req, res) => {

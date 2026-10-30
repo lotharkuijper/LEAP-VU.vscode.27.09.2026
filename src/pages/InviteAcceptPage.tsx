@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 
 // Landingspagina na een klik op "Account activeren" in de uitnodigingsmail van
-// een docent (server/courseInvitations.js). Het #-deel bevat het token; de
+// een docent (server/courses/courseInvitations.js). Het #-deel bevat het token; de
 // server wisselt het in voor een eenmalige inlogcode. Daarna kiest een nieuwe
 // student een wachtwoord (/activate); wie al een wachtwoord heeft, gaat door
 // naar het Dashboard. De cursus is al de actieve cursus.

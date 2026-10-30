@@ -14,7 +14,7 @@ export const COURSE_FEATURES = Object.freeze(['chat', 'explain', 'quiz', 'projec
 
 // Opt-in-onderdelen (2026-10-16): staan alleen aan als de docent ze bewust heeft
 // aangezet ({"attachments": true}); een ontbrekende sleutel betekent UIT.
-// 'attachments' = bijlagen in de chat (server/chatAttachments.js). In de
+// 'attachments' = bijlagen in de chat (server/chat/chatAttachments.js). In de
 // database doet leap_course_feature_on hetzelfde (migratie 20261016100000).
 // 'formulaEditor' = de visuele formule-editor (∑) bij alle tekstvakken van studenten
 // (2026-10-22). Getypte TeX wordt altijd opgemaakt, ook als dit uit staat.

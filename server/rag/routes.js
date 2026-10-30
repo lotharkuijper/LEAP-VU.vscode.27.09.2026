@@ -624,7 +624,7 @@ export function registerRagRoutes(app) {
     }
   });
 
-  // Zoeken in twee talen (server/crossLingual.js): vraag vertalen naar de taal van het materiaal.
+  // Zoeken in twee talen (server/rag/crossLingual.js): vraag vertalen naar de taal van het materiaal.
   registerCrossLingualRoute(app, {
     pgPool, requireAuthUser, userHasCourseAccess,
     translate: async (messages) => {

@@ -43,7 +43,7 @@ export function reviewIntervalDays(mastery: number): number {
 }
 
 /**
- * orderOf (optioneel): plek van een begrip in de stof (server/conceptOrder.js). Bij gelijke
+ * orderOf (optioneel): plek van een begrip in de stof (server/concepts/conceptOrder.js). Bij gelijke
  * prioriteit gaat wat eerder in de stof komt voor; zo komen nieuwe begrippen op volgorde
  * van de cursus. Er wordt niets verborgen.
  */

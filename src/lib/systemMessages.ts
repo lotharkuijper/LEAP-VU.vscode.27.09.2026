@@ -1,4 +1,4 @@
-// Systeemberichten van de beheerder (server/systemMessages.js).
+// Systeemberichten van de beheerder (server/system/systemMessages.js).
 //
 // Eén gedeelde opslag voor de hele app: het Dashboard toont de berichten, het
 // menu zet zolang er een openstaat een rood uitroepteken bij "Dashboard".

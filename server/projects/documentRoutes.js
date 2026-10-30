@@ -34,8 +34,8 @@ async function forgetProjectDocKnowledge(projectId, docId) {
   return (personas || []).map(p => p.name);
 }
 
-// Leerlijn: volgorde van de stof per cursus (server/courseUnits.js).
-// Voorbeoordeling van het ingeleverde eindproduct (server/preassessment.js).
+// Leerlijn: volgorde van de stof per cursus (server/courses/courseUnits.js).
+// Voorbeoordeling van het ingeleverde eindproduct (server/projects/preassessment.js).
 const preassessmentRunner = createPreassessmentRunner({
   supabaseAdmin, pgPool,
   extractText: extractTextFromUpload,

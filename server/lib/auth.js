@@ -4,7 +4,7 @@ import { canAccessCourseContent } from '../courses/courseAvailability.js';
 import { coursesHasStudentVisible } from './schemaFlags.js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, SUPERUSER_EMAIL, supabaseAdmin } from './supabase.js';
 
-// Inlogcontrole en profiel kort onthouden (server/authCache.js): scheelt per
+// Inlogcontrole en profiel kort onthouden (server/lib/authCache.js): scheelt per
 // verzoek een rondgang naar de inlogserver en een profielvraag. In tests uit.
 const AUTH_CACHE_TTL_MS = process.env.NODE_ENV === 'test' ? 0 : Number(process.env.LEAP_AUTH_CACHE_MS ?? 30000);
 
@@ -128,7 +128,7 @@ export async function userHasCourseAccess(user, profile, courseId) {
   if (isAdmin) return true;
   try {
     // Laad de cursus-status eerst. Toegang = lidmaatschap of docentschap
-    // (toegangsroute per cursus, server/enrollment.js; spiegelt de courses-RLS).
+    // (toegangsroute per cursus, server/courses/enrollment.js; spiegelt de courses-RLS).
     const courseCols = coursesHasStudentVisible ? 'is_active, student_visible' : 'is_active';
     const { data: course, error: courseErr } = await supabaseAdmin
       .from('courses')

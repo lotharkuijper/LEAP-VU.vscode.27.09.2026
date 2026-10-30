@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "إجمالي {0} مصطلحًا لهذه الدورة ({1} جديد/محدّث، {2} موجود بالفعل){3}{4}{5}{6}",
+  "accountConflict": "تعارض في الحساب",
   "accountFailed": "فشل الحساب",
   "Admin client niet beschikbaar": "عميل Admin غير متاح",
   "Admin client not available": "عميل Admin غير متاح",

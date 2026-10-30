@@ -24,7 +24,7 @@ function barColor(m: number) {
 export function ConceptProgressCard({ topics, attempts, onPractice, now, places = null }: {
   topics: ProgressTopic[];
   attempts: ProgressAttempt[];
-  /** Plek in de stof (server/conceptOrder.js): nieuwe begrippen op volgorde van de stof. */
+  /** Plek in de stof (server/concepts/conceptOrder.js): nieuwe begrippen op volgorde van de stof. */
   places?: Map<string, ConceptPlace> | null;
   onPractice: (ids: string[]) => void;
   now?: Date;

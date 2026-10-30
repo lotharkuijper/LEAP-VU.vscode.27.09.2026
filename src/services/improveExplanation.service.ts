@@ -1,4 +1,4 @@
-// "Verbeter deze uitleg" (server/flawedExplanations.js): de server maakt een
+// "Verbeter deze uitleg" (server/explain/flawedExplanations.js): de server maakt een
 // uitleg met één of meer fouten, beoordeelt het antwoord en maakt op verzoek een
 // reflectie voor het dagboek. De browser houdt alleen het versleutelde pakketje vast.
 import { supabase } from '../lib/supabase';

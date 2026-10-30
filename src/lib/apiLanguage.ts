@@ -1,6 +1,6 @@
 // Stuurt bij elke aanroep van de eigen API (/api/…) de gekozen interfacetaal
 // mee in de header X-LEAP-Lang. De server vertaalt daarmee zijn foutmeldingen
-// en statusmeldingen (server/serverI18n.js), zodat geen melding alleen in het
+// en statusmeldingen (server/i18n/serverI18n.js), zodat geen melding alleen in het
 // Nederlands verschijnt. Eén centrale plek i.p.v. elke fetch-aanroep apart.
 import { getActiveLang } from '../i18n/activeLang';
 

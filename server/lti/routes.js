@@ -11,7 +11,7 @@ import {
   registerLtiRoutes,
 } from './lti.js';
 
-// Canvas-koppeling via LTI 1.3 (server/lti.js): Canvas-link per cursus, inloggen
+// Canvas-koppeling via LTI 1.3 (server/lti/lti.js): Canvas-link per cursus, inloggen
 // zonder wachtwoord, en daarna inloggen met een code per e-mail.
 const ltiRegistry = createPlatformRegistry({ envPlatforms: loadPlatforms(process.env), getDb: () => supabaseAdmin });
 

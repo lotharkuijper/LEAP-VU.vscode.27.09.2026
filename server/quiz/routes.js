@@ -181,7 +181,6 @@ async function generateAndSaveQuizSummary({ user, summaryPrompt, topicsLabel, qT
   if (!(await courseFeatureOnFor(user, null, courseId, 'journal'))) {
     return { journalEntryId: null, summaryFailed: false, errorReason: null };
   }
-  const apiKey = process.env.OPENAI_API_KEY;
   if (!AZURE_CHAT_READY) {
     console.warn('[quiz/summary] Azure OpenAI niet geconfigureerd — samenvatting overgeslagen');
     return { journalEntryId: null, summaryFailed: true, errorReason: 'Geen taalmodel-toegang (Azure OpenAI niet geconfigureerd).' };

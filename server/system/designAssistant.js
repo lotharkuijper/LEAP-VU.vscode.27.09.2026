@@ -242,7 +242,7 @@ export function summarizeCourse(snap, locale = {}) {
   if (s.course) {
     out.push(`- Beschrijving: ${s.course.description || '(geen)'}`);
     out.push(`- Beschikbaar voor studenten: ${s.course.student_visible === false ? 'nee' : 'ja'}; actief: ${s.course.is_active === false ? 'nee' : 'ja'}`);
-    // Onderdelen per cursus (server/courseFeatures.js): adviseer niets wat uit staat zonder dat te zeggen.
+    // Onderdelen per cursus (server/courses/courseFeatures.js): adviseer niets wat uit staat zonder dat te zeggen.
     const f = normalizeCourseFeatures(s.course.features);
     const off = COURSE_FEATURES.filter(k => !f[k]).map(k => FEATURE_NL[k]);
     out.push(`- Onderdelen voor studenten: ${off.length ? `uit: ${off.join(', ')} (aan te zetten in Onderdelen aan/uit)` : 'alles aan'}`);

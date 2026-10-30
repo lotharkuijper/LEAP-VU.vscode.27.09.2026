@@ -2,7 +2,7 @@ import { FEATURE_DISABLED_MSG, featureAllowed, normalizeCourseFeatures } from '.
 import { isStaffForCourse, loadProfileRoleEmail, profileCache } from './auth.js';
 import { supabaseAdmin } from './supabase.js';
 
-// ── Onderdelen per cursus (server/courseFeatures.js) ─────────────────────────
+// ── Onderdelen per cursus (server/courses/courseFeatures.js) ─────────────────────────
 // De schakelaars worden bij veel aanroepen gelezen; kort onthouden (15 s) en bij
 // een wijziging direct vergeten. Ontbrekende kolom of leesfout = alles aan
 // (een storing mag een cursus niet stilleggen).

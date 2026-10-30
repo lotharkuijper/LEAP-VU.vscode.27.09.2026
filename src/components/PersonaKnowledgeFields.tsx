@@ -4,7 +4,7 @@ import { useLanguage } from '../i18n';
 import { HelpTip } from './help/HelpTip';
 import { AdminHint } from './help/AdminHint';
 
-// "Wat kent deze persona?" (2026-10-27, server/personaKnowledge.js). Gedeeld door
+// "Wat kent deze persona?" (2026-10-27, server/projects/personaKnowledge.js). Gedeeld door
 // de projecteditor (cursusmateriaal + projectdocumenten) en de sjablooneditor
 // (alleen cursusmateriaal: een sjabloon hoort niet bij een project).
 // Studenten zien deze keuze niet. Nieuwe persona's kennen niets.

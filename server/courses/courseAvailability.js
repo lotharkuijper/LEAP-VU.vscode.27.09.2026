@@ -62,7 +62,7 @@ export function memberCanAccessCourse({ studentVisible, isCourseTeacher }) {
 
 /**
  * Centrale toegangsregel voor cursus-inhoud (projecten, cursus-info, itembank).
- * Sinds 2026-10-20 (toegangsroute per cursus, server/enrollment.js) is
+ * Sinds 2026-10-20 (toegangsroute per cursus, server/courses/enrollment.js) is
  * toegang = lidmaatschap: een student wordt lid via open registratie, "Cursus
  * toevoegen", een docent of beheerder, en straks via Canvas. Spiegelt de
  * courses-RLS en course_content_is_public (migratie 20261020100000).

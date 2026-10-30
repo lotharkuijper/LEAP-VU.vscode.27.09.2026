@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "Усього {0} понять для цього курсу ({1} нових/оновлених, {2} уже наявні){3}{4}{5}{6}",
+  "accountConflict": "конфлікт облікового запису",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Admin client недоступний",
   "Admin client not available": "Admin client not available",

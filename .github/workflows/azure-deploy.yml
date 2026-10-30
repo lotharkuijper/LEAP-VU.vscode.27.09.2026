@@ -9,7 +9,7 @@ name: Uitrollen naar Azure
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md', 'docs/**', 'azure/**']
+    paths-ignore: ['**.md', 'docs/**', 'azure/**', '.claude/**', '.github/workflows/test.yml']
   workflow_dispatch:
 
 permissions:

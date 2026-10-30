@@ -167,12 +167,12 @@ async function ensureProjectPersonaFromCourse(projectId, coursePersonaId) {
 // Accepteert GEEN topics/agreements van de client — de server is de enige bron.
 //
 // Bij een rolspeler met verstandhouding beoordeelt de server daarna het gesprek
-// aan de hand van de gedragsregels van de docent (zie server/threadClose.js):
+// aan de hand van de gedragsregels van de docent (zie server/projects/threadClose.js):
 // het niveau gaat een stap omhoog, blijft gelijk of gaat een stap omlaag. De
 // groep ziet het nieuwe niveau en de reden.
 
 // --- Task #252: raadpleeglimiet-helpers (DB-toegang; pure logica zit in
-// server/consultationLimit.js). ---
+// server/projects/consultationLimit.js). ---
 
 // Tel hoeveel raadplegingen (= threads, open + gesloten) een groep al met deze
 // persona heeft gestart. De teller wordt verbruikt bij het OPENEN van een thread.
@@ -558,7 +558,6 @@ export function registerProjectPersonaRoutes(app) {
       // Task #296: leerniveau-blok vóór de taal-instructie (laatste blok blijft taal).
       const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${sourcesRulesBlock}${langSuffix}`;
 
-      const apiKey = process.env.OPENAI_API_KEY;
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
       const personaMessages = [
         { role: 'system', content: systemContent },
@@ -1463,7 +1462,7 @@ export function registerProjectPersonaRoutes(app) {
 
   // POST /api/projects/:projectId/groups/:groupId/personas/:personaId/relationship-adjust
   // — correctie door de docent (niveau kiezen, ook "contact herstellen"). Route +
-  // autorisatie staan in server/relationshipAdjust.js zodat ze testbaar zijn.
+  // autorisatie staan in server/projects/relationshipAdjust.js zodat ze testbaar zijn.
   registerRelationshipAdjustRoute(app, {
     supabaseAdmin,
     authUser,

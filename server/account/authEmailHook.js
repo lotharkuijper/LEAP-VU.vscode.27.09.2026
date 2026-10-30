@@ -6,7 +6,7 @@
 // draait de inlogdienst (Supabase Auth) in eigen beheer en heeft die geen
 // mailserver. De dienst roept daarom deze server aan ("send email hook"), en
 // die verstuurt de e-mail via dezelfde route als de Studiecafé-meldingen
-// (server/notifications.js). De inlogstroom zelf blijft gelijk.
+// (server/lib/notifications.js). De inlogstroom zelf blijft gelijk.
 //
 // De aanroep is ondertekend volgens Standard Webhooks (HMAC-SHA256 met het
 // gedeelde geheim AUTH_EMAIL_HOOK_SECRET); zonder geldige handtekening wordt
@@ -57,7 +57,7 @@ export function verifyHookSignature({ secret, headers, rawBody, nowMs = Date.now
 
 // Soort e-mail → groep vertaalsleutels (email.auth.<groep>.*). Onbekende
 // soorten (bv. e-mailadres wijzigen) krijgen de algemene tekst.
-// magiclink = inloggen zonder wachtwoord (Canvas-studenten, server/lti.js): code én knop.
+// magiclink = inloggen zonder wachtwoord (Canvas-studenten, server/lti/lti.js): code én knop.
 const TEXT_GROUP = { signup: 'signup', invite: 'invite', recovery: 'recovery', magiclink: 'magiclink' };
 
 // Link waarmee de ontvanger de actie afrondt. De inlogdienst controleert de

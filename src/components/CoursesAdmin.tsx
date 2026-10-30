@@ -32,7 +32,7 @@ interface CourseRow {
   cue_delta_max: number;
   // Task #270: zichtbaar/selecteerbaar voor studenten ja/nee.
   student_visible: boolean;
-  // Toegangsroute (server/enrollment.js); alleen de beheerder wijzigt hem.
+  // Toegangsroute (server/courses/enrollment.js); alleen de beheerder wijzigt hem.
   enrollment_mode: EnrollmentMode;
 }
 
@@ -73,7 +73,7 @@ export default function CoursesAdmin() {
   // Per-rij state voor activeren/deactiveren en verwijderen.
   const [rowBusyId, setRowBusyId] = useState<string | null>(null);
   const [enrollmentFor, setEnrollmentFor] = useState<CourseRow | null>(null);
-  // Canvas-link (server/lti.js) voor cursussen met de route Canvas of Canvas + open.
+  // Canvas-link (server/lti/lti.js) voor cursussen met de route Canvas of Canvas + open.
   const [canvasLinkFor, setCanvasLinkFor] = useState<CourseRow | null>(null);
   const [courseInfoFor, setCourseInfoFor] = useState<CourseRow | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
@@ -86,7 +86,7 @@ export default function CoursesAdmin() {
     user_id: string; member_role: 'student' | 'teacher';
     email: string | null; full_name: string | null;
     global_role: string;
-    // Uitgenodigd maar nog niet geactiveerd (server/courseInvitations.js).
+    // Uitgenodigd maar nog niet geactiveerd (server/courses/courseInvitations.js).
     invitation?: { status: 'queued' | 'failed' | 'pending' | 'expired'; expiresAt: string; lastSentAt: string | null } | null;
   }>>([]);
   const [inviteNotice, setInviteNotice] = useState<string | null>(null);

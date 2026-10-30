@@ -231,7 +231,7 @@ export async function processRagDocumentById(documentId, lang = 'nl') {
 }
 
 // Zorgt dat er een RAG-map (`RAG - <cursusnaam>`) bestaat, met permissies en
-// een koppeling aan de cursus (server/ragFolder.js). Gebruikt bij uploaden als
+// een koppeling aan de cursus (server/rag/ragFolder.js). Gebruikt bij uploaden als
 // leerstof/cursusinformatie en bij de web-import. Retourneert { folderId, created }.
 export async function ensureCourseRagFolder(courseId, courseName, userId) {
   return ensureCourseRagFolderWith(supabaseAdmin, courseId, courseName, userId);

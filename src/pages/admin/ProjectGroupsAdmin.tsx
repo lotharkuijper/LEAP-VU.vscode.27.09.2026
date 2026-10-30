@@ -5,7 +5,7 @@ import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { AdminHint } from '../../components/help/AdminHint';
 
-// Groepen van een project (2026-10-27, server/projectGroups.js). De docent deelt
+// Groepen van een project (2026-10-27, server/projects/projectGroups.js). De docent deelt
 // in, verplaatst en maakt groepen; bij groepsindeling via Canvas ontstaan de
 // groepen vanzelf als studenten het project openen vanuit een Canvas-
 // groepsopdracht. Privacy: alleen wie in welke groep zit.

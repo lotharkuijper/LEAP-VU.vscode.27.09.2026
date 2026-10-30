@@ -1,4 +1,4 @@
-// Onderdelen per cursus aan/uit (2026-10-15). Spiegel van server/courseFeatures.js:
+// Onderdelen per cursus aan/uit (2026-10-15). Spiegel van server/courses/courseFeatures.js:
 // courses.features bewaart alleen wat UIT staat ({ quiz: false }); een
 // ontbrekende sleutel betekent aan. Docenten van de cursus en beheerders zien
 // een uitgezet onderdeel nog wel, met het label "uit voor studenten".
@@ -6,7 +6,7 @@
 export const COURSE_FEATURES = ['chat', 'explain', 'quiz', 'projects', 'journal', 'studiecafe'] as const;
 export type CourseFeature = (typeof COURSE_FEATURES)[number];
 // Opt-in: alleen aan als de docent het bewust aanzette ({ attachments: true }).
-// 'attachments' = bijlagen in de chat (server/chatAttachments.js).
+// 'attachments' = bijlagen in de chat (server/chat/chatAttachments.js).
 // 'formulaEditor' = de visuele formule-editor (∑) bij tekstvakken van studenten.
 export const OPT_IN_FEATURES = ['attachments', 'formulaEditor'] as const;
 export type OptInFeature = (typeof OPT_IN_FEATURES)[number];

@@ -5,7 +5,7 @@
 //   src/services/llm.service.ts           `purpose: 'tutor_chat'` in sendChatMessage
 //   src/features/analytics/               het tabblad "Analyse"
 //   src/pages/AdminPage.tsx               tabblad 'analytics' (zoek op "analytics")
-//   server/designAssistant.js             ADMIN_SECTIONS-regel 'analytics'
+//   server/system/designAssistant.js             ADMIN_SECTIONS-regel 'analytics'
 //   src/help/helpTopics.ts                'analytics.thermometer', 'analytics.platform'
 //   src/i18n/locales/*.json               sleutels analytics.*, admin.tabs.analytics, help.analytics.*
 //   supabase/migrations/20261009100000_analytics_counters.sql (+ rollback-script)

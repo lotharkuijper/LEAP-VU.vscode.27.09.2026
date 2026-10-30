@@ -82,7 +82,7 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Toegang = lidmaatschap (server/enrollment.js): geen terugval meer op
+      // Toegang = lidmaatschap (server/courses/enrollment.js): geen terugval meer op
       // "alle actieve cursussen". Nieuwe cursussen komen via "Cursus toevoegen".
       setCourses([]);
       setLoadingCourses(false);

@@ -1,5 +1,5 @@
 // Zoekvraag verrijken voor korte begripsnamen (2026-10-15). Spiegelt
-// server/queryExpansion.js: de naam wordt aangevuld met wat de CURSUS zelf over
+// server/rag/queryExpansion.js: de naam wordt aangevuld met wat de CURSUS zelf over
 // het begrip weet (andere namen, echte kernpunten, begin van de definitie).
 // Geen vaste, vakspecifieke synoniemenlijst: LEAP is niet aan één vak gebonden.
 

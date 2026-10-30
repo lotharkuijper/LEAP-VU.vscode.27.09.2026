@@ -1,4 +1,4 @@
-// Typen voor server/filePurpose.js (gedeeld met de frontend).
+// Typen voor server/rag/filePurpose.js (gedeeld met de frontend).
 export type Purpose = 'course_material' | 'course_info' | 'project' | 'shared' | 'teacher_only';
 export type DocumentPurpose = Exclude<Purpose, 'project'>;
 export type MaterialKind = 'assignment' | 'data' | 'literature' | 'rubric' | 'other';

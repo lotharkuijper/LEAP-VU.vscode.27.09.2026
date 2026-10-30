@@ -4,7 +4,7 @@ import { useLanguage } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
 import { HelpTip } from './help/HelpTip';
 
-// AI-gebruik in procenten (2026-10-28, server/tokenBudget.js). Alleen voor
+// AI-gebruik in procenten (2026-10-28, server/account/tokenBudget.js). Alleen voor
 // accounts uit open registratie; voor alle anderen toont dit niets. Ververst
 // bij het openen en daarna elke twee minuten.
 interface Budget { applies: boolean; dayPercent?: number; weekPercent?: number; blocked?: 'day' | 'week' | 'global' | null }

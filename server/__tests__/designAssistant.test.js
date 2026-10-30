@@ -31,7 +31,7 @@ describe('de Ontwerphulp beweegt mee met het beheer', () => {
     expect(Object.keys(actual).length).toBeGreaterThan(10);
     const manifest = Object.fromEntries(ADMIN_SECTIONS.map(s => [s.tab, s.audience]));
     // Faalt deze test? Dan is een tabblad toegevoegd/verwijderd of zijn de rechten
-    // veranderd: werk ADMIN_SECTIONS in server/designAssistant.js bij.
+    // veranderd: werk ADMIN_SECTIONS in server/system/designAssistant.js bij.
     expect(manifest).toEqual(actual);
   });
 

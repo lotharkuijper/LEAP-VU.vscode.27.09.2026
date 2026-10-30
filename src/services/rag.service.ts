@@ -120,7 +120,7 @@ export interface RAGSearchStats {
   translatedQuery?: string | null;
 }
 
-// Zoeken in twee talen (server/crossLingual.js). Is de vraag in een andere taal
+// Zoeken in twee talen (server/rag/crossLingual.js). Is de vraag in een andere taal
 // dan het cursusmateriaal, dan levert de server een vertaling; we zoeken met
 // beide en nemen per passage de beste score. Nooit blokkerend: na 6 s of bij een
 // fout zoeken we alleen met de originele vraag.

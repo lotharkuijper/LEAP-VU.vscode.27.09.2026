@@ -1,4 +1,4 @@
-// Volgorde van begrippen in de stof (server/conceptOrder.js, 2026-10-24).
+// Volgorde van begrippen in de stof (server/concepts/conceptOrder.js, 2026-10-24).
 // Puur: sorteren, kleur en omschrijving van de plek in de cursus.
 
 export interface ConceptPlace {

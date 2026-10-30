@@ -163,7 +163,7 @@ export const READS_CLEANUP_INTERVAL_MS = Number(process.env.STUDIECAFE_READS_CLE
 
 // De fallback-logica (42703 → kolomloze SQL, 42P01 → stil overslaan), de
 // pgPool=null no-op en de overlap-gate zitten in `createOrphanCourseAccessCleanupRunner`
-// (server/studiecafe.js) zodat ze los van deze module-state getest kunnen worden.
+// (server/studiecafe/studiecafe.js) zodat ze los van deze module-state getest kunnen worden.
 // De getters leveren de actuele module-state (pgPool/coursesHasStudentVisible
 // wijzigen pas na de startup-detectie).
 export const runOrphanThreadReadsCleanupOnce = createOrphanCourseAccessCleanupRunner({
@@ -179,7 +179,7 @@ export function registerStudiecafe(app) {
   registerStudiecafeRoutes(app, {
     supabaseAdmin,
     requireAuthUser,
-    // Studiecafé uit in deze cursus (server/courseFeatures.js) = geen toegang,
+    // Studiecafé uit in deze cursus (server/courses/courseFeatures.js) = geen toegang,
     // behalve voor de docent en de beheerder.
     userHasCourseAccess: async (user, profile, courseId) =>
       (await userHasCourseAccess(user, profile, courseId))

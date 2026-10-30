@@ -12,7 +12,7 @@ import {
   type ImproveExercise, type ImproveFeedback, type ImproveReveal,
 } from '../../services/improveExplanation.service';
 
-// "Verbeter deze uitleg" (onderdeel van Ik leg uit, server/flawedExplanations.js).
+// "Verbeter deze uitleg" (onderdeel van Ik leg uit, server/explain/flawedExplanations.js).
 // De uitleg wordt ter plekke gemaakt en bevat één of meer fouten; de student weet
 // niet hoeveel. Na het beoordelen ziet de student de fouten, de juiste uitleg en
 // de bronnen, en kan hij alles ter discussie stellen in het Studiecafé.

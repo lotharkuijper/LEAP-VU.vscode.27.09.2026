@@ -136,7 +136,7 @@ async function findOrCreateProjectSubfolder(projectId, projectTitle, uploadedByI
 }
 
 // Kern van het uploaden van een projectdocument, los van HTTP, zodat ook het
-// cursusmateriaal-beheer (doel "Projectmateriaal", server/courseFiles.js) een
+// cursusmateriaal-beheer (doel "Projectmateriaal", server/documents/courseFiles.js) een
 // bestand exact op dezelfde manier aan een project kan toevoegen. De aanroeper
 // controleert zelf de staff-rechten (requireProjectStaff).
 // Gooit { status, message } bij een gebruikersfout.

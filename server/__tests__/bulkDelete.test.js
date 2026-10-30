@@ -1,4 +1,4 @@
-// Meerdere bestanden tegelijk verwijderen (server/courseFiles.js, 2026-10-18).
+// Meerdere bestanden tegelijk verwijderen (server/documents/courseFiles.js, 2026-10-18).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';

@@ -691,7 +691,7 @@ export function registerDocumentRoutes(app) {
 
   // Cursusmateriaal met bestandsdoelen (herinrichting docentenbeheer 2026-09-25):
   // bestanden per doel, eenmalige controle, "klaar voor studenten". Zie
-  // server/courseFiles.js en supabase/migrations/20260925100000_document_purposes.sql.
+  // server/documents/courseFiles.js en supabase/migrations/20260925100000_document_purposes.sql.
   registerCourseFilesRoutes(app, {
     supabaseAdmin,
     pgPool,

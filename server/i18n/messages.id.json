@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "Total {0} istilah untuk kursus ini ({1} baru/diperbarui, {2} sudah ada){3}{4}{5}{6}",
+  "accountConflict": "konflikAkun",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Klien admin tidak tersedia",
   "Admin client not available": "Klien admin tidak tersedia",

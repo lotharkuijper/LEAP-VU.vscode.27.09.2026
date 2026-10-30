@@ -1,5 +1,5 @@
 // Doeltalen voor de bron-document vertaalfunctie. Spiegelt de allowlist in
-// server/documentTranslation.js (de server valideert altijd; deze lijst voedt
+// server/documents/documentTranslation.js (de server valideert altijd; deze lijst voedt
 // alleen de keuze-dropdown). `native` toont de taal in haar eigen schrift.
 export interface TranslationLanguage {
   code: string;

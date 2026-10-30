@@ -9,8 +9,8 @@ import {
   UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users, Clock,
 } from 'lucide-react';
 
-// Studenten uitnodigen (server/courseInvitations.js). Maximale batchgrootte per
-// request — gelijk aan MAX_BULK_BATCH in server/bulkAccounts.js; grotere lijsten
+// Studenten uitnodigen (server/courses/courseInvitations.js). Maximale batchgrootte per
+// request — gelijk aan MAX_BULK_BATCH in server/courses/bulkAccounts.js; grotere lijsten
 // splitsen we client-side in stukken.
 const CHUNK = 50;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;

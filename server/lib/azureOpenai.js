@@ -11,7 +11,7 @@ import { completionTokenBudget, postChatCompletionWithRetry } from './openaiSamp
 // hij in tests verifieerbaar is zonder de Express-app te starten. Géén
 // OpenAI-fallback voor chat: als Azure niet is geconfigureerd blijft de URL
 // leeg en falen chat-calls expliciet (de endpoints gaten bovendien op
-// AZURE_CHAT_READY). Zie server/chatConfig.js + chatConfig.test.js (Task #249).
+// AZURE_CHAT_READY). Zie server/chat/chatConfig.js + chatConfig.test.js (Task #249).
 export const {
   endpoint: AZURE_OPENAI_ENDPOINT,
   apiKey: AZURE_OPENAI_API_KEY,

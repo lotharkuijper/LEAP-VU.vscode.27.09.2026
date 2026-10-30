@@ -625,12 +625,9 @@ export function registerStudiecafeRoutes(app, deps) {
     }
   }
 
-  // Bepaal de doelgroep voor een aankondiging volgens het ZICHTBAARHEIDS-model
-  // (zie canAccessCourseContent): een actieve + zichtbare cursus is open voor
-  // ÁLLE studenten (de meesten hebben géén course_members-rij), dus die krijgen
-  // állemaal de aankondiging. Bij een verborgen of inactieve cursus zien alleen
-  // ingeschreven leden de inhoud, dus beperken we de doelgroep tot course_members.
-  // De afzender wordt uitgesloten; het geheel wordt gecapt op MAX_ANNOUNCE_AUDIENCE.
+  // Doelgroep voor een aankondiging: de leden van de cursus (course_members),
+  // want toegang tot een cursus is lidmaatschap (2026-10-20). De afzender wordt
+  // uitgesloten; het geheel wordt gecapt op MAX_ANNOUNCE_AUDIENCE.
   async function announcementAudience(courseId, excludeUserId) {
     // Cursus-status (defensief: student_visible kan ontbreken op een oude DB).
     let isActive = true;
@@ -661,20 +658,10 @@ export function registerStudiecafeRoutes(app, deps) {
       console.warn('[studiecafe] aankondiging-doelgroep (members) mislukt:', e.message);
     }
 
-    // Alle studenten — alleen relevant als de cursus open is (actief + zichtbaar).
+    // Alleen de leden van de cursus. Sinds 2026-10-20 is toegang tot een cursus
+    // lidmaatschap; vroeger kreeg elke student van het platform de melding (en
+    // zo de titel van een aankondiging uit een andere cursus).
     const studentIds = [];
-    if (studentVisible !== false && isActive === true) {
-      try {
-        const { data: students } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .eq('role', 'student')
-          .limit(MAX_ANNOUNCE_AUDIENCE);
-        for (const r of students || []) if (r.id) studentIds.push(r.id);
-      } catch (e) {
-        console.warn('[studiecafe] aankondiging-doelgroep (studenten) mislukt:', e.message);
-      }
-    }
 
     return computeAnnouncementAudience({
       memberIds,

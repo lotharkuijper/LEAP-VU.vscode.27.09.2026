@@ -1,4 +1,4 @@
-// "Verbeter deze uitleg" (server/flawedExplanations.js, 2026-10-20): oefening ter
+// "Verbeter deze uitleg" (server/explain/flawedExplanations.js, 2026-10-20): oefening ter
 // plekke gemaakt en blind gecontroleerd, antwoorden alleen versleuteld bij de
 // student, onderdeel per cursus uit te zetten. Echte Express-app, nep-taalmodel.
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

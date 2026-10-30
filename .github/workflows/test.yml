@@ -1,0 +1,37 @@
+name: Tests
+
+# Draait de tests bij elke pull request naar main (en bij een push naar een
+# andere branch dan main). Zet niets live; uitrollen doet azure-deploy.yml bij
+# een push naar main. Zo zie je vóór het samenvoegen of alles nog werkt.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tests (server en frontend)
+        run: npx vitest run
+      - name: Servermeldingen actueel
+        run: node scripts/extract-server-messages.mjs --check
+      - name: Server-JavaScript (ontbrekende imports, tikfouten)
+        run: npx eslint server
+      - name: Frontend bouwt
+        run: npx vite build

@@ -10,7 +10,7 @@ import { SystemMessages } from '../../components/SystemMessages';
 import { loadSystemMessages } from '../../lib/systemMessages';
 
 // Beheer → Berichten (alleen beheerder): systeemberichten op het Dashboard
-// (server/systemMessages.js). Eenrichtingsverkeer; je ziet alleen totalen.
+// (server/system/systemMessages.js). Eenrichtingsverkeer; je ziet alleen totalen.
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 type Audience = 'all' | 'students' | 'teachers' | 'course';

@@ -1,4 +1,4 @@
-// Antwoord van de server op "klaar voor een hoger niveau?" (zie server/readiness.js).
+// Antwoord van de server op "klaar voor een hoger niveau?" (zie server/chat/readiness.js).
 export interface ReadinessResult {
   verdict: 'ready' | 'almost' | 'not_yet' | null;
   /** Telt dit oordeel voor het feest + achievement? (server beslist) */

@@ -388,7 +388,7 @@ export function registerPromptRoutes(app) {
     return res.json(result);
   });
 
-  // Sjablonen voor de cursusinstructies: docenten lezen, alleen de beheerder wijzigt (server/promptTemplates.js).
+  // Sjablonen voor de cursusinstructies: docenten lezen, alleen de beheerder wijzigt (server/prompts/promptTemplates.js).
   registerPromptTemplateRoutes(app, {
     supabaseAdmin,
     requireAuthUser,

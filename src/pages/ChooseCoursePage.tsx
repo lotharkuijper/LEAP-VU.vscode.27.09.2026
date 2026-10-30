@@ -7,7 +7,7 @@ import { useCourseAccess } from "../contexts/CourseAccessContext";
 import { supabase } from "../lib/supabase";
 import { activateEnrollments, allowsOpenRegistration, fetchOpenCourses, joinCourse, leaveCourse, type OpenCourse } from "../services/enrollment.service";
 
-// Cursuskeuze. Toegang = lidmaatschap (server/enrollment.js): de lijst toont de
+// Cursuskeuze. Toegang = lidmaatschap (server/courses/enrollment.js): de lijst toont de
 // cursussen waar je lid of docent van bent (de courses-RLS filtert), plus
 // "Cursus toevoegen" met open cursussen waar je nog geen lid van bent.
 type MyCourse = { id: string; name: string; description: string | null; enrollment_mode?: string | null; memberRole?: string | null };

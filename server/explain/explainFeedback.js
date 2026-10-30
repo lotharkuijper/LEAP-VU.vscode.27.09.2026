@@ -9,7 +9,7 @@
 //                    (cursusbegrippen die in dezelfde cursusfragmenten voorkomen);
 //   ### FEEDFORWARD — 1–2 concrete vervolgstappen.
 // De koppen zijn vaste Engelse tokens (net als het leerdagboek,
-// server/journalSections.js); het model schrijft de inhoud in de taal van de student.
+// server/journal/journalSections.js); het model schrijft de inhoud in de taal van de student.
 // Dit blok voegt de server ALTIJD toe; de (eventueel door de docent aangepaste)
 // uitleg-prompt bepaalt alleen de toon.
 

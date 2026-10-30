@@ -1,4 +1,4 @@
-// Client voor het cursusmateriaal-beheer met bestandsdoelen (server/courseFiles.js).
+// Client voor het cursusmateriaal-beheer met bestandsdoelen (server/documents/courseFiles.js).
 import { supabase } from '../lib/supabase';
 import type { Purpose, MaterialKind, PurposeSuggestion } from '../../server/rag/filePurpose.js';
 
@@ -231,7 +231,7 @@ export async function deleteCourseFile(docId: string) {
   return request<unknown>(`/api/admin/documents/${docId}`, { method: 'DELETE' });
 }
 
-// ── Leerlijn: volgorde van de stof (server/courseUnits.js) ──────────────────
+// ── Leerlijn: volgorde van de stof (server/courses/courseUnits.js) ──────────────────
 export interface LeerlijnUnit { id: string; title: string; position: number }
 export interface Leerlijn { available: boolean; units: LeerlijnUnit[]; documents: Array<{ documentId: string; unitId: string }> }
 export interface LeerlijnProposal { units: Array<{ title: string; position: number; documentIds: string[] }>; unplaced: string[] }

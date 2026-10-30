@@ -14,7 +14,7 @@ export interface SourceItem {
   pageStart?: number;
   /** Laatste PDF-pagina van de chunk; gelijk aan pageStart bij één pagina. */
   pageEnd?: number;
-  /** Onderdeel in de leerlijn van de cursus (server/courseUnits.js), als die is ingesteld. */
+  /** Onderdeel in de leerlijn van de cursus (server/courses/courseUnits.js), als die is ingesteld. */
   unitTitle?: string;
   /** True wanneer deze bron bij de begripsextractie als bewijs is vastgelegd (concept_evidence). */
   fromEvidence?: boolean;

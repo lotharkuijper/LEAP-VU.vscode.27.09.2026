@@ -5,7 +5,7 @@ import { useLanguage } from '../../i18n';
 import { previewDeleteCourseFiles, type DeletePreview } from '../../services/course-files.service';
 
 // Bevestiging voor het verwijderen van een selectie bestanden/websites
-// (server/courseFiles.js: delete-preview en delete). Eerst telt de server wat
+// (server/documents/courseFiles.js: delete-preview en delete). Eerst telt de server wat
 // er weggaat; boven BULK_CONFIRM_THRESHOLD bestanden moet de docent de
 // cursusnaam typen (de server controleert dat ook).
 

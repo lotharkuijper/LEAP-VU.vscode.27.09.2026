@@ -5,7 +5,7 @@ import { useLanguage } from '../i18n';
 import { HelpTip } from './help/HelpTip';
 import { ENROLLMENT_MODES, setEnrollmentMode, type EnrollmentMode } from '../services/enrollment.service';
 
-// Toegangsroute van een cursus kiezen (alleen beheerder; server/enrollment.js).
+// Toegangsroute van een cursus kiezen (alleen beheerder; server/courses/enrollment.js).
 // "Canvas + open" is een uitzondering en vraagt om een extra bevestiging.
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];

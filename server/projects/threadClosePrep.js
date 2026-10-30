@@ -11,7 +11,7 @@
 //    (vingerafdruk van de berichten + taal). Het blijft de eigen tekst van de
 //    server; de browser stuurt nog steeds niets mee.
 //  * het oordeel over de verstandhouding start al tijdens het venster, op de
-//    achtergrond; opslaan gebeurt pas bij het afsluiten (server/threadClose.js
+//    achtergrond; opslaan gebeurt pas bij het afsluiten (server/projects/threadClose.js
 //    controleert dan of het niveau intussen niet is veranderd).
 //  * zonder venster (bv. automatisch afronden) lopen neerslag en oordeel
 //    tegelijk in plaats van na elkaar.

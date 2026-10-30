@@ -150,7 +150,7 @@ export function QuizPage() {
   const QUESTION_TYPE_META = getQuestionTypeMeta(lang);
   const { profile } = useAuth();
   const { activeCourseId: activeCourse } = useActiveCourse();
-  // Plek van elk begrip in de stof (server/conceptOrder.js): volgorde + kleurverloop.
+  // Plek van elk begrip in de stof (server/concepts/conceptOrder.js): volgorde + kleurverloop.
   const places = useConceptOrder(activeCourse);
   const courseFeatures = useCourseFeatures();
 

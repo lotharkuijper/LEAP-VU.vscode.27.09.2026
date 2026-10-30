@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} όροι συνολικά για αυτό το μάθημα ({1} νέοι/ενημερωμένοι, {2} ήδη υπάρχουν){3}{4}{5}{6}",
+  "accountConflict": "διένεξη λογαριασμού",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Ο admin client δεν είναι διαθέσιμος",
   "Admin client not available": "Admin client not available",

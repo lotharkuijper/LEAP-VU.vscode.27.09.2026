@@ -27,7 +27,7 @@ import { TURN_SECRET } from '../lib/turnSigning.js';
 import { resolveChatPromptMode } from '../prompts/promptStore.js';
 import { searchChunksServerSide } from '../rag/search.js';
 
-// "Verbeter deze uitleg" (server/flawedExplanations.js): oefening ter plekke
+// "Verbeter deze uitleg" (server/explain/flawedExplanations.js): oefening ter plekke
 // gemaakt en blind gecontroleerd; niets bewaard behalve een dagboekreflectie op verzoek.
 async function flawedChunksFor(concept, courseId) {
   const out = [];
@@ -200,7 +200,7 @@ export function registerExplainRoutes(app) {
   // (POST /api/explain/save is op 2026-10-15 vervangen door /api/explain/evaluate:
   // de server beoordeelt, scoort en slaat in één stap op.)
   // POST /api/explain/evaluate — "Ik leg uit" beoordelen, uitlezen en opslaan in
-  // één stap (server/explainFeedback.js). De server bepaalt de instructie (toon
+  // één stap (server/explain/explainFeedback.js). De server bepaalt de instructie (toon
   // van de docent + vaste blokken en meetlat), de verwante begrippen (alleen
   // goedgekeurde cursusbegrippen uit hetzelfde materiaal) en de score; de browser
   // stuurt alleen de uitleg en de gevonden cursusfragmenten mee.
@@ -380,7 +380,6 @@ export function registerExplainRoutes(app) {
       let summaryFailed = false;
 
       if (generateSummary && (await courseFeatureOnFor(user, null, courseId, 'journal'))) {
-        const apiKey = process.env.OPENAI_API_KEY;
         const conceptName = row.concepts?.name || 'Onbekend begrip';
         const conceptDef = row.concepts?.definition || '';
         const keyPoints = Array.isArray(row.concepts?.key_points) ? row.concepts.key_points : [];

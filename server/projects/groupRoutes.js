@@ -404,7 +404,7 @@ export function registerProjectRoutes(app) {
     }
   });
 
-  // Studenten uitnodigen voor een cursus, met mail-wachtrij en opruimen (server/courseInvitations.js).
+  // Studenten uitnodigen voor een cursus, met mail-wachtrij en opruimen (server/courses/courseInvitations.js).
   registerProjectGroupRoutes(app, {
     supabaseAdmin,
     authUser,

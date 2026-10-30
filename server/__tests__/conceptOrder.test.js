@@ -1,4 +1,4 @@
-// Volgorde van begrippen in de stof (server/conceptOrder.js, 2026-10-24).
+// Volgorde van begrippen in de stof (server/concepts/conceptOrder.js, 2026-10-24).
 import { describe, it, expect } from 'vitest';
 import { buildDocOrder, conceptPositions } from '../concepts/conceptOrder.js';
 

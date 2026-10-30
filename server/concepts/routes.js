@@ -1136,7 +1136,7 @@ const conceptJobs = new Map();
 
 const CONCEPT_JOB_TTL_MS = 60 * 60 * 1000;
 
-// Volgorde van de begrippen in de stof (server/conceptOrder.js): waar komt elk
+// Volgorde van de begrippen in de stof (server/concepts/conceptOrder.js): waar komt elk
 // begrip voor het eerst voor? Voor de lijst bij Ik leg uit en de quiz, met een
 // kleurverloop van begin naar eind. 5 minuten onthouden per cursus.
 const conceptOrderCache = new Map();
@@ -1705,7 +1705,7 @@ export function registerConceptRoutes(app) {
   // toegepast, zodat de pagina blijft werken.
   // GET /api/concepts/evidence — bron-bewijs per begrip (Task #243), cursus-scoped
   // gefilterd (Task #244). De route en zijn filterhelper staan in
-  // server/conceptEvidence.js zodat de cursus-isolatie geautomatiseerd getest kan
+  // server/concepts/conceptEvidence.js zodat de cursus-isolatie geautomatiseerd getest kan
   // worden. conceptEvidenceSchemaReady wordt asynchroon gezet, dus we geven een
   // getter mee i.p.v. de momentane waarde.
   registerConceptEvidenceRoutes(app, {

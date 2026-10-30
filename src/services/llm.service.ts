@@ -207,7 +207,7 @@ export async function sendChatMessage(
 
 const RAG_STRICT_INSTRUCTION_LLM = `\n\nSTRIKTE BRONBEPERKING: Gebruik UITSLUITEND de context die hierboven is meegegeven. Ga NIET buiten deze bronnen. Als iets niet in de meegeleverde context staat, zeg dan eerlijk: "Dit onderwerp staat niet in het beschikbare cursusmateriaal."`;
 
-/** Feedback bij "Ik leg uit" in vier blokken (server/explainFeedback.js). */
+/** Feedback bij "Ik leg uit" in vier blokken (server/explain/explainFeedback.js). */
 export interface ExplainFeedbackSections {
   feedback: string;
   related: Array<{ id: string; name: string; relation: string }>;

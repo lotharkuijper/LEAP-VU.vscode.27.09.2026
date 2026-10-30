@@ -1,7 +1,7 @@
 import { loadLeerlijn } from '../courses/courseUnits.js';
 import { supabaseAdmin } from './supabase.js';
 
-// ── Leerlijn (server/courseUnits.js) ─────────────────────────────────────────
+// ── Leerlijn (server/courses/courseUnits.js) ─────────────────────────────────────────
 // Leerlijn per cursus 30 s en geoefende onderdelen per student 2 min onthouden:
 // de tutorchat vraagt ze bij elke beurt op. Een storing laat de chat gewoon
 // doorgaan zonder leerlijnblok.

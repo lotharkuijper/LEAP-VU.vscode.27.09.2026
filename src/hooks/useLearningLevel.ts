@@ -11,7 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 export const LEVEL_MIN = 1;
 export const LEVEL_MAX = 5;
 // Standaard wanneer een student nog niets koos. Bewust laag-gemiddeld; spiegelt
-// LEVEL_DEFAULT in server/learningLevel.js.
+// LEVEL_DEFAULT in server/chat/learningLevel.js.
 export const LEVEL_DEFAULT = 2;
 export const LEVELS = [1, 2, 3, 4, 5] as const;
 

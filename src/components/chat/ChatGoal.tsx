@@ -3,7 +3,7 @@ import { Target, Pencil, X } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { Tooltip } from '../help/Tooltip';
 
-// Optioneel doel voor dit chatgesprek (server/chatGoal.js). De student kiest
+// Optioneel doel voor dit chatgesprek (server/chat/chatGoal.js). De student kiest
 // het zelf; niets is verplicht. De tutor houdt er rekening mee en de reflectie
 // in het leerdagboek benoemt hoe ver de student kwam.
 

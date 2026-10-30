@@ -127,7 +127,6 @@ model gebruiken, lezen `.env`: `node --env-file=.env scripts/<naam>`.
 | `eval-flawed-explanations.mjs`, `eval-flawed-feedback.mjs` | "Verbeter deze uitleg": oefeningen en beoordeling. |
 | `eval-chat-attachments.mjs` | Kan het model afbeeldingen en bestanden lezen, en wat kost het? |
 | `eval-learning-levels.js`, `eval-learning-levels-persona.js` | Oudere metingen van leerniveaus (chat en persona). |
-| `verify-direct-address.js` | Oud eenmalig script; gebruikt een externe dienst (Groq) en hoort niet meer gebruikt te worden. |
 
 **Vertalingen**
 
