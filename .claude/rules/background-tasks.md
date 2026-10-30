@@ -3,7 +3,7 @@ paths:
   - "src/lib/backgroundTasks.ts"
   - "src/components/TaskTray.tsx"
   - "src/lib/conceptExtractionJob.ts"
-  - "src/components/{WebImportPanel,ShareStatsImportPanel,ImportsHubPanel,DocumentManagement,DatasetManagement}.tsx"
+  - "src/components/{WebImportPanel,ShareStatsImportPanel,ImportsHubPanel}.tsx"
   - "src/components/concepts/**"
   - "src/components/material/**"
   - "src/pages/admin/**"

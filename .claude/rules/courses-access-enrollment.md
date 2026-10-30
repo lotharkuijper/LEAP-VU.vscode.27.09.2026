@@ -3,7 +3,7 @@ paths:
   - "server/courses/**"
   - "server/lib/auth.js"
   - "src/pages/{ChooseCoursePage,LoginPage,ActivatePage,InviteAcceptPage,CoursesAdminPage}.tsx"
-  - "src/components/{EnrollmentModeDialog,CoursesAdmin,CourseSelector}.tsx"
+  - "src/components/{EnrollmentModeDialog,CoursesAdmin}.tsx"
   - "src/pages/admin/AddUsersTab.tsx"
   - "src/services/enrollment.service.ts"
   - "scripts/check-course-invitations.mjs"

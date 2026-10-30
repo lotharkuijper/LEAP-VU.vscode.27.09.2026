@@ -35,7 +35,6 @@ it('de servermodules worden echt gescand (ook de submappen)', () => {
 const TARGETS = [
   ...SERVER_TARGETS,
   'src/services/llm.service.ts',
-  'src/services/concept-extraction.service.ts',
 ];
 
 describe('persona framing is course-agnostic (Task #387)', () => {

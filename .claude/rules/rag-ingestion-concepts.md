@@ -5,12 +5,12 @@ paths:
   - "server/concepts/**"
   - "server/documents/**"
   - "server/courses/courseOverview.js"
-  - "src/services/{rag,concept-extraction,document-processor,document-upload,web-import,course-files,folder,quiz-context}.service.ts"
+  - "src/services/{rag,document-processor,document-upload,web-import,course-files,quiz-context}.service.ts"
   - "src/services/queryExpansion.ts"
   - "src/lib/conceptExtractionJob.ts"
   - "src/components/concepts/**"
   - "src/components/material/**"
-  - "src/components/{ConceptQualityPanel,ConceptReviewPanel,DocumentManagement,DocumentRetryPanel,DocumentViewer,RAGDiagnostics,RAGDocumentStatusPanel,RAGStatusIndicator,WebImportPanel,ExtractionProgressText}.tsx"
+  - "src/components/{ConceptQualityPanel,DocumentViewer,RAGDiagnostics,RAGDocumentStatusPanel,RAGStatusIndicator,WebImportPanel,ExtractionProgressText}.tsx"
 ---
 
 # RAG, ingestion and concept extraction
