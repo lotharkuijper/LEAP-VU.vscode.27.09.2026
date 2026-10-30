@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Această conexiune Canvas nu este cunoscută în LEAP.",
   "lti.error.loginFailed": "Autentificarea nu a reușit. Dă clic încă o dată pe link în Canvas.",
   "lti.error.badRequest": "Cererea de la Canvas a fost incompletă.",
+  "lti.error.accountConflict": "Există deja un cont LEAP cu această adresă de e-mail care nu a putut fi conectat automat la Canvas (adresa nu a fost încă confirmată sau diferă). Autentifică-te mai întâi o dată în LEAP în mod normal și apoi încearcă din nou sau cere ajutorul administratorului.",
   "login.code.link": "Ai ajuns în LEAP prin Canvas? Autentifică-te cu un cod prin e-mail",
   "login.code.intro": "Ai ajuns în LEAP prin linkul din Canvas? Introdu adresa ta de e-mail; vei primi un cod prin e-mail și te vei autentifica fără parolă.",
   "login.code.emailLabel": "Adresă de e-mail",

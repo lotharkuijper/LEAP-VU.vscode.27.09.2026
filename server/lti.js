@@ -144,11 +144,16 @@ export function findPlatform(platforms, issuer, clientId) {
   return platforms.find(p => p.issuer === issuer && (!clientId || p.clientId === clientId)) || null;
 }
 
-/** LTI-rollen → 'teacher' | 'student' | null. Canvas-docent (en assistent) wordt docent in LEAP. */
+/**
+ * LTI-rollen → 'teacher' | 'student' | null. Canvas-docent (en assistent) wordt docent in LEAP.
+ * Alleen rollen in DEZE cursus tellen (…/membership#…). Instellingsrollen
+ * (…/institution/person#Instructor) krijgt iemand die ergens anders docent of
+ * assistent is; die mogen hier nooit docentrechten geven.
+ */
 export function roleFromLti(roles) {
   const list = Array.isArray(roles) ? roles.map(String) : [];
-  if (list.some(r => TEACHER_ROLES.includes(r) || /#Instructor$/.test(r) || /Instructor#TeachingAssistant$/.test(r))) return 'teacher';
-  if (list.some(r => STUDENT_ROLES.includes(r) || /#Learner$/.test(r))) return 'student';
+  if (list.some(r => TEACHER_ROLES.includes(r))) return 'teacher';
+  if (list.some(r => STUDENT_ROLES.includes(r))) return 'student';
   return null;
 }
 
@@ -277,14 +282,55 @@ export function secureCookies(appUrl) {
 
 function stateCookie(state, secure) {
   // SameSite=None: Canvas stuurt het bericht via een formulier van een andere site terug.
-  return `leap_lti_state=${encodeURIComponent(state)}; Path=/lti; HttpOnly; Max-Age=600; SameSite=None${secure ? '; Secure' : ''}`;
+  // Partitioned (CHIPS): in een Canvas-iframe blokkeren Chrome, Edge en Firefox
+  // anders dit cookie van een andere site. Safari blijft een nieuw tabblad nodig hebben.
+  return `leap_lti_state=${encodeURIComponent(state)}; Path=/lti; HttpOnly; Max-Age=600; SameSite=None${secure ? '; Secure; Partitioned' : ''}`;
+}
+
+/** True als het inlogaccount `userId` precies dit e-mailadres heeft en het bevestigd is. */
+export async function verifiedLoginEmail(admin, userId, email) {
+  try {
+    const { data, error } = await admin.getUserById(userId);
+    const u = data?.user;
+    if (error || !u) return false;
+    return String(u.email || '').trim().toLowerCase() === email && Boolean(u.email_confirmed_at || u.confirmed_at);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Een docent nodigde deze student uit (LEAP maakte het account; nog nooit
+ * gebruikt) en de student klikt eerst in Canvas. Canvas staat in voor het
+ * adres: bevestig het en koppel. Het wachtwoord wordt vervangen door een
+ * willekeurig, zodat niemand die het adres eerder zelf registreerde erin kan;
+ * de student logt in via Canvas of met een code per e-mail.
+ */
+export async function claimInvitedAccount(db, admin, userId, email) {
+  try {
+    const { data, error } = await admin.getUserById(userId);
+    const u = data?.user;
+    if (error || !u) return false;
+    if (String(u.email || '').trim().toLowerCase() !== email) return false;
+    if (u.email_confirmed_at || u.confirmed_at || u.last_sign_in_at) return false;
+    const { data: inv } = await db.from('course_invitations').select('id')
+      .eq('user_id', userId).eq('kind', 'new').is('accepted_at', null).limit(1);
+    if (!inv || !inv[0]) return false;
+    const { error: upErr } = await admin.updateUserById(userId, {
+      email_confirm: true,
+      password: randomBytes(32).toString('base64url'),
+    });
+    return !upErr;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Account, lidmaatschap en koppelingen voor een geldige launch.
  * Geeft { userId, email, role, courseId } of { error }.
  */
-export async function processLaunch(db, admin, { claims, platform, now = new Date() }) {
+export async function processLaunch(db, admin, { claims, platform, now = new Date(), promoteTeacher = null }) {
   const email = String(claims.email || '').trim().toLowerCase();
   if (!email || !email.includes('@')) return { error: 'noEmail' };
   const role = roleFromLti(claims[`${CLAIM}roles`]);
@@ -312,7 +358,15 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
   if (ident) userId = ident.user_id;
   if (!userId) {
     const { data: prof } = await db.from('profiles').select('id').ilike('email', likeExact(email)).limit(1);
-    if (prof && prof[0]) userId = prof[0].id;
+    if (prof && prof[0]) {
+      // Alleen koppelen aan een account waarvan het INLOG-adres gelijk is en
+      // bevestigd: profiles.email kan de eigenaar zelf wijzigen, en een
+      // onbevestigde registratie op iemands adres mag diens Canvas-login niet
+      // overnemen.
+      if (!(await verifiedLoginEmail(admin, prof[0].id, email))
+          && !(await claimInvitedAccount(db, admin, prof[0].id, email))) return { error: 'accountConflict' };
+      userId = prof[0].id;
+    }
   }
   const fullName = String(claims.name || [claims.given_name, claims.family_name].filter(Boolean).join(' ') || '').trim();
   if (!userId) {
@@ -348,11 +402,15 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
       );
     }
   } else if (!member) {
-    const { error } = await db.from('course_members').insert({ course_id: course.id, user_id: userId, member_role: role });
+    const { error } = await db.from('course_members').insert({ course_id: course.id, user_id: userId, member_role: role, role });
     if (error) return { error: 'membershipFailed', detail: error.message };
   } else if (role === 'teacher' && member.member_role !== 'teacher') {
-    await db.from('course_members').update({ member_role: 'teacher' }).eq('course_id', course.id).eq('user_id', userId);
+    await db.from('course_members').update({ member_role: 'teacher', role: 'teacher' }).eq('course_id', course.id).eq('user_id', userId);
   }
+  // Elke weg die iemand cursusdocent maakt, zet ook het profiel op docent
+  // (nodig voor de project- en opslagregels in de database).
+  // Niet voor oud-deelnemers van een vorige editie.
+  if (role === 'teacher' && !retired && promoteTeacher) await promoteTeacher(userId, null, course.id);
 
   if (context.id) {
     await db.from('lti_course_links').upsert(
@@ -456,7 +514,7 @@ export function registerLtiRoutes(app, express, deps) {
     if (bad === 'unknownDeployment') unknown.add({ iss: platform.issuer, clientId: platform.clientId, deploymentId: claims[`${CLAIM}deployment_id`] });
     if (bad) return fail(req, res, bad);
     try {
-      const r = await processLaunch(db, db.auth.admin, { claims, platform });
+      const r = await processLaunch(db, db.auth.admin, { claims, platform, promoteTeacher: deps.promoteTeacherProfile || null });
       if (r.error) {
         if (r.detail) console.warn(`[lti] ${r.error}: ${r.detail}`);
         return fail(req, res, r.error);
@@ -467,7 +525,7 @@ export function registerLtiRoutes(app, express, deps) {
         console.warn('[lti] inlogcode maken mislukt:', error?.message);
         return fail(req, res, 'loginFailed');
       }
-      res.setHeader('Set-Cookie', `leap_lti_state=; Path=/lti; Max-Age=0; SameSite=None${secureCookies(deps.appUrl(req)) ? '; Secure' : ''}`);
+      res.setHeader('Set-Cookie', `leap_lti_state=; Path=/lti; Max-Age=0; SameSite=None${secureCookies(deps.appUrl(req)) ? '; Secure; Partitioned' : ''}`);
       console.log(`[lti] launch ok: ${r.role} → cursus ${r.courseId}`);
       return res.redirect(303, toStart(req, { token_hash: tokenHash, course: r.courseId, ...(r.next ? { next: r.next } : {}) }));
     } catch (e) {

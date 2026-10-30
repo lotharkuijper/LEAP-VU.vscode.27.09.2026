@@ -3123,6 +3123,7 @@
   "lti.error.unknownDeployment": "Esta integração do Canvas não é conhecida pelo LEAP.",
   "lti.error.loginFailed": "Não foi possível iniciar sessão. Clica novamente na ligação no Canvas.",
   "lti.error.badRequest": "O pedido do Canvas estava incompleto.",
+  "lti.error.accountConflict": "Já existe uma conta LEAP com este endereço de e-mail que não pôde ser associada automaticamente ao Canvas (o endereço ainda não foi confirmado ou é diferente). Inicia sessão uma vez no LEAP normalmente e tenta novamente depois, ou pede ajuda ao administrador.",
   "login.code.link": "Vieste para o LEAP-VU através do Canvas? Inicia sessão com um código por e-mail",
   "login.code.intro": "Vieste para o LEAP-VU através da ligação no Canvas? Introduz o teu endereço de e-mail; receberás um código por e-mail e iniciarás sessão sem palavra-passe.",
   "login.code.emailLabel": "Endereço de e-mail",

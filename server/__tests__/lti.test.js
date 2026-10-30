@@ -1,4 +1,4 @@
-// Canvas-koppeling via LTI 1.3 (server/lti.js, 2026-10-23). Een nep-Canvas met
+// Canvas-koppeling via LTI 1.3 (server/lti/lti.js, 2026-10-23). Een nep-Canvas met
 // een eigen sleutelpaar ondertekent echte berichten; de routes draaien in een
 // echte Express-app met een kleine nep-database.
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
@@ -17,6 +17,7 @@ const DEP = 'dep-1';
 const COURSE = '11111111-1111-4111-8111-111111111111';
 const platform = { issuer: ISS, clientId: CLIENT, deploymentIds: [DEP], authUrl: 'https://canvas.test/auth', jwksUrl: 'https://canvas.test/jwks' };
 let keys, otherKeys, jwks;
+let promoted = [];
 
 beforeAll(async () => {
   keys = await generateKeyPair('RS256');
@@ -44,6 +45,9 @@ describe('regels', () => {
     expect(roleFromLti(['http://purl.imsglobal.org/vocab/lis/v2/membership/Instructor#TeachingAssistant'])).toBe('teacher');
     expect(roleFromLti(['http://purl.imsglobal.org/vocab/lis/v2/membership#Learner'])).toBe('student');
     expect(roleFromLti(['http://purl.imsglobal.org/vocab/lis/v2/institution/person#Student'])).toBe(null);
+    // Docent of assistent ELDERS (instellingsrol) geeft hier geen docentrechten.
+    expect(roleFromLti(['http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor', 'http://purl.imsglobal.org/vocab/lis/v2/membership#Learner'])).toBe('student');
+    expect(roleFromLti(['http://purl.imsglobal.org/vocab/lis/v2/institution/person#Instructor'])).toBe(null);
     expect(roleFromLti(undefined)).toBe(null);
   });
   it('de cursus komt uit de Canvas-link of een custom-veld', () => {
@@ -110,14 +114,16 @@ let server, state, otpCalls;
 function fakeDb() {
   const tables = state.db;
   const match = (r, f) => Object.entries(f.eq).every(([k, v]) => String(r[k]) === String(v))
+    && f.isNull.every((k) => r[k] == null)
     && (!f.ilike || String(r[f.ilike[0]]).toLowerCase() === String(f.ilike[1]).replace(/\\(.)/g, '$1').toLowerCase());
   const from = (t) => {
-    const f = { eq: {}, ilike: null };
+    const f = { eq: {}, ilike: null, isNull: [] };
     const rows = () => (tables[t] ||= []).filter(r => match(r, f));
     const b = {
       select: () => b, order: () => b, limit: () => b,
       eq: (k, v) => { f.eq[k] = v; return b; },
       ilike: (k, v) => { f.ilike = [k, v]; return b; },
+      is: (k, v) => { if (v === null) f.isNull.push(k); return b; },
       maybeSingle: async () => ({ data: rows()[0] || null, error: null }),
       then: (res) => res({ data: rows(), error: null }),
       insert: async (row) => { (tables[t] ||= []).push({ ...row }); return { error: null }; },
@@ -135,7 +141,9 @@ function fakeDb() {
   return {
     from,
     auth: { admin: {
-      createUser: async ({ email }) => { const id = `u-${(tables.profiles || []).length + 1}`; (tables.profiles ||= []).push({ id, email }); return { data: { user: { id } }, error: null }; },
+      createUser: async ({ email }) => { const id = `u-${(tables.profiles || []).length + 1}`; (tables.profiles ||= []).push({ id, email }); state.auth[id] = { id, email, email_confirmed_at: 'now' }; return { data: { user: { id } }, error: null }; },
+      updateUserById: async (id, attrs) => { state.authUpdates.push({ id, attrs }); if (state.auth[id] && attrs.email_confirm) state.auth[id].email_confirmed_at = 'now'; return { error: null }; },
+      getUserById: async (id) => ({ data: state.auth[id] ? { user: state.auth[id] } : null, error: state.auth[id] ? null : { message: 'not found' } }),
       generateLink: async ({ email }) => ({ data: { properties: { hashed_token: `hash-for-${email}` } }, error: null }),
     } },
   };
@@ -170,7 +178,8 @@ beforeEach(async () => {
   state = { db: {
     courses: [{ id: COURSE, is_active: true, enrollment_mode: 'canvas' }],
     profiles: [], lti_identities: [], course_members: [], lti_course_links: [],
-  } };
+  }, auth: {}, authUpdates: [] };
+  promoted = [];
   const app = express();
   app.use(express.json());
   registerLtiRoutes(app, express, {
@@ -181,6 +190,7 @@ beforeEach(async () => {
     getJwks: () => jwks,
     requireAuthUser: async () => ({ user: { id: 'admin' }, profile: { role: 'admin' } }),
     isStaffForCourse: async () => true,
+    promoteTeacherProfile: async (userId, changedBy, courseId) => { promoted.push({ userId, courseId }); },
     createAnonClient: () => ({ auth: { signInWithOtp: async (a) => { otpCalls.push(a); return { error: null }; } } }),
     rateLimit: createRateLimiter({ max: 3 }),
   });
@@ -196,7 +206,8 @@ describe('launch vanuit Canvas', () => {
     expect(res.headers.location.startsWith('http://leap.local/lti/start#')).toBe(true);
     expect(frag.get('token_hash')).toBe('hash-for-student@example.org');
     expect(frag.get('course')).toBe(COURSE);
-    expect(state.db.course_members).toEqual([{ course_id: COURSE, user_id: 'u-1', member_role: 'student' }]);
+    expect(state.db.course_members).toEqual([{ course_id: COURSE, user_id: 'u-1', member_role: 'student', role: 'student' }]);
+    expect(promoted).toEqual([]);
     expect(state.db.lti_identities[0]).toMatchObject({ user_id: 'u-1', issuer: ISS, subject: 'canvas-user-1', email: 'student@example.org' });
     expect(state.db.lti_course_links[0]).toMatchObject({ context_id: 'ctx-9', context_title: 'Statistiek 1', course_id: COURSE });
     expect(state.db.profiles[0].last_active_course_id).toBe(COURSE);
@@ -209,10 +220,39 @@ describe('launch vanuit Canvas', () => {
   });
   it('Canvas-docent wordt docent; een bestaand account met hetzelfde e-mailadres wordt gekoppeld', async () => {
     state.db.profiles.push({ id: 'bestaand', email: 'docent@example.org' });
+    state.auth.bestaand = { id: 'bestaand', email: 'docent@example.org', email_confirmed_at: '2026-01-01' };
     state.db.course_members.push({ course_id: COURSE, user_id: 'bestaand', member_role: 'student' });
     await launch({ sub: 'canvas-docent', email: 'Docent@example.org', [`${CLAIM}roles`]: ['http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor'] });
     expect(state.db.profiles).toHaveLength(1);
     expect(state.db.course_members[0].member_role).toBe('teacher');
+    // Cursusdocent ⇒ ook het profiel docent (project-/opslagregels in de database).
+    expect(promoted).toEqual([{ userId: 'bestaand', courseId: COURSE }]);
+  });
+  it('een uitgenodigde student die eerst in Canvas klikt, wordt gekoppeld (adres bevestigd, wachtwoord vervangen)', async () => {
+    state.db.profiles.push({ id: 'uitgenodigd', email: 'student@example.org' });
+    state.auth.uitgenodigd = { id: 'uitgenodigd', email: 'student@example.org', email_confirmed_at: null, last_sign_in_at: null };
+    state.db.course_invitations = [{ user_id: 'uitgenodigd', kind: 'new', accepted_at: null }];
+    const { frag } = await launch();
+    expect(frag.get('error')).toBeNull();
+    expect(state.db.lti_identities[0]).toMatchObject({ user_id: 'uitgenodigd' });
+    expect(state.authUpdates).toHaveLength(1);
+    expect(state.authUpdates[0].attrs.email_confirm).toBe(true);
+    expect(typeof state.authUpdates[0].attrs.password).toBe('string');
+  });
+  it('koppelt niet aan een account met een onbevestigd of ander inlogadres (overname voorkomen)', async () => {
+    // a) iemand registreerde zich op dit adres maar bevestigde het nooit
+    state.db.profiles.push({ id: 'onbevestigd', email: 'student@example.org' });
+    state.auth.onbevestigd = { id: 'onbevestigd', email: 'student@example.org', email_confirmed_at: null };
+    let { frag } = await launch();
+    expect(frag.get('error')).toBe('accountConflict');
+    expect(state.db.lti_identities).toHaveLength(0);
+    expect(state.db.course_members).toHaveLength(0);
+    // b) iemand zette dit adres alleen in zijn profiel; zijn inlogadres is anders
+    state.db.profiles = [{ id: 'kaper', email: 'student@example.org' }];
+    state.auth = { kaper: { id: 'kaper', email: 'kaper@example.org', email_confirmed_at: '2026-01-01' } };
+    ({ frag } = await launch());
+    expect(frag.get('error')).toBe('accountConflict');
+    expect(state.db.lti_identities).toHaveLength(0);
   });
   it('een docent wordt nooit teruggezet naar student', async () => {
     state.db.profiles.push({ id: 'd', email: 'student@example.org' });

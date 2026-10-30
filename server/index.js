@@ -14765,6 +14765,7 @@ registerLtiRoutes(app, express, {
     return a.user;
   },
   isStaffForCourse,
+  promoteTeacherProfile: promoteCourseTeacherProfile,
   createAnonClient: () => createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { autoRefreshToken: false, persistSession: false } }),
   rateLimit: (key, limit) => ltiRateLimit(key, limit),
 });

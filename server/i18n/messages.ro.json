@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} termeni în total pentru acest curs ({1} noi/actualizați, {2} deja prezenți){3}{4}{5}{6}",
+  "accountConflict": "conflictDeCont",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Clientul admin nu este disponibil",
   "Admin client not available": "Clientul admin nu este disponibil",

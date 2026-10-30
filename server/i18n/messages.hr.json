@@ -1,5 +1,6 @@
 {
   "{0} begrippen totaal voor deze cursus ({1} nieuw/bijgewerkt, {2} al aanwezig){3}{4}{5}{6}": "{0} pojmova ukupno za ovaj kolegij ({1} novih/ažuriranih, {2} već prisutnih){3}{4}{5}{6}",
+  "accountConflict": "sukobRačuna",
   "accountFailed": "accountFailed",
   "Admin client niet beschikbaar": "Admin client nije dostupan",
   "Admin client not available": "Admin client nije dostupan",
