@@ -7,6 +7,7 @@ import {
   loadProfileRoleEmail,
   profileCache,
   userHasCourseAccess,
+  userIsActiveCourseMember,
 } from '../lib/auth.js';
 import { courseFeatureOnFor, rejectIfFeatureOff } from '../lib/courseFeatureGate.js';
 import { coursesHasStudentVisible } from '../lib/schemaFlags.js';
@@ -52,6 +53,9 @@ export function registerProjectRoutes(app) {
         // Docent of Canvas deelt in: een student maakt geen eigen groep (projectGroups.js).
         if (!studentMayFormGroups(project)) {
           return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });
+        }
+        if (!(await userIsActiveCourseMember(auth.user.id, project.course_id))) {
+          return res.status(403).json({ error: 'Je hoort bij een vorige editie van deze cursus en kunt niet meer meedoen aan nieuwe projecten', code: 'alumni' });
         }
       }
 
@@ -123,6 +127,9 @@ export function registerProjectRoutes(app) {
       }
       if (!isStaff && project?.course_id && !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
         return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
+      }
+      if (!isStaff && project?.course_id && !(await userIsActiveCourseMember(auth.user.id, project.course_id))) {
+        return res.status(403).json({ error: 'Je hoort bij een vorige editie van deze cursus en kunt niet meer meedoen aan nieuwe projecten', code: 'alumni' });
       }
       if (!isStaff && (await rejectIfFeatureOff(res, auth.user, profile, project?.course_id, 'projects'))) return;
       // Privacy (2026-10-08): een docent komt nooit in de groep van studenten
@@ -252,6 +259,17 @@ export function registerProjectRoutes(app) {
         });
         if (allowed) courseMap.set(c.id, { id: c.id, name: c.name });
       }
+      // Oud-deelnemer van een vorige editie (server/courses/courseEditions.js): alleen de
+      // afgeronde groepen van toen, geen nieuwe projecten.
+      const alumniCourseIds = new Set();
+      const { data: alumniRows } = await supabaseAdmin
+        .from('course_alumni').select('course_id, courses(id, name, student_visible)').eq('user_id', auth.user.id);
+      for (const a of (alumniRows || [])) {
+        const c = a.courses;
+        if (!c?.id || courseMap.has(c.id) || c.student_visible === false) continue;
+        alumniCourseIds.add(c.id);
+        courseMap.set(c.id, { id: c.id, name: c.name });
+      }
 
       // Een LEAP-beheerder heeft overal toegang, ook zonder lidmaatschap: alle
       // cursussen (de frontend toont alleen de actieve). Zo kan de beheerder in
@@ -273,7 +291,7 @@ export function registerProjectRoutes(app) {
 
       const { data: projects } = await supabaseAdmin
         .from('projects').select('id, title, research_question, course_id, status, briefing_markdown, max_group_size, min_group_size, group_mode, allow_self_signup')
-        .in('course_id', courseIds).eq('status', 'active');
+        .in('course_id', courseIds).in('status', ['active', 'archived']);
       const projectIds = (projects || []).map(p => p.id);
 
       let sessions = [];
@@ -346,9 +364,12 @@ export function registerProjectRoutes(app) {
           // de eindreflectie terugzien en in het eigen leerdagboek bewaren (2026-10-27).
           const finishedGroup = groups.filter(g => g.status === 'finalized')
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
-          return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup };
-        });
-        return { course: c, projects: cps };
+          return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup, archived: p.status === 'archived' };
+        })
+          // Gearchiveerde projecten (vorige editie) en cursussen waarvan je oud-deelnemer
+          // bent: alleen zichtbaar als terugblik op je eigen afgeronde groep.
+          .filter(p => (p.status === 'active' && !alumniCourseIds.has(c.id)) || p.finishedGroup);
+        return { course: c, projects: cps, alumni: alumniCourseIds.has(c.id) };
       });
       return res.json({ courses: result });
     } catch (err) {

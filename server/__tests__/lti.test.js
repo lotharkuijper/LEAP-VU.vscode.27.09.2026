@@ -285,6 +285,14 @@ describe('launch vanuit Canvas', () => {
     expect((await launch({ [`${CLAIM}roles`]: [] })).frag.get('error')).toBe('noRole');
     expect((await launch({ [`${CLAIM}target_link_uri`]: 'http://x/lti/launch?course=geen-uuid' })).frag.get('error')).toBe('courseUnknown');
   });
+  it('Canvas-cursus van een vorige editie: oud-deelnemer, geen (nieuw) lid of docent', async () => {
+    state.db.course_alumni = [];
+    state.db.lti_course_links.push({ issuer: ISS, context_id: 'ctx-9', course_id: COURSE, retired_at: '2026-10-29T10:00:00Z' });
+    const { frag } = await launch({ [`${CLAIM}roles`]: ['http://purl.imsglobal.org/vocab/lis/v2/membership#Instructor'] });
+    expect(frag.get('token_hash')).toBeTruthy(); // inloggen en lezen kan nog
+    expect(state.db.course_members).toHaveLength(0);
+    expect(state.db.course_alumni[0]).toMatchObject({ course_id: COURSE, user_id: 'u-1', former_role: 'teacher' });
+  });
   it('onbekende Canvas-omgeving wordt niet doorgestuurd', async () => {
     const r = await req('GET', '/lti/login?iss=https%3A%2F%2Fevil.test&client_id=x&login_hint=x');
     expect(new URLSearchParams(new URL(r.headers.location).hash.slice(1)).get('error')).toBe('unknownPlatform');

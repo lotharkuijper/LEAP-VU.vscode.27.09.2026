@@ -101,6 +101,12 @@ export function StudiecafePage() {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [repliesByThread, setRepliesByThread] = useState<Record<string, Reply[]>>({});
   const [isStaff, setIsStaff] = useState(false);
+  // Edities (server/courseEditions.js): oud-deelnemer leest alleen; vragen van
+  // vorige edities staan in het archief; mails per cursus uit te zetten.
+  const [alumni, setAlumni] = useState(false);
+  const [archivedView, setArchivedView] = useState(false);
+  const [archivedCount, setArchivedCount] = useState(0);
+  const [courseMuted, setCourseMuted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterKey>('all');
@@ -228,11 +234,13 @@ export function StudiecafePage() {
   const loadThreads = useCallback(async () => {
     if (!courseId) return;
     try {
-      const r = await apiFetch(`/api/studiecafe/${courseId}/threads`);
+      const r = await apiFetch(`/api/studiecafe/${courseId}/threads${archivedView ? '?archived=1' : ''}`);
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
         setThreads(d.threads || []);
         setIsStaff(!!d.isStaff);
+        setAlumni(!!d.alumni);
+        setArchivedCount(Number(d.archivedCount) || 0);
         setError(null);
         // Merge de server-leesstatus met lokaal (optimistisch) gezette reads zodat
         // een net-geopende thread niet terugspringt naar "nieuw" bij een refetch:
@@ -270,7 +278,20 @@ export function StudiecafePage() {
     } finally {
       setLoading(false);
     }
-  }, [courseId, apiFetch, t]);
+  }, [courseId, apiFetch, t, archivedView]);
+
+  useEffect(() => {
+    if (!courseId) return;
+    apiFetch(`/api/studiecafe/${courseId}/mute`).then((r) => r.json()).then((d) => setCourseMuted(!!d?.muted)).catch(() => {});
+  }, [courseId, apiFetch]);
+  const saveCourseMuted = useCallback(async (muted: boolean) => {
+    if (!courseId) return;
+    setCourseMuted(muted); // optimistisch
+    try {
+      const r = await apiFetch(`/api/studiecafe/${courseId}/mute`, { method: 'POST', body: JSON.stringify({ muted }) });
+      if (!r.ok) setCourseMuted(!muted);
+    } catch { setCourseMuted(!muted); }
+  }, [courseId, apiFetch]);
 
   const loadReplies = useCallback(async (threadId: string) => {
     if (!courseId) return;
@@ -841,6 +862,20 @@ export function StudiecafePage() {
                       <span className="block text-xs text-slate-500">{t('studiecafe.notifications.announcementsHint')}</span>
                     </span>
                   </label>
+                  <label className="flex items-start gap-3 py-2 cursor-pointer border-t border-slate-100 mt-1">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 w-4 h-4 accent-violet-500"
+                      checked={courseMuted}
+                      disabled={!courseId}
+                      onChange={(e) => saveCourseMuted(e.target.checked)}
+                      data-testid="switch-course-muted"
+                    />
+                    <span className="text-sm">
+                      <span className="block font-medium text-slate-800">{t('studiecafe.notifications.courseMutedLabel', { course: activeCourse?.name || '' })}</span>
+                      <span className="block text-xs text-slate-500">{t('studiecafe.notifications.courseMutedHint')}</span>
+                    </span>
+                  </label>
                   <p className="text-[11px] text-slate-400 mt-2">{t('studiecafe.notifications.digestNote')}</p>
                 </div>
               </>
@@ -894,8 +929,15 @@ export function StudiecafePage() {
         </div>
       )}
 
+      {/* Oud-deelnemer of archief: lezen, niet schrijven. */}
+      {(alumni || archivedView) && (
+        <div className="bg-slate-50 ring-1 ring-slate-200 rounded-2xl p-4 mb-5 text-sm text-slate-600" data-testid={alumni ? 'banner-studiecafe-alumni' : 'banner-studiecafe-archive'}>
+          {alumni ? t('studiecafe.alumniNotice') : t('studiecafe.archiveNotice')}
+        </div>
+      )}
+
       {/* COMPOSER */}
-      <div className="bg-white rounded-2xl ring-1 ring-slate-200 shadow-sm p-4 mb-5">
+      <div className={`bg-white rounded-2xl ring-1 ring-slate-200 shadow-sm p-4 mb-5 ${alumni || archivedView ? 'hidden' : ''}`}>
         {!showComposer ? (
           <button
             onClick={() => setShowComposer(true)}
@@ -1047,6 +1089,19 @@ export function StudiecafePage() {
           >
             <CheckCheck className="w-4 h-4" />
             {t('studiecafe.unread.markAllRead')}
+          </button>
+        </div>
+      )}
+
+      {/* Archief: vragen van vorige edities (gesloten). */}
+      {(archivedCount > 0 || archivedView) && (
+        <div className="flex justify-end mb-3">
+          <button
+            onClick={() => setArchivedView((v) => !v)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-slate-600 ring-1 ring-slate-200 bg-white hover:bg-slate-50 transition-colors"
+            data-testid="button-studiecafe-archive"
+          >
+            {archivedView ? t('studiecafe.archiveBack') : t('studiecafe.archiveShow', { count: String(archivedCount) })}
           </button>
         </div>
       )}
@@ -1332,8 +1387,8 @@ export function StudiecafePage() {
                     ))}
 
                     {/* REPLY-COMPOSER */}
-                    {th.isLocked && !isStaff ? (
-                      <p className="text-sm text-slate-400 flex items-center gap-1.5" data-testid={`text-locked-${th.id}`}><Lock className="w-3.5 h-3.5" />{t('studiecafe.lockedHint')}</p>
+                    {(th.isLocked && !isStaff) || alumni ? (
+                      <p className="text-sm text-slate-400 flex items-center gap-1.5" data-testid={`text-locked-${th.id}`}><Lock className="w-3.5 h-3.5" />{alumni ? t('studiecafe.alumniReplyHint') : t('studiecafe.lockedHint')}</p>
                     ) : (
                       <div className="space-y-2 pt-1">
                         {expandedId === th.id && replyAttachment && (

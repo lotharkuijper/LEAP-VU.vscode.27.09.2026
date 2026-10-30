@@ -61,21 +61,31 @@ export function CourseAccessProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      if (memberData && memberData.length > 0) {
+      // Oud-deelnemer van een vorige editie: de cursus blijft in de lijst (alleen lezen).
+      const { data: alumniData } = await supabase
+        .from("course_alumni")
+        .select(`course_id, courses ( id, name, folder_name )`)
+        .eq("user_id", user.id);
+      const memberIds = new Set((memberData || []).map((row: any) => row.courses?.id).filter(Boolean));
+      const alumniCourses: Course[] = (alumniData || [])
+        .filter((row: any) => row.courses != null && !memberIds.has(row.courses.id))
+        .map((row: any) => ({ role: "alumni", id: row.courses.id, name: row.courses.name, folder_name: row.courses.folder_name }));
+
+      if ((memberData && memberData.length > 0) || alumniCourses.length > 0) {
         // Task #270: een niet-beschikbare cursus (student_visible=false) wordt
         // door de RLS-policy weggefilterd uit de embedded `courses`-join, óók
         // voor een student die er nog lid van is. Dan is `row.courses` null.
         // Filter die rijen weg: zo verdwijnt de verborgen cursus uit de lijst
         // en voorkomen we een crash op `row.courses.id`. Docenten van de cursus
         // houden de join (RLS-uitzondering) en blijven hem dus wél zien.
-        const visibleMembers = memberData.filter((row: any) => row.courses != null);
-        if (visibleMembers.length > 0) {
-          const mapped: Course[] = visibleMembers.map((row: any) => ({
+        const visibleMembers = (memberData || []).filter((row: any) => row.courses != null);
+        if (visibleMembers.length > 0 || alumniCourses.length > 0) {
+          const mapped: Course[] = [...visibleMembers.map((row: any) => ({
             role: row.role,
             id: row.courses.id,
             name: row.courses.name,
             folder_name: row.courses.folder_name,
-          }));
+          })), ...alumniCourses];
           setCourses(mapped);
           setLoadingCourses(false);
           return;

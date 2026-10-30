@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createProfileCache, createUserCache } from './authCache.js';
 import { canAccessCourseContent } from '../courses/courseAvailability.js';
+import { isCourseAlumnus } from '../courses/courseEditions.js';
 import { coursesHasStudentVisible } from './schemaFlags.js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, SUPERUSER_EMAIL, supabaseAdmin } from './supabase.js';
 
@@ -176,8 +177,18 @@ async function userHasCourseMembership(userId, courseId) {
       .eq('user_id', userId)
       .eq('course_id', courseId)
       .maybeSingle();
-    return !!data;
+    if (data) return true;
+    // Oud-deelnemer van een vorige editie: houdt leestoegang (server/courses/courseEditions.js).
+    return await isCourseAlumnus(supabaseAdmin, userId, courseId);
   } catch { return false; }
+}
+
+// Actief lid (geen oud-deelnemer van een vorige editie): voor meedoen aan projecten.
+export async function userIsActiveCourseMember(userId, courseId) {
+  if (!courseId) return true;
+  if (!(await isCourseAlumnus(supabaseAdmin, userId, courseId))) return true;
+  const { data } = await supabaseAdmin.from('course_members').select('user_id').eq('user_id', userId).eq('course_id', courseId).maybeSingle();
+  return !!data;
 }
 
 // Helper: vereis admin/docent. Geeft op fout een response en `null` terug.

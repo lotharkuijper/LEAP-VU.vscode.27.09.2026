@@ -35,13 +35,16 @@ export default function ChooseCoursePage() {
     setLoading(true);
     // Aanmeldingen van de open registratie worden bij de eerste login lidmaatschappen.
     await activateEnrollments();
-    const [{ data, error: e }, { data: members }, open] = await Promise.all([
+    const [{ data, error: e }, { data: members }, { data: alumni }, open] = await Promise.all([
       supabase.from("courses").select("id, name, description, enrollment_mode").eq("is_active", true).order("name", { ascending: true }),
       supabase.from("course_members").select("course_id, member_role").eq("user_id", user.id),
+      // Oud-deelnemer van een vorige editie: de cursus blijft leesbaar (server/courseEditions.js).
+      supabase.from("course_alumni").select("course_id").eq("user_id", user.id),
       fetchOpenCourses().catch(() => [] as OpenCourse[]),
     ]);
     if (e) console.error("[COURSE SELECT] Error loading courses:", e);
-    const roleBy = new Map((members ?? []).map((m: { course_id: string; member_role: string }) => [m.course_id, m.member_role]));
+    const roleBy = new Map<string, string>((alumni ?? []).map((a: { course_id: string }) => [a.course_id, 'alumni']));
+    for (const m of (members ?? []) as Array<{ course_id: string; member_role: string }>) roleBy.set(m.course_id, m.member_role);
     const mine: MyCourse[] = ((data ?? []) as MyCourse[]).map((c) => ({ ...c, memberRole: roleBy.get(c.id) ?? null }));
     setCourses(mine);
     const mineIds = new Set(mine.map((c) => c.id));
@@ -128,6 +131,9 @@ export default function ChooseCoursePage() {
                 >
                   <strong style={{ fontSize: "1.1rem" }}>{course.name}</strong>
                   {course.description && <div style={{ opacity: 0.7 }}>{course.description}</div>}
+                  {course.memberRole === 'alumni' && (
+                    <div style={{ marginTop: "0.25rem", fontSize: "0.8rem", color: "#6b7280" }} data-testid={`text-course-alumni-${course.id}`}>{t('editions.alumniBadge')}</div>
+                  )}
                 </button>
                 {course.memberRole === 'student' && allowsOpenRegistration(course.enrollment_mode) && (
                   <button

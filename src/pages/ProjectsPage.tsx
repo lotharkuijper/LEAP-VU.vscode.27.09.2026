@@ -27,6 +27,8 @@ interface OverviewProject {
   /** Groepsindeling: alleen bij 'self' maakt de student zelf een groep (server/projects/projectGroups.js). */
   group_mode?: 'self' | 'teacher' | 'canvas' | null;
   allow_self_signup?: boolean | null;
+  /** Project van een vorige editie (gearchiveerd): alleen je afgeronde groep terugkijken. */
+  archived?: boolean;
 }
 
 interface OverviewCourse {
@@ -213,7 +215,8 @@ export function ProjectsPage() {
                     const inProgress = !!p.activeGroup;
                     const completed = p.sessions.some(s => s.status === 'completed');
                     const groupMode = p.group_mode || (p.allow_self_signup === false ? 'teacher' : 'self');
-                    const selfGroups = groupMode === 'self';
+                    const archived = !!p.archived;
+                    const selfGroups = groupMode === 'self' && !archived;
                     return (
                       <div key={p.id} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-3" data-testid={`overview-project-${p.id}`}>
                         <div>
@@ -223,6 +226,7 @@ export function ProjectsPage() {
                             {t('projects.groupSize', { min: String(p.min_group_size ?? 1), max: String(p.max_group_size ?? 5) })}
                             {inProgress && <span className="ml-2 inline-block px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">{t('projects.inProgress')}</span>}
                             {completed && !inProgress && <span className="ml-2 inline-block px-1.5 py-0.5 bg-green-100 text-green-700 rounded">{t('projects.previouslyCompleted')}</span>}
+                            {archived && <span className="ml-2 inline-block px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded" data-testid={`badge-archived-${p.id}`}>{t('editions.previousEdition')}</span>}
                           </div>
                         </div>
                         <div className="flex flex-col gap-2 mt-auto">
@@ -254,7 +258,7 @@ export function ProjectsPage() {
                               <ArrowRight className="w-4 h-4" /> {t('projects.viewFinished')}
                             </button>
                           )}
-                          {!selfGroups && !inProgress && !p.finishedGroup && (
+                          {!selfGroups && !archived && !inProgress && !p.finishedGroup && (
                             <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600" data-testid={'text-group-assigned-' + p.id}>
                               {t(groupMode === 'canvas' ? 'projects.groupFromCanvas' : 'projects.groupFromTeacher')}
                             </p>

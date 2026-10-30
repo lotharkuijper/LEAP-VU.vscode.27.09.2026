@@ -18,6 +18,8 @@ export interface ConceptRow {
 }
 export interface ThermometerData {
   since: string;
+  /** Begin van de huidige editie van de cursus (server/courseEditions.js), als die er is. */
+  editionStart?: string | null;
   measuredSince: string | null;
   k: number;
   quiz: { attempts: number | null; avgScore: number | null; suppressed: boolean };
@@ -222,6 +224,7 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
             {data.measuredSince
               ? t('analytics.thermometer.measuredSince', { date: new Date(data.measuredSince).toLocaleDateString(lang) })
               : t('analytics.thermometer.notMeasuredYet')}
+            {data.editionStart && ` ${t('analytics.thermometer.sinceEdition', { date: new Date(data.editionStart).toLocaleDateString(lang) })}`}
           </p>
         </>
       )}

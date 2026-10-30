@@ -572,13 +572,36 @@ export function registerStudiecafeRoutes(app, deps) {
   const MAX_ANNOUNCE_AUDIENCE = 5000;
   const ENQUEUE_CHUNK = 500; // rijen per bulk-insert (8 params/rij, ruim onder de pg-limiet)
 
+  // Oud-deelnemer van een vorige editie (server/courseEditions.js): leest mee, schrijft niet.
+  const ALUMNI_MSG = 'Je hoort bij een vorige editie van deze cursus: je kunt het Studiecafé lezen, maar niet meer schrijven';
+  async function isActiveMember(userId, courseId) {
+    try {
+      const { data: alum } = await supabaseAdmin.from('course_alumni').select('user_id').eq('course_id', courseId).eq('user_id', userId).maybeSingle();
+      if (!alum) return true;
+      const { data: m } = await supabaseAdmin.from('course_members').select('user_id').eq('course_id', courseId).eq('user_id', userId).maybeSingle();
+      return !!m;
+    } catch { return true; }
+  }
+
+  // Studiecafé-mails die een gebruiker voor één cursus heeft uitgezet (2026-10-29).
+  async function mutedPairs(courseIds) {
+    const out = new Set();
+    if (!courseIds.length) return out;
+    try {
+      const { data } = await supabaseAdmin.from('studiecafe_course_mutes').select('user_id, course_id').in('course_id', courseIds);
+      for (const r of data || []) out.add(`${r.user_id}|${r.course_id}`);
+    } catch { /* tabel ontbreekt: niemand gedempt */ }
+    return out;
+  }
+
   // Bulk-insert van meldingen in één multi-row statement per chunk (i.p.v. één
   // query per ontvanger), zodat een aankondiging met een grote doelgroep snel
   // wegschrijft. Ontdubbeling via de partiële unieke index op dedup_key.
   async function enqueueNotifications(items) {
     if (!Array.isArray(items) || !items.length) return;
+    const muted = await mutedPairs([...new Set(items.map((it) => it?.courseId).filter(Boolean))]);
     const rows = items
-      .filter((it) => it && it.userId && it.courseId && it.kind)
+      .filter((it) => it && it.userId && it.courseId && it.kind && !muted.has(`${it.userId}|${it.courseId}`))
       .map((it) => ({
         user_id: it.userId,
         course_id: it.courseId,
@@ -625,9 +648,8 @@ export function registerStudiecafeRoutes(app, deps) {
     }
   }
 
-  // Doelgroep voor een aankondiging: de leden van de cursus (course_members),
-  // want toegang tot een cursus is lidmaatschap (2026-10-20). De afzender wordt
-  // uitgesloten; het geheel wordt gecapt op MAX_ANNOUNCE_AUDIENCE.
+  // Doelgroep voor een aankondiging: de leden van de cursus (course_members).
+  // De afzender wordt uitgesloten; het geheel wordt gecapt op MAX_ANNOUNCE_AUDIENCE.
   async function announcementAudience(courseId, excludeUserId) {
     // Cursus-status (defensief: student_visible kan ontbreken op een oude DB).
     let isActive = true;
@@ -658,14 +680,12 @@ export function registerStudiecafeRoutes(app, deps) {
       console.warn('[studiecafe] aankondiging-doelgroep (members) mislukt:', e.message);
     }
 
-    // Alleen de leden van de cursus. Sinds 2026-10-20 is toegang tot een cursus
-    // lidmaatschap; vroeger kreeg elke student van het platform de melding (en
-    // zo de titel van een aankondiging uit een andere cursus).
-    const studentIds = [];
-
+    // Sinds de toegangsroute (2026-10-20) is toegang = lidmaatschap: alleen leden
+    // krijgen de aankondiging, nooit "alle studenten". Oud-deelnemers van een
+    // vorige editie staan niet in course_members en vallen dus vanzelf buiten.
     return computeAnnouncementAudience({
       memberIds,
-      studentIds,
+      studentIds: [],
       isActive,
       studentVisible,
       excludeUserId,
@@ -727,6 +747,32 @@ export function registerStudiecafeRoutes(app, deps) {
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
+  });
+
+  // Studiecafé-mails van één cursus uit/aan (de algemene voorkeuren hierboven blijven gelden).
+  app.get('/api/studiecafe/:courseId/mute', async (req, res) => {
+    const auth = await requireAuthUser(req, res);
+    if (!auth) return;
+    try {
+      const { data } = await supabaseAdmin.from('studiecafe_course_mutes').select('user_id')
+        .eq('user_id', auth.user.id).eq('course_id', req.params.courseId).maybeSingle();
+      return res.json({ muted: !!data });
+    } catch {
+      return res.json({ muted: false });
+    }
+  });
+  app.post('/api/studiecafe/:courseId/mute', async (req, res) => {
+    const auth = await requireAuthUser(req, res);
+    if (!auth) return;
+    const { courseId } = req.params;
+    if (!(await userHasCourseAccess(auth.user, auth.profile, courseId))) return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
+    const muted = req.body?.muted === true;
+    const q = muted
+      ? supabaseAdmin.from('studiecafe_course_mutes').upsert({ user_id: auth.user.id, course_id: courseId }, { onConflict: 'user_id,course_id' })
+      : supabaseAdmin.from('studiecafe_course_mutes').delete().eq('user_id', auth.user.id).eq('course_id', courseId);
+    const { error } = await q;
+    if (error) return res.status(500).json({ error: error.message });
+    return res.json({ muted });
   });
 
   // Bijlagen-kolom (Task #351) kan ontbreken op een nog-niet-gemigreerde DB. We
@@ -796,6 +842,7 @@ export function registerStudiecafeRoutes(app, deps) {
   function shapeThread(r, nameFor, viewerId) {
     return {
       id: r.id,
+      archived: !!r.archived_at,
       courseId: r.course_id,
       authorId: r.author_id,
       authorName: nameFor(r.author_id),
@@ -971,15 +1018,27 @@ export function registerStudiecafeRoutes(app, deps) {
     }
     try {
       const isStaff = await isStaffForCourse(auth.user, auth.profile, courseId);
-      const { data: rows, error } = await supabaseAdmin
+      // Archief (vorige edities, server/courseEditions.js): ?archived=1 toont alleen
+      // gearchiveerde vragen, anders alleen de huidige.
+      const archived = req.query?.archived === '1';
+      const THREAD_COLS_BASE = await threadCols();
+      const feed = (withArchive) => supabaseAdmin
         .from('studiecafe_threads')
-        .select(await threadCols())
+        .select(withArchive ? `${THREAD_COLS_BASE}, archived_at` : THREAD_COLS_BASE)
         .eq('course_id', courseId)
         .is('deleted_at', null)
         .order('is_pinned', { ascending: false })
         .order('is_announcement', { ascending: false })
         .order('last_activity_at', { ascending: false })
-        .limit(200);
+        .limit(500);
+      let { data: rows, error } = await feed(true);
+      if (error && /archived_at/.test(error.message || '')) {
+        // Migratie nog niet toegepast: zonder archief.
+        ({ data: rows, error } = await feed(false));
+      }
+      const archivedCount = (rows || []).filter((r) => r.archived_at).length;
+      rows = (rows || []).filter((r) => (archived ? !!r.archived_at : !r.archived_at)).slice(0, 200);
+      const alumni = !isStaff && !(await isActiveMember(auth.user.id, courseId));
       if (error) {
         console.error('[studiecafe] feed error:', error.message);
         return res.status(500).json({ error: error.message });
@@ -999,6 +1058,9 @@ export function registerStudiecafeRoutes(app, deps) {
       ]);
       return res.json({
         isStaff,
+        alumni,
+        archived,
+        archivedCount: archivedCount || 0,
         currentUserId: auth.user.id,
         threads,
         lastSeenAt,
@@ -1292,6 +1354,7 @@ export function registerStudiecafeRoutes(app, deps) {
     if (!v.ok) return res.status(400).json({ error: v.error });
     try {
       const isStaff = await isStaffForCourse(auth.user, auth.profile, courseId);
+      if (!isStaff && !(await isActiveMember(auth.user.id, courseId))) return res.status(403).json({ error: ALUMNI_MSG, code: 'alumni' });
       const isAnnouncement = !!(req.body && req.body.isAnnouncement) && isStaff;
       const insert = await withAttachments({
         course_id: courseId,
@@ -1347,6 +1410,7 @@ export function registerStudiecafeRoutes(app, deps) {
     if (!v.ok) return res.status(400).json({ error: v.error });
     try {
       const isStaff = await isStaffForCourse(auth.user, auth.profile, courseId);
+      if (!isStaff && !(await isActiveMember(auth.user.id, courseId))) return res.status(403).json({ error: ALUMNI_MSG, code: 'alumni' });
       const { data: thread } = await supabaseAdmin
         .from('studiecafe_threads')
         .select('id, course_id, is_locked, reply_count, deleted_at, author_id, title')

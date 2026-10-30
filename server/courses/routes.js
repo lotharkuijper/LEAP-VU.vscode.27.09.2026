@@ -7,6 +7,7 @@ import {
   normalizeCourseFeatures,
   parseCourseFeaturesPatch,
 } from './courseFeatures.js';
+import { registerCourseEditionRoutes } from './courseEditions.js';
 import { registerCourseInfoRoutes } from './courseInfo.js';
 import { pendingInvitationsForCourse, registerCourseInvitationRoutes } from './courseInvitations.js';
 import { collectMemberUserIds, mergeCourseMembers, sortCourseMembers } from './courseMembers.js';
@@ -1465,4 +1466,8 @@ export function registerCourseRoutes(app) {
       return res.status(500).json({ error: err.message });
     }
   });
+
+  // Nieuwe editie van een cursus: vorige jaargang wordt oud-deelnemer, projecten en
+  // Studiecafé naar het archief (server/courses/courseEditions.js).
+  registerCourseEditionRoutes(app, { supabaseAdmin, requireAuthUser, isStaffForCourse });
 }

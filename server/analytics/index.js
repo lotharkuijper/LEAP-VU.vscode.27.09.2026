@@ -18,7 +18,7 @@
 
 import { createCollector, analyticsMiddleware, installFetchMeter } from './collector.js';
 import {
-  K_MIN, periodStart, buildConceptThermometer, weeklyQuizSeries, summarizeIngestion, summarizePlatform,
+  K_MIN, periodStart, weekStart, buildConceptThermometer, weeklyQuizSeries, summarizeIngestion, summarizePlatform,
 } from './aggregate.js';
 
 const PAGE = 1000;
@@ -98,14 +98,26 @@ export function installAnalytics(app, deps) {
       const profile = await profileOf(auth.user.id);
       if (!(await isStaffForCourse(auth.user, profile, courseId))) return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
       await collector.flush();
-      const since = periodStart(req.query.weeks);
+      // Sinds een nieuwe editie (course_editions) telt alleen de huidige jaargang,
+      // tenzij ?edition=all. Alleen een datum: geen personen.
+      const period = periodStart(req.query.weeks);
+      let editionStart = null;
+      if (req.query.edition !== 'all') {
+        try {
+          const { data: ed } = await db().from('course_editions').select('started_at').eq('course_id', courseId)
+            .order('started_at', { ascending: false }).limit(1);
+          editionStart = ed?.[0]?.started_at || null;
+        } catch { /* geen edities (of tabel ontbreekt): hele periode */ }
+      }
+      const since = editionStart && editionStart > period ? editionStart : period;
+      const sinceWeek = editionStart && editionStart > period ? weekStart(new Date(editionStart)) : period;
       const [concepts, attempts, counters] = await Promise.all([
         loadConcepts(courseId),
         allRows(() => db().from('quiz_attempts')
           .select('student_id, topics, score_percentage, created_at')
           .eq('course_id', courseId).gte('created_at', since).order('created_at')),
         counterRows(() => db().from('analytics_counters')
-          .select('kind, key, n, week').eq('course_id', courseId).gte('week', since)
+          .select('kind, key, n, week').eq('course_id', courseId).gte('week', sinceWeek)
           .in('kind', ['chat_evidence', 'chat_concept_hit', 'chat_concept_miss', 'chat_attachment'])),
       ]);
       const result = buildConceptThermometer({ attempts, concepts, chatRows: counters.rows, k: K_MIN });
@@ -113,7 +125,7 @@ export function installAnalytics(app, deps) {
       // Bijlagen in de chat: alleen aantallen per soort (geen namen, geen inhoud).
       const attachments = { image: 0, file: 0 };
       for (const r of counters.rows) if (r.kind === 'chat_attachment' && r.key in attachments) attachments[r.key] += Number(r.n || 0);
-      return res.json({ since, measuredSince, countersAvailable: counters.available, ...result, attachments, weekly: weeklyQuizSeries(attempts, K_MIN) });
+      return res.json({ since, editionStart, measuredSince, countersAvailable: counters.available, ...result, attachments, weekly: weeklyQuizSeries(attempts, K_MIN) });
     } catch (err) {
       return res.status(500).json({ error: err?.message || String(err) });
     }

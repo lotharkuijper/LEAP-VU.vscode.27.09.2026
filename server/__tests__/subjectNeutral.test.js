@@ -37,6 +37,13 @@ describe('schermteksten zijn vakneutraal', () => {
       expect(hits).toEqual([]);
     });
   }
+  // De voorbeeldtekst bij een gedeelde link (WhatsApp, Teams, zoekmachines) stond
+  // tot 2026-10-29 nog op "epidemiologie en biostatistiek".
+  it('index.html (voorbeeldtekst bij een gedeelde link)', () => {
+    const metas = read('index.html').match(/<meta [^>]*content="[^"]*"[^>]*>/g) || [];
+    expect(metas.filter((m) => DOMAIN.test(m))).toEqual([]);
+    expect(metas.some((m) => /og:description/.test(m))).toBe(true);
+  });
 });
 
 describe('vaste instructies aan het taalmodel zijn vakneutraal', () => {

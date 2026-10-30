@@ -15,6 +15,8 @@
 export const EXPORT_SOURCES = [
   { table: 'profiles', column: 'id', label: 'profiel' },
   { table: 'course_members', column: 'user_id', label: 'cursussen' },
+  { table: 'course_alumni', column: 'user_id', label: 'cursussen van een vorige editie' },
+  { table: 'studiecafe_course_mutes', column: 'user_id', label: 'Studiecafé-mails uitgezet per cursus' },
   { table: 'lti_identities', column: 'user_id', label: 'Canvas-koppeling' },
   { table: 'course_invitations', column: 'user_id', label: 'uitnodigingen voor cursussen' },
   { table: 'open_accounts', column: 'user_id', label: 'aangemeld via open registratie' },
@@ -54,6 +56,8 @@ export const NOT_EXPORTED = [
   'user_audit_log',
   // Schakelaar-logboek (wie zette bijlagen in de chat aan/uit): beheergegeven.
   'leap_setting_changes',
+  // Edities van een cursus: wie de editie startte is een beheergegeven van de docent.
+  'course_editions',
   // Systeemberichten zijn van de beheerder (created_by), niet van de ontvanger;
   // wat de gebruiker wegklikte, staat wel in de export.
   'system_messages',
