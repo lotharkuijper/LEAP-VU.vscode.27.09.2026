@@ -43,7 +43,7 @@ describe('migraties bouwen een nieuwe database vanaf nul', () => {
     expect(lac).toBeLessThan(files.indexOf(firstUse(/last_active_course_id/)));
   });
   it('de basismigraties doen niets op een database die al bestaat', () => {
-    expect(read('supabase/migrations/20260507090000_course_members_baseline.sql')).toMatch(/CREATE TABLE IF NOT EXISTS public\.course_members/);
+    expect(read('supabase/migrations/20260507090000_course_members_baseline.sql')).toMatch(/IF to_regclass\('public\.course_members'\) IS NULL THEN/);
     expect(read('supabase/migrations/20260608100000_profiles_last_active_course_baseline.sql')).toMatch(/ADD COLUMN IF NOT EXISTS last_active_course_id/);
   });
 });

@@ -171,9 +171,10 @@ beforeAll(async () => {
   // De content_hash-startupdetectie draait niet onder NODE_ENV=test; zet de vlag
   // hier expliciet aan zodat de top-up/skip-paden getest worden (de in-memory
   // stub kent de kolom en geeft geen fout terug).
-  await mod.detectDocumentsContentHash();
+  const flags = await import('../lib/schemaFlags.js');
+  await flags.detectDocumentsContentHash();
   // Idem voor websitebronnen: de stub kent de tabel web_sources.
-  await mod.detectWebSources();
+  await flags.detectWebSources();
   server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
 });

@@ -865,7 +865,6 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
       const { data: project } = await supabaseAdmin
         .from('projects').select('id, title, briefing_markdown, rubric_criteria, research_question')
         .eq('id', group.project_id).maybeSingle();
-      const checkpointCourseId = await courseIdForProject(group.project_id);
 
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 

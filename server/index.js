@@ -41,7 +41,7 @@ import {
   READS_CLEANUP_INTERVAL_MS,
   runOrphanThreadReadsCleanupOnce,
   runStudiecafeDigestOnce,
-} from './studiecafe/routes.js';
+} from './studiecafe/digest.js';
 import { installTokenBudget } from './account/tokenBudget.js';
 import { registerChatRoutes } from './chat/routes.js';
 import { registerRagRoutes } from './rag/routes.js';
@@ -63,7 +63,6 @@ import { registerProjectDocumentRoutes } from './projects/documentRoutes.js';
 import { registerCanvasRoutes } from './lti/routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
-
 const __dirname = path.dirname(__filename);
 
 const app = express();
@@ -169,7 +168,6 @@ registerEnrollmentRoutes(app, {
 
 registerCanvasRoutes(app);
 
-// =============================================================================
 // Serveer de gebouwde Vite-frontend als dist/index.html bestaat (productie).
 const distPath = path.join(__dirname, '..', 'dist');
 
@@ -235,4 +233,4 @@ if (process.env.NODE_ENV !== 'test') {
   });
 }
 
-export { app, detectDocumentsContentHash, detectWebSources };
+export { app };

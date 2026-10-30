@@ -48,7 +48,6 @@ const BADGE_EMOJI = {
 // feedback" (ingeleverd werk van de groep, `productId`). Fouten gooien we als
 // { status, body } zodat de route ze één-op-één kan teruggeven.
 export async function runEvaluatorReview({ project, group, persona, title, text, lang, requesterId, documentId = null, productId = null }) {
-  const projectId = project.id;
   const groupId = group.id;
   // Beoordelingsmateriaal van deze beoordelaar: de projectdocumenten van de
   // docent die hij kent, in hun geheel (personaKnowledge.js). Nooit uploads van

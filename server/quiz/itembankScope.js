@@ -1,12 +1,10 @@
 
 
-// Bron-agnostische itembank: alle 'itembank'-achtige bronnen die items in
-// quiz_questions wegschrijven met een exsection_path. ShareStats is er één van;
-// 'csv_import' is een tweede provider (docent-geüploade CSV). Lees-endpoints
-// (secties, vraagselectie, dekking, suggesties, diagnose) gebruiken deze set
-// zodat elke cursus een eigen itembank kan meebrengen. ShareStats-specifieke
-// flows (auto-link, GitHub-sync) blijven hard op 'sharestats'.
-const ITEMBANK_SOURCES = ['sharestats', 'csv_import'];
+// Bron-agnostische itembank: de bronnen 'sharestats' en 'csv_import' (door de
+// docent geüploade CSV) schrijven items in quiz_questions met een exsection_path.
+// Lees-endpoints (secties, vraagselectie, dekking, suggesties, diagnose) kijken
+// naar beide, zodat elke cursus een eigen itembank kan meebrengen.
+// ShareStats-specifieke flows (auto-link, GitHub-sync) blijven op 'sharestats'.
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

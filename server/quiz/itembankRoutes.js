@@ -498,7 +498,6 @@ export function registerItembankRoutes(app) {
 
       // Bestaande concepten in deze cursus ophalen (zowel course_id-pad als
       // key_points-fallback) zodat we case-insensitive op naam kunnen matchen.
-      const courseMarker = `[RAG-geëxtraheerd uit cursusmateriaal]`;
       let existingForCourse = [];
       if (conceptsHasCourseId) {
         const { data, error } = await supabaseAdmin

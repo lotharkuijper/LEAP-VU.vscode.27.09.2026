@@ -16,7 +16,8 @@ export default tseslint.config(
       globals: { ...globals.node, ...globals.vitest },
     },
     rules: {
-      'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none' }],
+      // `_x` names drop a field from an object on purpose ({ secret: _s, ...rest }).
+      'no-unused-vars': ['warn', { args: 'none', caughtErrors: 'none', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
       'no-empty': 'off',
       'no-control-regex': 'off', // sanitising code strips control characters on purpose
     },

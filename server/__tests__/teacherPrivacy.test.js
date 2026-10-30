@@ -87,6 +87,10 @@ describe('docenten komen niet via de server in een studentengroep', () => {
     expect(block).toMatch(/if \(isStaff && !isLeapAdmin\(profile\)\)/);
     expect(block).toMatch(/\.neq\('user_id', auth\.user\.id\)/);
   });
+  it('en een student sluit niet aan bij een groep waarin een docent van de cursus zit', () => {
+    const block = routeBlock("app.post('/api/projects/groups/join'");
+    expect(block).toMatch(/\.eq\('member_role', 'teacher'\)\.in\('user_id', memberIds\)/);
+  });
   it('groepsbeheer geeft de uitnodigingscodes niet aan docenten', () => {
     const block = routeBlock("app.get('/api/projects/:projectId/group-admin'");
     expect(block).not.toMatch(/invite_code/);

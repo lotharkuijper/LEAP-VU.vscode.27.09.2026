@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   STUDIECAFE_CATEGORIES,
   ALLOWED_REACTION_EMOJI,

@@ -133,6 +133,18 @@ export function registerProjectRoutes(app) {
           .select('id', { count: 'exact', head: true }).eq('group_id', group.id).neq('user_id', auth.user.id);
         if ((others || 0) > 0) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
       }
+      // En andersom: een student sluit niet aan bij een groep waarin een docent
+      // van de cursus zit (bv. de eigen testgroep van de docent).
+      if (!isStaff && project?.course_id) {
+        const { data: groupMembers } = await supabaseAdmin.from('project_group_members')
+          .select('user_id').eq('group_id', group.id);
+        const memberIds = (groupMembers || []).map((m) => m.user_id).filter((id) => id !== auth.user.id);
+        if (memberIds.length) {
+          const { data: teachers } = await supabaseAdmin.from('course_members').select('user_id')
+            .eq('course_id', project.course_id).eq('member_role', 'teacher').in('user_id', memberIds);
+          if ((teachers || []).length) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
+        }
+      }
 
       // Idempotent — als je al lid bent, gewoon de groep teruggeven. Race-safe:
       // bij gelijktijdige join kan de unique-constraint (group_id, user_id) een
