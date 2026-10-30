@@ -3,7 +3,8 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { planAlumni, startEdition, previewEdition, isCourseAlumnus } from '../courseEditions.js';
+import { planAlumni, startEdition, previewEdition, isCourseAlumnus } from '../courses/courseEditions.js';
+import { allServerSource, fileSource, functionSource } from './helpers/serverSource.js';
 
 const C = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
@@ -137,14 +138,13 @@ describe('aansluiting', () => {
     expect(fs.existsSync(path.join(process.cwd(), 'supabase/rollback/20261029100000_course_editions_down.sql'))).toBe(true);
   });
   it('server: leestoegang telt oud-deelnemers mee; meedoen aan projecten en schrijven in het Studiecafé niet', () => {
-    const index = src('server/index.js');
-    expect(index).toMatch(/return await isCourseAlumnus\(supabaseAdmin, userId, courseId\)/);
-    expect((index.match(/userIsActiveCourseMember\(auth\.user\.id, project\.course_id\)/g) || []).length).toBe(2);
-    const sc = src('server/studiecafe.js');
+    expect(functionSource('userHasCourseMembership')).toMatch(/return await isCourseAlumnus\(supabaseAdmin, userId, courseId\)/);
+    expect((allServerSource().match(/userIsActiveCourseMember\(auth\.user\.id, project\.course_id\)/g) || []).length).toBe(2);
+    const sc = fileSource('server/studiecafe/studiecafe.js');
     expect((sc.match(/isActiveMember\(auth\.user\.id, courseId\)\)\) return res\.status\(403\)/g) || []).length).toBe(2);
     expect(sc).not.toMatch(/\.eq\('role', 'student'\)/); // aankondigingen nooit meer aan "alle studenten"
   });
   it('Canvas: een klik uit de Canvas-cursus van een vorige editie maakt niemand weer actief lid', () => {
-    expect(src('server/lti.js')).toMatch(/if \(retired\) \{[\s\S]*course_alumni/);
+    expect(fileSource('server/lti/lti.js')).toMatch(/if \(retired\) \{[\s\S]*course_alumni/);
   });
 });

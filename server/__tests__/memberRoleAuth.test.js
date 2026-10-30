@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import * as acorn from 'acorn';
+import { routeSource, serverFiles, fileSource } from './helpers/serverSource.js';
 import {
   authorizeMemberRoleChange,
   checkLastTeacherProtection,
   parseForceFlag,
   profileRoleForCourseTeacher,
-} from '../memberRoleAuth.js';
+} from '../courses/memberRoleAuth.js';
 
 describe('authorizeMemberRoleChange', () => {
   it('staat admin altijd toe', () => {
@@ -105,24 +107,31 @@ describe('profielrol bij docent worden in een cursus', () => {
     expect(profileRoleForCourseTeacher('admin')).toBe(null);
   });
   it('beide routes die iemand docent maken, zetten het profiel mee', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
     for (const route of ["app.put('/api/admin/courses/:id/members/:userId'", "app.post('/api/admin/courses/:id/members/:userId'"]) {
-      const start = src.indexOf(route);
-      expect(start).toBeGreaterThan(0);
-      const body = src.slice(start, src.indexOf('\napp.', start + 10));
+      const body = routeSource(route);
       expect(body).toMatch(/member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);
     }
   });
   it('promoveren in Beheer leden zet het profiel ook op het pad met directe databaseverbinding (live, regressie 2026-10-27)', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
-    const start = src.indexOf("app.put('/api/admin/courses/:id/members/:userId'");
-    const body = src.slice(start, src.indexOf('\napp.', start + 10));
+    const body = routeSource("app.put('/api/admin/courses/:id/members/:userId'");
     const pgPath = body.slice(body.indexOf('if (pgPool)'), body.indexOf('// Fallback zonder directe DB-verbinding'));
     expect(pgPath).toMatch(/COMMIT[\s\S]*member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);
   });
   it('"Docent toevoegen" (uitnodigen met role teacher) zet het docentprofiel', () => {
-    const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8');
-    expect(src).toMatch(/registerCourseInvitationRoutes\(app, \{[\s\S]*promoteTeacherProfile: promoteCourseTeacherProfile/);
+    // De registratie-aanroep zelf (precies één), gevonden door de code te ontleden.
+    const calls = [];
+    for (const rel of serverFiles()) {
+      const src = fileSource(rel);
+      if (!src.includes('registerCourseInvitationRoutes(')) continue;
+      const visit = (n) => {
+        if (!n || typeof n.type !== 'string') return;
+        if (n.type === 'CallExpression' && n.callee.type === 'Identifier' && n.callee.name === 'registerCourseInvitationRoutes') calls.push(src.slice(n.start, n.end));
+        for (const v of Object.values(n)) (Array.isArray(v) ? v : [v]).forEach((c) => c && typeof c.type === 'string' && visit(c));
+      };
+      visit(acorn.parse(src, { ecmaVersion: 'latest', sourceType: 'module' }));
+    }
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toMatch(/registerCourseInvitationRoutes\(app, \{[\s\S]*promoteTeacherProfile: promoteCourseTeacherProfile/);
   });
   it('de databaseregel voor projecten kijkt naar het docentprofiel', () => {
     const sql = fs.readFileSync(path.resolve(__dirname, '..', '..', 'supabase/migrations/20260605120000_projects_strict_course_scope.sql'), 'utf8');

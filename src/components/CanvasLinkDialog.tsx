@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { AdminHint } from './help/AdminHint';
 import { HelpTip } from './help/HelpTip';
 
-// Canvas-link van een LEAP-cursus (server/lti.js). De docent zet de link in
+// Canvas-link van een LEAP-cursus (server/lti/lti.js). De docent zet de link in
 // Canvas als externe tool; studenten komen dan met één klik, zonder
 // wachtwoord, in deze cursus.
 

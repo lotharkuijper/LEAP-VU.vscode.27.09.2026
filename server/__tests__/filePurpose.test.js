@@ -7,7 +7,7 @@ import {
   looksSensitive,
   PURPOSES,
   PURPOSE_RULES,
-} from '../filePurpose.js';
+} from '../rag/filePurpose.js';
 
 describe('suggestPurpose', () => {
   it('herkent de colleges van E&B1 als leerstof', () => {

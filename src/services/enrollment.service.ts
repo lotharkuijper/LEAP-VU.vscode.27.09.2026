@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-// Toegangsroute per cursus en open registratie (server/enrollment.js).
+// Toegangsroute per cursus en open registratie (server/courses/enrollment.js).
 
 export type EnrollmentMode = 'closed' | 'canvas' | 'open' | 'canvas_open';
 export const ENROLLMENT_MODES: EnrollmentMode[] = ['closed', 'canvas', 'open', 'canvas_open'];

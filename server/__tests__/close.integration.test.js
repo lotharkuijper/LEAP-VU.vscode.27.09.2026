@@ -3,7 +3,7 @@
 // Supabase en een neptaalmodel (chat) dat we per geval laten antwoorden.
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { applyConversationJudgement, judgeConversation, setRelationshipLevelImpl, transcriptOf } from '../threadClose.js';
+import { applyConversationJudgement, judgeConversation, setRelationshipLevelImpl, transcriptOf } from '../projects/threadClose.js';
 import { makeFakeRelationshipSupabase } from './helpers/fakeRelationshipSupabase.js';
 
 const P = 'proj-1';

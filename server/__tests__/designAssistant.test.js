@@ -1,12 +1,13 @@
 // Ontwerphulp: de bot moet LEAP kennen zoals het NU is. Deze tests bewaken dat
-// zijn kennis meebeweegt met de engine (zie server/designAssistant.js).
+// zijn kennis meebeweegt met de engine (zie server/system/designAssistant.js).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
   ADMIN_SECTIONS, OTHER_PAGES, describePlace, buildLeapKnowledge, loadLeapKnowledge, helpTextsByGroup, htmlToText,
   summarizeCourse, buildDesignAssistantMessages, DEFAULT_DESIGN_ASSISTANT_PROMPT,
-} from '../designAssistant.js';
+} from '../system/designAssistant.js';
+import { serverFiles, fileSource } from './helpers/serverSource.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const nl = JSON.parse(fs.readFileSync(path.join(root, 'src/i18n/locales/nl.json'), 'utf8'));
@@ -30,7 +31,7 @@ describe('de Ontwerphulp beweegt mee met het beheer', () => {
     expect(Object.keys(actual).length).toBeGreaterThan(10);
     const manifest = Object.fromEntries(ADMIN_SECTIONS.map(s => [s.tab, s.audience]));
     // Faalt deze test? Dan is een tabblad toegevoegd/verwijderd of zijn de rechten
-    // veranderd: werk ADMIN_SECTIONS in server/designAssistant.js bij.
+    // veranderd: werk ADMIN_SECTIONS in server/system/designAssistant.js bij.
     expect(manifest).toEqual(actual);
   });
 
@@ -141,7 +142,7 @@ describe('berichten naar het taalmodel', () => {
 
 describe('vaste kennisdocumenten (besluit 2026-10-16)', () => {
   it('handleiding én stappenplan gaan helemaal mee, zonder stil afkappen', async () => {
-    const { loadKnowledgeDocs, KNOWLEDGE_DOC_LIMIT, KNOWLEDGE_DOCS } = await import('../designAssistant.js');
+    const { loadKnowledgeDocs, KNOWLEDGE_DOC_LIMIT, KNOWLEDGE_DOCS } = await import('../system/designAssistant.js');
     const docs = loadKnowledgeDocs();
     expect(docs).toHaveLength(KNOWLEDGE_DOCS.length);
     for (const d of docs) {
@@ -155,15 +156,18 @@ describe('vaste kennisdocumenten (besluit 2026-10-16)', () => {
     expect(k).not.toMatch(/Veld bijwerken/); // inhoudsopgave weggelaten
   });
   it('het Docker-image bevat elk kennisdocument', async () => {
-    const { KNOWLEDGE_DOCS } = await import('../designAssistant.js');
+    const { KNOWLEDGE_DOCS } = await import('../system/designAssistant.js');
     const docker = fs.readFileSync(path.join(root, 'Dockerfile'), 'utf8');
     for (const d of KNOWLEDGE_DOCS) expect(docker).toContain(`COPY ${d.file} `);
   });
   it('gescheiden van cursusmateriaal: de Ontwerphulp leest geen cursus-RAG en niets anders leest zijn kennis', () => {
-    const src = fs.readFileSync(path.join(root, 'server/designAssistant.js'), 'utf8').replace(/^\s*\/\/.*$/gm, ''); // commentaar telt niet
+    const OWN = 'server/system/designAssistant.js';
+    const src = fileSource(OWN).replace(/^\s*\/\/.*$/gm, ''); // commentaar telt niet
     expect(src).not.toMatch(/document_chunks|match_documents|\.rpc\(|from\('documents'\)/);
-    for (const f of fs.readdirSync(path.join(root, 'server')).filter((n) => n.endsWith('.js') && n !== 'designAssistant.js')) {
-      const other = fs.readFileSync(path.join(root, 'server', f), 'utf8');
+    const others = serverFiles().filter((f) => f !== OWN);
+    expect(others.length).toBeGreaterThan(50); // alle servermodules, ook in submappen
+    for (const f of others) {
+      const other = fileSource(f);
       expect(other, f).not.toMatch(/loadKnowledgeDocs|KNOWLEDGE_DOCS|loadLeapKnowledge/);
     }
   });

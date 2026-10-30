@@ -13,7 +13,7 @@
 // samengevoegd als één stuk tekst (zie POST /api/admin/extract-concepts in
 // server/index.js) en heeft dus geen bestandsgrens om op te classificeren.
 // Het is pas afleidbaar ná de RAG-verificatiestap, via het aantal DISTINCT
-// document_id's per begrip in `concept_evidence` (server/conceptEvidence.js,
+// document_id's per begrip in `concept_evidence` (server/concepts/conceptEvidence.js,
 // GET /api/concepts/evidence-summary).
 export type ConceptClass = 'example' | 'course' | 'module';
 
@@ -33,7 +33,7 @@ export function classifyConceptForTeacher(
 }
 
 // Moeilijkheidsgraad, beoordeeld door de LLM tijdens extractie op basis van de
-// definitietekst zelf (zie server/conceptExtraction.js classifyConceptDifficulty
+// definitietekst zelf (zie server/concepts/conceptExtraction.js classifyConceptDifficulty
 // voor de tekstuele vangnet-heuristiek). Bewust GEEN afleiding uit de
 // embedding-vector: daarvoor bestaat geen gevalideerd signaal, dat zou
 // schijnprecisie zijn die een docent niet kan navertellen of vertrouwen.

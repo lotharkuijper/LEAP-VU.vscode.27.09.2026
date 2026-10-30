@@ -9,7 +9,7 @@ import {
   buildContentBatchPrompt,
   CONTENT_TRANSLATE_MAX_TOTAL_CHARS,
   createSlidingWindowLimiter,
-} from '../documentTranslation.js';
+} from '../documents/documentTranslation.js';
 
 describe('content-translation helpers (Task #288)', () => {
   describe('normalizeContentFormat', () => {

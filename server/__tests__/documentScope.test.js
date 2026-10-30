@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeTeacherFolderScope } from '../documentScope.js';
+import { computeTeacherFolderScope } from '../rag/documentScope.js';
 
 // Mappenmodel zoals de cursus-aanmaak het opzet (zie documentScope.js):
 //   root → cursus-map(course) → RAG(rag_sources) / Data(data) / Uploads(uploads)

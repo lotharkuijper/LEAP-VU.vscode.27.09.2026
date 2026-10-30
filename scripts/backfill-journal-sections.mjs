@@ -15,8 +15,8 @@
 //   node --env-file=.env scripts/backfill-journal-sections.mjs             (echt opslaan)
 
 import pg from 'pg';
-import { computeChatConfig } from '../server/chatConfig.js';
-import { journalRedistributePrompt, parseJournalSections } from '../server/journalSections.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
+import { journalRedistributePrompt, parseJournalSections } from '../server/journal/journalSections.js';
 
 const DRY = process.argv.includes('--dry-run');
 const AUTO_TYPES = ['chat_reflection', 'explanation_reflection', 'quiz_reflection', 'project_reflection'];

@@ -35,13 +35,13 @@ export function LoginPage() {
   // Wachtwoord-vergeten-modus: toont een apart e-mailformulier i.p.v. login.
   const [isForgot, setIsForgot] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
-  // Inloggen met een code per e-mail (wie via Canvas in LEAP kwam, server/lti.js).
+  // Inloggen met een code per e-mail (wie via Canvas in LEAP kwam, server/lti/lti.js).
   const [isCode, setIsCode] = useState(false);
   // Na het zelf verwijderen van een account (Mijn gegevens) een bevestiging tonen.
   const [accountDeleted] = useState(() => typeof window !== 'undefined' && (window.history.state as { usr?: { notice?: string } } | null)?.usr?.notice === 'accountDeleted');
   const { signIn } = useAuth();
   const { t, lang, setLang } = useLanguage();
-  // Open registratie (server/enrollment.js): de nieuwe gebruiker kiest één of
+  // Open registratie (server/courses/enrollment.js): de nieuwe gebruiker kiest één of
   // meer cursussen die open zijn voor aanmelding.
   const [openCourses, setOpenCourses] = useState<OpenCourse[] | null>(null);
   const [chosen, setChosen] = useState<string[]>([]);

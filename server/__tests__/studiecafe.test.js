@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   STUDIECAFE_CATEGORIES,
   ALLOWED_REACTION_EMOJI,
@@ -34,7 +34,7 @@ import {
   MAX_ATTACHMENTS,
   MAX_ATTACHMENT_CONTENT_LEN,
   MAX_ATTACHMENT_SOURCES,
-} from '../studiecafe.js';
+} from '../studiecafe/studiecafe.js';
 
 describe('sanitizeCategory', () => {
   it('laat geldige categorieën door', () => {

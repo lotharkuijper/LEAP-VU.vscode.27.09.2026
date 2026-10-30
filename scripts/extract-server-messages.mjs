@@ -9,18 +9,21 @@
 //  * `new Error('…')` — die komen via err.message vaak in een JSON-respons;
 //  * constanten die op _MSG eindigen (const X_MSG = '…').
 // Template-literals met ${…} worden sjablonen met {0}, {1}, … — de middleware
-// (server/serverI18n.js) vult bij het vertalen de echte waarden weer in.
+// (server/i18n/serverI18n.js) vult bij het vertalen de echte waarden weer in.
 //
 // Gebruik:  node scripts/extract-server-messages.mjs          (schrijft het bestand)
 //           node scripts/extract-server-messages.mjs --check  (faalt als het bestand verouderd is)
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { extractMessages } from '../server/serverI18n.js';
+import { extractMessages } from '../server/i18n/serverI18n.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const serverDir = path.join(root, 'server');
-const files = fs.readdirSync(serverDir).filter((f) => f.endsWith('.js')).map((f) => path.join(serverDir, f));
+// All server modules, also in the domain folders; tests excluded.
+const files = fs.readdirSync(serverDir, { recursive: true })
+  .filter((f) => f.endsWith('.js') && !f.split(path.sep).includes('__tests__'))
+  .map((f) => path.join(serverDir, f));
 const found = new Set();
 for (const f of files) for (const m of extractMessages(fs.readFileSync(f, 'utf8'))) found.add(m);
 const sorted = [...found].sort((a, b) => a.localeCompare(b, 'nl'));

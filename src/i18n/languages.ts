@@ -2,7 +2,7 @@
 // `native` = naam in eigen schrift (UI-label), `english` = Engelse naam die in
 // de AI-instructie ("respond in <english>") gaat, `dir` = leesrichting.
 // Deze lijst is de bron van waarheid; src/lib/translationLanguages.ts (bron-
-// document-vertaling) en server/documentTranslation.js spiegelen een subset.
+// document-vertaling) en server/documents/documentTranslation.js spiegelen een subset.
 
 export type LanguageDir = 'ltr' | 'rtl';
 

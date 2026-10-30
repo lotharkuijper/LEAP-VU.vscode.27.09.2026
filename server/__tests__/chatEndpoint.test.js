@@ -86,6 +86,12 @@ beforeAll(async () => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
   process.env.SUPABASE_ANON_KEY = '';
   process.env.SUPABASE_DB_URL = '';
+  // Eigen nep-instellingen voor Azure OpenAI (fetch is gemockt), zodat de test
+  // niet afhangt van een echte .env (bv. in GitHub Actions).
+  process.env.AZURE_OPENAI_ENDPOINT ||= 'https://example-openai.invalid/';
+  process.env.AZURE_OPENAI_API_KEY ||= 'test-azure-key';
+  process.env.AZURE_OPENAI_DEPLOYMENT ||= 'test-deployment';
+  process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT ||= 'test-embeddings';
 
   ({ app } = await import('../index.js'));
   server = app.listen(0);

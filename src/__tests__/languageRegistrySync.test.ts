@@ -9,8 +9,8 @@ import { describe, it, expect } from 'vitest';
 // (staat in de picker maar laadt geen locale, of het opslaan faalt in de DB).
 import { SUPPORTED_LANGUAGES, SUPPORTED_LANG_CODES, EAGER_LANGS, SOURCE_LANG } from '../i18n/languages';
 import { TRANSLATION_LANGUAGE_CODES } from '../lib/translationLanguages';
-import { LANG_ENGLISH_NAMES } from '../../server/languages.js';
-import { LANGUAGE_CODES as DOC_TRANSLATION_LANGUAGE_CODES } from '../../server/documentTranslation.js';
+import { LANG_ENGLISH_NAMES } from '../../server/i18n/languages.js';
+import { LANGUAGE_CODES as DOC_TRANSLATION_LANGUAGE_CODES } from '../../server/documents/documentTranslation.js';
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 

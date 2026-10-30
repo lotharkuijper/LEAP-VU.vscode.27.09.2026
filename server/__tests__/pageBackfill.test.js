@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { backfillDocxPages } from '../pageBackfill.js';
+import { backfillDocxPages } from '../ingestion/pageBackfill.js';
 
 // Regressie 2026-09-27: Word-bronnen die zonder LibreOffice waren ingelezen,
 // hadden geen paginanummers; de viewer kon niet naar de juiste pagina.

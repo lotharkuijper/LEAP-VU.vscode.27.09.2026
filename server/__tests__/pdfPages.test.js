@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assignPdfPages, normalizeForMatch } from '../pdfPages.js';
+import { assignPdfPages, normalizeForMatch } from '../ingestion/pdfPages.js';
 
 // Minimale chunk; assignPdfPages mapt op tekst-inhoud, niet op offset.
 function mk(text) {

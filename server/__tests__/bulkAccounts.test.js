@@ -8,7 +8,7 @@ import {
   validateBatchSize,
   buildActivationRedirect,
   MAX_BULK_BATCH,
-} from '../bulkAccounts.js';
+} from '../courses/bulkAccounts.js';
 
 describe('validateEmail', () => {
   it('accepteert normale adressen', () => {

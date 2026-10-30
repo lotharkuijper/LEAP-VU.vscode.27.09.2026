@@ -2,7 +2,7 @@
 // is klein: { style, seed, options }. Zonder configuratie krijgt een persona
 // een robotje dat uit de naam wordt afgeleid, zodat iedereen een gezicht heeft.
 // Stijlmodules worden pas geladen als ze nodig zijn (lazy) en onthouden.
-// De stijllijst staat ook in server/personaAvatar.js (serverzijdige controle).
+// De stijllijst staat ook in server/projects/personaAvatar.js (serverzijdige controle).
 
 import type { TranslationKey } from '../i18n/translations';
 

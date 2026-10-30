@@ -9,7 +9,7 @@ import {
   CLAIM, loadPlatforms, roleFromLti, courseIdFromClaims, checkLaunchClaims, createStateStore,
   canvasToolConfig, canvasLinkFor, likeExact, registerLtiRoutes, createRateLimiter, secureCookies,
   projectIdFromClaims, canvasGroupFromClaims, normalizePlatform, canvasEndpoints, createPlatformRegistry, PLATFORMS_KEY,
-} from '../lti.js';
+} from '../lti/lti.js';
 
 const ISS = 'https://canvas.test';
 const CLIENT = 'client-1';

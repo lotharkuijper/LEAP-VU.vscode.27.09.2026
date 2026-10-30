@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeMix, DEFAULT_MIX } from '../quizSourcesMix.js';
+import { normalizeMix, DEFAULT_MIX } from '../quiz/quizSourcesMix.js';
 
 describe('normalizeMix', () => {
   it('laat een mix die al optelt tot 100 ongewijzigd', () => {

@@ -1,4 +1,4 @@
-// Bijlagen in de chat (2026-10-16, server/chatAttachments.js, docs/plans/chat-bijlagen-plan.html).
+// Bijlagen in de chat (2026-10-16, server/chat/chatAttachments.js, docs/plans/chat-bijlagen-plan.html).
 //
 // LEAP bewaart bijlagen niet. Alles hier leeft in het geheugen van de pagina:
 // zodra de student de chat afsluit (ander gesprek, nieuw gesprek, pagina
@@ -132,7 +132,7 @@ export async function renderPdfPages(file: Blob, maxPages: number, maxSide: numb
       out.push(canvas.toDataURL('image/jpeg', 0.85));
     }
   } finally {
-    await pdf.destroy();
+    await pdf.loadingTask.destroy();
   }
   return out;
 }

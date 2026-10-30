@@ -1,11 +1,12 @@
-// Toegangsroute per cursus en open registratie (server/enrollment.js, 2026-10-20).
+// Toegangsroute per cursus en open registratie (server/courses/enrollment.js, 2026-10-20).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { routeSource } from './helpers/serverSource.js';
 import {
   ENROLLMENT_MODES, isEnrollmentMode, allowsOpenRegistration, isBlockedEmail, isSelfJoinable,
   validateRegistration, createRateLimiter, blockedDomains,
-} from '../enrollment.js';
+} from '../courses/enrollment.js';
 
 const root = path.resolve(__dirname, '..', '..');
 
@@ -67,7 +68,7 @@ describe('aantal aanmeldingen per adres beperkt', () => {
 });
 
 describe('koppeling', () => {
-  const src = fs.readFileSync(path.join(root, 'server', 'enrollment.js'), 'utf8');
+  const src = fs.readFileSync(path.join(root, 'server', 'courses', 'enrollment.js'), 'utf8');
   it('alleen een beheerder stelt de toegangsroute in; canvas_open vraagt om bevestiging', () => {
     const route = src.slice(src.indexOf("'/api/admin/courses/:courseId/enrollment-mode'"));
     expect(route).toMatch(/if \(!isAdminProfile\(auth\.profile\)\) return res\.status\(403\)/);
@@ -91,13 +92,11 @@ describe('koppeling', () => {
     expect(fs.existsSync(path.join(root, 'supabase', 'rollback', '20261020100000_course_enrollment_mode_down.sql'))).toBe(true);
   });
   it('het projectenoverzicht voor studenten voegt geen cursussen meer toe zonder lidmaatschap', () => {
-    const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8');
-    const ov = idx.slice(idx.indexOf("app.get('/api/projects/student-overview'"), idx.indexOf("app.get('/api/projects/student-overview'") + 2500);
+    const ov = routeSource("app.get('/api/projects/student-overview'");
     expect(ov).not.toMatch(/Open cursussen: actief/);
   });
   it('maar een LEAP-beheerder krijgt in het projectenoverzicht alle cursussen (eigen groep starten om te controleren)', () => {
-    const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8');
-    const ov = idx.slice(idx.indexOf("app.get('/api/projects/student-overview'"), idx.indexOf("app.post('/api/projects/student-restart'"));
+    const ov = routeSource("app.get('/api/projects/student-overview'");
     expect(ov).toMatch(/ovProfile\?\.role === 'admin' \|\| ovProfile\?\.email === SUPERUSER_EMAIL/);
     expect(ov).toMatch(/from\('courses'\)\.select\('id, name'\)/);
   });

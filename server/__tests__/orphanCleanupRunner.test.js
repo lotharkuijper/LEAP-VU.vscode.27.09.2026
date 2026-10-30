@@ -1,5 +1,5 @@
 // Task #330 — Unit-tests voor de omhullende opruim-runner zelf
-// (`createOrphanCourseAccessCleanupRunner` in server/studiecafe.js). De pure
+// (`createOrphanCourseAccessCleanupRunner` in server/studiecafe/studiecafe.js). De pure
 // DELETE-SQL is al string- én Postgres-getest (Task #323/#325/#326); hier testen
 // we het GEDRAG van de runner met een mock-pgPool, zonder echte database:
 //   • 42703 (student_visible-kolom ontbreekt) → terugval op de kolomloze SQL;
@@ -19,7 +19,7 @@ import {
   buildOrphanCourseAccessCleanupSql,
   ORPHAN_CLEANUP_TABLE_LABELS,
   ORPHAN_CLEANUP_STARTUP_DELAY_MS,
-} from '../studiecafe.js';
+} from '../studiecafe/studiecafe.js';
 
 const SUPERUSER = 'superuser@example.com';
 

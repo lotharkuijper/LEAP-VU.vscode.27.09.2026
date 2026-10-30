@@ -1,4 +1,4 @@
-// Niveaus van de verstandhouding met een rolspeler (zie server/personaRelationship.js).
+// Niveaus van de verstandhouding met een rolspeler (zie server/projects/personaRelationship.js).
 // -3 = contact verbroken, -2 koud … +2 warm. Klassen staan hier letterlijk
 // zodat Tailwind ze vindt.
 export type RelationshipKey = 'broken' | 'cold' | 'strained' | 'neutral' | 'positive' | 'warm';

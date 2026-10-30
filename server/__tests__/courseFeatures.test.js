@@ -1,6 +1,6 @@
 // Onderdelen per cursus aan/uit (2026-10-15): pure regels + bewaking dat de
 // schakelaar overal meedoet waar studenten iets gebruiken of iets in hun
-// leerdagboek terechtkomt (server/courseFeatures.js, migratie
+// leerdagboek terechtkomt (server/courses/courseFeatures.js, migratie
 // 20261015100000_course_features).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -8,8 +8,9 @@ import path from 'node:path';
 import {
   COURSE_FEATURES, normalizeCourseFeatures, isFeatureOn, parseCourseFeaturesPatch, mergeCourseFeatures,
   featureForChatRequest, featureAllowed,
-} from '../courseFeatures.js';
-import { summarizeCourse } from '../designAssistant.js';
+} from '../courses/courseFeatures.js';
+import { summarizeCourse } from '../system/designAssistant.js';
+import { serverFiles, fileSource, allServerSource, routeSource, functionSource } from './helpers/serverSource.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -73,14 +74,16 @@ describe('database', () => {
   });
 });
 
-describe('server/index.js', () => {
-  const src = read('server/index.js');
-  const lines = src.split(/\r?\n/);
+describe('server (routes)', () => {
 
   it('/api/chat houdt een uitgezet onderdeel tegen', () => {
-    const route = src.slice(src.indexOf("app.post('/api/chat',"), src.indexOf('// Readiness-vraag'));
-    expect(route).toContain('featureForChatRequest(req.body)');
-    expect(route).toContain('rejectIfFeatureOff(');
+    const route = routeSource("app.post('/api/chat',");
+    const feature = route.indexOf('featureForChatRequest(req.body)');
+    expect(feature).toBeGreaterThan(0);
+    // Zelfde deel van de route als vroeger: vóór de readiness-vraag.
+    expect(feature).toBeLessThan(route.indexOf('// Readiness-vraag'));
+    expect(route.indexOf('rejectIfFeatureOff(')).toBeGreaterThan(0);
+    expect(route.indexOf('rejectIfFeatureOff(')).toBeLessThan(route.indexOf('// Readiness-vraag'));
   });
 
   it('elke dagboekregel die de server schrijft, kijkt eerst of het leerdagboek aan staat', () => {
@@ -88,20 +91,28 @@ describe('server/index.js', () => {
     // de schakelaar: zet er courseFeatureOnFor(…, 'journal') of
     // loadCourseFeatures(…).journal vóór.
     const guard = /courseFeatureOnFor\(|loadCourseFeatures\(|journalOn|rejectIfFeatureOff\(.*'journal'/;
+    // Over alle servermodules (sinds de opsplitsing van server/index.js staan
+    // de schrijvende routes in domeinmodules).
     const unguarded = [];
-    lines.forEach((line, i) => {
-      if (!line.includes("from('learning_journal_entries')")) return;
-      if (!/\.insert\(/.test(line + (lines[i + 1] || ''))) return;
-      const window = lines.slice(Math.max(0, i - 150), i).join('\n');
-      if (!guard.test(window)) unguarded.push(i + 1);
-    });
+    let inserts = 0;
+    for (const file of serverFiles()) {
+      const lines = fileSource(file).split('\n');
+      lines.forEach((line, i) => {
+        if (!line.includes("from('learning_journal_entries')")) return;
+        if (!/\.insert\(/.test(line + (lines[i + 1] || ''))) return;
+        inserts += 1;
+        const window = lines.slice(Math.max(0, i - 150), i).join('\n');
+        if (!guard.test(window)) unguarded.push(`${file}:${i + 1}`);
+      });
+    }
+    expect(inserts).toBeGreaterThanOrEqual(6); // anders zoekt de test op de verkeerde plek
     expect(unguarded).toEqual([]);
   });
 
   it('projecten en studiecafé volgen de schakelaar', () => {
-    const access = src.slice(src.indexOf('async function userHasProjectAccess'), src.indexOf("app.post('/api/projects/groups',"));
+    const access = functionSource('userHasProjectAccess');
     expect(access).toContain('.projects === false');
-    expect(src).toMatch(/registerStudiecafeRoutes\(app, \{[\s\S]*?courseFeatureOnFor\(user, profile, courseId, 'studiecafe'\)/);
+    expect(allServerSource()).toMatch(/registerStudiecafeRoutes\(app, \{[\s\S]*?courseFeatureOnFor\(user, profile, courseId, 'studiecafe'\)/);
   });
 });
 

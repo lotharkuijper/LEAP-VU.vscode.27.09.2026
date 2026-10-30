@@ -6,7 +6,7 @@ import { HelpTip } from '../../components/help/HelpTip';
 import { AdminHint } from '../../components/help/AdminHint';
 
 // Beheer → Instellingen: tokenbudget voor accounts uit open registratie
-// (GET/PUT /api/admin/token-budget, server/tokenBudget.js). Alleen totalen,
+// (GET/PUT /api/admin/token-budget, server/account/tokenBudget.js). Alleen totalen,
 // nooit verbruik per persoon.
 interface Settings { weekTokens: number; dayTokens: number; openWeekTotal: number; registrationsPerHourAlert: number }
 

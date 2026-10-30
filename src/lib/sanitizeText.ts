@@ -2,7 +2,7 @@
 // accepteert. PDF-/DOCX-/PPTX-extractie levert soms onzichtbare tekens op
 // (NUL `\u0000`, ongepaarde UTF-16-surrogaten, niet-witruimte control-chars) die
 // Postgres weigert met "unsupported Unicode escape sequence", waardoor één chunk
-// de hele insert laat falen. Spiegel van server/sanitizeText.js — houd ze gelijk.
+// de hele insert laat falen. Spiegel van server/lib/sanitizeText.js — houd ze gelijk.
 
 // Verwijder NUL en niet-witruimte C0/C1 control-chars. Behoud tab (\u0009),
 // newline (\u000A) en carriage return (\u000D).

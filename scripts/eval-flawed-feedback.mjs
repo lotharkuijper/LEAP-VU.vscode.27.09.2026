@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// IJking van de BEOORDELING bij "Verbeter deze uitleg" (server/flawedExplanations.js),
+// IJking van de BEOORDELING bij "Verbeter deze uitleg" (server/explain/flawedExplanations.js),
 // tegen het echte model. Schrijft niets weg. Per begrip maakt het script een echte
 // oefening en stuurt er vier gesimuleerde antwoorden op in:
 //   A  alle fouten gevonden en goed uitgelegd      → verwacht: gevonden = totaal, niets onterecht
@@ -9,8 +9,8 @@
 //
 //   node --env-file=.env scripts/eval-flawed-feedback.mjs [begrippen=8]
 import { createClient } from '@supabase/supabase-js';
-import { computeChatConfig } from '../server/chatConfig.js';
-import { makeExercise, evaluationSystem, evaluationUser, parseEvaluation } from '../server/flawedExplanations.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
+import { makeExercise, evaluationSystem, evaluationUser, parseEvaluation } from '../server/explain/flawedExplanations.js';
 
 const N = Number(process.argv[2] || 8);
 const COURSE_NAMES = (process.env.EVAL_COURSES || 'E&B1,Methodologie 2 - Gezondheidswetenschappen,Microbiologie').split(',').map(s => s.trim());

@@ -3,7 +3,7 @@ import { Mail, KeyRound, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 
-// Inloggen zonder wachtwoord voor wie via Canvas in LEAP kwam (server/lti.js,
+// Inloggen zonder wachtwoord voor wie via Canvas in LEAP kwam (server/lti/lti.js,
 // POST /api/auth/email-code): e-mailadres → code per e-mail → binnen. De server
 // zegt nooit of een adres bekend is; alleen Canvas-accounts krijgen een code.
 

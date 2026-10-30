@@ -1,4 +1,4 @@
-// Sjablonen voor cursusinstructies (server/promptTemplates.js, 2026-10-20):
+// Sjablonen voor cursusinstructies (server/prompts/promptTemplates.js, 2026-10-20):
 // docenten lezen het sjabloon, alleen de beheerder wijzigt het, en de vorige
 // tekst wordt bewaard. Echte Express-app met een kleine in-memory database.
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -6,7 +6,7 @@ import express from 'express';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { registerPromptTemplateRoutes, courseIdsWithOwnPrompt, validateTemplateContent } from '../promptTemplates.js';
+import { registerPromptTemplateRoutes, courseIdsWithOwnPrompt, validateTemplateContent } from '../prompts/promptTemplates.js';
 
 const root = path.resolve(__dirname, '..', '..');
 

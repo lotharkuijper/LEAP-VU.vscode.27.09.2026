@@ -2,10 +2,9 @@
 // enkele passage, de tutor kende de cursus niet, en Nederlandse vragen over een
 // Engels boek vonden de stof slecht ("complementsysteem" 0,31 tegen 0,64).
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { buildCourseOverviewBlock, OVERVIEW_MAX_TITLES } from '../courseOverview.js';
-import { detectLanguage, majorityLanguage, needsTranslation, buildTranslationMessages } from '../crossLingual.js';
+import { routeSource } from './helpers/serverSource.js';
+import { buildCourseOverviewBlock, OVERVIEW_MAX_TITLES } from '../courses/courseOverview.js';
+import { detectLanguage, majorityLanguage, needsTranslation, buildTranslationMessages } from '../rag/crossLingual.js';
 import { mergeCandidatesByBestScore } from '../../src/services/rag.service';
 
 describe('cursusoverzicht voor de tutor', () => {
@@ -35,8 +34,7 @@ describe('cursusoverzicht voor de tutor', () => {
     expect(buildCourseOverviewBlock({ course: null })).toBe('');
   });
   it('de tutorchat krijgt het overzicht mee', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'index.js'), 'utf8');
-    expect(src).toMatch(/systemContent \+= await courseOverviewBlock\(courseId\)/);
+    expect(routeSource("app.post('/api/chat',")).toMatch(/systemContent \+= await courseOverviewBlock\(courseId\)/);
   });
 });
 

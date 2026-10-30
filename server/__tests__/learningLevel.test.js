@@ -3,7 +3,7 @@ import {
   LEVEL_MIN, LEVEL_MAX, LEVEL_DEFAULT,
   LEVEL_LABELS,
   clampLevel, buildLevelInstructionBlock,
-} from '../learningLevel.js';
+} from '../chat/learningLevel.js';
 
 describe('clampLevel', () => {
   it('houdt geldige niveaus 1..5', () => {

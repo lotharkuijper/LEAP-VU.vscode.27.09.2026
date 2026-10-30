@@ -62,13 +62,13 @@
 <h2>2. Hoe het nu werkt (bevindingen, 13-10-2026)</h2>
 <ul>
   <li><b>Inloggen</b> loopt via de zelf gehoste Supabase-inlogdienst (GoTrue) op Azure. Zelfregistratie staat open (<code>GOTRUE_DISABLE_SIGNUP=false</code> in <code>azure/scripts/deploy.sh</code>): de inlogpagina roept <code>supabase.auth.signUp</code> aan (<code>src/contexts/AuthContext.tsx</code>, <code>src/pages/LoginPage.tsx</code>). Een nieuw account krijgt een profiel via de trigger <code>handle_new_user()</code>.</li>
-  <li><b>Accounts in bulk</b> voor een cursus: <code>server/bulkAccounts.js</code> + route in <code>server/index.js</code> (uitnodiging per e-mail met activatielink).</li>
+  <li><b>Accounts in bulk</b> voor een cursus: <code>server/courses/bulkAccounts.js</code> + route in <code>server/courses/routes.js</code> (uitnodiging per e-mail met activatielink).</li>
   <li><b>Lidmaatschap</b>: <code>course_members(user_id, course_id, member_role 'student'|'teacher')</code>.</li>
   <li><b>Zichtbaarheid (belangrijk)</b>: iedere ingelogde gebruiker ziet <i>alle</i> cursussen die actief en <code>student_visible</code> zijn (policy "Students see available courses, teachers see own" op <code>courses</code>), en mag de inhoud ervan gebruiken: <code>course_content_is_public()</code> wordt gebruikt in de leesregels voor documenten en fragmenten, in <code>sc_can_read_course()</code> (Studiecafé), in <code>leap_can_use_course()</code> en in de server (<code>userHasCourseAccess</code>, <code>canAccessCourseContent</code>). Zelfgeregistreerde studenten (Task #272) hebben daardoor vaak géén <code>course_members</code>-rij. <b>Met externen erbij zou iedere externe dus alle VU-cursussen zien.</b> Deze regel moet om (hoofdstuk 5).</li>
   <li><b>Documenten aan een cursus</b>: via <code>course_folder_assignments</code> (map → cursus). <code>folder_course_id(folder)</code> neemt bij meerdere cursussen per map willekeurig één (<code>LIMIT 1</code>). Een map met dezelfde documenten aan een VU-cursus én een open variant hangen werkt daardoor nu niet betrouwbaar (hoofdstuk 8).</li>
   <li><b>Rolbeveiliging</b>: trigger <code>pr_guard_profile_role</code> voorkomt dat gebruikers hun eigen rol wijzigen; alleen beheerder of server (service role).</li>
-  <li><b>Inlogcache</b>: <code>server/authCache.js</code> (30 s). Na het verwijderen of blokkeren van een account: <code>userCache.forgetUser(id)</code> en <code>profileCache.invalidate(id)</code>.</li>
-  <li><b>E-mail</b>: account-e-mails via <code>server/authEmailHook.js</code> (Azure Communication Services).</li>
+  <li><b>Inlogcache</b>: <code>server/lib/authCache.js</code> (30 s). Na het verwijderen of blokkeren van een account: <code>userCache.forgetUser(id)</code> en <code>profileCache.invalidate(id)</code>.</li>
+  <li><b>E-mail</b>: account-e-mails via <code>server/account/authEmailHook.js</code> (Azure Communication Services).</li>
   <li><b>Eén replica</b> op Azure; in-memory staat moet in de database als die een herstart moet overleven.</li>
 </ul>
 
@@ -135,7 +135,7 @@ user_can_use_course(course)   = admin OR is_course_teacher OR
   <tr><td>Server <code>userHasCourseAccess</code> / <code>canAccessCourseContent</code></td><td>actief + zichtbaar = iedereen</td><td>zelfde regel als <code>user_can_use_course</code>; de pure functie <code>canAccessCourseContent</code> krijgt <code>audience</code> en <code>isMember</code></td></tr>
   <tr><td>Cursuskeuze (<code>ChooseCoursePage</code>)</td><td>alle zichtbare cursussen</td><td>twee lijsten: "Mijn cursussen" (lid) en "Open cursussen" (met knop Deelnemen). Externen zien alleen open cursussen.</td></tr>
 </table>
-<p>Nieuwe route <code>POST /api/courses/:id/join</code>: alleen voor <code>audience = 'open'</code>, maakt een <code>course_members</code>-rij (student). Server-melding via <code>server/serverI18n.js</code>.</p>
+<p>Nieuwe route <code>POST /api/courses/:id/join</code>: alleen voor <code>audience = 'open'</code>, maakt een <code>course_members</code>-rij (student). Server-melding via <code>server/i18n/serverI18n.js</code>.</p>
 <div class="box warn"><b>Risico.</b> Dit verandert wie wat ziet in heel LEAP. Daarom: (1) eerst backfill (4.1) met droge run, (2) een regressietest per policy (bestaande stijl: <code>server/__tests__/teacherPrivacy.test.js</code> + controle in de database met het testaccount in een teruggedraaide transactie, zoals <code>learningIntegrity</code>), (3) terugdraaiscript dat de oude policies letterlijk herstelt.</div>
 
 <h2>6. Inloggen via Canvas (LTI 1.3)</h2>
@@ -187,7 +187,7 @@ user_can_use_course(course)   = admin OR is_course_teacher OR
 <h2>7. Registratie voor externen</h2>
 <ul>
   <li><b>GoTrue-signup dicht</b> (<code>GOTRUE_DISABLE_SIGNUP=true</code> in de Azure-configuratie). Registratie loopt via een eigen route <code>POST /api/register</code> die <code>auth.admin.createUser</code> gebruikt. Zo bepaalt LEAP zelf wie zich mag registreren.</li>
-  <li>Regels in die route: e-maildomein staat niet op de VU-lijst (anders code <code>useCanvas</code> → melding "VU-student of -medewerker? Log in via Canvas"); <code>account_type = 'external'</code>; e-mailbevestiging via de bestaande hook (<code>server/authEmailHook.js</code>); rate limit; registratie aan/uit met één beheerinstelling ("Externen mogen zich registreren").</li>
+  <li>Regels in die route: e-maildomein staat niet op de VU-lijst (anders code <code>useCanvas</code> → melding "VU-student of -medewerker? Log in via Canvas"); <code>account_type = 'external'</code>; e-mailbevestiging via de bestaande hook (<code>server/account/authEmailHook.js</code>); rate limit; registratie aan/uit met één beheerinstelling ("Externen mogen zich registreren").</li>
   <li>Na bevestigen en inloggen: de externe ziet alleen open cursussen en kiest "Deelnemen".</li>
   <li>Optioneel: een uitnodigingslink per open cursus (<code>/join/&lt;code&gt;</code>) die na registratie direct lid maakt.</li>
   <li>Inlogpagina: knop/uitleg "VU? Open LEAP via je cursus in Canvas", daaronder e-mail/wachtwoord (voor externen, docenten en beheerders) en "Account aanmaken (extern)".</li>
@@ -207,7 +207,7 @@ user_can_use_course(course)   = admin OR is_course_teacher OR
   <li>Cursusinstellingen: "Voor wie" (VU via Canvas / Open voor externen), lijst gekoppelde Canvas-cursussen (ontkoppelen kan), "Open variant maken".</li>
   <li>Instellingen (beheerder): externe registratie aan/uit, lijst VU-domeinen, Canvas-koppeling (status van <code>lti_platforms</code>, laatste geslaagde start).</li>
   <li>Gebruikers (beheerder): kolom accounttype, en of het account aan Canvas gekoppeld is.</li>
-  <li>Alle teksten via i18n (<code>nl.json</code> bron, <code>en.json</code> met de hand, rest via <code>scripts/i18n-generate.mjs</code>); servermeldingen via <code>server/serverI18n.js</code>; nieuwe hulpteksten in <code>src/help/helpTopics.ts</code>; Ontwerphulp: <code>ADMIN_SECTIONS</code>/<code>OTHER_PAGES</code> bijwerken; <code>server/myData.js</code>: <code>lti_identities</code> in <code>EXPORT_SOURCES</code> of <code>NOT_EXPORTED</code> (test faalt anders).</li>
+  <li>Alle teksten via i18n (<code>nl.json</code> bron, <code>en.json</code> met de hand, rest via <code>scripts/i18n-generate.mjs</code>); servermeldingen via <code>server/i18n/serverI18n.js</code>; nieuwe hulpteksten in <code>src/help/helpTopics.ts</code>; Ontwerphulp: <code>ADMIN_SECTIONS</code>/<code>OTHER_PAGES</code> bijwerken; <code>server/account/myData.js</code>: <code>lti_identities</code> in <code>EXPORT_SOURCES</code> of <code>NOT_EXPORTED</code> (test faalt anders).</li>
   <li>Handleiding (<code>docs/handleiding/handleiding.html</code> + PDF): hoofdstuk "Via Canvas" en "Open cursussen". CLAUDE.md: sectie met de nieuwe regels.</li>
 </ul>
 

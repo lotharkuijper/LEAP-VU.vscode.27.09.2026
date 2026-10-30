@@ -1,5 +1,5 @@
 // Bijlagen in de chat (2026-10-16, docs/plans/chat-bijlagen-plan.html):
-// pure regels (server/chatAttachments.js) plus bewaking in server/index.js en
+// pure regels (server/chat/chatAttachments.js) plus bewaking in de serverroutes en
 // de migratie dat bijlagen nergens bewaard worden.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
@@ -8,9 +8,10 @@ import {
   DEFAULT_LIMITS, normalizePlatformSettings, parsePlatformPatch, mergePlatformSettings, attachmentsAvailability,
   parseChatAttachments, sniffImageMime, sniffFileKind, safeName, createDailyCounter,
   attachmentSystemBlock, attachImagesToLastUser, ATTACHMENT_INSTRUCTION,
-} from '../chatAttachments.js';
-import { normalizeCourseFeatures, mergeCourseFeatures, parseCourseFeaturesPatch, isFeatureOn } from '../courseFeatures.js';
+} from '../chat/chatAttachments.js';
+import { normalizeCourseFeatures, mergeCourseFeatures, parseCourseFeaturesPatch, isFeatureOn } from '../courses/courseFeatures.js';
 import { featureOf } from '../analytics/aggregate.js';
+import { allServerSource, routeSource } from './helpers/serverSource.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -165,9 +166,9 @@ describe('prompt', () => {
   });
 });
 
-describe('server/index.js', () => {
-  const src = read('server/index.js');
-  const chatRoute = src.slice(src.indexOf("app.post('/api/chat',"), src.indexOf("// ─── Leerdagboek: cursus-herkomst"));
+describe('server (routes)', () => {
+  const src = allServerSource();
+  const chatRoute = routeSource("app.post('/api/chat',");
   it('/api/chat controleert schakelaars en grenzen vóór het taalmodel', () => {
     const gate = chatRoute.indexOf('chatAttachmentsGate(');
     const parse = chatRoute.indexOf('parseChatAttachments(');
@@ -188,18 +189,19 @@ describe('server/index.js', () => {
   it('bijlagen worden nergens gelogd of opgeslagen', () => {
     expect(src).not.toMatch(/console\.\w+\([^)]*req\.body\.attachments/);
     expect(src).not.toMatch(/console\.\w+\([^)]*attachmentParts/);
-    const extract = src.slice(src.indexOf("app.post('/api/chat/attachments/extract'"), src.indexOf("app.get('/api/admin/chat-attachments'"));
+    const extract = routeSource("app.post('/api/chat/attachments/extract'");
     expect(extract.length).toBeGreaterThan(100);
     expect(extract).not.toMatch(/fs\.\w*write|storage\.from|\.upload\(|\.insert\(/);
     expect(extract).not.toMatch(/console\.\w+\([^)]*\btext\b/);
   });
   it('aanzetten per cursus vraagt de bevestiging en komt in het logboek', () => {
-    expect(src).toMatch(/parsed\.value\.attachments === true && req\.body\?\.confirmAttachments !== true/);
-    expect(src).toMatch(/setting: 'chat_attachments'/);
-    expect(src).toMatch(/setting: 'chat_attachments_platform'/);
+    const features = routeSource("app.patch('/api/courses/:id/features'");
+    expect(features).toMatch(/parsed\.value\.attachments === true && req\.body\?\.confirmAttachments !== true/);
+    expect(features).toMatch(/setting: 'chat_attachments'/);
+    expect(routeSource("app.put('/api/admin/chat-attachments'")).toMatch(/setting: 'chat_attachments_platform'/);
   });
   it('platforminstelling alleen voor de beheerder; leesfout = uit', () => {
-    const admin = src.slice(src.indexOf("app.put('/api/admin/chat-attachments'"));
+    const admin = routeSource("app.put('/api/admin/chat-attachments'");
     expect(admin.slice(0, 400)).toMatch(/isLeapAdmin\(auth\.profile\)/);
     expect(src).toMatch(/Leesfout = uit/);
   });

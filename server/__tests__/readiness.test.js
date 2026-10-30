@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   extractReadiness, evaluateReadiness, countPriorStudentMessages, matchTopic,
   buildReadinessInstruction, topicKey, levelName, MIN_STUDENT_MESSAGES,
-} from '../readiness.js';
+} from '../chat/readiness.js';
 
 const topics = [{ id: 'c1', name: 'Patiënt-controleonderzoek' }, { id: 'c2', name: 'Cohortonderzoek' }];
 

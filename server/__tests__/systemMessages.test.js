@@ -1,8 +1,9 @@
-// Systeemberichten van de beheerder (server/systemMessages.js, migratie 20261016120000).
+// Systeemberichten van de beheerder (server/system/systemMessages.js, migratie 20261016120000).
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseMessageInput, isRecipient, messagesForUser, statusOf, endUpdate, isActive } from '../systemMessages.js';
+import { routeFile, routeSource } from './helpers/serverSource.js';
+import { parseMessageInput, isRecipient, messagesForUser, statusOf, endUpdate, isActive } from '../system/systemMessages.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8').replace(/\r\n/g, '\n');
@@ -78,16 +79,14 @@ describe('status en beëindigen', () => {
 });
 
 describe('beveiliging en privacy', () => {
-  const src = read('server/systemMessages.js');
   it('alle beheerroutes zijn alleen voor de beheerder', () => {
     for (const route of ["app.get('/api/admin/messages'", "app.post('/api/admin/messages'", "app.post('/api/admin/messages/:id/end'", "app.delete('/api/admin/messages/:id'"]) {
-      const start = src.indexOf(route);
-      expect(start).toBeGreaterThan(0);
-      expect(src.slice(start, start + 300)).toMatch(/adminOnly\(req, res\)/);
+      expect(routeFile(route)).toBe('server/system/systemMessages.js');
+      expect(routeSource(route).slice(0, 300)).toMatch(/adminOnly\(req, res\)/);
     }
   });
   it('de beheerder ziet alleen totalen, geen namen van wie wegklikte', () => {
-    const admin = src.slice(src.indexOf("app.get('/api/admin/messages'"), src.indexOf("app.post('/api/admin/messages'"));
+    const admin = routeSource("app.get('/api/admin/messages'");
     expect(admin).toMatch(/select\('message_id'\)/);
     expect(admin).not.toMatch(/user_id/);
   });
@@ -96,7 +95,7 @@ describe('beveiliging en privacy', () => {
     expect(up).toMatch(/system_messages ENABLE ROW LEVEL SECURITY/);
     expect(up).toMatch(/system_message_dismissals ENABLE ROW LEVEL SECURITY/);
     expect(up).not.toMatch(/CREATE POLICY/);
-    expect(read('server/myData.js')).toMatch(/table: 'system_message_dismissals', column: 'user_id'/);
+    expect(read('server/account/myData.js')).toMatch(/table: 'system_message_dismissals', column: 'user_id'/);
     expect(fs.existsSync(path.join(root, 'supabase/rollback/20261016120000_system_messages_down.sql'))).toBe(true);
   });
 });

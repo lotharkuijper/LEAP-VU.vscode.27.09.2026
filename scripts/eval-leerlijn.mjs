@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Meting leerlijn (server/courseUnits.js) tegen het echte model. Schrijft niets
+// Meting leerlijn (server/courses/courseUnits.js) tegen het echte model. Schrijft niets
 // weg. Een vraag uit een VROEG onderdeel, drie varianten van de systeemprompt:
 //   A  zonder leerlijn
 //   B  met leerlijn; het LATE onderdeel is nog niet geoefend
@@ -11,8 +11,8 @@
 // Standaard E&B1: vroeg = "Studiedesigns", laat = "Toetsen"; aan te passen met
 // EVAL_COURSE_ID, EVAL_EARLY, EVAL_LATE, EVAL_QUESTION, EVAL_LATE_TERMS (regex).
 import { createClient } from '@supabase/supabase-js';
-import { computeChatConfig } from '../server/chatConfig.js';
-import { proposeUnits, buildLeerlijnBlock } from '../server/courseUnits.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
+import { proposeUnits, buildLeerlijnBlock } from '../server/courses/courseUnits.js';
 
 const REPEATS = Number(process.argv[2] || 3);
 const COURSE = process.env.EVAL_COURSE_ID || '8ca986e2-67f8-48ca-938d-4b77b841b398';

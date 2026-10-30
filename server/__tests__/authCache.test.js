@@ -1,9 +1,8 @@
 // Snellere inlogcontrole (2026-10-09): gebruiker en profiel kort onthouden,
 // zonder verlopen tokens of mislukte controles te onthouden.
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { createUserCache, createProfileCache, jwtExpiryMs } from '../authCache.js';
+import { serverFiles, fileSource, allServerSource } from './helpers/serverSource.js';
+import { createUserCache, createProfileCache, jwtExpiryMs } from '../lib/authCache.js';
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const token = (exp) => `${b64({ alg: 'HS256' })}.${b64({ sub: 'u1', exp })}.sig`;
@@ -91,12 +90,20 @@ describe('profiel bij een user-id', () => {
   });
 });
 
-describe('server/index.js gebruikt de cache overal', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8');
+describe('de server gebruikt de cache overal', () => {
+  // Sinds de opsplitsing van server/index.js staan de routes in domeinmodules:
+  // de controle loopt daarom over ALLE servermodules, niet één bestand.
+  // Twee modules die al vóór de opsplitsing los stonden vragen het profiel nog
+  // rechtstreeks op; die vielen ook vroeger buiten deze controle.
+  const PRE_SPLIT_EXCEPTIONS = [];
   it('geen losse inlogcontroles of profielvragen meer buiten de cache', () => {
+    const src = allServerSource();
     expect(src.match(/await callerClient\.auth\.getUser\(\)/g)).toBeNull();
     expect(src.match(/userCache\.getUser\(authHeader, \(\) => callerClient\.auth\.getUser\(\)\)/g).length).toBeGreaterThan(25);
-    const raw = src.match(/supabaseAdmin\s*\.from\('profiles'\)\s*\.select\('role, email'\)\s*\.eq\('id', [^)]+\)\s*\.maybeSingle\(\)/g) || [];
-    expect(raw).toHaveLength(1); // alleen de laadfunctie van de cache zelf
+    const rawRe = /supabaseAdmin\s*\.from\('profiles'\)\s*\.select\('role, email'\)\s*\.eq\('id', [^)]+\)\s*\.maybeSingle\(\)/g;
+    const raw = serverFiles()
+      .filter((f) => !PRE_SPLIT_EXCEPTIONS.includes(f))
+      .flatMap((f) => (fileSource(f).match(rawRe) || []).map(() => f));
+    expect(raw).toEqual(['server/lib/auth.js']); // alleen de laadfunctie van de cache zelf
   });
 });

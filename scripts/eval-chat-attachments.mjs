@@ -14,8 +14,8 @@
 // lezen, tokens, duur). Er wordt niets in de database geschreven.
 import fs from 'node:fs';
 import path from 'node:path';
-import { computeChatConfig } from '../server/chatConfig.js';
-import { extractPdfPageTexts } from '../server/pdfPageText.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
+import { extractPdfPageTexts } from '../server/ingestion/pdfPageText.js';
 import katex from 'katex';
 
 const [outDir, imgDirArg] = process.argv.slice(2);

@@ -2,7 +2,7 @@ import { Check, TrendingUp, NotebookPen, MessageSquareText, Rocket } from 'lucid
 import { useLanguage } from '../i18n';
 import { MarkdownMessage } from './MarkdownMessage';
 
-/** Zie server/journalSections.js — de drie blokken van een dagboekregel. */
+/** Zie server/journal/journalSections.js — de drie blokken van een dagboekregel. */
 export interface JournalSectionsData {
   summary?: string;
   went_well?: string[];

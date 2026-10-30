@@ -9,7 +9,7 @@ import { useCourseFeatures } from '../hooks/useCourseFeatures';
 // een eigen instructie; het veld begint leeg. Zolang het leeg is, krijgen
 // studenten het sjabloon — dat staat er dan als waarschuwing bij. Het sjabloon
 // is te bekijken en te kopiëren, maar alleen de beheerder kan het aanpassen, en
-// pas na "Pas sjabloon aan" (server/promptTemplates.js).
+// pas na "Pas sjabloon aan" (server/prompts/promptTemplates.js).
 
 type Section = 'chat' | 'explain';
 const SECTIONS: Section[] = ['chat', 'explain'];

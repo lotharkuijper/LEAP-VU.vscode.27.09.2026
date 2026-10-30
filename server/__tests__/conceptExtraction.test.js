@@ -12,7 +12,7 @@ import {
   capByBestMatch,
   cosineSimilarity,
   mergeNearDuplicateConcepts,
-} from '../conceptExtraction.js';
+} from '../concepts/conceptExtraction.js';
 
 const COURSE = '9485d5c9-e0b8-47b1-9d13-452e8518f5ad';
 const OTHER = 'dbb59936-d4cc-43ce-b1cc-15afa963930d';

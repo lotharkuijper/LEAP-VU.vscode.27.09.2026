@@ -207,7 +207,7 @@ export async function sendChatMessage(
 
 const RAG_STRICT_INSTRUCTION_LLM = `\n\nSTRIKTE BRONBEPERKING: Gebruik UITSLUITEND de context die hierboven is meegegeven. Ga NIET buiten deze bronnen. Als iets niet in de meegeleverde context staat, zeg dan eerlijk: "Dit onderwerp staat niet in het beschikbare cursusmateriaal."`;
 
-/** Feedback bij "Ik leg uit" in vier blokken (server/explainFeedback.js). */
+/** Feedback bij "Ik leg uit" in vier blokken (server/explain/explainFeedback.js). */
 export interface ExplainFeedbackSections {
   feedback: string;
   related: Array<{ id: string; name: string; relation: string }>;
@@ -844,9 +844,15 @@ export async function evaluateCasusAnswer(
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   let response: Response;
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
+    } catch {}
     response = await fetch('/api/embeddings', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ texts }),
     });
   } catch (error: any) {

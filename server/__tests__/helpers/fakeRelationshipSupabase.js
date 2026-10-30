@@ -1,5 +1,5 @@
 // In-memory Supabase voor de verstandhoudings-tests: ondersteunt precies de
-// chains die server/relationshipAdjust.js en server/threadClose.js gebruiken.
+// chains die server/projects/relationshipAdjust.js en server/projects/threadClose.js gebruiken.
 // `state` bevat de rijen; tests passen die per geval aan.
 export function makeFakeRelationshipSupabase(state) {
   let nextId = 1;

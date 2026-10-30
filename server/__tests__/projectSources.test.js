@@ -2,9 +2,8 @@
 // de docent en uploads van de groep zonder bronnummer mee en verzon dan een
 // voetnoot naar "het cursusmateriaal" die nergens heen ging.
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
-import { numberDocumentSources, buildNoSourcesInstructionBlock, buildSourcesInstructionBlock } from '../citationSources.js';
+import { fileSource, routeSource } from './helpers/serverSource.js';
+import { numberDocumentSources, buildNoSourcesInstructionBlock, buildSourcesInstructionBlock } from '../chat/citationSources.js';
 
 describe('projectdocumenten krijgen een bronnummer', () => {
   it('doorgenummerd na het cursusmateriaal, met soort en id', () => {
@@ -34,13 +33,11 @@ describe('projectdocumenten krijgen een bronnummer', () => {
 });
 
 describe('persona-chat gebruikt het', () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
-  const start = src.indexOf("app.post('/api/projects/persona-chat'");
-  const route = src.slice(start, src.indexOf('\n});\n', start));
+  const route = routeSource("app.post('/api/projects/persona-chat'");
   it('projectmateriaal en groepsuploads doorgenummerd; één verwijsblok; zonder bronnen het "geen verwijzingen"-blok', () => {
     // Projectdocumenten die de persona kent: genummerd in personaKnowledge.js (sinds 2026-10-27).
     expect(route).toContain('buildProjectKnowledgeContext(');
-    expect(fs.readFileSync(path.resolve(__dirname, '..', 'personaKnowledge.js'), 'utf8')).toContain("kind: 'project_document'");
+    expect(fileSource('server/projects/personaKnowledge.js')).toContain("kind: 'project_document'");
     expect(route).toContain("kind: 'persona_document'");
     expect(route).toContain('buildNoSourcesInstructionBlock()');
     expect(route).toMatch(/\$\{sourcesRulesBlock\}\$\{langSuffix\}/);

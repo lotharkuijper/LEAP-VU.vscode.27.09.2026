@@ -8,6 +8,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { routeSource, serverFiles } from './helpers/serverSource.js';
 
 const root = path.resolve(__dirname, '..', '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -46,14 +47,23 @@ describe('schermteksten zijn vakneutraal', () => {
 });
 
 describe('vaste instructies aan het taalmodel zijn vakneutraal', () => {
+  // Alle servermodules (recursief; de routes uit het oude server/index.js staan
+  // nu verspreid over domeinmappen), plus de prompts in de browsercode.
+  const files = serverFiles();
+  it('de lijst servermodules is volledig (ook de submappen)', () => {
+    for (const rel of [
+      'server/index.js',
+      'server/concepts/conceptConsolidation.js',
+      'server/concepts/conceptExtraction.js',
+      'server/chat/learningLevel.js',
+      'server/explain/explainFeedback.js',
+      'server/explain/flawedExplanations.js',
+      'server/rag/queryExpansion.js',
+      'server/chat/routes.js',
+    ]) expect(files).toContain(rel);
+  });
   for (const rel of [
-    'server/index.js',
-    'server/conceptConsolidation.js',
-    'server/conceptExtraction.js',
-    'server/learningLevel.js',
-    'server/explainFeedback.js',
-    'server/flawedExplanations.js',
-    'server/queryExpansion.js',
+    ...files,
     'src/services/queryExpansion.ts',
     'src/services/llm.service.ts',
   ]) {
@@ -65,16 +75,13 @@ describe('vaste instructies aan het taalmodel zijn vakneutraal', () => {
 });
 
 describe('begrippen blijven binnen hun cursus', () => {
-  const src = read('server/index.js');
   it('/api/concepts valt nooit terug op begrippen zonder cursus of van andere cursussen', () => {
-    const start = src.indexOf("app.get('/api/concepts',");
-    const route = src.slice(start, src.indexOf('\napp.', start + 10));
-    expect(start).toBeGreaterThan(0);
+    const route = routeSource("app.get('/api/concepts',");
     expect(route).not.toMatch(/\.is\('course_id', null\)/);
     expect(route).toContain("if (!isManageView) return res.json({ concepts: [], source: 'empty' });");
   });
   it('de zoekverrijking gebruikt alleen gegevens van het begrip zelf (geen vaste synoniemenlijst)', () => {
-    expect(read('server/queryExpansion.js')).not.toMatch(/QUERY_SYNONYMS/);
+    expect(read('server/rag/queryExpansion.js')).not.toMatch(/QUERY_SYNONYMS/);
     expect(read('src/services/queryExpansion.ts')).not.toMatch(/QUERY_SYNONYMS/);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeAvatar, AVATAR_STYLES, faceFields, changedFaceFields, syncPersonaFace } from '../personaAvatar.js';
+import { sanitizeAvatar, AVATAR_STYLES, faceFields, changedFaceFields, syncPersonaFace } from '../projects/personaAvatar.js';
 
 // Kleine in-memory database met dezelfde update().eq().select()-vorm als supabase-js.
 function memoryDb(tables) {

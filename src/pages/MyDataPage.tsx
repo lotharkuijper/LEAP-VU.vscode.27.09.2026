@@ -1,5 +1,5 @@
 // Mijn gegevens (2026-10-09): je eigen gegevens downloaden, je leerdossier
-// afdrukken of als PDF bewaren, en je account verwijderen. Server: server/myData.js.
+// afdrukken of als PDF bewaren, en je account verwijderen. Server: server/account/myData.js.
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Download, FileText, Trash2, ShieldCheck, Loader2 } from 'lucide-react';

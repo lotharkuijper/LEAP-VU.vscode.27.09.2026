@@ -1,11 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import fs from 'node:fs';
-import path from 'node:path';
 import { unzipSync, strFromU8 } from 'fflate';
+import { functionSource, routeSource } from './helpers/serverSource.js';
 import {
   splitForAssessment, verifyQuotes, normalizePreassessment, assessText,
   buildAssessmentDocx, buildOverviewCsv, streamZip, docLabels, safeName, PART_CHARS,
-} from '../preassessment.js';
+} from '../projects/preassessment.js';
 
 const PRODUCT = `Inleiding
 In dit rapport onderzoeken we hoe buurtbewoners het nieuwe park gebruiken.
@@ -172,22 +171,20 @@ describe('downloads', () => {
 });
 
 describe('koppeling in de server', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'index.js'), 'utf8');
   it('een inlevering start de voorbeoordeling op de achtergrond', () => {
-    const handler = src.slice(src.indexOf('async function uploadProjectSubmissionHandler'), src.indexOf("app.post('/api/projects/:projectId/submissions'"));
+    const handler = functionSource('uploadProjectSubmissionHandler');
     expect(handler).toMatch(/preassessmentRunner\.start\(newId\)/);
   });
   it('de voorbeoordelaar doet niet mee aan feedbackrondes en "Beoordeling opvragen"', () => {
-    const list = src.slice(src.indexOf("app.get('/api/projects/:projectId/groups/:groupId/feedback'"), src.indexOf("app.post('/api/projects/:projectId/groups/:groupId/personas/:personaId/feedback'"));
+    const list = routeSource("app.get('/api/projects/:projectId/groups/:groupId/feedback'");
     expect(list).toMatch(/neq\('id', project\.preassessment_persona_id/);
-    const ctxFn = src.slice(src.indexOf('async function loadFeedbackContext'), src.indexOf("app.get('/api/projects/:projectId/groups/:groupId/feedback'"));
+    const ctxFn = functionSource('loadFeedbackContext');
     expect(ctxFn).toMatch(/p\.id === project\.preassessment_persona_id/);
-    const evaluate = src.slice(src.indexOf("app.post('/api/projects/groups/:groupId/evaluate'"));
+    const evaluate = routeSource("app.post('/api/projects/groups/:groupId/evaluate'");
     expect(evaluate.slice(0, 3000)).toMatch(/neq\('id', project\?\.preassessment_persona_id/);
   });
   it('de routes zijn alleen voor docenten van de cursus', () => {
-    const mod = fs.readFileSync(path.join(__dirname, '..', 'preassessment.js'), 'utf8');
-    const routes = mod.slice(mod.indexOf('export function registerPreassessmentRoutes'));
+    const routes = functionSource('registerPreassessmentRoutes');
     const count = (routes.match(/app\.(get|post|put)\(/g) || []).length;
     const guarded = (routes.match(/const ctx = await staffProject\(req, res\);/g) || []).length;
     expect(count).toBe(5);

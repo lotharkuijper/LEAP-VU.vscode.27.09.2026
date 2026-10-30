@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeText, sanitizeMetadata } from '../sanitizeText.js';
+import { sanitizeText, sanitizeMetadata } from '../lib/sanitizeText.js';
 
 describe('sanitizeText (server)', () => {
   it('verwijdert een NUL-teken midden in de tekst', () => {

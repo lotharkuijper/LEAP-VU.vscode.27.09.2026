@@ -1,19 +1,49 @@
 # LEAP-VU — AI-leeromgeving
 
-LEAP-VU is een webapplicatie van de VU Amsterdam waarin studenten met AI-ondersteuning oefenen met cursusstof. De app is ontstaan voor epidemiologie en biostatistiek, maar ondersteunt inmiddels meerdere cursussen. Alle AI-functies zijn gegrond in het cursusmateriaal dat docenten per cursus uploaden (RAG).
+LEAP-VU is een webapplicatie van de VU Amsterdam waarin studenten met AI-ondersteuning oefenen met cursusstof. De app is ontstaan voor epidemiologie en biostatistiek, maar is niet aan één vak gebonden en ondersteunt meerdere cursussen. Alle AI-functies zijn gegrond in het cursusmateriaal dat docenten per cursus uploaden (RAG).
+
+Live: <https://leap.vu-edulab.nl> (Azure, resourcegroep `vu-leap-rg`).
+
+## Snel starten
+
+```bash
+npm install
+cp .env.example .env     # vul de waarden in (zie hieronder)
+npm run dev              # Express-server (poort 3001) en Vite (poort 5000) tegelijk
+```
+
+Open daarna <http://localhost:5000>. Vite stuurt alle `/api`-verzoeken door naar de server.
+Wil je lokaal tegen de Azure-omgeving werken, dan vult `node azure/scripts/local-env.mjs`
+de Supabase-waarden in je `.env` (zie [`azure/README.md`](azure/README.md)).
+Let op: de server herlaadt niet vanzelf. Na een wijziging in `server/` herstart je `npm run dev`.
+
+**Een push naar `main` gaat direct live** (GitHub Actions rolt uit naar Azure). Werk op een branch.
+
+## Documentatie
+
+| Document | Waarvoor |
+|---|---|
+| [docs/README.md](docs/README.md) | Wat staat waar: kaart van de repository, hoe een verzoek loopt, waar je iets toevoegt, tests. |
+| [docs/architecture.md](docs/architecture.md) | De architectuur op één pagina, met tekening van de Azure-onderdelen. |
+| [docs/security/README.md](docs/security/README.md) | Beveiliging: wie mag wat, en hoe dat is afgedwongen. |
+| [docs/reference/kennisnotities.md](docs/reference/kennisnotities.md) | Valkuilen die je niet uit de code haalt. |
+| [scripts/local-db/README.md](scripts/local-db/README.md) | Lokale testdatabase om migraties en RLS-regels veilig te testen. |
+| [azure/README.md](azure/README.md) | Beheer op Azure: uitrollen, logboek, terugrollen, database. |
+| [CLAUDE.md](CLAUDE.md) | Projectregels voor Claude Code en iedereen die code schrijft. |
+| [docs/handleiding/handleiding.html](docs/handleiding/handleiding.html) | Handleiding voor docenten. |
 
 ## Functies
 
 ### Voor studenten
-- **Socratische chatbot** (`/chat`) — stelt wedervragen in plaats van direct antwoorden te geven. Antwoorden worden onderbouwd met relevante fragmenten uit de cursusdocumenten. Ondersteunt meerdere gesprekken, persona's en een zelf in te stellen leerniveau (1–5) per cursus.
-- **"Ik leg uit"** (`/explain`) — de student legt een begrip in eigen woorden uit en krijgt AI-feedback op juistheid en volledigheid. De begrippen worden per cursus uit de geüploade documenten geëxtraheerd.
-- **Quiz** (`/quiz`) — vragen uit een mix van drie bronnen: cursusmateriaal (RAG), een itembank en LLM-generatie. De docent bepaalt de verhouding per cursus (standaard 50% RAG / 0% itembank / 50% LLM). Daarnaast zijn er ShareStats-onderwerpen (`/sharestats`).
-- **Studiecafé** (`/studiecafe`) — discussieforum per cursus met categorieën (vraag, discussie, samenwerken, check-llm), reacties en e-mailmeldingen.
-- **Projecten** (`/projects`) — projecten met groepsruimtes.
-- **Bronnen** (`/resources`) en **feedback** (`/feedback`).
+- **Tutorchat** (`/chat`) — stelt wedervragen in plaats van direct antwoorden te geven. Antwoorden worden onderbouwd met fragmenten uit het cursusmateriaal. Meerdere gesprekken, een zelf gekozen leerniveau (1–5) per cursus, een optioneel doel, en bijlagen (als de cursus dat aanzet).
+- **"Ik leg uit"** (`/explain`) — de student legt een begrip in eigen woorden uit en krijgt feedback; of verbetert een uitleg met bewust aangebrachte fouten. De begrippen komen uit het cursusmateriaal.
+- **Quiz** (`/quiz`) — vragen uit een mix van cursusmateriaal (RAG), een vraagbank en LLM-generatie. De docent bepaalt de verhouding per cursus. Daarnaast ShareStats-onderwerpen (`/sharestats`).
+- **Studiecafé** (`/studiecafe`) — forum per cursus met reacties en e-mailmeldingen.
+- **Projecten** (`/projects`) — groepsruimtes met project-bots (begeleider, beoordelaar, rolspeler).
+- **Leerdagboek** (`/feedback`), **Bronnen** (`/resources`) en **Mijn gegevens** (`/my-data`).
 
 ### Voor docenten en admins
-- **Cursusmateriaal** (`/admin?tab=material`) — één werkruimte per cursus in vier stappen: *Bestanden → Verwerking → Begrippen → Klaar voor studenten*. Elk bestand krijgt een **doel**, dat bepaalt wie het ziet en wat de AI ermee doet:
+- **Cursusmateriaal** (`/admin?tab=material`) — één werkruimte per cursus in vier stappen: *Bestanden → Verwerking → Begrippen → Klaar voor studenten*, plus de *Leerlijn*. Elk bestand krijgt een **doel**, dat bepaalt wie het ziet en wat de AI ermee doet:
 
   | Doel | Voorbeelden | AI-gebruik | Studenten |
   |---|---|---|---|
@@ -23,154 +53,86 @@ LEAP-VU is een webapplicatie van de VU Amsterdam waarin studenten met AI-onderst
   | Alleen delen | formats, sjablonen | geen | download via Bronnen |
   | Alleen voor docenten | antwoordmodellen, tentamens | nooit | nooit (afgeschermd in de database) |
 
-  LEAP stelt bij uploaden een doel voor op basis van naam en inhoud. Bestaande bestanden gaan één keer door een controle. Leerstof en cursusinformatie worden omgezet naar platte tekst, in chunks verdeeld (~380 tokens met 60 tokens overlap), voorzien van embeddings en opgeslagen in pgvector. "Klaar voor studenten" toont waarschuwingen (bijv. begrippen zonder bronfragment, zichtbare antwoordmodellen) en laat je een voorbeeldvraag maken als student.
-
-  **Websites als bron:** met *Website toevoegen* (in *Bestanden*) plak je het adres van een leeromgeving of documentatiesite (bijv. een Quarto-boek). LEAP zoekt de pagina's (sitemap of links, max. 80), je vinkt ze per pagina of per map aan en kiest *Leerstof* of *Cursusinformatie*. De site verschijnt daarna als één bron met aantal pagina's, fragmenten en datum van laatste ophaling. *Opnieuw ophalen* verwerkt alleen gewijzigde pagina's opnieuw; pagina's die de site niet meer levert worden gemeld maar niet stilzwijgend verwijderd. Doel wijzigen en verwijderen gaan per hele site (tabel `web_sources`, migratie `20260926100000_web_sources.sql`).
-- **Cursusbeheer** (`/admin/courses`) — cursussen, zichtbaarheid, banners en leden beheren.
-- **Beheer** (`/admin`) — onder *Mijn cursus*: quizbronnen, projecten (met het tabblad *Persona-sjablonen*: kant-en-klare persona's van de cursus, die een project als eigen kopie overneemt), cursus-info, leerniveaus, chat-instructies, zoekgevoeligheid (Ruim / Gebalanceerd / Streng), imports (externe vraagbanken zoals ShareStats) en gebruikers toevoegen. Onder *Systeembeheer* (admin): gebruikers en instellingen. Onder *Onderdelen* zet de docent per cursus chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé aan of uit. (De *Klassieke weergave* met Documenten, RAG Beheer en Begrippen is in oktober 2026 verdwenen; alles daaruit zit in *Cursusmateriaal*.)
+  Leerstof en cursusinformatie worden omgezet naar platte tekst, in stukken (chunks) verdeeld, voorzien van embeddings en opgeslagen in pgvector. Met *Website toevoegen* kan ook een documentatiesite (bijv. een Quarto-boek) als bron dienen.
+- **Cursusbeheer** (`/admin/courses`) — cursussen, zichtbaarheid, toegangsroute (gesloten, Canvas, open), cursus-info en leden.
+- **Beheer** (`/admin`) — op volgorde van het opzetten van een cursus: Inhoud (Cursusmateriaal, Projecten), AI-tutor (Tutor-instructies, Zoekgevoeligheid), Quiz (bronnen, vraagbanken), Openstellen (Onderdelen aan/uit, Deelnemers toevoegen), Volgen (Analytics). Admins hebben daarnaast Systeem.
+- **Ontwerphulp** — een optionele chatbot in Beheer die docenten helpt hun cursusdoelen te vertalen naar keuzes in LEAP.
 
 ### Meertaligheid
-De interface is beschikbaar in 20 talen (o.a. Nederlands, Engels, Duits, Frans, Chinees, Arabisch); zie `src/i18n/locales/`. De AI antwoordt in de gekozen taal.
+De interface is beschikbaar in 20 talen (zie `src/i18n/locales/`). De AI antwoordt in de gekozen taal.
 
 ## Technologie
 
 | Onderdeel | Technologie |
 |---|---|
-| Frontend | React 18 + TypeScript + Vite, Tailwind CSS, React Router 7, TipTap, KaTeX |
-| Backend | Node.js + Express 5 (`server/index.js`, poort 3001) |
-| Database & auth | Supabase (PostgreSQL + pgvector, Auth, Storage, Edge Functions) |
-| LLM (chat, feedback, quizgeneratie) | Azure OpenAI (VU-resource), via deployment-naam |
+| Frontend | React 18 + TypeScript + Vite, Tailwind CSS, React Router 7, TipTap, KaTeX, MathLive |
+| Backend | Node.js + Express 5 (`server/index.js`, poort 3001), routes per onderwerp in `server/<onderwerp>/` |
+| Database & auth | Supabase-software in eigen beheer op Azure: Postgres + pgvector, Auth (GoTrue), PostgREST, Storage |
+| LLM (chat, feedback, quizgeneratie) | Azure OpenAI van de VU, via deployment-naam |
 | Embeddings | Azure OpenAI `text-embedding-3-small` — **geen** terugval naar de publieke OpenAI-API |
-| Documentverwerking | pdfjs-dist, mammoth, officeparser, LibreOffice (`soffice`) voor rendering |
-| E-mail | Resend (optioneel, voor Studiecafé-meldingen) |
+| Documentverwerking | pdfjs-dist, mammoth, officeparser, LibreOffice (`soffice`) voor de weergave |
+| E-mail | Azure Communication Services (op Azure), Resend (elders) |
 | Tests | Vitest + Testing Library |
 
-In development draait Vite op `http://localhost:5173` en stuurt alle `/api`-verzoeken door naar de Express-server op `http://localhost:3001`.
+## Instellingen
 
-## Installatie
-
-### 1. Omgevingsvariabelen
-
-Maak een `.env` in de hoofdmap (commit dit bestand nooit):
-
-```env
-# Supabase
-VITE_PUBLIC_SUPABASE_URL=
-VITE_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-SUPABASE_DB_URL=
-
-# Azure OpenAI
-AZURE_OPENAI_ENDPOINT=
-AZURE_OPENAI_API_KEY=
-AZURE_OPENAI_API_VERSION=2024-10-21
-AZURE_OPENAI_DEPLOYMENT=
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=
-# AZURE_OPENAI_EMBEDDING_API_VERSION=   # optioneel, standaard gelijk aan AZURE_OPENAI_API_VERSION
-
-# Optioneel
-# OPENAI_MODEL=              # modelnaam voor parameterkeuze (bijv. gpt-5.x / gpt-4o-mini)
-# RESEND_API_KEY=            # e-mailmeldingen
-# NOTIFICATION_FROM_EMAIL=
-# GITHUB_TOKEN=              # ShareStats-inhoud ophalen van GitHub
-# SOFFICE_BIN=soffice        # pad naar LibreOffice
-# APP_PUBLIC_URL=            # basis-URL in e-mails/links
-# PORT=3001
-```
+Alle omgevingsvariabelen staan met uitleg in [`.env.example`](.env.example). Minimaal nodig
+voor lokaal werken: de Supabase-waarden (`VITE_PUBLIC_SUPABASE_URL`,
+`VITE_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`) en
+Azure OpenAI (`AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_DEPLOYMENT`,
+`AZURE_OPENAI_EMBEDDING_DEPLOYMENT`). Commit `.env` nooit; op Azure staan de geheimen in
+Key Vault `kv-vu-leap`.
 
 Zonder `AZURE_OPENAI_ENDPOINT` + `AZURE_OPENAI_API_KEY` geven de chat-endpoints een 503. Zonder `AZURE_OPENAI_EMBEDDING_DEPLOYMENT` falen alle embedding-calls (upload, RAG-zoekvragen, conceptextractie) expliciet met een 503.
 
-### 2. Database
+**LibreOffice (alleen op de server).** De documentviewer zet Word- en PowerPoint-bronnen om naar pdf, en Word-bronnen krijgen daarmee bij het inlezen paginanummers. Daarvoor moet LibreOffice op de machine staan die de server draait; de Docker-image heeft het al. Op een Mac: `brew install --cask libreoffice`. Op Windows: `winget install TheDocumentFoundation.LibreOffice` (de server vindt `soffice.exe` vanzelf, of zet `SOFFICE_BIN`). Bij het opstarten meldt de server welke LibreOffice hij gebruikt. Zonder LibreOffice toont de viewer Office-bestanden als tekst.
 
-De databasestructuur staat in `supabase/migrations/`. Pas de migraties toe op je Supabase-project (bijv. met de Supabase CLI: `supabase db push`). Edge Functions staan in `supabase/functions/`.
-
-### 3. Starten
-
-```bash
-npm install
-npm run dev          # start Express-server én Vite tegelijk
-```
-
-Losse onderdelen: `npm run dev:server` of `npm run dev:frontend`.
-
-Overige scripts: `npm run build`, `npm run lint`, `npm run typecheck`.
-
-**LibreOffice (alleen op de server).** De documentviewer zet Word- en PowerPoint-bronnen om naar pdf, en Word-bronnen krijgen daarmee bij het inlezen paginanummers ("naar de juiste pagina"). Daarvoor moet LibreOffice op de machine staan die de server draait; gebruikers hebben alleen een browser nodig. Replit installeert het via `replit.nix`. Op Windows: `winget install TheDocumentFoundation.LibreOffice` — de server vindt `soffice.exe` in Program Files vanzelf (of zet `SOFFICE_BIN`). Bij het opstarten meldt de server welke LibreOffice hij gebruikt. Zonder LibreOffice toont de viewer Office-bestanden als tekst ("Vereenvoudigde weergave").
-
-## Hosting (bijv. binnen het VU-domein)
+## Hosting
 
 LEAP draait als één container: de Express-server serveert ook de gebouwde frontend. De `Dockerfile` bevat Node 22, LibreOffice zonder grafische schil en de lettertypen Carlito/Caladea (maat-compatibel met Calibri/Cambria, zodat de paginering van Word-documenten klopt).
 
-```bash
-docker build \
-  --build-arg VITE_PUBLIC_SUPABASE_URL=https://<project>.supabase.co \
-  --build-arg VITE_PUBLIC_SUPABASE_ANON_KEY=<anon-key> \
-  -t leap-vu .
-docker run -p 3001:3001 --env-file .env leap-vu
-```
+Op Azure gaat dat vanzelf: een push naar `main` bouwt de image en rolt hem uit via `.github/workflows/azure-deploy.yml`; nieuwe migraties in `supabase/migrations/` voert de app bij het starten zelf uit (`scripts/migrate.mjs`). Zie [docs/architecture.md](docs/architecture.md) en [azure/README.md](azure/README.md).
 
-- De twee `VITE_`-waarden komen in de frontendbundel (publiek). Alle geheimen (`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `AZURE_OPENAI_*`, `RESEND_API_KEY`) gaan alleen als runtime-omgeving mee, nooit in de image. Zet `APP_PUBLIC_URL` op het publieke adres.
-- **Weergaveversies worden bij het uploaden gemaakt.** Een Word-bron wordt bij het inlezen al naar pdf omgezet (voor de paginanummers); die pdf wordt bewaard als weergaveversie. PowerPoint-bronnen krijgen hun pdf direct na het inlezen, op de achtergrond. Studenten openen dus altijd een kant-en-klare pdf. De versies staan in de opslag onder `__renditions__/` en volgen het bronbestand: een vervangen bestand krijgt vanzelf een nieuwe.
-- **Bestaande bronnen** die op een server zonder LibreOffice zijn ingelezen, bereid je eenmalig voor met `node scripts/prepare-office-sources.mjs` (maakt de weergaveversies en vult paginanummers aan zonder opnieuw in te lezen; `--dry-run` om eerst te tellen).
-- Later kan de omzetting via Microsoft 365 (Graph) lopen; de plek daarvoor is `convertOfficeToPdf` in `server/documentRender.js`.
-
-### Op Azure (VU)
-
-De opzet voor Azure staat in [`azure/README.md`](azure/README.md): LEAP en de Supabase-onderdelen (inloggen, database-API, bestandsopslag) draaien dan in eigen beheer in resourcegroep `vu-leap-rg`. Een push naar `main` rolt de app uit via `.github/workflows/azure-deploy.yml`; nieuwe migraties in `supabase/migrations/` voert de app bij het starten zelf uit (`scripts/migrate.mjs`). E-mails gaan daar via Azure Communication Services (`ACS_CONNECTION_STRING`, `ACS_SENDER`, `MAIL_REPLY_TO`) in plaats van Resend, en live-updates lopen zonder Supabase Realtime (`VITE_PUBLIC_REALTIME=off`).
+- De twee `VITE_PUBLIC_`-waarden komen in de frontendbundel (publiek). Alle geheimen gaan alleen als runtime-omgeving mee, nooit in de image.
+- **Weergaveversies worden bij het uploaden gemaakt.** Word- en PowerPoint-bronnen krijgen een pdf-versie (opslag onder `__renditions__/`), zodat studenten altijd een kant-en-klare pdf openen. Bestaande bronnen die zonder LibreOffice zijn ingelezen, bereid je eenmalig voor met `node scripts/prepare-office-sources.mjs` (`--dry-run` om eerst te tellen).
+- De omzetting zelf zit in `convertOfficeToPdf` in `server/documents/documentRender.js`.
 
 ## Rollen
 
-- **Student** — standaardrol bij registratie. Toegang tot chat, uitleg, quiz, Studiecafé en projecten van zichtbare cursussen.
-- **Docent** — beheert eigen cursussen: documenten, begrippen, bronnenmix, leden.
-- **Admin** — volledige toegang, inclusief gebruikers- en rolbeheer.
+- **Student** — gebruikt de cursussen waarvan hij lid is.
+- **Docent** — beheert eigen cursussen: materiaal, begrippen, instructies, bronnenmix, leden.
+- **Admin** — volledige toegang, inclusief gebruikers, rollen en platforminstellingen.
 
-Het account `l.d.j.kuijper@vu.nl` krijgt altijd admin-rechten via databasetriggers en een Edge Function; zie [SUPERUSER_SYSTEM.md](SUPERUSER_SYSTEM.md).
+Een vast beheerdersaccount houdt altijd admin-rechten via databasetriggers; zie [docs/reference/superuser-system.md](docs/reference/superuser-system.md) (oud document, deels verouderd).
 
-Beveiliging loopt via Supabase Row Level Security en server-side controles op cursustoegang en staf-rol. Schrijfacties met de service-role verifiëren altijd dat de rij bij de gevraagde cursus hoort.
-
-## Projectstructuur
-
-```
-src/
-  pages/          pagina's (Chat, Explain, Quiz, Studiecafe, Admin, ...)
-  components/     UI-componenten
-  contexts/       AuthContext, ActiveCourseContext, CourseAccessContext
-  services/       LLM-, RAG-, quiz-, upload- en ShareStats-services
-  lib/            gedeelde helpers + Supabase-types
-  i18n/           vertalingen
-server/
-  index.js        Express-API (alle /api-routes)
-  chunking.js, ragProcessing.js, conceptExtraction.js, conceptEvidence.js
-                  ingestie- en RAG-pijplijn
-  __tests__/      server-tests
-supabase/
-  migrations/     databaseschema
-  functions/      Edge Functions
-scripts/          evaluatie- en onderhoudsscripts
-```
+Beveiliging loopt via Row Level Security in de database en controles op de server (`server/lib/auth.js`). Wat docenten wel en niet over studenten mogen zien, staat in [CLAUDE.md](CLAUDE.md) en [docs/security/README.md](docs/security/README.md).
 
 ## Testen
 
 ```bash
 npx vitest run                                         # alle tests
-npx vitest run server/__tests__/ragProcessing.test.js  # ingestie/chunking
-npx vitest run server/__tests__/conceptExtraction.test.js
+npx vitest run server/__tests__/ragProcessing.test.js  # één bestand
+npm run typecheck
+npm run lint
+npm run db:local && bash scripts/local-db/test.sh      # migraties en RLS, lokaal in Docker
 ```
 
-Sommige `*.integration.test.js`-bestanden hebben een werkende databaseverbinding nodig. `chatConfig.endpoints.test.js` en `translateContentEndpoint.test.js` testen gedrag zónder Azure-configuratie; ze falen zolang er een `.env` met Azure-sleutels in de projectmap staat (`server/index.js` laadt die opnieuw in).
+Sommige `*.integration.test.js`-bestanden hebben een werkende databaseverbinding nodig. `chatConfig.endpoints.test.js` en `translateContentEndpoint.test.js` testen gedrag zónder Azure-configuratie; ze kunnen falen zolang er een `.env` met Azure-sleutels in de projectmap staat (de server laadt die bij het importeren).
 
 ## Migraties en terugdraaien
 
-Databasewijzigingen staan in `supabase/migrations/`; voer ze uit met `node scripts/run-sql.mjs <bestand>`. Voor de bestandsdoelen (`20260925100000_document_purposes.sql`) staat een terugdraaiscript in `supabase/rollback/`. De code van vóór de herinrichting van het beheer staat onder de git-tag `pre-beheer-redesign`.
+Databasewijzigingen staan in `supabase/migrations/` (`<JJJJMMDDUUMMSS>_<naam>.sql`), elk met een terugdraaiscript in `supabase/rollback/`. Op Azure voert de app nieuwe migraties zelf uit bij het starten. Handmatig: `node --env-file=.env scripts/migrate.mjs --status` (wat staat nog open) of `node scripts/run-sql.mjs <bestand>` (één bestand, bv. een terugdraaiscript). Test een nieuwe migratie eerst met de [lokale testdatabase](scripts/local-db/README.md).
+
+Git-tags als terugvalpunt: `pre-beheer-redesign` (vóór de herinrichting van Beheer) en `pre-ontwerphulp-2026-10-07` (vóór de Ontwerphulp).
 
 ## Troubleshooting
 
 - **Chat geeft een 503 "Azure OpenAI is niet geconfigureerd"** — controleer `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY` en `AZURE_OPENAI_DEPLOYMENT`, en herstart de server.
-- **Upload/RAG faalt met een embeddings-fout** — controleer `AZURE_OPENAI_EMBEDDING_DEPLOYMENT`. Bij een 429 (rate limit) probeert de server het opnieuw. Upload minder bestanden tegelijk als het blijft falen.
-- **Document levert geen of rare chunks op** — controleer in documentbeheer het aantal chunks. Eén enorme chunk of tekst als `[object Object]` wijst op een extractieprobleem en moet worden onderzocht, niet genegeerd.
+- **Upload/RAG faalt met een embeddings-fout** — controleer `AZURE_OPENAI_EMBEDDING_DEPLOYMENT`. Bij een 429 (snelheidslimiet) probeert de server het opnieuw; uploads lopen via een wachtrij, twee tegelijk.
+- **Document levert geen of rare chunks op** — controleer het aantal chunks in Cursusmateriaal → Verwerking. Eén enorme chunk of tekst als `[object Object]` wijst op een extractieprobleem en moet worden onderzocht, niet genegeerd.
+- **Een functie werkt lokaal niet na een serverwijziging** — de server herlaadt niet vanzelf; herstart `npm run dev`.
+- **"Nog steeds kapot" na een fix** — kijk op GitHub onder *Actions* of de uitrol is gelukt. Mislukte migraties houden de vorige versie draaiende.
 - **Geen toegang tot beheer** — controleer je rol (rechtsboven) of vraag een admin om die aan te passen.
-
-Zie ook [GIT_WORKFLOW.md](GIT_WORKFLOW.md) voor de git-werkwijze en [exports/LEAP-VU-korte-manual.md](exports/LEAP-VU-korte-manual.md) voor een korte handleiding.
 
 ## Licentie
 

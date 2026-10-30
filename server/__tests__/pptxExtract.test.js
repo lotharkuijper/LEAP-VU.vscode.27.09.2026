@@ -12,7 +12,7 @@ import {
   fallbackChunks,
   splitLongSections,
   estimateTokens,
-} from '../pptxExtract.js';
+} from '../ingestion/pptxExtract.js';
 
 describe('decodeXmlEntities', () => {
   it('decodeert standaard-entiteiten', () => {

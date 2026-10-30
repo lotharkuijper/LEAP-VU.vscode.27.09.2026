@@ -58,7 +58,8 @@ const setCourse = async (on) => {
 // De server onthoudt instellingen 15 s.
 const settle = () => new Promise(r => setTimeout(r, 15500));
 
-const img = imgArg || 'attached_assets/image_1776096257596.png';
+const img = imgArg;
+if (!img) { console.error('Geef een testafbeelding (png) mee als eerste argument.'); process.exit(1); }
 const imageData = `data:image/png;base64,${fs.readFileSync(img).toString('base64')}`;
 const chatBody = (attachments, text = 'Ik snap deze afbeelding niet goed. Wat staat erop?') => ({
   messages: [{ role: 'user', content: text }],
@@ -79,7 +80,8 @@ try {
   check('afbeelding: model beschrijft eerst wat het ziet', withImage.status === 200 && /Dit zie ik/i.test(answer), `${withImage.status}, ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   console.log('---\n' + answer.slice(0, 700) + '\n---');
 
-  const pdf = pdfArg || 'attached_assets/deb3_ch2_1782311631911.pdf';
+  const pdf = pdfArg;
+  if (!pdf) throw new Error('Geef een test-pdf mee als argument (geen auteursrechtelijk materiaal in de repo).');
   const ex = await api('POST', '/api/chat/attachments/extract', { courseId, name: 'hoofdstuk.pdf', data: fs.readFileSync(pdf).toString('base64') });
   check('bestand: tekst uit PDF gehaald', ex.status === 200 && ex.body?.chars > 1000 && !ex.body?.scanned, `${ex.body?.pages} pagina's, ${ex.body?.chars} tekens, afgekapt=${ex.body?.truncated}`);
   const withFile = await api('POST', '/api/chat', chatBody([{ kind: 'file', name: 'hoofdstuk.pdf', text: ex.body?.text || '', pages: ex.body?.pages, isNew: true }], 'Waar gaat dit bestand over, in twee zinnen?'));

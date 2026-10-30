@@ -1,4 +1,4 @@
-// Controle van "Studenten uitnodigen" (server/courseInvitations.js) tegen de echte
+// Controle van "Studenten uitnodigen" (server/courses/courseInvitations.js) tegen de echte
 // database en de draaiende API (poort 3001). Maakt een tijdelijke cursus en
 // tijdelijke accounts aan en ruimt alles weer op. Er gaat geen echte mail uit
 // zolang lokaal geen mailinstelling is geladen (status wordt dan "failed").
@@ -6,7 +6,7 @@
 //   node --env-file=.env scripts/check-course-invitations.mjs
 import { createHmac } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
-import { registerCourseInvitationRoutes, signInviteToken } from '../server/courseInvitations.js';
+import { registerCourseInvitationRoutes, signInviteToken } from '../server/courses/courseInvitations.js';
 
 const API = process.env.CHECK_API || 'http://localhost:3001';
 const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || process.env.VITE_PUBLIC_SUPABASE_URL;

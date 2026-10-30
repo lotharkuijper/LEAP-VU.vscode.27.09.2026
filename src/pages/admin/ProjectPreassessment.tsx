@@ -7,7 +7,7 @@ import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { StatusBadge } from '../../components/ui/ListRow';
 
-// Voorbeoordeling van het ingeleverde eindproduct (server/preassessment.js).
+// Voorbeoordeling van het ingeleverde eindproduct (server/projects/preassessment.js).
 // Alleen voor docenten van de cursus: een Beoordelaar aanwijzen, per
 // inlevering de voorbeoordeling bekijken of als Word downloaden, en alles in
 // één zip. Studenten zien alleen dát er een voorbeoordeling voor de docent is.

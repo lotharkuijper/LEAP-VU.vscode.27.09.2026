@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Fase 0 "Verbeter deze uitleg": meting tegen het echte model. Schrijft NIETS weg.
 //
-// Per begrip doet het script wat de productieversie doet (zelfde module, server/flawedExplanations.js):
+// Per begrip doet het script wat de productieversie doet (zelfde module, server/explain/flawedExplanations.js):
 //   1. fragmenten uit het cursusmateriaal ophalen (embedding + match_document_chunks);
 //   2. één aanroep: eerst een juiste uitleg, dan een versie met k fouten (k = 1..3, willekeurig);
 //   3. een BLINDE controle (weet niet dat er fouten in zitten) moet precies de bedoelde
@@ -16,8 +16,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-import { computeChatConfig } from '../server/chatConfig.js';
-import { makeExercise as prodMakeExercise, sourcesText as srcText, MAX_ATTEMPTS } from '../server/flawedExplanations.js';
+import { computeChatConfig } from '../server/chat/chatConfig.js';
+import { makeExercise as prodMakeExercise, sourcesText as srcText, MAX_ATTEMPTS } from '../server/explain/flawedExplanations.js';
 
 const PER_COURSE = Number(process.argv[2] || 20);
 const OUT = process.argv[3] || 'eval-output';
@@ -51,7 +51,7 @@ async function llm(system, user, effort, maxTokens = 6000) {
   return null;
 }
 
-// Zoals in productie (flawedChunksFor in server/index.js): eerst het opgeslagen
+// Zoals in productie (flawedChunksFor in server/explain/routes.js): eerst het opgeslagen
 // bewijs van het begrip (concept_evidence), aangevuld met zoeken in het materiaal.
 async function retrieve(concept, docIds) {
   const out = [];
@@ -88,7 +88,7 @@ Antwoord uitsluitend met JSON: {"per_fout": [{"echt_fout": "...", "wezenlijk": "
 
 function sourcesText(chunks) { return srcText(chunks); }
 
-// Productieweg (server/flawedExplanations.js), met de pogingen bewaard voor de meting.
+// Productieweg (server/explain/flawedExplanations.js), met de pogingen bewaard voor de meting.
 async function makeExercise(concept, chunks, related) {
   const attempts = [];
   const t0 = Date.now();

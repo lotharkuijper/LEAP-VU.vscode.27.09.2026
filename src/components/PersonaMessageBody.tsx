@@ -4,7 +4,7 @@ import { SourceList, type SourceItem } from './SourceList';
 import { ragDocumentDownloadUrl } from '../services/rag.service';
 import { useLanguage } from '../i18n';
 
-/** Bron zoals de server hem bij een persona-antwoord meestuurt/bewaart (server/citationSources.js). */
+/** Bron zoals de server hem bij een persona-antwoord meestuurt/bewaart (server/chat/citationSources.js). */
 export interface PersonaSource {
   index: number;
   title: string;

@@ -289,7 +289,7 @@ export function ExplainPage() {
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [filteredConcepts, setFilteredConcepts] = useState<Concept[]>([]);
   const [selectedConcept, setSelectedConcept] = useState<Concept | null>(null);
-  // Plek van elk begrip in de stof (server/conceptOrder.js): volgorde + kleurverloop.
+  // Plek van elk begrip in de stof (server/concepts/conceptOrder.js): volgorde + kleurverloop.
   const places = useConceptOrder(activeCourse);
   // Leg zelf uit / Verbeter deze uitleg (onderdelen van Ik leg uit, per cursus aan/uit).
   const partSelf = explainPartView(courseFeatures.features, 'explainSelf', courseFeatures.isStaff);

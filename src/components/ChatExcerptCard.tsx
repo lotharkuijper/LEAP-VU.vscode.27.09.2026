@@ -6,7 +6,7 @@ import { useLanguage } from '../i18n';
 import { openRagDocument } from '../services/rag.service';
 
 // Bijlage-vorm (Task #351): een geciteerd AI-antwoord uit de chat. Spiegelt de
-// server-side gevalideerde vorm (sanitizeAttachments in server/studiecafe.js).
+// server-side gevalideerde vorm (sanitizeAttachments in server/studiecafe/studiecafe.js).
 export interface AttachmentSource {
   index?: number;
   title: string;

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import express from 'express';
 import multer from 'multer';
-import { registerCourseInfoRoutes } from '../courseInfo.js';
+import { registerCourseInfoRoutes } from '../courses/courseInfo.js';
 
 // ───────────────────────────────────────────────────────────────────────────
 // Integratietests voor de Cursus-info-endpoints (Task #203). De routes worden

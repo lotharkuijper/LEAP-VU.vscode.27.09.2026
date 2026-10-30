@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Voorbeoordeling van het eindproduct end-to-end tegen de draaiende API en het
-// echte taalmodel (server/preassessment.js).
+// echte taalmodel (server/projects/preassessment.js).
 //
 // Gebruik: node --env-file=.env scripts/check-preassessment.mjs [--long]
 //

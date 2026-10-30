@@ -21,7 +21,7 @@
 import { supabase } from '../lib/supabase';
 import { getAccessibleFolders } from './permissions.service';
 import { STORAGE_CONFIG } from '../config/storage.config';
-import { purposeAllowsModule } from '../../server/filePurpose.js';
+import { purposeAllowsModule } from '../../server/rag/filePurpose.js';
 import {
   searchRelevantChunksWithStats,
   fetchConceptEvidence,
@@ -69,7 +69,7 @@ async function defaultAllowedDocumentIds(courseId: string, role: Role): Promise<
     .select('id, purpose')
     .in('folder_id', scoped)
     .eq('bucket', STORAGE_CONFIG.buckets.RAG_SOURCES);
-  // Cursusinformatie levert geen quizbewijs (zie server/filePurpose.js).
+  // Cursusinformatie levert geen quizbewijs (zie server/rag/filePurpose.js).
   return new Set((data || [])
     .filter((d: { purpose?: string | null }) => purposeAllowsModule(d.purpose, 'quiz'))
     .map((d: { id: string }) => d.id));

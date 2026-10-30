@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { serverFiles, fileSource } from './helpers/serverSource.js';
 import {
   extractMessages, buildTranslator, translateBody, normalizeLang, serverI18nMiddleware, translateServerMessage,
-} from '../serverI18n.js';
+} from '../i18n/serverI18n.js';
 
 // 2026-09-27: servermeldingen kwamen altijd in het Nederlands, ook als de
 // interface in een andere taal stond. De middleware vertaalt ze nu.
@@ -84,8 +85,11 @@ describe('meldingenlijst en vertalingen zijn compleet', () => {
   const sources = JSON.parse(fs.readFileSync(path.join(i18nDir, 'messages.source.json'), 'utf8'));
   it('messages.source.json is actueel met de code (nieuwe melding → node scripts/extract-server-messages.mjs)', () => {
     const found = new Set();
-    for (const f of fs.readdirSync(serverDir).filter((x) => x.endsWith('.js'))) {
-      for (const m of extractMessages(fs.readFileSync(path.join(serverDir, f), 'utf8'))) found.add(m);
+    // Alle servermodules, ook in de mappen per onderwerp (zoals scripts/extract-server-messages.mjs).
+    const files = serverFiles();
+    expect(files.length).toBeGreaterThan(50);
+    for (const f of files) {
+      for (const m of extractMessages(fileSource(f))) found.add(m);
     }
     expect([...found].filter((m) => !sources.includes(m)), 'meldingen die nog niet in de lijst staan').toEqual([]);
   });

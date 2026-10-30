@@ -10,7 +10,7 @@ import {
   consultationLimitMessage,
   AUTO_CLOSE_MAX_HOURS,
   MAX_CONSULTATIONS_CAP,
-} from '../consultationLimit.js';
+} from '../projects/consultationLimit.js';
 
 describe('normalizeMaxConsultations', () => {
   it('lege/null/undefined → null (onbeperkt)', () => {

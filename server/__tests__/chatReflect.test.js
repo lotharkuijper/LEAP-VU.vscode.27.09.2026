@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { routeSource, functionSource } from './helpers/serverSource.js';
 
 // Tussentijds opslaan in het leerdagboek (2026-10-27): de student hoeft een
 // gesprek niet meer te verwijderen om een reflectie te krijgen. Elke opslag gaat
@@ -8,10 +9,9 @@ import path from 'node:path';
 // gebruikt dezelfde functie en maakt geen dubbele regel.
 
 const root = path.resolve(__dirname, '..', '..');
-const src = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
-const helper = src.slice(src.indexOf('async function createChatReflection'), src.indexOf("app.post('/api/chat/reflect'"));
-const reflectRoute = src.slice(src.indexOf("app.post('/api/chat/reflect'"), src.indexOf("app.post(['/api/chat/delete'"));
-const deleteRoute = src.slice(src.indexOf("app.post(['/api/chat/delete'"), src.indexOf("app.post('/api/embeddings'"));
+const helper = functionSource('createChatReflection');
+const reflectRoute = routeSource("app.post('/api/chat/reflect'");
+const deleteRoute = routeSource("app.post(['/api/chat/delete'");
 
 describe('tussentijds opslaan in het leerdagboek', () => {
   it('kijkt eerst of het leerdagboek aan staat', () => {

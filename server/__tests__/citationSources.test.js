@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildNumberedRagContext, buildSourcesInstructionBlock, locationFromMetadata } from '../citationSources.js';
+import { buildNumberedRagContext, buildSourcesInstructionBlock, locationFromMetadata } from '../chat/citationSources.js';
 
 // Regressie 2026-09-27: persona "Dr. C. Zemouri" gaf voetnoten als ^1 zonder
 // verwijzing naar het cursusmateriaal. De context bevatte alleen "[Bron i]"

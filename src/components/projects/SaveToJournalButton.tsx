@@ -3,7 +3,7 @@ import { BookText, Check, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 
 // "Bewaar in mijn leerdagboek" in de projectruimte (2026-10-27,
-// server/projectJournalSave.js). Groepsteksten (tussenstand, eindreflectie,
+// server/projects/projectJournalSave.js). Groepsteksten (tussenstand, eindreflectie,
 // beoordeling, feedback op ingeleverd werk) staan bij de groep; elk groepslid
 // bewaart zelf wat het in het eigen dagboek wil. Twee keer bewaren geeft geen
 // dubbele regel. Met withNote kan de student er een eigen reflectie bij zetten.

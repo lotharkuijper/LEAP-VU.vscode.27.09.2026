@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import crypto from 'node:crypto';
 import express from 'express';
-import { verifyHookSignature, buildVerifyLink, buildAuthEmail, registerAuthEmailHook } from '../authEmailHook.js';
+import { verifyHookSignature, buildVerifyLink, buildAuthEmail, registerAuthEmailHook } from '../account/authEmailHook.js';
 
 const KEY = crypto.randomBytes(32);
 const SECRET = `v1,whsec_${KEY.toString('base64')}`;
@@ -90,7 +90,7 @@ describe('buildAuthEmail', () => {
   });
 
   it('heeft de teksten in elke taal (geen kale sleutels)', async () => {
-    const { SUPPORTED_LANG_CODES } = await import('../languages.js');
+    const { SUPPORTED_LANG_CODES } = await import('../i18n/languages.js');
     for (const lang of SUPPORTED_LANG_CODES) {
       for (const type of ['signup', 'invite', 'recovery', 'magiclink']) {
         const mail = buildAuthEmail(payload(type).email_data, { ...opts, lang });

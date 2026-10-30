@@ -24,7 +24,7 @@ interface OverviewProject {
   activeGroup: { id: string; name: string; invite_code: string; status: string; lastCheckpointAt: string | null } | null;
   /** Afgeronde groep: terugkijken en in het eigen leerdagboek bewaren (alleen lezen). */
   finishedGroup?: { id: string; name: string } | null;
-  /** Groepsindeling: alleen bij 'self' maakt de student zelf een groep (server/projectGroups.js). */
+  /** Groepsindeling: alleen bij 'self' maakt de student zelf een groep (server/projects/projectGroups.js). */
   group_mode?: 'self' | 'teacher' | 'canvas' | null;
   allow_self_signup?: boolean | null;
   /** Project van een vorige editie (gearchiveerd): alleen je afgeronde groep terugkijken. */

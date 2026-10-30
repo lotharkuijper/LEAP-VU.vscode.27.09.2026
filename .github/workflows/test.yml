@@ -1,0 +1,65 @@
+name: Tests
+
+# Draait de tests bij elke pull request naar main (en bij een push naar een
+# andere branch dan main). Zet niets live; uitrollen doet azure-deploy.yml bij
+# een push naar main. Zo zie je vóór het samenvoegen of alles nog werkt.
+#
+# Bewust alleen controles die stabiel zijn en nu slagen: tests (zonder
+# geheimen; in CI één herkansing per test), servermeldingen, lint-FOUTEN in de
+# servercode en de frontend-build. De typecheck en de frontend-lint hebben nog
+# oude meldingen en staan er daarom (nog) niet in.
+#
+# Mislukt deze workflow, dan: `gh run view <id> --log-failed`, de oorzaak lokaal nadoen en die repareren. Nooit een test
+# overslaan of afzwakken om groen te krijgen.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches-ignore: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Afhankelijkheden
+        # Zelfde npm-versie als de Dockerfile (npm 11); npm 10 van Node 22 leest
+        # het lockbestand anders en weigert dan.
+        run: npm install -g npm@11 && npm ci --no-audit --no-fund
+      - name: Tests (server en frontend)
+        # github-actions-reporter zet mislukte tests als aantekening bij de
+        # regel in de pull request; default houdt de leesbare log.
+        run: npx vitest run --reporter=default --reporter=github-actions
+      - name: Servermeldingen actueel
+        if: ${{ !cancelled() }}
+        run: node scripts/extract-server-messages.mjs --check
+      - name: Servercode (ontbrekende imports, tikfouten)
+        if: ${{ !cancelled() }}
+        run: npx eslint server --quiet
+      - name: Frontend bouwt
+        if: ${{ !cancelled() }}
+        run: npx vite build
+      - name: Samenvatting bij een fout
+        if: ${{ failure() }}
+        run: |
+          {
+            echo "## Tests mislukt"
+            echo ""
+            echo "Bekijk de mislukte stap hierboven, of lokaal:"
+            echo '`gh run view ${{ github.run_id }} --log-failed | tail -300`'
+            echo ""
+            echo "Doe de fout lokaal na met dezelfde opdracht (bv. \`npx vitest run <bestand>\`) en repareer de oorzaak."
+          } >> "$GITHUB_STEP_SUMMARY"

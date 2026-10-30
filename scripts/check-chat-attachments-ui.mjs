@@ -17,7 +17,8 @@ const BASE = process.env.UI_AUDIT_BASE || 'http://localhost:5000';
 const [imgArg, shotsArg] = process.argv.slice(2);
 const shots = shotsArg || 'ui-audit-output/chat-bijlagen';
 fs.mkdirSync(shots, { recursive: true });
-const img = imgArg || 'attached_assets/image_1776096257596.png';
+const img = imgArg;
+if (!img) { console.error('Geef een testafbeelding (png) mee als eerste argument.'); process.exit(1); }
 const imgB64 = fs.readFileSync(img).toString('base64');
 
 const KEY = '__chat_attachments__';

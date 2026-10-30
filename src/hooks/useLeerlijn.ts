@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchLeerlijn, type LeerlijnUnit } from '../services/course-files.service';
 
-// Leerlijn van de actieve cursus voor de chat (server/courseUnits.js): het
+// Leerlijn van de actieve cursus voor de chat (server/courses/courseUnits.js): het
 // onderdeel bij elke bron, en de keuze "Ik werk aan …" (standaard automatisch:
 // dan bepaalt de vraag zelf het onderdeel). De keuze is een gemak per cursus
 // in deze browser; geen gegevens die iemand anders ziet.

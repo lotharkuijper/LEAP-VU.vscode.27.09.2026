@@ -127,9 +127,9 @@ function AppRoutes() {
 
       <Route path="/activate" element={<ActivatePage />} />
 
-      {/* Landing na de Canvas-link (server/lti.js): wisselt de eenmalige inlogcode in. */}
+      {/* Landing na de Canvas-link (server/lti/lti.js): wisselt de eenmalige inlogcode in. */}
       <Route path="/lti/start" element={<LtiStartPage />} />
-      {/* Uitnodiging van een docent (server/courseInvitations.js). */}
+      {/* Uitnodiging van een docent (server/courses/courseInvitations.js). */}
       <Route path="/invite" element={<InviteAcceptPage />} />
 
       <Route

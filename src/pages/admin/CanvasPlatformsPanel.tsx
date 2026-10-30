@@ -7,7 +7,7 @@ import { AdminHint } from '../../components/help/AdminHint';
 import { Tooltip } from '../../components/help/Tooltip';
 
 // Beheer → Instellingen: Canvas-omgevingen voor de LTI-koppeling
-// (GET/PUT /api/admin/lti-platforms, server/lti.js). Niets hiervan is geheim;
+// (GET/PUT /api/admin/lti-platforms, server/lti/lti.js). Niets hiervan is geheim;
 // de sleutel van LEAP zelf blijft in Key Vault en is voor inloggen niet nodig.
 interface Platform { issuer: string; clientId: string; deploymentIds: string; authUrl: string; jwksUrl: string }
 interface Attempt { issuer: string; clientId: string; deploymentId: string; at: string }

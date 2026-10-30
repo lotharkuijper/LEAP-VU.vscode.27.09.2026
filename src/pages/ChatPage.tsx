@@ -231,7 +231,7 @@ export function ChatPage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   // Bijlagen in de chat: alleen in het geheugen van deze pagina (src/lib/chatAttachments.ts).
   const att = useChatAttachments(activeCourse, currentConversationId);
-  // Leerlijn: onderdeel bij de bronnen en de keuze "Ik werk aan …" (server/courseUnits.js).
+  // Leerlijn: onderdeel bij de bronnen en de keuze "Ik werk aan …" (server/courses/courseUnits.js).
   const leerlijn = useLeerlijn(activeCourse);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
@@ -343,7 +343,7 @@ export function ChatPage() {
     loadConversations();
   }, [profile, activeCourse]);
 
-  // Optioneel doel voor dit gesprek (server/chatGoal.js). touched = ooit gezet in dit
+  // Optioneel doel voor dit gesprek (server/chat/chatGoal.js). touched = ooit gezet in dit
   // gesprek: dan gaat het (ook als het weer is weggehaald) mee als label bij elk bericht.
   const [chatGoal, setChatGoal] = useState<string | null>(null);
   const [chatGoalTouched, setChatGoalTouched] = useState(false);

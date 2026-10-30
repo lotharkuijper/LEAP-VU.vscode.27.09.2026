@@ -6,18 +6,13 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { functionSource, routeSource } from './helpers/serverSource.js';
 
 const root = path.resolve(__dirname, '..', '..');
-const src = fs.readFileSync(path.join(root, 'server/index.js'), 'utf8');
 const migration = fs.readFileSync(path.join(root, 'supabase/migrations/20261008100000_teacher_privacy.sql'), 'utf8');
 
-/** De code van één route (tot de volgende route). */
-function routeBlock(signature) {
-  const i = src.indexOf(signature);
-  if (i < 0) throw new Error(`route niet gevonden: ${signature}`);
-  const next = src.indexOf('\napp.', i + signature.length);
-  return src.slice(i, next < 0 ? undefined : next);
-}
+/** De code van één route (gevonden door de code te ontleden, waar die ook staat). */
+const routeBlock = (signature) => routeSource(signature);
 
 const GROUP_CONTENT_ROUTES = [
   "app.get('/api/projects/groups/:groupId/conversation-log'",
@@ -40,8 +35,7 @@ describe('docenten zien de inhoud van projectgroepen niet', () => {
   });
 
   it('feedback op ingeleverd werk: geen docenttoegang', () => {
-    const i = src.indexOf('async function loadFeedbackContext');
-    const fn = src.slice(i, src.indexOf('\n}\n', i));
+    const fn = functionSource('loadFeedbackContext');
     expect(fn).toContain('const isStaff = isLeapAdmin(profile);');
   });
 
@@ -82,5 +76,27 @@ describe('database: brede docent-leesregels weg, rol niet zelf te wijzigen', () 
   });
   it('rolwijziging alleen door beheerder of server', () => {
     expect(migration).toContain('CREATE TRIGGER pr_guard_profile_role BEFORE INSERT OR UPDATE ON public.profiles');
+  });
+});
+
+// Beveiligingsronde 2026-10-30: docenten kwamen via de server toch in een
+// studentengroep (code opvragen, aansluiten, zichzelf indelen).
+describe('docenten komen niet via de server in een studentengroep', () => {
+  it('aansluiten met een code: een docent (geen admin) mag niet bij een groep met andere leden', () => {
+    const block = routeBlock("app.post('/api/projects/groups/join'");
+    expect(block).toMatch(/if \(isStaff && !isLeapAdmin\(profile\)\)/);
+    expect(block).toMatch(/\.neq\('user_id', auth\.user\.id\)/);
+  });
+  it('en een student sluit niet aan bij een groep waarin een docent van de cursus zit', () => {
+    const block = routeBlock("app.post('/api/projects/groups/join'");
+    expect(block).toMatch(/\.eq\('member_role', 'teacher'\)\.in\('user_id', memberIds\)/);
+  });
+  it('groepsbeheer geeft de uitnodigingscodes niet aan docenten', () => {
+    const block = routeBlock("app.get('/api/projects/:projectId/group-admin'");
+    expect(block).not.toMatch(/invite_code/);
+  });
+  it('indelen: alleen studenten van de cursus, nooit een docent', () => {
+    const block = routeBlock("app.put('/api/projects/:projectId/group-admin/members/:userId'");
+    expect(block).toMatch(/cm\.member_role !== 'student'/);
   });
 });

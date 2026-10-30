@@ -6,7 +6,7 @@ import { HelpTip } from '../help/HelpTip';
 import { Tooltip } from '../help/Tooltip';
 import { fetchLeerlijn, fetchLeerlijnProposal, saveLeerlijn, type CourseFile } from '../../services/course-files.service';
 
-// Leerlijn: de volgorde van de stof (server/courseUnits.js). Onderdelen met een
+// Leerlijn: de volgorde van de stof (server/courses/courseUnits.js). Onderdelen met een
 // positie; een gelijke positie = naast elkaar. Geen datums: het gaat om de
 // opbouw van de stof. De tutorchat verwijst terug naar voorafgaande
 // onderdelen en spaarzaam vooruit (behalve naar wat de student al oefende).

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseJournalSections, journalFieldsFromModel, sectionsToText, normalizeSections, journalFormatInstruction,
-} from '../journalSections.js';
+} from '../journal/journalSections.js';
 
 const MODEL_ANSWER = `### SUMMARY
 Je hebt het verschil tussen "én" en "gegeven" leren zien door naar de noemer te kijken.

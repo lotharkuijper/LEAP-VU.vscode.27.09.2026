@@ -11,10 +11,10 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import express from 'express';
-import { registerRelationshipAdjustRoute } from '../relationshipAdjust.js';
-import { setRelationshipLevelImpl } from '../threadClose.js';
-import { levelKey } from '../personaRelationship.js';
-import { reputationActive } from '../personaRoles.js';
+import { registerRelationshipAdjustRoute } from '../projects/relationshipAdjust.js';
+import { setRelationshipLevelImpl } from '../projects/threadClose.js';
+import { levelKey } from '../projects/personaRelationship.js';
+import { reputationActive } from '../projects/personaRoles.js';
 import { makeFakeRelationshipSupabase } from './helpers/fakeRelationshipSupabase.js';
 
 const PROJECT_ID = 'proj-1';
@@ -39,6 +39,7 @@ beforeAll(async () => {
       ? { user: authState.user }
       : { error: { status: 401, body: { error: 'Niet geauthenticeerd' } } }),
     isStaffForCourse: async () => staffState,
+    getProfile: async () => ({ data: { role: 'student', email: 'x@example.org' } }),
     setRelationshipLevel: (args) => setRelationshipLevelImpl({ supabaseAdmin: fakeSupabase }, args),
     levelKey,
     reputationActive,

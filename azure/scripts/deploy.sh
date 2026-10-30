@@ -133,7 +133,7 @@ YAML
 
 # "Onze Supabase": gateway + Supabase Auth + PostgREST in één app, één publiek adres.
 # Inloggen werkt als bij Supabase in de cloud: e-mail + wachtwoord, bevestiging per
-# e-mail. De e-mails zelf verstuurt de LEAP-server (server/authEmailHook.js).
+# e-mail. De e-mails zelf verstuurt de LEAP-server (server/account/authEmailHook.js).
 deploy_supabase() {
   mirror "$GOTRUE_IMAGE"; mirror "$POSTGREST_IMAGE"
   local gateway; gateway=$(build "$REPO/azure/gateway" leap-gateway) || exit 1

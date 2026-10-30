@@ -7,7 +7,7 @@ import { useLanguage } from '../../i18n';
 import { AdminHint } from '../../components/help/AdminHint';
 import { HelpTip } from '../../components/help/HelpTip';
 
-// Bijlagen in de chat per cursus (server/chatAttachments.js). Opt-in: staat
+// Bijlagen in de chat per cursus (server/chat/chatAttachments.js). Opt-in: staat
 // standaard uit en gaat pas aan na een waarschuwing en een tweede bevestiging.
 // Werkt alleen als de beheerder bijlagen platformbreed toestaat.
 

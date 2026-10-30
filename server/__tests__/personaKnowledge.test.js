@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
+import { allServerSource, routeSource } from './helpers/serverSource.js';
 import {
   isDataDocument, canBeKnowledge, knowledgeFieldsFrom, copyKnowledgeFields, filterKnowledgeIds,
   buildEvaluatorMaterial, buildProjectKnowledgeContext, knownByMap, EVALUATOR_TOTAL_MAX_CHARS,
-} from '../personaKnowledge.js';
+} from '../projects/personaKnowledge.js';
 
 // "Wat kent deze persona?" (2026-10-27). Per persona kiest de docent welke
 // cursusbestanden en projectdocumenten de persona kent; nieuwe persona's kennen
 // niets; databestanden zijn nooit kennis; studenten zien de keuze niet.
 
 const root = path.resolve(__dirname, '..', '..');
-const idx = fs.readFileSync(path.join(root, 'server', 'index.js'), 'utf8').replace(/\r\n/g, '\n');
+// Alle servercode (de routes staan sinds de opsplitsing in domeinmodules). De
+// tellingen hieronder zijn gelijk aan die in het oude server/index.js: geen van
+// de al eerder losse modules bevat deze aanroepen.
+const idx = allServerSource();
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
 const C = '33333333-3333-4333-8333-333333333333';
@@ -109,8 +113,7 @@ describe('koppeling in de server', () => {
     expect((idx.match(/sanitizePersonaKnowledge\(knowledgeFieldsFrom\(req\.body/g) || []).length).toBe(4);
   });
   it('het persona-gesprek leest niet meer álle projectdocumenten, en niet rag_enabled', () => {
-    const start = idx.indexOf("app.post('/api/projects/persona-chat'");
-    const route = idx.slice(start, idx.indexOf('\napp.', start + 10));
+    const route = routeSource("app.post('/api/projects/persona-chat'");
     expect(route).not.toMatch(/from\('project_documents'\)/);
     expect(route).not.toMatch(/persona\.rag_enabled/);
     expect(route).toMatch(/loadPersonaProjectDocs\(supabaseAdmin, persona\)/);
@@ -119,16 +122,16 @@ describe('koppeling in de server', () => {
   it('beoordelaars lezen hun kennis, niet meer de oude rubric-uploads of alle projectdocumenten', () => {
     expect(idx).not.toMatch(/\.eq\('is_hidden_rubric', true\);\n\s*const rubricBlock/);
     expect((idx.match(/await loadEvaluatorMaterial\(supabaseAdmin, \w+\)/g) || []).length).toBe(2);
-    const pre = fs.readFileSync(path.join(root, 'server', 'preassessment.js'), 'utf8');
+    const pre = fs.readFileSync(path.join(root, 'server', 'projects', 'preassessment.js'), 'utf8');
     expect(pre).not.toMatch(/is_hidden_rubric/);
     expect(pre).toMatch(/buildEvaluatorMaterial\(rubricDocs\)/);
   });
   it('studenten krijgen de kennisinstellingen niet mee in de projectkamer', () => {
-    expect(idx).toMatch(/const \{ course_knowledge: _ck, course_knowledge_doc_ids: _cd, project_knowledge_doc_ids: _pd, rag_folder_ids: _rf, \.\.\.rest \} = p;/);
+    expect(routeSource("app.get('/api/projects/:projectId/room'")).toMatch(/const \{ course_knowledge: _ck, course_knowledge_doc_ids: _cd, project_knowledge_doc_ids: _pd, rag_folder_ids: _rf, \.\.\.rest \} = p;/);
   });
   it('verwijderen of omzetten naar data haalt het document weg uit wat persona\'s kennen', () => {
-    expect(idx).toMatch(/update\.material_kind === 'data' \? await forgetProjectDocKnowledge\(projectId, docId\)/);
-    const del = idx.slice(idx.indexOf("app.delete('/api/projects/:projectId/documents/:docId'"));
+    expect(routeSource("app.patch('/api/projects/:projectId/documents/:docId'")).toMatch(/update\.material_kind === 'data' \? await forgetProjectDocKnowledge\(projectId, docId\)/);
+    const del = routeSource("app.delete('/api/projects/:projectId/documents/:docId'");
     expect(del.slice(0, 1500)).toMatch(/await forgetProjectDocKnowledge\(projectId, docId\)/);
   });
   it('migratie met terugdraaiscript', () => {

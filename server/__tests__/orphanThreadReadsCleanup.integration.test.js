@@ -19,7 +19,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import pg from 'pg';
-import { buildOrphanThreadReadsCleanupSql } from '../studiecafe.js';
+import { buildOrphanThreadReadsCleanupSql } from '../studiecafe/studiecafe.js';
 
 const { Client } = pg;
 const CONN = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
