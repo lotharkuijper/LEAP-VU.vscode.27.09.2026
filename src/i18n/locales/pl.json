@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Wybierz kurs —",
   "addUsers.emailsLabel": "Adresy e-mail (jeden lub więcej)",
   "addUsers.emailsPlaceholder": "Wklej tutaj adresy e-mail, rozdzielone przecinkiem, średnikiem, spacją lub nowym wierszem…",
+  "addUsers.emailsHint": "Wpisz adresy jeden pod drugim albo oddziel je przecinkiem, średnikiem lub spacją. Możesz też wkleić listę z Outlooka: nazwy zostaną pominięte, liczą się tylko adresy e-mail.",
   "addUsers.uploadBtn": "Prześlij plik",
   "addUsers.uploadHint": "Excel, CSV lub tekst (.docx/.pdf w miarę możliwości)",
   "addUsers.fileLoaded": "Dodano {n} adres(ów) z pliku",

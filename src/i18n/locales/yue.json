@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— 選擇課程 —",
   "addUsers.emailsLabel": "電郵地址（一個或多個）",
   "addUsers.emailsPlaceholder": "喺呢度貼上電郵地址，以逗號、分號、空格或新行分隔…",
+  "addUsers.emailsHint": "將地址逐行輸入，或用逗號、分號或空格分隔。亦可以貼上 Outlook 嘅清單：姓名會被略過，只會計算電郵地址。",
   "addUsers.uploadBtn": "上載檔案",
   "addUsers.uploadHint": "Excel、CSV 或文字檔（.docx/.pdf 盡力處理）",
   "addUsers.fileLoaded": "已從檔案新增 {n} 個地址",

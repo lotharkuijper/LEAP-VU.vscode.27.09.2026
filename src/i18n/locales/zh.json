@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— 选择一门课程 —",
   "addUsers.emailsLabel": "电子邮件地址（一个或多个）",
   "addUsers.emailsPlaceholder": "在此粘贴电子邮件地址，用逗号、分号、空格或换行分隔…",
+  "addUsers.emailsHint": "请将地址逐行输入，或用逗号、分号或空格分隔。也可以粘贴 Outlook 中的列表：姓名会被跳过，只会识别电子邮件地址。",
   "addUsers.uploadBtn": "上传文件",
   "addUsers.uploadHint": "Excel、CSV 或文本（.docx/.pdf 尽力支持）",
   "addUsers.fileLoaded": "已从文件添加 {n} 个地址",

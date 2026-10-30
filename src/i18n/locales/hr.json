@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Odaberi kolegij —",
   "addUsers.emailsLabel": "Adrese e-pošte (jedna ili više)",
   "addUsers.emailsPlaceholder": "Ovdje zalijepi e-adrese, odvojene zarezom, točkom sa zarezom, razmakom ili novim retkom…",
+  "addUsers.emailsHint": "Stavi adrese jednu ispod druge ili ih odvoji zarezom, točkom sa zarezom ili razmakom. Možeš zalijepiti i popis iz Outlooka: imena se preskaču, računaju se samo e-mail adrese.",
   "addUsers.uploadBtn": "Prenesi datoteku",
   "addUsers.uploadHint": "Excel, CSV ili tekst (.docx/.pdf najbolji mogući rezultat)",
   "addUsers.fileLoaded": "{n} adresa dodano iz datoteke",

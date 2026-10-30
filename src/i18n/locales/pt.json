@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Escolhe um curso —",
   "addUsers.emailsLabel": "Endereços de e-mail (um ou mais)",
   "addUsers.emailsPlaceholder": "Cola aqui os endereços de e-mail, separados por vírgula, ponto e vírgula, espaço ou nova linha…",
+  "addUsers.emailsHint": "Coloca os endereços um por linha ou separa-os por vírgula, ponto e vírgula ou espaço. Também podes colar uma lista do Outlook: os nomes serão ignorados, apenas os endereços de e-mail contam.",
   "addUsers.uploadBtn": "Carregar ficheiro",
   "addUsers.uploadHint": "Excel, CSV ou texto (.docx/.pdf com melhor esforço)",
   "addUsers.fileLoaded": "{n} endereço(s) adicionado(s) a partir do ficheiro",

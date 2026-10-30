@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Kies een cursus —",
   "addUsers.emailsLabel": "E-mailadressen (één of meer)",
   "addUsers.emailsPlaceholder": "Plak hier e-mailadressen, gescheiden door komma, puntkomma, spatie of nieuwe regel…",
+  "addUsers.emailsHint": "Zet de adressen onder elkaar of scheid ze met een komma, puntkomma of spatie. Een lijst uit Outlook plakken mag ook: namen worden overgeslagen, alleen de e-mailadressen tellen.",
   "addUsers.uploadBtn": "Bestand uploaden",
   "addUsers.uploadHint": "Excel, CSV of tekst (.docx/.pdf best-effort)",
   "addUsers.fileLoaded": "{n} adres(sen) uit bestand toegevoegd",

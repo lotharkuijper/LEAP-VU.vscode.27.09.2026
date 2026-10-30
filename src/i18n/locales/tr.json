@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Bir ders seç —",
   "addUsers.emailsLabel": "E-posta adresleri (bir veya daha fazla)",
   "addUsers.emailsPlaceholder": "E-posta adreslerini buraya yapıştır; virgül, noktalı virgül, boşluk veya yeni satırla ayır…",
+  "addUsers.emailsHint": "Adresleri alt alta yaz veya virgül, noktalı virgül ya da boşlukla ayır. Outlook’tan bir liste yapıştırabilirsin: adlar atlanır, yalnızca e-posta adresleri dikkate alınır.",
   "addUsers.uploadBtn": "Dosya yükle",
   "addUsers.uploadHint": "Excel, CSV veya metin (.docx/.pdf en iyi çabayla)",
   "addUsers.fileLoaded": "Dosyadan {n} adres eklendi",

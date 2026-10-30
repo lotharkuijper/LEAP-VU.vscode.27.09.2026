@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— コースを選択 —",
   "addUsers.emailsLabel": "メールアドレス（1件以上）",
   "addUsers.emailsPlaceholder": "メールアドレスをここに貼り付けてください。カンマ、セミコロン、スペース、または改行で区切れます…",
+  "addUsers.emailsHint": "アドレスを1行ずつ入力するか、カンマ、セミコロン、またはスペースで区切ってください。Outlookのリストを貼り付けてもOKです。名前は無視され、メールアドレスだけが対象になります。",
   "addUsers.uploadBtn": "ファイルをアップロード",
   "addUsers.uploadHint": "Excel、CSV、またはテキスト（.docx/.pdf は可能な範囲で対応）",
   "addUsers.fileLoaded": "ファイルから {n} 件のアドレスを追加しました",

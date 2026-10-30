@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Choose a course —",
   "addUsers.emailsLabel": "Email addresses (one or more)",
   "addUsers.emailsPlaceholder": "Paste email addresses here, separated by comma, semicolon, space or newline…",
+  "addUsers.emailsHint": "Put each address on its own line or separate them with a comma, semicolon or space. You can also paste a list from Outlook: names are skipped, only the email addresses count.",
   "addUsers.uploadBtn": "Upload file",
   "addUsers.uploadHint": "Excel, CSV or text (.docx/.pdf best-effort)",
   "addUsers.fileLoaded": "Added {n} address(es) from file",

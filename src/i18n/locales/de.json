@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Wähle einen Kurs —",
   "addUsers.emailsLabel": "E-Mail-Adressen (eine oder mehrere)",
   "addUsers.emailsPlaceholder": "Füge hier E-Mail-Adressen ein, getrennt durch Komma, Semikolon, Leerzeichen oder neue Zeile…",
+  "addUsers.emailsHint": "Setze die Adressen untereinander oder trenne sie mit einem Komma, Semikolon oder Leerzeichen. Du kannst auch eine Liste aus Outlook einfügen: Namen werden übersprungen, nur die E-Mail-Adressen zählen.",
   "addUsers.uploadBtn": "Datei hochladen",
   "addUsers.uploadHint": "Excel, CSV oder Text (.docx/.pdf nach bestem Aufwand)",
   "addUsers.fileLoaded": "{n} Adresse(n) aus Datei hinzugefügt",

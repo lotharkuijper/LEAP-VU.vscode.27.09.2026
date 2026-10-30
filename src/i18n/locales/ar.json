@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— اختر مقررًا —",
   "addUsers.emailsLabel": "عناوين البريد الإلكتروني (واحد أو أكثر)",
   "addUsers.emailsPlaceholder": "الصق عناوين البريد الإلكتروني هنا، مفصولة بفاصلة أو فاصلة منقوطة أو مسافة أو سطر جديد…",
+  "addUsers.emailsHint": "ضع العناوين كلًّا في سطر منفصل أو افصل بينها بفاصلة أو فاصلة منقوطة أو مسافة. يمكنك أيضًا لصق قائمة من Outlook: سيتم تخطي الأسماء، وتُحتسب عناوين البريد الإلكتروني فقط.",
   "addUsers.uploadBtn": "تحميل ملف",
   "addUsers.uploadHint": "Excel أو CSV أو نص (.docx/.pdf بأفضل جهد)",
   "addUsers.fileLoaded": "تمت إضافة {n} عنوان/عناوين من الملف",

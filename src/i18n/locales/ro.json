@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Alege un curs —",
   "addUsers.emailsLabel": "Adrese de e-mail (una sau mai multe)",
   "addUsers.emailsPlaceholder": "Lipește aici adresele de e-mail, separate prin virgulă, punct și virgulă, spațiu sau linie nouă…",
+  "addUsers.emailsHint": "Pune adresele una sub alta sau separă-le prin virgulă, punct și virgulă sau spațiu. Poți lipi și o listă din Outlook: numele vor fi ignorate, contează doar adresele de e-mail.",
   "addUsers.uploadBtn": "Încarcă fișier",
   "addUsers.uploadHint": "Excel, CSV sau text (.docx/.pdf best-effort)",
   "addUsers.fileLoaded": "{n} adresă/adrese adăugată/adăugate din fișier",

@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Elige un curso —",
   "addUsers.emailsLabel": "Direcciones de correo electrónico (una o más)",
   "addUsers.emailsPlaceholder": "Pega aquí direcciones de correo electrónico, separadas por coma, punto y coma, espacio o salto de línea…",
+  "addUsers.emailsHint": "Pon las direcciones una debajo de otra o sepáralas con una coma, punto y coma o espacio. También puedes pegar una lista de Outlook: se omiten los nombres, solo cuentan las direcciones de correo electrónico.",
   "addUsers.uploadBtn": "Subir archivo",
   "addUsers.uploadHint": "Excel, CSV o texto (.docx/.pdf con el mejor esfuerzo)",
   "addUsers.fileLoaded": "{n} dirección(es) añadida(s) desde el archivo",

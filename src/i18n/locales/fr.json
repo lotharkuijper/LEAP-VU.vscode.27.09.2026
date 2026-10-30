@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Choisis un cours —",
   "addUsers.emailsLabel": "Adresses e-mail (une ou plusieurs)",
   "addUsers.emailsPlaceholder": "Colle ici les adresses e-mail, séparées par une virgule, un point-virgule, un espace ou une nouvelle ligne…",
+  "addUsers.emailsHint": "Place les adresses les unes sous les autres ou sépare-les par une virgule, un point-virgule ou un espace. Tu peux aussi coller une liste depuis Outlook : les noms seront ignorés, seules les adresses e-mail seront prises en compte.",
   "addUsers.uploadBtn": "Importer un fichier",
   "addUsers.uploadHint": "Excel, CSV ou texte (.docx/.pdf au mieux)",
   "addUsers.fileLoaded": "{n} adresse(s) ajoutée(s) depuis le fichier",

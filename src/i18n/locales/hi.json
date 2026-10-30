@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— एक कोर्स चुनो —",
   "addUsers.emailsLabel": "ईमेल पते (एक या अधिक)",
   "addUsers.emailsPlaceholder": "यहाँ ईमेल पते पेस्ट करो, जिन्हें कॉमा, सेमीकोलन, स्पेस या नई लाइन से अलग किया गया हो…",
+  "addUsers.emailsHint": "पते एक-दूसरे के नीचे लिखो या उन्हें कॉमा, सेमीकोलन या स्पेस से अलग करो। Outlook से सूची पेस्ट करना भी ठीक है: नाम छोड़ दिए जाएंगे, केवल ईमेल पते गिने जाएंगे।",
   "addUsers.uploadBtn": "फ़ाइल अपलोड करो",
   "addUsers.uploadHint": "Excel, CSV या टेक्स्ट (.docx/.pdf best-effort)",
   "addUsers.fileLoaded": "फ़ाइल से {n} पते जोड़े गए",

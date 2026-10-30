@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Scegli un corso —",
   "addUsers.emailsLabel": "Indirizzi e-mail (uno o più)",
   "addUsers.emailsPlaceholder": "Incolla qui gli indirizzi e-mail, separati da virgola, punto e virgola, spazio o nuova riga…",
+  "addUsers.emailsHint": "Inserisci gli indirizzi uno sotto l’altro o separali con una virgola, un punto e virgola o uno spazio. Puoi anche incollare un elenco da Outlook: i nomi verranno ignorati, contano solo gli indirizzi e-mail.",
   "addUsers.uploadBtn": "Carica file",
   "addUsers.uploadHint": "Excel, CSV o testo (.docx/.pdf best-effort)",
   "addUsers.fileLoaded": "{n} indirizzo/i aggiunto/i dal file",

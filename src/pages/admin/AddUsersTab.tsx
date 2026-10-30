@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Link } from 'react-router-dom';
 import { AdminHint } from '../../components/help/AdminHint';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
+import { parseEmailList } from '../../lib/emailList';
 import {
   UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users, Clock,
 } from 'lucide-react';
@@ -13,7 +14,6 @@ import {
 // request — gelijk aan MAX_BULK_BATCH in server/courses/bulkAccounts.js; grotere lijsten
 // splitsen we client-side in stukken.
 const CHUNK = 50;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 interface CourseOption { id: string; name: string; }
 type ProvisionStatus = 'invited' | 'added' | 'alreadyMember' | 'limit' | 'failed';
@@ -80,27 +80,9 @@ export function AddUsersTab() {
     return () => { cancelled = true; };
   }, [courseId]);
 
-  // Client-side voorvertoning: tokeniseer, valideer, ontdubbel. Puur cosmetisch;
-  // de server her-valideert en is de bron van waarheid.
-  const preview = useMemo(() => {
-    const tokens = emailText.split(/[\s,;]+/).map((s) => s.trim()).filter(Boolean);
-    const seen = new Set<string>();
-    const valid: string[] = [];
-    const invalidSeen = new Set<string>();
-    const invalid: string[] = [];
-    let duplicates = 0;
-    for (const tok of tokens) {
-      if (EMAIL_RE.test(tok) && tok.length <= 254) {
-        const low = tok.toLowerCase();
-        if (seen.has(low)) { duplicates++; continue; }
-        seen.add(low); valid.push(low);
-      } else {
-        const low = tok.toLowerCase();
-        if (!invalidSeen.has(low)) { invalidSeen.add(low); invalid.push(tok); }
-      }
-    }
-    return { valid, invalid, duplicates };
-  }, [emailText]);
+  // Client-side voorvertoning: puur cosmetisch; de server her-valideert en is
+  // de bron van waarheid.
+  const preview = useMemo(() => parseEmailList(emailText), [emailText]);
 
   const handleFile = async (file: File) => {
     setError(''); setFileMsg(''); setFileLoading(true);
@@ -238,6 +220,7 @@ export function AddUsersTab() {
           placeholder={t('addUsers.emailsPlaceholder')}
           data-testid="input-emails"
         />
+        <p className="mt-1 text-xs text-gray-500">{t('addUsers.emailsHint')}</p>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <input
             ref={fileInputRef}

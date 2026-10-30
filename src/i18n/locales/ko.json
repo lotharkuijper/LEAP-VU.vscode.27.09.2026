@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— 과정 선택 —",
   "addUsers.emailsLabel": "이메일 주소(하나 이상)",
   "addUsers.emailsPlaceholder": "이메일 주소를 여기에 붙여넣어. 쉼표, 세미콜론, 공백 또는 줄바꿈으로 구분해…",
+  "addUsers.emailsHint": "주소를 한 줄에 하나씩 입력하거나 쉼표, 세미콜론 또는 공백으로 구분해. Outlook에서 복사한 목록을 붙여넣어도 돼: 이름은 건너뛰고 이메일 주소만 인식돼.",
   "addUsers.uploadBtn": "파일 업로드",
   "addUsers.uploadHint": "Excel, CSV 또는 텍스트(.docx/.pdf는 가능한 범위에서 지원)",
   "addUsers.fileLoaded": "파일에서 {n}개 주소 추가됨",

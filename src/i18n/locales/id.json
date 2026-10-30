@@ -176,6 +176,7 @@
   "addUsers.coursePlaceholder": "— Pilih mata kuliah —",
   "addUsers.emailsLabel": "Alamat email (satu atau lebih)",
   "addUsers.emailsPlaceholder": "Tempel alamat email di sini, dipisahkan dengan koma, titik koma, spasi, atau baris baru…",
+  "addUsers.emailsHint": "Letakkan alamat satu per satu di baris terpisah atau pisahkan dengan koma, titik koma, atau spasi. Kamu juga boleh menempelkan daftar dari Outlook: nama akan dilewati, hanya alamat email yang dihitung.",
   "addUsers.uploadBtn": "Unggah file",
   "addUsers.uploadHint": "Excel, CSV, atau teks (.docx/.pdf best-effort)",
   "addUsers.fileLoaded": "{n} alamat dari file ditambahkan",
