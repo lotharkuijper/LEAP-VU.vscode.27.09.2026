@@ -32,4 +32,4 @@ Read the first real error, not the last line. Vitest prints `FAIL <file> > <test
 - Changing the workflow's triggers, permissions or secrets without asking the user.
 
 ## 5. Finish
-Push the fix, run `gh pr checks --watch` again, and tell the user in Dutch: what failed, why, what you changed, and the final status of the run.
+Commit the fix and ask for an explicit "push" before pushing it (never push to `main`). After the push, run `gh pr checks --watch` again and tell the user in Dutch: what failed, why, what you changed, and the final status of the run.

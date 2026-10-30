@@ -58,5 +58,6 @@ Then stop and wait.
 - Branches: `git branch -d <name>` (the safe form; if git refuses, report it instead of forcing).
 - Stashes: `git stash drop stash@{n}` only for confirmed entries; show `git stash show --stat` first.
 - Untracked files: delete exactly the confirmed paths (`rm <path>`), not `git clean -f`.
+- Never delete `db-backups/` (database snapshots can contain student data): name the path and ask the user to check and remove it by hand. Never use globs with `rm`.
 - Containers: `bash scripts/local-db/down.sh`.
 - Afterwards, rerun the relevant checks and report in Dutch what changed.

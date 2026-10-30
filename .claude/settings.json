@@ -30,15 +30,18 @@
       "Bash(az * revoke *)",
       "Bash(az * regenerate *)",
       "Bash(az * renew *)",
-      "Bash(az * secret show *)",
-      "Bash(az * secret download *)",
       "Bash(az * keys list *)",
       "Bash(az * credential *)",
       "Bash(az * show-connection-string *)",
       "Bash(az deployment *)",
       "Bash(az rest *)",
       "Edit(/supabase/migrations/**)",
-      "Edit(/.github/workflows/**)"
+      "Edit(/.github/workflows/**)",
+      "Bash(az * secret *)",
+      "Bash(az * appsettings *)",
+      "Bash(az account get-access-token*)",
+      "Bash(az * grant *)",
+      "Bash(az * rotate *)"
     ],
     "deny": [
       "Read(.env)",

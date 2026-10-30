@@ -47,7 +47,7 @@ Stack: React + TypeScript + Vite (`src/`), Node/Express 5 (`server/`), self-host
 - The repo is public. Never describe an unfixed vulnerability or Azure weakness in code, comments, commits, PRs, issues or docs; tell the maintainer privately.
 
 ### Secrets
-- Secrets live only in Azure Key Vault (`kv-vu-leap`); locally in `.env` (git-ignored; `.claude/settings.json` blocks Claude from reading it). Scripts get them with `node --env-file=.env …`.
+- Secrets live only in Azure Key Vault (`kv-vu-leap`); locally in `.env` (git-ignored; `.claude/settings.json` stops the file tools and `cat`/`head`/`tail` from reading it, but a script can still load it, so this is a guard rail, not a wall). Scripts get them with `node --env-file=.env …`.
 - Never print, paste or commit a secret value, also not in a chat answer meant to be copied into an e-mail. If one was shared anyway, advise rotating it in Key Vault.
 - Azure OpenAI only through the configured deployment names and API version; never fall back to public OpenAI.
 
