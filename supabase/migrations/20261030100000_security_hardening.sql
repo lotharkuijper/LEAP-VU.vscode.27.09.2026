@@ -1,20 +1,16 @@
 -- Beveiligingsronde 2026-10-30 (docs/security/README.md). Terugdraaien:
 -- supabase/rollback/20261030100000_security_hardening_down.sql
 --
--- 1. Projectgroepen: elke ingelogde gebruiker kon via de database-API zelf een
---    groep in elk project maken, zich bij elke groep aanmelden of een groep naar
---    een ander project verhangen. De browser doet dat nooit zelf: aanmaken,
---    aansluiten en indelen gaan via de server (service role), met de controles
---    op cursus, groepsindeling en privacy. Daarom deze schrijfregels weg.
+-- 1. Projectgroepen: aanmaken, aansluiten en indelen gaan via de server
+--    (service role), met de controles op cursus, groepsindeling en privacy.
+--    De browser schrijft deze tabellen nooit zelf, dus geen schrijfregels.
 DROP POLICY IF EXISTS project_groups_insert ON public.project_groups;
 DROP POLICY IF EXISTS project_groups_update ON public.project_groups;
 DROP POLICY IF EXISTS pgm_insert ON public.project_group_members;
 
--- 2. Projectdocumenten: elke docent (globale rol) zag de documenten van elk
---    project, en groepsleden zagen ook verborgen documenten en de rubric. Nu:
---    beheerder, docent van DEZE cursus, of groepslid voor documenten die voor
---    studenten zichtbaar zijn en geen rubric zijn. (De browser leest deze tabel
---    niet zelf; de server gebruikt de service role.)
+-- 2. Projectdocumenten lezen: beheerder, docent van DEZE cursus, of groepslid
+--    voor documenten die voor studenten zichtbaar zijn en geen rubric zijn.
+--    (De browser leest deze tabel niet zelf; de server gebruikt de service role.)
 DROP POLICY IF EXISTS project_documents_select ON public.project_documents;
 CREATE POLICY project_documents_select ON public.project_documents
   FOR SELECT TO authenticated
@@ -36,11 +32,10 @@ CREATE POLICY project_documents_select ON public.project_documents
     )
   );
 
--- 3. Profielen: het e-mailadres in profiles is waarop Canvas (LTI) en
---    uitnodigingen een bestaand account zoeken. Een gebruiker mocht het zelf
---    wijzigen en zo andermans Canvas-login naar zijn eigen account laten
---    wijzen. Nu: alleen beheerder of server wijzigt het; bij het aanmaken van
---    het eigen profiel moet het het eigen inlogadres zijn.
+-- 3. Profielen: Canvas (LTI) en uitnodigingen zoeken een bestaand account op
+--    het e-mailadres in profiles. Dat adres wijzigt daarom alleen een beheerder
+--    of de server; bij het aanmaken van het eigen profiel is het het eigen
+--    inlogadres.
 CREATE OR REPLACE FUNCTION public.pr_guard_profile_role()
  RETURNS trigger
  LANGUAGE plpgsql
