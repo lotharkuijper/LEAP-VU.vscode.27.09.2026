@@ -45,7 +45,7 @@ export function mergeCourseMembers(rows, profiles) {
 }
 
 /**
- * Volgorde voor Beheer leden: docenten eerst, daarna op naam (of e-mailadres).
+ * Volgorde voor de ledenlijst (Openstellen → Leden): docenten eerst, daarna op naam (of e-mailadres).
  * course_members heeft geen datum van aanmelding, dus daar sorteren kan niet.
  */
 export function sortCourseMembers(members) {

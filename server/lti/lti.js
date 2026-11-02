@@ -1,7 +1,7 @@
 // Canvas-koppeling via LTI 1.3 (2026-10-23).
 //
 // Een cursus die de beheerder op "Canvas" zet (courses.enrollment_mode
-// 'canvas' of 'canvas_open'), krijgt in Cursussen beheren een Canvas-link:
+// 'canvas' of 'canvas_open'), krijgt in Beheer → Openstellen → Cursus een Canvas-link:
 //   <app>/lti/launch?course=<LEAP-cursus-id>
 // De docent zet die in Canvas als externe tool (module-item). Klikt een
 // student erop, dan:

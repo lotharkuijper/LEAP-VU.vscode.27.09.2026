@@ -8,7 +8,7 @@ import { collectMemberUserIds, mergeCourseMembers, sortCourseMembers } from '../
 // De route haalt course_members en profiles los op (geen PostgREST-embed
 // mogelijk: course_members.user_id → auth.users, niet profiles) en voegt ze
 // in JS samen. Deze tests bewaken die samenvoeging zodat een toekomstige
-// wijziging de "Beheer leden"-lijst niet stilletjes breekt.
+// wijziging de ledenlijst (Openstellen → Leden) niet stilletjes breekt.
 // ───────────────────────────────────────────────────────────────────────────
 
 describe('collectMemberUserIds', () => {
@@ -105,7 +105,7 @@ describe('mergeCourseMembers', () => {
   });
 });
 
-describe('Beheer leden: volgorde en kolommen (regressie 2026-10-26)', () => {
+describe('de ledenlijst (Openstellen → Leden): volgorde en kolommen (regressie 2026-10-26)', () => {
   it('docenten eerst, daarna op naam of e-mailadres', () => {
     const list = sortCourseMembers([
       { user_id: 'a', member_role: 'student', full_name: 'Zoë', email: 'z@x.nl' },

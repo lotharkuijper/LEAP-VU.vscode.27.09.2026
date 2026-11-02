@@ -124,7 +124,7 @@ describe('koppeling', () => {
     expect(src).toMatch(/`\$\{base\}\/invite#t=\$\{signInviteToken\(row\.id, deps\.secret\)\}`/);
     expect(route("'/api/invitations/accept'", 'async function deleteIfOrphaned')).toMatch(/generateLink\(\{ type, email: au\.user\.email \}\)/);
   });
-  it('de server gebruikt de module voor Beheer leden, en de migratie heeft een terugdraaiscript', () => {
+  it('de server gebruikt de module voor de ledenlijst (Openstellen → Leden), en de migratie heeft een terugdraaiscript', () => {
     const all = allServerSource();
     expect(all).toMatch(/registerCourseInvitationRoutes\(app, \{/);
     expect(routeSource("app.get('/api/admin/courses/:id/members'")).toMatch(/m\.invitation = pending\.get\(m\.user_id\) \|\| null/);

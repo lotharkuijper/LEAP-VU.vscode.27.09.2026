@@ -73,7 +73,7 @@ async function downloadInfoFile(courseId: string, documentId: string): Promise<v
   URL.revokeObjectURL(objectUrl);
 }
 
-// Cursus-info staat sinds 2026-10-26 in Cursussen beheren (knop per cursus),
+// Cursus-info opent sinds 2026-11-02 vanuit Openstellen → Cursus (een dialoog per cursus),
 // dus voor elke cursus; zonder courseId geldt de actieve cursus.
 export default function CursusInfoTab({ courseId, courseName }: { courseId?: string; courseName?: string } = {}) {
   const { t } = useLanguage();
