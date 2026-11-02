@@ -931,9 +931,17 @@ export function AdminPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || t('admin.users.loadFailedStatus', { status: String(res.status) }));
+      const courses = json.courses || [];
       setTeacherCoursesByUser((m) => ({
-        ...m, [userId]: { loading: false, error: null, courses: json.courses || [] },
+        ...m, [userId]: { loading: false, error: null, courses },
       }));
+      // Houd de Rol-kolom in de pas met de wijziging, zonder de pagina te verversen.
+      setTeacherUserIds((prev) => {
+        if (prev.has(userId) === courses.length > 0) return prev;
+        const next = new Set(prev);
+        if (courses.length > 0) next.add(userId); else next.delete(userId);
+        return next;
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('common.unknownError');
       setTeacherCoursesByUser((m) => ({ ...m, [userId]: { loading: false, error: msg, courses: [] } }));
