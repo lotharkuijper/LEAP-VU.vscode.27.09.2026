@@ -49,7 +49,7 @@ const LEVEL_PROFILES = {
       abstractie: 'begin met een alledaags, concreet voorbeeld en kom pas daarna bij het idee; geen formules of symbolen',
       voorkennis: 'ga uit van geen enkele voorkennis van het vak',
       stap: 'heel kleine stap: één eenvoudige vraag die aansluit bij het dagelijks leven',
-      lengte: 'aan de korte kant van wat de docent toestaat; zonder grens van de docent 2 tot 4 korte zinnen',
+      lengte: 'aan de korte kant van wat de docent toestaat; zonder grens van de docent 4 tot 6 korte zinnen',
     },
     2: {
       taal: 'eenvoudige taal op B2-niveau',
@@ -58,7 +58,7 @@ const LEVEL_PROFILES = {
       abstractie: 'eerst een concreet voorbeeld, dan het begrip; een eenvoudige formule alleen als het moet, met uitleg in woorden',
       voorkennis: 'ga uit van weinig voorkennis',
       stap: 'kleine stap: één gerichte vraag',
-      lengte: 'kort binnen het kader van de docent; zonder grens 3 of 4 zinnen',
+      lengte: 'kort binnen het kader van de docent; zonder grens 5 tot 7 zinnen',
     },
     3: {
       taal: 'gewone vaktaal op C1-niveau',
@@ -67,7 +67,7 @@ const LEVEL_PROFILES = {
       abstractie: 'het begrip met een voorbeeld uit het vak; formules mag je gebruiken',
       voorkennis: 'ga uit van basiskennis van de kernbegrippen van de cursus',
       stap: 'middelgrote stap: een vraag die vraagt om toepassen',
-      lengte: 'gemiddeld binnen het kader van de docent; zonder grens 3 tot 5 zinnen',
+      lengte: 'gemiddeld binnen het kader van de docent; zonder grens 5 tot 8 zinnen',
     },
     4: {
       taal: 'academische vaktaal op C1/C2-niveau',
@@ -76,7 +76,7 @@ const LEVEL_PROFILES = {
       abstractie: 'onderliggende mechanismen, nuances en verbanden met andere begrippen',
       voorkennis: 'ga uit van een stevige basis; de kernbegrippen van de cursus zijn bekend',
       stap: 'grotere stap: een vraag over interpretatie, vergelijking of een lastige situatie',
-      lengte: 'wat uitgebreider binnen het kader van de docent; zonder grens 4 tot 6 zinnen',
+      lengte: 'wat uitgebreider binnen het kader van de docent; zonder grens 6 tot 10 zinnen',
     },
     5: {
       taal: 'precieze academische taal op C2-niveau, zoals tussen vakgenoten',
@@ -85,7 +85,7 @@ const LEVEL_PROFILES = {
       abstractie: 'hoog abstractieniveau: principes, aannames, randgevallen, beperkingen en verbanden met gevorderde stof',
       voorkennis: 'ga ervan uit dat de student verwante onderwerpen en de grotere samenhang van het vak al kent',
       stap: 'grote sprong: een uitdagende vraag over randgevallen, kritiek of toepassing in een nieuwe situatie; begin niet bij de basis',
-      lengte: 'aan de lange kant van wat de docent toestaat als het redeneren dat vraagt; zonder grens tot ongeveer 8 zinnen',
+      lengte: 'aan de lange kant van wat de docent toestaat als het redeneren dat vraagt; zonder grens tot ongeveer 14 zinnen',
     },
   },
   en: {
@@ -96,7 +96,7 @@ const LEVEL_PROFILES = {
       abstractie: 'start with an everyday, concrete example and only then the idea; no formulas or symbols',
       voorkennis: 'assume no prior knowledge of the subject at all',
       stap: 'a very small step: one simple question linked to everyday life',
-      lengte: 'at the short end of what the teacher allows; without a teacher limit 2 to 4 short sentences',
+      lengte: 'at the short end of what the teacher allows; without a teacher limit 4 to 6 short sentences',
     },
     2: {
       taal: 'simple language at CEFR B2',
@@ -105,7 +105,7 @@ const LEVEL_PROFILES = {
       abstractie: 'a concrete example first, then the concept; a simple formula only if needed, explained in words',
       voorkennis: 'assume little prior knowledge',
       stap: 'a small step: one focused question',
-      lengte: 'short within the teacher\'s frame; without a limit 3 or 4 sentences',
+      lengte: 'short within the teacher\'s frame; without a limit 5 to 7 sentences',
     },
     3: {
       taal: 'standard subject language at CEFR C1',
@@ -114,7 +114,7 @@ const LEVEL_PROFILES = {
       abstractie: 'the concept with an example from the field; formulas are fine',
       voorkennis: 'assume basic familiarity with the core concepts of the course',
       stap: 'a medium step: a question that asks for application',
-      lengte: 'medium within the teacher\'s frame; without a limit 3 to 5 sentences',
+      lengte: 'medium within the teacher\'s frame; without a limit 5 to 8 sentences',
     },
     4: {
       taal: 'academic language at CEFR C1/C2',
@@ -123,7 +123,7 @@ const LEVEL_PROFILES = {
       abstractie: 'underlying mechanisms, nuances and links to other concepts',
       voorkennis: 'assume a solid foundation; the core concepts of the course are known',
       stap: 'a larger step: a question about interpretation, comparison or a tricky situation',
-      lengte: 'somewhat longer within the teacher\'s frame; without a limit 4 to 6 sentences',
+      lengte: 'somewhat longer within the teacher\'s frame; without a limit 6 to 10 sentences',
     },
     5: {
       taal: 'precise academic language at CEFR C2, as between peers in the field',
@@ -132,7 +132,7 @@ const LEVEL_PROFILES = {
       abstractie: 'a high level of abstraction: principles, assumptions, edge cases, limitations and links to advanced material',
       voorkennis: 'assume the student already knows related topics and the wider coherence of the subject',
       stap: 'a big leap: a challenging question about edge cases, critique or application in a new situation; do not start from the basics',
-      lengte: 'at the long end of what the teacher allows if the reasoning needs it; without a limit up to about 8 sentences',
+      lengte: 'at the long end of what the teacher allows if the reasoning needs it; without a limit up to about 14 sentences',
     },
   },
 };
