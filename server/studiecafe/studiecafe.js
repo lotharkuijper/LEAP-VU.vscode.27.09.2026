@@ -1225,6 +1225,7 @@ export function registerStudiecafeRoutes(app, deps) {
       if (threadIds.length) {
         // read_at=now() én manual_unread=false: "alles gelezen" heft ook eerdere
         // bewust-ongelezen markeringen (#327) op.
+        let pgFailed = false;
         if (pgPool) {
           // Atomair pad: één multi-row INSERT ... ON CONFLICT (user_id, thread_id)
           // DO UPDATE (gespiegeld op de reactie-/pluim-/melding-pgPool-paden). De
@@ -1265,13 +1266,15 @@ export function registerStudiecafeRoutes(app, deps) {
                 params,
               );
             } else {
-              console.warn('[studiecafe] read-all atomic upsert mislukt:', e.message);
-              return res.json({ ok: false, readAt: ts, threadIds: [] });
+              // Geen directe Postgres-verbinding (bv. time-out): val terug op de
+              // REST-upsert hieronder in plaats van niets op te slaan.
+              console.warn('[studiecafe] read-all atomic upsert mislukt, REST-fallback:', e.message);
+              pgFailed = true;
             }
           }
-          return res.json({ ok: true, readAt: ts, threadIds });
+          if (!pgFailed) return res.json({ ok: true, readAt: ts, threadIds });
         }
-        // Fallback zonder pgPool (bv. testomgeving): Supabase REST upsert.
+        // Fallback zonder (werkende) pgPool: Supabase REST upsert.
         // Idempotent per (user, thread); geen directe Postgres-verbinding nodig.
         // Defensief: oude DB zonder de kolom valt terug op de upsert zonder
         // manual_unread.

@@ -36,7 +36,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 
 /**
  * De onderdelen van het beheer, in de volgorde van het menu (sinds 2026-10-26 in
- * de volgorde van inrichten: Inhoud, AI-tutor, Quiz, Openstellen, Volgen; Systeem).
+ * de volgorde van inrichten: Inhoud, AI-tutor, Quiz, Openstellen, Volgen; Beheerder).
  * `audience`: 'all' = docent en beheerder,
  * 'admin' = alleen beheerder. `helpGroups`: groepen hulpteksten (help.<groep>.*)
  * die bij dit onderdeel horen. `tab`: waarde van ?tab= in /admin.
@@ -56,10 +56,14 @@ export const ADMIN_SECTIONS = [
     what: 'Vraagbanken importeren (onder andere ShareStats).' },
   { tab: 'course_features', labelKey: 'admin.tabs.courseFeatures', audience: 'all', helpGroups: ['courseFeatures'],
     what: 'Onderdelen aan/uit: onderdelen voor studenten per cursus aan- of uitzetten: chat, Ik leg uit, quiz, projecten, leerdagboek en studiecafé. Uitgezet = verdwenen uit menu en overzicht van studenten (docent ziet het nog met een label); er wordt niets gewist. Zonder chat geen leerniveau (kiezen of verdienen); zonder leerdagboek geen nieuwe dagboekregels en staan projectbeoordelingen alleen in de projectruimte. Apart: bijlagen in de chat (afbeeldingen plakken, bestanden meegeven) staan standaard UIT en gaan pas aan na een waarschuwing en een dubbele bevestiging; alleen als de beheerder het platformbreed toestaat. Bijlagen worden niet bewaard.' },
-  { tab: 'add_users', labelKey: 'admin.tabs.addUsers', audience: 'all', helpGroups: [],
-    what: 'Studenten uitnodigen met hun e-mailadres (één, een paar, of een lijst/bestand), voor een cursus waarvan je docent bent. Bestaand account: direct student in de cursus, met een mail. Geen account: LEAP maakt het aan en stuurt een persoonlijke uitnodiging (naam docent + cursus); na activeren zit de student in de cursus. Werkt in elke cursus, ook Canvas of gesloten, en ook met een VU-adres (voor uitzonderingen naast de Canvas-link). Uitnodiging 30 dagen geldig; niet geactiveerd = account weer verwijderd. In Cursussen beheren → Beheer leden: status, opnieuw sturen, intrekken; daar ook iemand verwijderen of docent maken. Hoogstens 300 uitnodigingen per docent per dag; mails gaan op de achtergrond (ca. 80 per uur).' },
+  { tab: 'course', labelKey: 'admin.tabs.course', audience: 'all', helpGroups: ['courses'],
+    what: 'Cursus: hoe de actieve cursus voor studenten openstaat. Beschikbaar of niet beschikbaar voor studenten; hoe studenten binnenkomen (de toegangsroute: gesloten, Canvas, open registratie, of Canvas + open; de docent ziet hem, alleen de beheerder wijzigt hem); bij een Canvas-cursus de Canvas-link om in Canvas te plaatsen; Cursus-info (het blok bovenaan het Dashboard van studenten: tekst, banner, bestanden om te downloaden); en Nieuwe editie (nieuwe jaargang: vorige studenten worden oud-deelnemer, projecten en Studiecafé naar het archief, niets verwijderd).' },
+  { tab: 'members', labelKey: 'admin.tabs.members', audience: 'all', helpGroups: [],
+    what: 'Leden van de actieve cursus: wie erin zit en met welke rol. Docent toevoegen (bestaand account: meteen docent; anders een uitnodiging), wisselen tussen student en docent (de laatste docent kan niet zomaar student worden), iemand uit de cursus halen, en openstaande uitnodigingen opnieuw sturen of intrekken. Daaronder Studenten uitnodigen met hun e-mailadres (één, een paar, of een lijst/bestand). Bestaand account: direct student in de cursus, met een mail. Geen account: LEAP maakt het aan en stuurt een persoonlijke uitnodiging (naam docent + cursus); na activeren zit de student in de cursus. Werkt in elke cursus, ook Canvas of gesloten, en ook met een VU-adres (voor uitzonderingen naast de Canvas-link). Uitnodiging 30 dagen geldig; niet geactiveerd = account weer verwijderd. Hoogstens 300 uitnodigingen per docent per dag; mails gaan op de achtergrond (ca. 80 per uur).' },
   { tab: 'analytics', labelKey: 'admin.tabs.analytics', audience: 'all', helpGroups: ['analytics', 'learningLevels'],
     what: 'Analytics, alleen in totalen (cijfers op minder dan 5 studenten blijven verborgen). Docent: begrippen-thermometer met gemiddelde quizscore per begrip en chatvragen waarvoor de chat geen goed bewijs in het materiaal vond. Beheerder: ook gezondheid en kosten (fouten, responstijd, tokens, inleesproblemen). Onderaan: de leerniveaus, hoeveel studenten op welk niveau werken (alleen de verdeling, nooit per student).' },
+  { tab: 'courses', labelKey: 'admin.tabs.courses', audience: 'admin', helpGroups: [],
+    what: 'Alle cursussen van LEAP: cursus aanmaken (met automatisch een cursusmap met submappen RAG en Projectdata), naam en beschrijving wijzigen, per cursus de toegangsroute kiezen, activeren of deactiveren en verwijderen. Per cursus brengen de knoppen Leden en Cursus je naar die tabbladen, met die cursus als actieve cursus.' },
   { tab: 'users', labelKey: 'admin.tabs.users', audience: 'admin', helpGroups: [],
     what: 'Alle gebruikers van LEAP en hun rol.' },
   { tab: 'messages', labelKey: 'admin.tabs.messages', audience: 'admin', helpGroups: ['systemMessages'],
@@ -76,7 +80,6 @@ export const OTHER_PAGES = [
     what: 'Studenten zien per begrip hun eigen voortgang (alleen voor henzelf) en kunnen "Oefen wat je lastig vindt" kiezen: gespreide herhaling op basis van hun eigen quizscores. De standaardmoeilijkheid volgt hun leerniveau; na "Ik leg uit" kunnen ze direct een quiz over dat begrip starten.' },
   { path: '/chat, /explain, /feedback, /my-data', label: 'Studentenkant: uitleg bij knoppen', helpGroups: ['student'],
     what: 'Bij knoppen waarvan het gevolg niet vanzelf spreekt, staat voor studenten een vraagteken: wat er gebeurt, wat bewaard wordt en wie het ziet. In de chat: leerniveau, Klaar voor een hoger niveau?, Doel (optioneel eigen doel voor een gesprek), Ik werk aan, bijlagen en afsluiten. In Ik leg uit: de twee manieren van oefenen (Leg zelf uit, Verbeter deze uitleg). Verder de prijzenkast en account verwijderen.' },
-  { path: '/admin/courses', label: 'Cursussen beheren', helpGroups: ['courses'], what: 'Cursussen aanmaken, leden beheren (docenten kunnen zelf studenten toevoegen en tot docent bevorderen), beschikbaar maken voor studenten. Per cursus de knop Cursus-info: het blok bovenaan het Dashboard van studenten (tekst, banner, bestanden om te downloaden). De toegangsroute (gesloten, Canvas, open registratie, of Canvas + open) stelt alleen de beheerder in.' },
   { path: '/projects', label: 'Projectruimte', what: 'De werkplek van een groep. Alleen de groepsleden zien wat daar gebeurt; docenten niet (privacy). Docenten zien in Projecten alleen wie in welke groep zit. Het contact met een rolspeler herstellen en extra gesprekken toekennen kan alleen een beheerder.' },
 ];
 

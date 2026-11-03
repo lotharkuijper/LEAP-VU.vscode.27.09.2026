@@ -112,7 +112,7 @@ describe('profielrol bij docent worden in een cursus', () => {
       expect(body).toMatch(/member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);
     }
   });
-  it('promoveren in Beheer leden zet het profiel ook op het pad met directe databaseverbinding (live, regressie 2026-10-27)', () => {
+  it('promoveren in de ledenlijst (Openstellen → Leden) zet het profiel ook op het pad met directe databaseverbinding (live, regressie 2026-10-27)', () => {
     const body = routeSource("app.put('/api/admin/courses/:id/members/:userId'");
     const pgPath = body.slice(body.indexOf('if (pgPool)'), body.indexOf('// Fallback zonder directe DB-verbinding'));
     expect(pgPath).toMatch(/COMMIT[\s\S]*member_role === 'teacher' \? await promoteCourseTeacherProfile\(/);

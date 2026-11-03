@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, Eye, EyeOff, DoorOpen, Link2, BookText, Send, UserPlus, Archive } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { useCourseAccess } from '../contexts/CourseAccessContext';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, DoorOpen, School, UserPlus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCourseAccess } from '../../contexts/CourseAccessContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,17 +13,17 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './ui/alert-dialog';
-import { useActiveCourse } from '../contexts/ActiveCourseContext';
-import { useLanguage } from '../i18n';
-import { Tooltip } from './help/Tooltip';
-import { AdminHint } from './help/AdminHint';
-import { ListRow, StatusBadge } from './ui/ListRow';
-import { EnrollmentModeDialog } from './EnrollmentModeDialog';
-import { CanvasLinkDialog } from './CanvasLinkDialog';
-import { CourseEditionDialog } from './CourseEditionDialog';
-import { CourseInfoDialog } from './CourseInfoDialog';
-import type { EnrollmentMode } from '../services/enrollment.service';
+} from '../../components/ui/alert-dialog';
+import { useActiveCourse } from '../../contexts/ActiveCourseContext';
+import { useLanguage } from '../../i18n';
+import { AdminHint } from '../../components/help/AdminHint';
+import { ListRow, StatusBadge } from '../../components/ui/ListRow';
+import { EnrollmentModeDialog } from '../../components/EnrollmentModeDialog';
+import type { EnrollmentMode } from '../../services/enrollment.service';
+
+// Beheerder → Cursussen: cursussen aanmaken, naam en beschrijving, toegangsroute,
+// (de)activeren en verwijderen. Alleen voor de beheerder; leden en het openstellen van
+// één cursus staan bij Openstellen (Leden, Cursus) en gelden voor de actieve cursus.
 
 interface CourseRow {
   id: string;
@@ -46,16 +46,12 @@ interface DeleteCounts {
   documents: number;
 }
 
-export default function CoursesAdmin() {
-  const { session, isAdmin, user } = useAuth();
+export function CoursesAdminTab() {
+  const { session, isAdmin } = useAuth();
   const { refreshCourses } = useCourseAccess();
   const { setActiveCourse } = useActiveCourse();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  // Cursussen waarin de huidige user per-cursus docent is — bepaalt of
-  // de 'Beheer leden'-knop in een rij zichtbaar is voor non-admins.
-  const [myTeacherCourseIds, setMyTeacherCourseIds] = useState<Set<string>>(new Set());
   const [courses, setCourses] = useState<CourseRow[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [name, setName] = useState('');
@@ -74,31 +70,9 @@ export default function CoursesAdmin() {
   // Per-rij state voor activeren/deactiveren en verwijderen.
   const [rowBusyId, setRowBusyId] = useState<string | null>(null);
   const [enrollmentFor, setEnrollmentFor] = useState<CourseRow | null>(null);
-  // Canvas-link (server/lti/lti.js) voor cursussen met de route Canvas of Canvas + open.
-  const [canvasLinkFor, setCanvasLinkFor] = useState<CourseRow | null>(null);
-  const [editionFor, setEditionFor] = useState<CourseRow | null>(null);
-  const [courseInfoFor, setCourseInfoFor] = useState<CourseRow | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string | null>>({});
   const [rowCounts, setRowCounts] = useState<Record<string, DeleteCounts | null>>({});
   const [confirmBulkMembersId, setConfirmBulkMembersId] = useState<string | null>(null);
-
-  // Leden-beheerdialoog (per-cursus rol: 'student' | 'teacher').
-  const [membersTarget, setMembersTarget] = useState<CourseRow | null>(null);
-  const [membersList, setMembersList] = useState<Array<{
-    user_id: string; member_role: 'student' | 'teacher';
-    email: string | null; full_name: string | null;
-    global_role: string;
-    // Uitgenodigd maar nog niet geactiveerd (server/courses/courseInvitations.js).
-    invitation?: { status: 'queued' | 'failed' | 'pending' | 'expired'; expiresAt: string; lastSentAt: string | null } | null;
-  }>>([]);
-  const [inviteNotice, setInviteNotice] = useState<string | null>(null);
-  const [membersLoading, setMembersLoading] = useState(false);
-  const [membersError, setMembersError] = useState<string | null>(null);
-  const [memberRoleBusy, setMemberRoleBusy] = useState<string | null>(null);
-  // "Docent toevoegen" in Beheer leden (via de uitnodigingsroute met role teacher).
-  const [teacherEmail, setTeacherEmail] = useState('');
-  const [teacherBusy, setTeacherBusy] = useState(false);
-  const [focusTeacherField, setFocusTeacherField] = useState(false);
   // Net aangemaakte cursus: vervolgstappen tonen.
   const [createdCourseId, setCreatedCourseId] = useState<string | null>(null);
 
@@ -165,188 +139,6 @@ export default function CoursesAdmin() {
     }
   }
 
-  async function addTeacher() {
-    if (!membersTarget) return;
-    const email = teacherEmail.trim();
-    if (!email) return;
-    const token = session?.access_token;
-    if (!token) { setMembersError(t('admin.users.notLoggedIn')); return; }
-    setTeacherBusy(true);
-    setMembersError(null);
-    setInviteNotice(null);
-    try {
-      const res = await fetch(`/api/admin/courses/${membersTarget.id}/invitations`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emails: [email], role: 'teacher' }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setMembersError(json.error || t('common.unknownError')); return; }
-      if (json.summary?.invalid) { setMembersError(t('coursesAdmin.addTeacher.invalid')); return; }
-      const status = json.results?.[0]?.status as string | undefined;
-      if (status === 'failed') { setMembersError(json.results[0].error || t('common.unknownError')); return; }
-      setInviteNotice(t(`coursesAdmin.addTeacher.result.${status || 'added'}` as 'coursesAdmin.addTeacher.result.added', { email }));
-      setTeacherEmail('');
-      await openMembersDialog(membersTarget, { keepNotice: true });
-    } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
-    } finally {
-      setTeacherBusy(false);
-    }
-  }
-
-  async function openMembersDialog(c: CourseRow, opts: { keepNotice?: boolean } = {}) {
-    setMembersTarget(c);
-    setMembersList([]);
-    setMembersError(null);
-    if (!opts.keepNotice) setInviteNotice(null);
-    setMembersLoading(true);
-    const token = session?.access_token;
-    if (!token) {
-      setMembersError(t('admin.users.notLoggedIn'));
-      setMembersLoading(false);
-      return;
-    }
-    try {
-      const res = await fetch(`/api/admin/courses/${c.id}/members`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setMembersError(json.error || t('coursesAdmin.errors.loadFailed', { status: String(res.status) }));
-      } else {
-        setMembersList(json.members || []);
-      }
-    } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
-    } finally {
-      setMembersLoading(false);
-    }
-  }
-
-  async function changeMemberRole(userId: string, newRole: 'student' | 'teacher', force = false) {
-    if (!membersTarget) return;
-    const token = session?.access_token;
-    if (!token) {
-      setMembersError(t('admin.users.notLoggedIn'));
-      return;
-    }
-    setMemberRoleBusy(userId);
-    setMembersError(null);
-    try {
-      const url = `/api/admin/courses/${membersTarget.id}/members/${userId}${force ? '?force=1' : ''}`;
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ member_role: newRole }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        // Bij last_teacher-409 mag een admin de wijziging forceren. We
-        // vragen expliciet om bevestiging in plaats van stilletjes door te
-        // duwen — zo blijft de bescherming zichtbaar.
-        if (res.status === 409 && json.code === 'last_teacher' && isAdmin && !force) {
-          const ok = window.confirm(
-            t('coursesAdmin.confirm.lastTeacherForce', { error: String(json.error) })
-          );
-          if (ok) {
-            return changeMemberRole(userId, newRole, true);
-          }
-          setMembersError(json.error);
-          return;
-        }
-        setMembersError(json.error || t('coursesAdmin.errors.updateFailed', { status: String(res.status) }));
-        return;
-      }
-      setMembersList((prev) => prev.map((m) =>
-        m.user_id === userId ? { ...m, member_role: newRole } : m
-      ));
-    } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
-    } finally {
-      setMemberRoleBusy(null);
-    }
-  }
-
-  async function removeMember(userId: string, force = false) {
-    if (!membersTarget) return;
-    const token = session?.access_token;
-    if (!token) {
-      setMembersError(t('admin.users.notLoggedIn'));
-      return;
-    }
-    if (!force) {
-      const target = membersList.find((m) => m.user_id === userId);
-      const label = target?.full_name || target?.email || t('coursesAdmin.members.thisMember');
-      if (!window.confirm(t('coursesAdmin.confirm.removeMember', { label, course: membersTarget.name }))) {
-        return;
-      }
-    }
-    setMemberRoleBusy(userId);
-    setMembersError(null);
-    try {
-      const url = `/api/admin/courses/${membersTarget.id}/members/${userId}${force ? '?force=1' : ''}`;
-      const res = await fetch(url, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        // Last-teacher-bescherming: een admin mag het forceren na bevestiging.
-        if (res.status === 409 && json.code === 'last_teacher' && isAdmin && !force) {
-          const ok = window.confirm(
-            t('coursesAdmin.confirm.lastTeacherForce', { error: String(json.error) })
-          );
-          if (ok) {
-            return removeMember(userId, true);
-          }
-          setMembersError(json.error);
-          return;
-        }
-        setMembersError(json.error || t('coursesAdmin.errors.deleteFailed', { status: String(res.status) }));
-        return;
-      }
-      setMembersList((prev) => prev.filter((m) => m.user_id !== userId));
-    } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
-    } finally {
-      setMemberRoleBusy(null);
-    }
-  }
-
-  // Uitnodiging opnieuw sturen of intrekken (alleen voor wie nog niet heeft geactiveerd).
-  async function inviteAction(userId: string, action: 'resend' | 'revoke') {
-    if (!membersTarget) return;
-    const token = session?.access_token;
-    if (!token) { setMembersError(t('admin.users.notLoggedIn')); return; }
-    if (action === 'revoke') {
-      const target = membersList.find((m) => m.user_id === userId);
-      if (!window.confirm(t('coursesAdmin.invite.confirmRevoke', { email: target?.email || '', course: membersTarget.name }))) return;
-    }
-    setMemberRoleBusy(userId);
-    setMembersError(null);
-    setInviteNotice(null);
-    try {
-      const res = await fetch(`/api/admin/courses/${membersTarget.id}/invitations/${userId}${action === 'resend' ? '/resend' : ''}`, {
-        method: action === 'resend' ? 'POST' : 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) { setMembersError(json.error || t('common.unknownError')); return; }
-      if (action === 'revoke') {
-        setMembersList((prev) => prev.filter((m) => m.user_id !== userId));
-        setInviteNotice(t('coursesAdmin.invite.revoked'));
-      } else {
-        setMembersList((prev) => prev.map((m) => (m.user_id === userId && m.invitation ? { ...m, invitation: { ...m.invitation, status: 'queued' } } : m)));
-        setInviteNotice(t('coursesAdmin.invite.resent'));
-      }
-    } catch (err: unknown) {
-      setMembersError(err instanceof Error ? err.message : t('common.unknownError'));
-    } finally {
-      setMemberRoleBusy(null);
-    }
-  }
-
   async function loadCourses() {
     setLoadingList(true);
     // Defensief: oude DB zonder cue_delta_max- of student_visible-kolom →
@@ -389,67 +181,6 @@ export default function CoursesAdmin() {
   useEffect(() => {
     loadCourses();
   }, []);
-
-  // Laad de set cursussen waarin de huidige user docent is, zodat we de
-  // 'Beheer leden'-knop ook tonen voor per-cursus docenten (niet alleen
-  // admin). Admins krijgen de knop sowieso, dus voor hen is dit overbodig.
-  useEffect(() => {
-    if (isAdmin || !user?.id || !session?.access_token) {
-      setMyTeacherCourseIds(new Set());
-      return;
-    }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/me/teacher-courses`, {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const json = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!res.ok) {
-          console.warn('[CoursesAdmin] teacher-courses fetch failed:', json.error);
-          return;
-        }
-        const ids = new Set<string>((json.courses || []).map((c: { courseId: string }) => c.courseId));
-        setMyTeacherCourseIds(ids);
-      } catch (err) {
-        if (!cancelled) console.warn('[CoursesAdmin] teacher-courses exception:', err);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [isAdmin, user?.id, session?.access_token]);
-
-  // Open automatisch de members-dialog wanneer ?manageMembers=<id>
-  // meegegeven is (bijv. via een link uit /admin → Gebruikers-uitklap).
-  // Wacht tot de cursussenlijst geladen is en de bevoegdheid bekend.
-  useEffect(() => {
-    const wanted = searchParams.get('manageMembers');
-    if (!wanted || loadingList || courses.length === 0) return;
-    const course = courses.find((c) => c.id === wanted);
-    if (!course) return;
-    const allowed = isAdmin || myTeacherCourseIds.has(wanted);
-    if (!allowed) return;
-    if (membersTarget?.id === wanted) return;
-    openMembersDialog(course);
-    const next = new URLSearchParams(searchParams);
-    next.delete('manageMembers');
-    setSearchParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, loadingList, courses, isAdmin, myTeacherCourseIds]);
-
-  // ?courseInfo=<id> opent de Cursus-info van die cursus (oude links naar het
-  // tabblad Cursus-info in Beheer komen hier uit).
-  useEffect(() => {
-    const wanted = searchParams.get('courseInfo');
-    if (!wanted || loadingList || courses.length === 0) return;
-    const course = courses.find((c) => c.id === wanted);
-    if (!course || !(isAdmin || myTeacherCourseIds.has(wanted))) return;
-    setCourseInfoFor(course);
-    const next = new URLSearchParams(searchParams);
-    next.delete('courseInfo');
-    setSearchParams(next, { replace: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, loadingList, courses, isAdmin, myTeacherCourseIds]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -524,40 +255,6 @@ export default function CoursesAdmin() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ is_active: !c.is_active }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setRowError(c.id, json.error || t('coursesAdmin.errors.changeFailed', { status: String(res.status) }));
-        return;
-      }
-      await Promise.all([loadCourses(), refreshCourses()]);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : t('common.unknownError');
-      setRowError(c.id, msg);
-    } finally {
-      setRowBusyId(null);
-    }
-  }
-
-  // Task #270: cursus zichtbaar/verborgen voor studenten zetten.
-  // Autorisatie wordt server-side afgedwongen (docent enkel eigen cursus, admin alles);
-  // de UI toont de knop alleen aan admins en docenten van de cursus.
-  async function toggleAvailability(c: CourseRow) {
-    setRowError(c.id, null);
-    const token = session?.access_token;
-    if (!token) {
-      setRowError(c.id, t('admin.users.notLoggedIn'));
-      return;
-    }
-    setRowBusyId(c.id);
-    try {
-      const res = await fetch(`/api/courses/${c.id}/availability`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ student_visible: !c.student_visible }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -681,7 +378,7 @@ export default function CoursesAdmin() {
         const message = json.error || t('coursesAdmin.errors.deleteFailed', { status: String(res.status) });
         if (res.status === 409 && json.counts) {
           // Schakel terug naar de rij-weergave zodat de admin de
-          // category-specifieke cleanup-acties (Beheer leden, Open projecten,
+          // category-specifieke cleanup-acties (Leden, Open projecten,
           // Open cursusmap, bulk-leden verwijderen) ziet bij de juiste cursus.
           setRowError(c.id, message);
           setRowCount(c.id, json.counts as DeleteCounts);
@@ -740,21 +437,18 @@ export default function CoursesAdmin() {
     }
   }
 
+  if (!isAdmin) return null;
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="space-y-8" data-testid="tab-courses">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <BookOpen className="w-6 h-6 text-blue-600" />
-          {t('admin.header.manageCourses')}
-        </h1>
-        <AdminHint variant="intro">
-          {isAdmin
-            ? t('coursesAdmin.intro.admin')
-            : t('coursesAdmin.intro.teacher')}
-        </AdminHint>
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-blue-600" />
+          {t('admin.tabs.courses')}
+        </h2>
+        <AdminHint variant="intro">{t('coursesAdmin.intro.admin')}</AdminHint>
       </header>
 
-      {isAdmin && (
       <section className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('coursesAdmin.create.title')}</h2>
         <form onSubmit={handleCreate} className="space-y-4" data-testid="form-create-course">
@@ -816,24 +510,22 @@ export default function CoursesAdmin() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => { setFocusTeacherField(true); void openMembersDialog(created); }}
+                    onClick={() => void goToAdminTab(created.id, 'members')}
                     className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
                     data-testid="button-next-add-teacher"
                   >
                     <UserPlus className="w-4 h-4" />
                     {t('coursesAdmin.nextSteps.addTeacher')}
                   </button>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => setEnrollmentFor(created)}
-                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
-                      data-testid="button-next-enrollment"
-                    >
-                      <DoorOpen className="w-4 h-4" />
-                      {t('coursesAdmin.nextSteps.enrollment')}
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => setEnrollmentFor(created)}
+                    className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-sm font-medium text-brand-700 ring-1 ring-brand-200 hover:bg-brand-100"
+                    data-testid="button-next-enrollment"
+                  >
+                    <DoorOpen className="w-4 h-4" />
+                    {t('coursesAdmin.nextSteps.enrollment')}
+                  </button>
                   <button
                     type="button"
                     onClick={() => void goToAdminTab(created.id, 'material')}
@@ -863,7 +555,6 @@ export default function CoursesAdmin() {
           </button>
         </form>
       </section>
-      )}
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('coursesAdmin.list.title')}</h2>
@@ -968,7 +659,7 @@ export default function CoursesAdmin() {
                             </StatusBadge>
                             <StatusBadge
                               tone={c.enrollment_mode === 'closed' ? 'neutral' : 'info'}
-                              title={`${t(`enrollment.modeDesc.${c.enrollment_mode}` as Parameters<typeof t>[0])}${isAdmin ? '' : ` ${t('enrollment.setByAdmin')}`}`}
+                              title={t(`enrollment.modeDesc.${c.enrollment_mode}` as Parameters<typeof t>[0])}
                               testId={`status-course-enrollment-${c.id}`}
                             >
                               {t(`enrollment.mode.${c.enrollment_mode}` as Parameters<typeof t>[0])}
@@ -981,47 +672,24 @@ export default function CoursesAdmin() {
                           </>
                         }
                         actions={[
-                          ...(isAdmin ? [{
+                          {
                             key: 'edit', label: t('coursesAdmin.row.edit'), icon: Pencil, tone: 'primary' as const,
                             title: t('coursesAdmin.row.editTitle'), onClick: () => startEdit(c),
                             disabled: rowBusyId === c.id, testId: `button-edit-course-${c.id}`,
-                          }] : []),
-                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
-                            key: 'members', label: t('admin.users.manageCourseMembers'), icon: Users, tone: 'primary' as const,
-                            title: t('coursesAdmin.row.manageMembersTitle'), onClick: () => openMembersDialog(c),
-                            disabled: rowBusyId === c.id, testId: `button-manage-members-primary-${c.id}`,
-                          }] : []),
-                          // Cursus-info (wat studenten op het Dashboard over de cursus zien) hoort bij de cursus zelf.
-                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
-                            key: 'courseInfo', label: t('admin.tabs.courseInfo'), icon: BookText, tone: 'primary' as const,
-                            title: t('coursesAdmin.row.courseInfoTitle'), onClick: () => setCourseInfoFor(c),
-                            disabled: rowBusyId === c.id, testId: `button-course-info-${c.id}`,
-                          }] : []),
-                          // Bij een Canvas-cursus is de Canvas-link de belangrijkste knop: direct na Beheer leden,
-                          // zodat hij zichtbaar blijft en niet als eerste in "⋯ Meer" verdwijnt.
-                          ...((isAdmin || myTeacherCourseIds.has(c.id)) && (c.enrollment_mode === 'canvas' || c.enrollment_mode === 'canvas_open') ? [{
-                            key: 'canvasLink', label: t('canvasLink.action'), icon: Link2, tone: 'primary' as const,
-                            title: t('canvasLink.actionTitle'), onClick: () => setCanvasLinkFor(c),
-                            disabled: rowBusyId === c.id, testId: `button-canvas-link-${c.id}`,
-                          }] : []),
-                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
-                            key: 'availability',
-                            label: c.student_visible ? t('coursesAdmin.row.makeUnavailable') : t('coursesAdmin.row.makeAvailable'),
-                            icon: c.student_visible ? EyeOff : Eye, tone: (c.student_visible ? 'warning' : 'success') as 'warning' | 'success',
-                            title: c.student_visible ? t('coursesAdmin.row.hideTitle') : t('coursesAdmin.row.showTitle'),
-                            onClick: () => toggleAvailability(c), busy: rowBusyId === c.id,
-                            testId: `button-toggle-availability-${c.id}`,
-                          }] : []),
-                          // Nieuwe editie (jaargang): vorige studenten worden oud-deelnemer, projecten en Studiecafé naar het archief.
-                          ...((isAdmin || myTeacherCourseIds.has(c.id)) ? [{
-                            key: 'edition', label: t('editions.action'), icon: Archive, tone: 'primary' as const,
-                            title: t('editions.actionTitle'), onClick: () => setEditionFor(c),
-                            disabled: rowBusyId === c.id, testId: `button-course-edition-${c.id}`,
-                          }] : []),
-                          ...(isAdmin ? [{
+                          }, {
                             key: 'enrollment', label: t('enrollment.action'), icon: DoorOpen, tone: 'primary' as const,
                             title: t('enrollment.actionTitle'), onClick: () => setEnrollmentFor(c),
                             disabled: rowBusyId === c.id, testId: `button-enrollment-mode-${c.id}`,
+                          },
+                          // Leden en openstellen gelden voor de actieve cursus: maak deze cursus actief en ga erheen.
+                          {
+                            key: 'members', label: t('admin.tabs.members'), icon: Users, tone: 'primary' as const,
+                            title: t('coursesAdmin.row.openMembersTitle'), onClick: () => void goToAdminTab(c.id, 'members'),
+                            disabled: rowBusyId === c.id, testId: `button-open-members-${c.id}`,
+                          }, {
+                            key: 'course', label: t('admin.tabs.course'), icon: School, tone: 'primary' as const,
+                            title: t('coursesAdmin.row.openCourseTitle'), onClick: () => void goToAdminTab(c.id, 'course'),
+                            disabled: rowBusyId === c.id, testId: `button-open-course-${c.id}`,
                           }, {
                             key: 'active', label: c.is_active ? t('coursesAdmin.row.deactivate') : t('coursesAdmin.row.activate'),
                             icon: Power, tone: (c.is_active ? 'warning' : 'success') as 'warning' | 'success',
@@ -1035,7 +703,7 @@ export default function CoursesAdmin() {
                             key: 'cascade', label: t('coursesAdmin.row.cascade'), icon: Flame, tone: 'danger' as const,
                             title: t('coursesAdmin.row.cascadeTitle'), onClick: () => requestCascadeDelete(c),
                             disabled: rowBusyId === c.id, testId: `button-cascade-delete-course-${c.id}`,
-                          }] : []),
+                          },
                         ]}
                       />
                       {rowErrors[c.id] && (
@@ -1054,8 +722,7 @@ export default function CoursesAdmin() {
                                   <span className="text-gray-700 text-xs">
                                     {t('coursesAdmin.counts.members', { count: String(rowCounts[c.id]!.members) })}
                                   </span>
-                                  {isAdmin && (
-                                    confirmBulkMembersId === c.id ? (
+                                  {confirmBulkMembersId === c.id ? (
                                       <span className="inline-flex items-center gap-1.5">
                                         <span className="text-xs text-amber-800">{t('coursesAdmin.cleanup.confirmBulk')}</span>
                                         <button
@@ -1095,16 +762,15 @@ export default function CoursesAdmin() {
                                         <UserX className="w-3.5 h-3.5" />
                                         {t('coursesAdmin.cleanup.bulkRemove')}
                                       </button>
-                                    )
-                                  )}
+                                    )}
                                   <button
                                     type="button"
-                                    onClick={() => openMembersDialog(c)}
+                                    onClick={() => void goToAdminTab(c.id, 'members')}
                                     className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition-colors"
                                     data-testid={`button-manage-members-${c.id}`}
                                   >
                                     <Users className="w-3.5 h-3.5" />
-                                    {t('admin.users.manageCourseMembers')}
+                                    {t('admin.tabs.members')}
                                   </button>
                                 </div>
                               )}
@@ -1393,231 +1059,6 @@ export default function CoursesAdmin() {
           </AlertDialogContent>
         )}
       </AlertDialog>
-
-      {/* Leden-beheerdialoog: per-cursus rol student/docent wijzigen. */}
-      {membersTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => { setMembersTarget(null); setFocusTeacherField(false); }}
-          data-testid="dialog-manage-members"
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {t('coursesAdmin.members.title', { name: membersTarget.name })}
-                </h3>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {t('coursesAdmin.members.help')}
-                </p>
-              </div>
-              <Tooltip label={t('common.close')} side="bottom">
-                <button
-                  type="button"
-                  onClick={() => { setMembersTarget(null); setFocusTeacherField(false); }}
-                  className="p-1 hover:bg-gray-100 rounded"
-                  data-testid="button-close-members-dialog"
-                >
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </Tooltip>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {membersError && (
-                <div className="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800">
-                  {membersError}
-                </div>
-              )}
-              {inviteNotice && (
-                <div className="mb-3 rounded-lg bg-accent-50 border border-accent-200 px-3 py-2 text-sm text-accent-800" data-testid="text-invite-notice">
-                  {inviteNotice}
-                </div>
-              )}
-              {(isAdmin || myTeacherCourseIds.has(membersTarget.id)) && (
-                <form
-                  onSubmit={(e) => { e.preventDefault(); void addTeacher(); }}
-                  className="mb-4 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3"
-                  data-testid="form-add-teacher"
-                >
-                  <label htmlFor="add-teacher-email" className="block text-sm font-medium text-gray-800">
-                    {t('coursesAdmin.addTeacher.label')}
-                  </label>
-                  <p className="text-xs text-gray-600 mb-2">{t('coursesAdmin.addTeacher.hint')}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      id="add-teacher-email"
-                      type="email"
-                      value={teacherEmail}
-                      onChange={(e) => setTeacherEmail(e.target.value)}
-                      placeholder={t('coursesAdmin.addTeacher.placeholder')}
-                      autoFocus={focusTeacherField}
-                      className="min-w-0 flex-1 basis-56 border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      disabled={teacherBusy}
-                      data-testid="input-add-teacher"
-                    />
-                    <button
-                      type="submit"
-                      disabled={teacherBusy || !teacherEmail.trim()}
-                      className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-gray-300"
-                      data-testid="button-add-teacher"
-                    >
-                      {teacherBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                      {t('coursesAdmin.addTeacher.submit')}
-                    </button>
-                  </div>
-                </form>
-              )}
-              {membersLoading ? (
-                <div className="flex items-center justify-center py-12 text-gray-500">
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  {t('coursesAdmin.members.loading')}
-                </div>
-              ) : membersList.length === 0 ? (
-                <p className="text-sm text-gray-500 py-8 text-center">
-                  {t('coursesAdmin.members.empty')}
-                </p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-2 px-2 font-semibold text-gray-700">{t('admin.users.nameCol')}</th>
-                      <th className="text-left py-2 px-2 font-semibold text-gray-700">{t('admin.users.emailCol')}</th>
-                      <th className="text-left py-2 px-2 font-semibold text-gray-700">{t('coursesAdmin.members.roleCol')}</th>
-                      <th className="text-right py-2 px-2 font-semibold text-gray-700">{t('admin.users.actionsCol')}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const teacherCount = membersList.filter((mm) => mm.member_role === 'teacher').length;
-                      const canEdit = isAdmin || (membersTarget && myTeacherCourseIds.has(membersTarget.id));
-                      return membersList.map((m) => {
-                        // Voorkom dat de laatste docent zichzelf demoteert
-                        // (UI-hint; server blokkeert hetzelfde scenario met 409).
-                        const isSoleTeacherSelf = m.member_role === 'teacher'
-                          && teacherCount <= 1
-                          && m.user_id === user?.id
-                          && !isAdmin;
-                        return (
-                          <tr key={m.user_id} className="border-b border-gray-100" data-testid={`row-member-${m.user_id}`}>
-                            <td className="py-2 px-2">{m.full_name || '—'}</td>
-                            <td className="py-2 px-2 text-gray-600">
-                              <div className="min-w-0 break-words">{m.email || '—'}</div>
-                              {m.invitation && (
-                                <span
-                                  className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                    m.invitation.status === 'failed' || m.invitation.status === 'expired'
-                                      ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'
-                                  }`}
-                                  data-testid={`badge-invite-${m.user_id}`}
-                                >
-                                  {t(`coursesAdmin.invite.status.${m.invitation.status}` as 'coursesAdmin.invite.status.pending', {
-                                    date: new Date(m.invitation.expiresAt).toLocaleDateString(),
-                                  })}
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 px-2">
-                              {canEdit ? (
-                                <select
-                                  value={m.member_role}
-                                  disabled={memberRoleBusy === m.user_id || isSoleTeacherSelf}
-                                  onChange={(e) => changeMemberRole(m.user_id, e.target.value as 'student' | 'teacher')}
-                                  className="border border-gray-300 rounded px-2 py-1 text-xs bg-white disabled:opacity-50"
-                                  data-testid={`select-member-role-${m.user_id}`}
-                                  title={isSoleTeacherSelf ? t('coursesAdmin.members.soleTeacherTitle') : undefined}
-                                >
-                                  <option value="student">{t('nav.role.student')}</option>
-                                  <option value="teacher">{t('nav.role.docent')}</option>
-                                </select>
-                              ) : (
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                  m.member_role === 'teacher'
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-green-100 text-green-700'
-                                }`}>
-                                  {m.member_role === 'teacher' ? t('nav.role.docent') : t('nav.role.student')}
-                                </span>
-                              )}
-                              {isSoleTeacherSelf && (
-                                <span className="ml-2 text-[11px] text-amber-700" data-testid={`text-sole-teacher-${m.user_id}`}>
-                                  {t('coursesAdmin.members.soleTeacherBadge')}
-                                </span>
-                              )}
-                              {memberRoleBusy === m.user_id && (
-                                <Loader2 className="w-3 h-3 inline-block ml-2 animate-spin text-gray-400" />
-                              )}
-                            </td>
-                            <td className="py-2 px-2 text-right">
-                              {canEdit && m.invitation ? (
-                                <div className="flex flex-wrap justify-end gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => inviteAction(m.user_id, 'resend')}
-                                    disabled={memberRoleBusy === m.user_id || m.invitation.status === 'queued'}
-                                    className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-1 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 rounded disabled:opacity-50"
-                                    data-testid={`button-resend-invite-${m.user_id}`}
-                                  >
-                                    <Send className="w-3.5 h-3.5" />
-                                    {t('coursesAdmin.invite.resend')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => inviteAction(m.user_id, 'revoke')}
-                                    disabled={memberRoleBusy === m.user_id}
-                                    className="inline-flex items-center gap-1 whitespace-nowrap px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded disabled:opacity-50"
-                                    data-testid={`button-revoke-invite-${m.user_id}`}
-                                  >
-                                    <UserX className="w-3.5 h-3.5" />
-                                    {t('coursesAdmin.invite.revoke')}
-                                  </button>
-                                </div>
-                              ) : canEdit && (
-                                <button
-                                  type="button"
-                                  onClick={() => removeMember(m.user_id)}
-                                  disabled={memberRoleBusy === m.user_id || isSoleTeacherSelf}
-                                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                  data-testid={`button-remove-member-${m.user_id}`}
-                                  title={isSoleTeacherSelf ? t('coursesAdmin.members.soleTeacherTitle') : t('coursesAdmin.members.removeTitle')}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                  {t('coursesAdmin.delete')}
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      });
-                    })()}
-                  </tbody>
-                </table>
-              )}
-            </div>
-            <div className="px-6 py-3 border-t border-gray-200 flex justify-end">
-              <button
-                type="button"
-                onClick={() => { setMembersTarget(null); setFocusTeacherField(false); }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                data-testid="button-close-members-dialog-footer"
-              >
-                {t('common.close')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {courseInfoFor && (
-        <CourseInfoDialog courseId={courseInfoFor.id} courseName={courseInfoFor.name} onClose={() => setCourseInfoFor(null)} />
-      )}
-      {editionFor && (
-        <CourseEditionDialog courseId={editionFor.id} courseName={editionFor.name} currentUserId={user?.id || null} onClose={() => setEditionFor(null)} />
-      )}
-      {canvasLinkFor && (
-        <CanvasLinkDialog courseId={canvasLinkFor.id} courseName={canvasLinkFor.name} isAdmin={isAdmin} onClose={() => setCanvasLinkFor(null)} />
-      )}
       {enrollmentFor && (
         <EnrollmentModeDialog
           courseId={enrollmentFor.id}

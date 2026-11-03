@@ -4,7 +4,7 @@ import { useLanguage } from '../i18n';
 import CursusInfoTab from './CursusInfoTab';
 
 // Cursus-info (tekst, banner en downloads op het Dashboard van studenten) bewerken
-// vanuit Cursussen beheren, voor de cursus van die rij.
+// vanuit Openstellen → Cursus, voor de actieve cursus.
 export function CourseInfoDialog({ courseId, courseName, onClose }: { courseId: string; courseName: string; onClose: () => void }) {
   const { t } = useLanguage();
   return createPortal(

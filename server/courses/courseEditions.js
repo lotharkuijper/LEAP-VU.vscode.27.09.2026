@@ -194,7 +194,7 @@ export function registerCourseEditionRoutes(app, deps) {
     if (!UUID.test(String(userId))) return res.status(400).json({ error: 'Ongeldige gebruiker' });
     const { data: row } = await db().from('course_alumni').select('former_role').eq('course_id', courseId).eq('user_id', userId).maybeSingle();
     if (!row) return res.status(404).json({ error: 'Niet gevonden' });
-    // Altijd terug als student: docentschap geeft de docent bewust opnieuw (Beheer leden).
+    // Altijd terug als student: docentschap geeft de docent bewust opnieuw (Openstellen → Leden).
     const { error } = await db().from('course_members').insert({ course_id: courseId, user_id: userId, member_role: 'student', role: 'student' });
     if (error && !/duplicate/i.test(error.message)) return res.status(500).json({ error: error.message });
     await db().from('course_alumni').delete().eq('course_id', courseId).eq('user_id', userId);

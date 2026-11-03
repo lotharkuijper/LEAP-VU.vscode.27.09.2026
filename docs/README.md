@@ -89,8 +89,8 @@ en daarnaast de modules met de eigenlijke regels. Die modules zijn zoveel mogeli
 | Map | Wat erin staat |
 |---|---|
 | `src/main.tsx`, `src/App.tsx` | Opstarten en de routes (welke pagina bij welk adres). |
-| `src/pages/` | Eén bestand per pagina: `ChatPage`, `ExplainPage`, `QuizPage`, `ProjectsPage`, `ProjectRoomPage`, `StudiecafePage`, `DashboardPage`, `AdminPage`, `CoursesAdminPage`, `MyDataPage`, inlog- en activatiepagina's. |
-| `src/pages/admin/` | Tabbladen van Beheer (projecten, onderdelen aan/uit, systeemberichten, tokenbudget, Canvas, …). |
+| `src/pages/` | Eén bestand per pagina: `ChatPage`, `ExplainPage`, `QuizPage`, `ProjectsPage`, `ProjectRoomPage`, `StudiecafePage`, `DashboardPage`, `AdminPage`, `CoursesAdminPage` (alleen doorverwijzing van het oude adres /admin/courses naar Beheer), `MyDataPage`, inlog- en activatiepagina's. |
+| `src/pages/admin/` | Tabbladen van Beheer (cursussen, cursus, leden, projecten, onderdelen aan/uit, systeemberichten, tokenbudget, Canvas, …). |
 | `src/components/` | Herbruikbare onderdelen. Losse bestanden voor algemene stukken; submappen per gebied: |
 | `src/components/material/` | De Cursusmateriaal-werkruimte (Bestanden, Verwerking, Begrippen, Klaar voor studenten, Leerlijn). |
 | `src/components/help/` | `HelpTip`, `Tooltip`, `AdminHint`, `HelpToggle`: uitleg en "?"-knoppen. |

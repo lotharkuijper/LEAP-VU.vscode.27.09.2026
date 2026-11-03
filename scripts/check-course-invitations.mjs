@@ -67,13 +67,13 @@ try {
   const r2 = await api('POST', `/api/admin/courses/${course.id}/invitations`, token, { emails: [mail('bestaand')] });
   ok(r2.body.results?.[0]?.status === 'alreadyMember', 'nogmaals uitnodigen: "was al lid"');
 
-  // 3. Beheer leden toont de openstaande uitnodiging (alleen voor het nieuwe account).
+  // 3. de ledenlijst (Openstellen → Leden) toont de openstaande uitnodiging (alleen voor het nieuwe account).
   await new Promise((r) => setTimeout(r, 1500));
   const r3 = await api('GET', `/api/admin/courses/${course.id}/members`, token);
   const byId = Object.fromEntries((r3.body.members || []).map((m) => [m.user_id, m]));
   if (!r3.body.members) console.log(`     (antwoord leden: ${r3.status} ${JSON.stringify(r3.body).slice(0, 200)})`);
-  ok(!!byId[newId]?.invitation && ['queued', 'failed', 'pending'].includes(byId[newId].invitation.status), `Beheer leden: uitnodiging zichtbaar (${byId[newId]?.invitation?.status})`);
-  ok(byId[ex.user.id] && !byId[ex.user.id].invitation, 'Beheer leden: bestaand account zonder uitnodigingslabel');
+  ok(!!byId[newId]?.invitation && ['queued', 'failed', 'pending'].includes(byId[newId].invitation.status), `de ledenlijst (Openstellen → Leden): uitnodiging zichtbaar (${byId[newId]?.invitation?.status})`);
+  ok(byId[ex.user.id] && !byId[ex.user.id].invitation, 'de ledenlijst (Openstellen → Leden): bestaand account zonder uitnodigingslabel');
 
   // 4. Link met verkeerde handtekening.
   const { data: inv } = await admin.from('course_invitations').select('id').eq('course_id', course.id).eq('user_id', newId).single();

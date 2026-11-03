@@ -33,9 +33,10 @@ const SHOTS = [
   ['beheer-leerniveaus', '/admin?tab=learning_levels'],
   ['beheer-chatinstructies', '/admin?tab=prompts'],
   ['beheer-zoekgevoeligheid', '/admin?tab=rag_settings'],
-  ['beheer-cursusinfo', '/admin?tab=course_info'],
+  ['beheer-cursus', '/admin?tab=course'],
+  ['beheer-leden', '/admin?tab=members'],
   ['beheer-imports', '/admin?tab=imports'],
-  ['cursussen', '/admin/courses'],
+  ['cursussen', '/admin?tab=courses'],
 ];
 
 fs.mkdirSync(OUT, { recursive: true });

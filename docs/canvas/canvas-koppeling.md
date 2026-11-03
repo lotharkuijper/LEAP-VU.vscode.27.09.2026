@@ -4,7 +4,7 @@ Voor de Canvas-beheerders van de VU en de beheerder van LEAP. Eenmalig per Canva
 
 ## Wat het doet
 
-Een docent zet in zijn Canvas-cursus een link naar zijn LEAP-cursus (Beheer → Cursussen beheren → **Canvas-link**). Een student of docent klikt erop en staat met één klik in die LEAP-cursus, zonder wachtwoord. LEAP maakt zo nodig het account aan. Wie in Canvas docent is, wordt docent in de LEAP-cursus.
+Een docent zet in zijn Canvas-cursus een link naar zijn LEAP-cursus (Beheer → Openstellen → Cursus → **Canvas-link**). Een student of docent klikt erop en staat met één klik in die LEAP-cursus, zonder wachtwoord. LEAP maakt zo nodig het account aan. Wie in Canvas docent is, wordt docent in de LEAP-cursus.
 
 LEAP vraagt alleen: een vast Canvas-id van de gebruiker, naam, e-mailadres, rol, cursus (id en naam) en, bij een groepsopdracht, de Canvas-groep van de student (id en naam). Daarnaast leesrecht op de deelnemerslijst (Names and Role Provisioning, alleen lezen), zodat LEAP later de groepsindeling vooraf kan ophalen. Geen cijfers, geen andere gegevens.
 

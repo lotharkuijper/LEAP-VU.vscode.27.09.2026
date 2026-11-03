@@ -7,8 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { CoursePromptsPanel } from '../components/CoursePromptsPanel';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, Library, ToggleRight, Megaphone } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, Library, ToggleRight, Megaphone, School } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 import { ImportsHubPanel } from '../components/ImportsHubPanel';
 import { QuizSourcesAdminPanel } from '../components/QuizSourcesAdminPanel';
@@ -20,7 +19,9 @@ import { TokenBudgetPanel } from './admin/TokenBudgetPanel';
 import { CanvasPlatformsPanel } from './admin/CanvasPlatformsPanel';
 import { SystemMessagesAdminTab } from './admin/SystemMessagesAdminTab';
 import { AnalyticsAdminTab } from '../features/analytics/AnalyticsAdminTab';
-import { AddUsersTab } from './admin/AddUsersTab';
+import { MembersTab } from './admin/MembersTab';
+import { CourseTab } from './admin/CourseTab';
+import { CoursesAdminTab } from './admin/CoursesAdminTab';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { ConceptPicker } from '../components/material/ConceptPicker';
 
@@ -70,7 +71,12 @@ interface ChatbotPrompt {
 // oude links gaan naar de bijbehorende stap in Cursusmateriaal.
 const LEGACY_MATERIAL_TABS: Record<string, MaterialStep> = { documents: 'files', rag_beheer: 'processing', concepts: 'concepts' };
 
-type TabType = 'material' | 'users' | 'add_users' | 'imports' | 'quiz_sources' | 'prompts' | 'rag_settings' | 'settings' | 'projects_admin' | 'analytics' | 'course_features' | 'messages';
+const TAB_IDS = ['material', 'users', 'members', 'course', 'courses', 'imports', 'quiz_sources', 'prompts', 'rag_settings', 'settings', 'projects_admin', 'analytics', 'course_features', 'messages'] as const;
+type TabType = typeof TAB_IDS[number];
+
+// Herindeling 2026-11-02: Leden (was Studenten uitnodigen + Beheer leden) en Cursus (was per
+// cursus in Cursussen beheren) staan bij Openstellen; Cursussen is een tabblad voor de beheerder.
+const LEGACY_TABS: Record<string, TabType> = { add_users: 'members', course_info: 'course' };
 
 interface RagModuleSettings {
   similarity_threshold: number;
@@ -252,7 +258,7 @@ function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deleting
 export function AdminPage() {
   const { t, lang } = useLanguage();
   const { profile, isAdmin, isDocent, session } = useAuth();
-  const { activeCourseId, activeCourse } = useActiveCourse();
+  const { activeCourseId, activeCourse, setActiveCourse } = useActiveCourse();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = (() => {
@@ -269,9 +275,9 @@ export function AdminPage() {
     if (t && LEGACY_MATERIAL_TABS[t as string]) t = 'material';
     // Leerniveaus staan sinds 2026-10-26 onder Analytics.
     if ((t as string | null) === 'learning_levels') t = 'analytics';
-    const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','analytics','course_features','messages'];
-    if (t && allowed.includes(t)) return t;
-    return isAdmin ? 'users' : 'material';
+    if (t && LEGACY_TABS[t as string]) t = LEGACY_TABS[t as string];
+    if (t && (TAB_IDS as readonly string[]).includes(t)) return t;
+    return isAdmin ? 'courses' : 'material';
   })();
   const [activeTab, setActiveTabState] = useState<TabType>(initialTab);
   const [designOpen, setDesignOpen] = useState(false);
@@ -324,9 +330,11 @@ export function AdminPage() {
       setActiveTabState('projects_admin');
       return;
     }
-    // Cursus-info staat sinds 2026-10-26 in Cursussen beheren (knop per cursus).
-    if (raw === 'course_info') {
-      navigate(activeCourseId ? `/admin/courses?courseInfo=${activeCourseId}` : '/admin/courses', { replace: true });
+    if (raw && LEGACY_TABS[raw]) {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', LEGACY_TABS[raw]);
+      setSearchParams(next, { replace: true });
+      setActiveTabState(LEGACY_TABS[raw]);
       return;
     }
     if (raw === 'learning_levels') {
@@ -347,10 +355,7 @@ export function AdminPage() {
       return;
     }
     const t = raw as TabType | null;
-    if (t && t !== activeTab) {
-      const allowed: TabType[] = ['material','users','add_users','imports','quiz_sources','prompts','rag_settings','settings','projects_admin','analytics','course_features','messages'];
-      if (allowed.includes(t)) setActiveTabState(t);
-    }
+    if (t && t !== activeTab && (TAB_IDS as readonly string[]).includes(t)) setActiveTabState(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
   const [users, setUsers] = useState<Profile[]>([]);
@@ -926,9 +931,17 @@ export function AdminPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || t('admin.users.loadFailedStatus', { status: String(res.status) }));
+      const courses = json.courses || [];
       setTeacherCoursesByUser((m) => ({
-        ...m, [userId]: { loading: false, error: null, courses: json.courses || [] },
+        ...m, [userId]: { loading: false, error: null, courses },
       }));
+      // Houd de Rol-kolom in de pas met de wijziging, zonder de pagina te verversen.
+      setTeacherUserIds((prev) => {
+        if (prev.has(userId) === courses.length > 0) return prev;
+        const next = new Set(prev);
+        if (courses.length > 0) next.add(userId); else next.delete(userId);
+        return next;
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('common.unknownError');
       setTeacherCoursesByUser((m) => ({ ...m, [userId]: { loading: false, error: msg, courses: [] } }));
@@ -1264,8 +1277,10 @@ export function AdminPage() {
 
 const tabs = [
   { id: 'material' as TabType, label: t('admin.tabs.material'), icon: Library, show: true },
+  { id: 'courses' as TabType, label: t('admin.tabs.courses'), icon: BookOpen, show: isAdmin },
   { id: 'users' as TabType, label: t('admin.tabs.users'), icon: Users, show: isAdmin },
-  { id: 'add_users' as TabType, label: t('admin.tabs.addUsers'), icon: UserPlus, show: isAdmin || isDocent },
+  { id: 'members' as TabType, label: t('admin.tabs.members'), icon: UserPlus, show: isAdmin || isDocent },
+  { id: 'course' as TabType, label: t('admin.tabs.course'), icon: School, show: isAdmin || isDocent },
   { id: 'imports' as TabType, label: t('admin.tabs.imports'), icon: Download, show: true },
   { id: 'quiz_sources' as TabType, label: t('admin.tabs.quizSources'), icon: SlidersHorizontal, show: isAdmin || isDocent },
   { id: 'prompts' as TabType, label: t('admin.tabs.prompts'), icon: MessageSquareText, show: isAdmin || isDocent },
@@ -1283,9 +1298,9 @@ const tabGroups = [
   { key: 'content', label: t('admin.tabGroups.content'), ids: ['material', 'projects_admin'] },
   { key: 'aiTutor', label: t('admin.tabGroups.aiTutor'), ids: ['prompts', 'rag_settings'] },
   { key: 'quiz', label: t('admin.tabGroups.quiz'), ids: ['quiz_sources', 'imports'] },
-  { key: 'publish', label: t('admin.tabGroups.publish'), ids: ['course_features', 'add_users'] },
+  { key: 'publish', label: t('admin.tabGroups.publish'), ids: ['course_features', 'course', 'members'] },
   { key: 'follow', label: t('admin.tabGroups.follow'), ids: ['analytics'] },
-  { key: 'system', label: t('admin.tabGroups.system'), ids: ['users', 'messages', 'settings'] },
+  { key: 'system', label: t('admin.tabGroups.system'), ids: ['courses', 'users', 'messages', 'settings'] },
 ].map(g => ({ ...g, items: g.ids.map(id => tabs.find(tab => tab.id === id)).filter((x): x is typeof tabs[number] => !!x) }))
  .filter(g => g.items.length > 0);
 
@@ -1325,15 +1340,6 @@ const tabGroups = [
           <p className="text-gray-600">
             {isAdmin ? t('admin.header.subtitleAdmin') : t('admin.header.subtitleDocent')}
           </p>
-          <div className="mt-4">
-  <Link
-    to="/admin/courses"
-    className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-  >
-    {t('admin.header.manageCourses')}
-  </Link>
-</div>
-
         </div>
         <div className="flex flex-shrink-0 flex-row-reverse flex-wrap items-center justify-end gap-2 sm:flex-col sm:items-end">
           <button
@@ -1649,12 +1655,12 @@ const tabGroups = [
                                         )}
                                         <button
                                           type="button"
-                                          onClick={() => navigate(`/admin/courses?manageMembers=${c.courseId}`)}
+                                          onClick={() => void setActiveCourse(c.courseId).then(() => setActiveTab('members'))}
                                           className="ml-auto inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 px-2 py-1 rounded border border-blue-200 hover:bg-blue-50 transition-colors"
                                           data-testid={`link-manage-members-${c.courseId}`}
                                         >
                                           <Users className="w-3.5 h-3.5" />
-                                          {t('admin.users.manageCourseMembers')}
+                                          {t('admin.tabs.members')}
                                         </button>
                                         <button
                                           type="button"
@@ -2711,7 +2717,9 @@ const tabGroups = [
           )}
 
           {activeTab === 'projects_admin' && <ProjectsAdminTab />}
-          {activeTab === 'add_users' && <AddUsersTab />}
+          {activeTab === 'members' && <MembersTab />}
+          {activeTab === 'course' && <CourseTab />}
+          {activeTab === 'courses' && <CoursesAdminTab />}
 
           {activeTab === 'settings' && (
             <div className="space-y-4">

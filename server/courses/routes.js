@@ -690,23 +690,6 @@ export function registerCourseRoutes(app) {
     }
   });
 
-  // GET /api/me/teacher-courses — geeft de ingelogde gebruiker de lijst
-  // cursussen waarin zij/hij per-cursus docent is. Wordt door CoursesAdmin
-  // gebruikt om de 'Beheer leden'-knop te tonen voor non-admin docenten.
-  app.get('/api/me/teacher-courses', async (req, res) => {
-    if (!supabaseAdmin) {
-      return res.status(503).json({ error: 'Admin client not available — SUPABASE_SERVICE_ROLE_KEY missing' });
-    }
-    const r = await resolveAdminUser(req);
-    if (r.error) return res.status(r.error.status).json(r.error.body);
-    try {
-      const courses = await fetchTeacherCoursesForUser(r.user.id);
-      return res.json({ courses });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-
   // ── Bulk-accounts (Task #271): e-mailadressen uit een bestand halen. Uitnodigen zelf: server/courses/courseInvitations.js.
   // POST /api/admin/bulk-accounts/parse-file — leest een geüpload bestand
   // (.csv/.txt of office-formaat .xlsx/.docx/.pdf/…) en vist er e-mailadressen uit.

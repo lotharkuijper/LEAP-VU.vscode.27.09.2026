@@ -2,32 +2,26 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
-import { Link } from 'react-router-dom';
 import { AdminHint } from '../../components/help/AdminHint';
-import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { parseEmailList } from '../../lib/emailList';
 import {
   UserPlus, Upload, Loader2, CheckCircle, XCircle, Info, Users, Clock,
 } from 'lucide-react';
 
-// Studenten uitnodigen (server/courses/courseInvitations.js). Maximale batchgrootte per
-// request — gelijk aan MAX_BULK_BATCH in server/courses/bulkAccounts.js; grotere lijsten
-// splitsen we client-side in stukken.
+// Studenten uitnodigen voor de actieve cursus (server/courses/courseInvitations.js), in het
+// tabblad Leden. Maximale batchgrootte per request — gelijk aan MAX_BULK_BATCH in
+// server/courses/bulkAccounts.js; grotere lijsten splitsen we client-side in stukken.
 const CHUNK = 50;
 
-interface CourseOption { id: string; name: string; }
 type ProvisionStatus = 'invited' | 'added' | 'alreadyMember' | 'limit' | 'failed';
 interface ProvisionResult { email: string; status: ProvisionStatus; error?: string; }
 type Summary = Record<'invited' | 'added' | 'alreadyMember' | 'limit' | 'failed' | 'invalid' | 'duplicates', number>;
 
-export function AddUsersTab() {
-  const { isAdmin, isDocent } = useAuth();
+export function InviteStudentsForm({ courseId, onInvited }: { courseId: string; onInvited?: () => void }) {
+  const { isAdmin } = useAuth();
   const { t } = useLanguage();
-  const { activeCourseId } = useActiveCourse();
   const [courseMode, setCourseMode] = useState<string | null>(null);
 
-  const [courses, setCourses] = useState<CourseOption[]>([]);
-  const [courseId, setCourseId] = useState('');
   const [emailText, setEmailText] = useState('');
   const [fileLoading, setFileLoading] = useState(false);
   const [fileMsg, setFileMsg] = useState('');
@@ -38,37 +32,8 @@ export function AddUsersTab() {
   const [error, setError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Cursuslijst laden: admin krijgt alle cursussen, een docent alleen de
-  // cursussen waarin hij/zij docent is.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        if (isAdmin) {
-          const { data } = await supabase.from('courses').select('id, name').order('name');
-          if (!cancelled) setCourses((data as CourseOption[]) || []);
-        } else {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session?.access_token) return;
-          const res = await fetch('/api/me/teacher-courses', {
-            headers: { Authorization: `Bearer ${session.access_token}` },
-          });
-          const d = await res.json();
-          if (!cancelled) {
-            setCourses((d.courses || []).map((c: any) => ({ id: c.courseId, name: c.courseName })));
-          }
-        }
-      } catch {
-        /* stil — de selector blijft leeg */
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [isAdmin]);
-
-  // Standaard de actieve cursus, als je daar docent van bent.
-  useEffect(() => {
-    if (!courseId && activeCourseId && courses.some((c) => c.id === activeCourseId)) setCourseId(activeCourseId);
-  }, [courses, activeCourseId, courseId]);
+  // Andere cursus gekozen: begin met een leeg resultaat.
+  useEffect(() => { setResults([]); setSummary(null); setError(''); }, [courseId]);
 
   // Toegangsroute van de gekozen cursus: bij Canvas een korte uitleg.
   useEffect(() => {
@@ -100,8 +65,8 @@ export function AddUsersTab() {
       const merged = (emailText.trim() ? emailText.trim() + '\n' : '') + (d.emails || []).join('\n');
       setEmailText(merged);
       setFileMsg(t('addUsers.fileLoaded').replace('{n}', String(d.count || 0)));
-    } catch (e: any) {
-      setError(e.message || t('addUsers.err.fileFailed'));
+    } catch (e: unknown) {
+      setError((e instanceof Error && e.message) || t('addUsers.err.fileFailed'));
     } finally {
       setFileLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -110,7 +75,6 @@ export function AddUsersTab() {
 
   const handleProvision = async () => {
     setError('');
-    if (!courseId) { setError(t('addUsers.err.noCourse')); return; }
     if (preview.valid.length === 0) { setError(t('addUsers.err.noEmails')); return; }
     setSubmitting(true);
     setResults([]);
@@ -137,17 +101,14 @@ export function AddUsersTab() {
       setProgress({ done: chunks.length, total: chunks.length });
       setResults(allResults);
       setSummary({ ...agg, invalid: preview.invalid.length, duplicates: preview.duplicates });
-    } catch (e: any) {
-      setError(e.message || t('addUsers.err.provisionFailed'));
+      if (agg.invited > 0 || agg.added > 0) onInvited?.();
+    } catch (e: unknown) {
+      setError((e instanceof Error && e.message) || t('addUsers.err.provisionFailed'));
     } finally {
       setSubmitting(false);
       setProgress(null);
     }
   };
-
-  if (!isAdmin && !isDocent) {
-    return <div className="text-gray-600">{t('addUsers.noAccess')}</div>;
-  }
 
   const statusBadge = (s: ProvisionStatus) => {
     const base = 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium';
@@ -159,20 +120,16 @@ export function AddUsersTab() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl" data-testid="tab-add-users">
+    <div className="space-y-5" data-testid="form-invite-students">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2">
           <UserPlus className="w-5 h-5 text-blue-600" />
           {t('addUsers.title')}
-        </h2>
+        </h3>
         <AdminHint variant="intro" className="mt-1">{t('addUsers.subtitle')}</AdminHint>
-        {/* Wie al lid is (verwijderen, docent maken, bestaande accounts toevoegen): Beheer leden. */}
-        <p className="mt-2 text-sm text-gray-600" data-testid="text-add-users-members-link">
-          {t('addUsers.membersHint')}{' '}
-          <Link to={courseId ? `/admin/courses?manageMembers=${courseId}` : '/admin/courses'} className="font-medium text-brand-700 underline hover:text-brand-900" data-testid="link-add-users-manage-members">
-            {t('admin.users.manageCourseMembers')}
-          </Link>
-        </p>
+        {(courseMode === 'canvas' || courseMode === 'canvas_open') && (
+          <AdminHint variant="intro" className="mt-2" testId="text-invite-canvas-hint">{t('addUsers.canvasHint')}</AdminHint>
+        )}
       </div>
 
       <AdminHint variant="tip" testId="text-invite-expiry">{t('addUsers.expiryNote')}</AdminHint>
@@ -183,28 +140,6 @@ export function AddUsersTab() {
           {t('addUsers.emailPrereq')}
         </AdminHint>
       )}
-
-      {/* Cursuskeuze */}
-      <div>
-        <label htmlFor="add-users-course" className="block text-sm font-semibold text-gray-700 mb-2">
-          {t('addUsers.courseLabel')}
-        </label>
-        <select
-          id="add-users-course"
-          value={courseId}
-          onChange={(e) => setCourseId(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-white"
-          data-testid="select-course"
-        >
-          <option value="">{t('addUsers.coursePlaceholder')}</option>
-          {courses.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        {(courseMode === 'canvas' || courseMode === 'canvas_open') && (
-          <AdminHint variant="intro" className="mt-2" testId="text-invite-canvas-hint">{t('addUsers.canvasHint')}</AdminHint>
-        )}
-      </div>
 
       {/* E-mailadressen */}
       <div>
@@ -280,7 +215,7 @@ export function AddUsersTab() {
         <button
           type="button"
           onClick={handleProvision}
-          disabled={submitting || !courseId || preview.valid.length === 0}
+          disabled={submitting || preview.valid.length === 0}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-green-600 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="button-provision"
         >
