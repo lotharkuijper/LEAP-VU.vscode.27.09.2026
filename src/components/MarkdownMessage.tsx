@@ -115,6 +115,9 @@ export function MarkdownMessage({
         'prose-code:before:hidden prose-code:after:hidden prose-code:bg-gray-100 ' +
         'prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[0.9em] ' +
         'prose-pre:bg-gray-900 prose-pre:text-gray-100 ' +
+        // De opmaak voor `code` in een zin (lichte achtergrond) niet ook binnen een codeblok
+        // toepassen: dan kreeg elke regel een lichte balk met lichte tekst erop, onleesbaar.
+        '[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_pre_code]:text-inherit ' +
         'prose-a:text-blue-600 prose-a:underline'
       }
       style={style}
