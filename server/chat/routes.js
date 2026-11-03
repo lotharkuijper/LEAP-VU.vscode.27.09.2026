@@ -371,6 +371,9 @@ async function chatAttachmentsGate(user, profile, courseId) {
 
 // Highest answer length a browser may ask for (quiz checks ask up to ~5000).
 const CHAT_MAX_TOKENS = 16000;
+// Budget when the browser asks for none (the tutor chat). A reasoning model spends part of it
+// on thinking, so 512 made answers terse; 1200 leaves room for the longer answers (2026-11-02).
+const CHAT_DEFAULT_TOKENS = 1200;
 
 export function registerChatRoutes(app) {
   app.post('/api/chat', async (req, res) => {
@@ -583,7 +586,7 @@ export function registerChatRoutes(app) {
       model: OPENAI_MODEL,
       messages: finalMessages,
       // Met een bijlage beschrijft het model eerst wat het ziet: meer ruimte.
-      [MAX_TOKENS_PARAM]: hasAttachments ? Math.max(maxTokens ?? 512, 1500) : (maxTokens ?? 512),
+      [MAX_TOKENS_PARAM]: hasAttachments ? Math.max(maxTokens ?? CHAT_DEFAULT_TOKENS, 1500) : (maxTokens ?? CHAT_DEFAULT_TOKENS),
       stream,
     };
     if (IS_REASONING_MODEL) {
@@ -664,7 +667,7 @@ export function registerChatRoutes(app) {
       // keer opnieuw met een ruimer tokenbudget (en lage reasoning-inspanning)
       // voordat we falen, zodat alle functies (chat én explain) profiteren.
       if (!stream && isEmptyOrTruncatedCompletion(data)) {
-        const baseBudget = maxTokens ?? 512;
+        const baseBudget = maxTokens ?? CHAT_DEFAULT_TOKENS;
         const retryBudget = Math.max(baseBudget * 2, 2000);
         const retryBody = { ...chatBody, [MAX_TOKENS_PARAM]: retryBudget };
         if (IS_REASONING_MODEL) retryBody.reasoning_effort = REASONING_EFFORT;
