@@ -63,9 +63,10 @@ export function ConceptProgressCard({ topics, attempts, onPractice, now, places 
 
       <ul className="space-y-1.5">
         {shown.map(p => (
-          <li key={p.id} className="flex items-center gap-3 min-w-0" data-testid={`row-progress-${p.id}`}>
+          // Op een smal scherm schuiven balk en label naar een tweede regel, zodat de naam leesbaar blijft.
+          <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0" data-testid={`row-progress-${p.id}`}>
             {places && <ConceptPlaceDot place={places.get(p.id)} />}
-            <span className="min-w-0 flex-1 truncate text-sm text-gray-800" title={p.name}>{p.name}</span>
+            <span className="min-w-[10rem] flex-1 truncate text-sm text-gray-800" title={p.name}>{p.name}</span>
             {p.mastery != null ? (
               <span className="flex w-28 shrink-0 items-center gap-2">
                 <span className="h-2 flex-1 overflow-hidden rounded bg-gray-100">

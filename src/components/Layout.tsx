@@ -220,6 +220,8 @@ export function Layout({ children }: LayoutProps) {
               {/* MOBILE MENU */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label={t('nav.menu')}
+                aria-expanded={mobileMenuOpen}
                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
