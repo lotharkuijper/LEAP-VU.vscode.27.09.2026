@@ -132,12 +132,14 @@ export function DesignAssistantDock({ courseId, courseName, place, context, onNa
           type="button"
           onClick={() => setOpen(true)}
           title={t('admin.designAssistant.openTooltip')}
-          className="fixed right-0 top-1/2 z-40 -translate-y-1/2 rounded-l-xl border border-r-0 border-brand-200 bg-white px-1.5 py-3 text-brand-700 shadow-lg hover:bg-brand-50"
+          aria-label={t('admin.designAssistant.title')}
+          // Telefoon: rond knopje rechtsonder; vanaf tablet een strook aan de rechterrand.
+          className="fixed bottom-4 right-4 z-40 rounded-full border border-brand-200 bg-white p-3 text-brand-700 shadow-lg hover:bg-brand-50 md:bottom-auto md:right-0 md:top-1/2 md:-translate-y-1/2 md:rounded-none md:rounded-l-xl md:border-r-0 md:px-1.5 md:py-3"
           data-testid="button-design-open"
         >
           <span className="flex flex-col items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            <span className="text-xs font-semibold [writing-mode:vertical-rl] rotate-180">{t('admin.designAssistant.title')}</span>
+            <span className="hidden md:inline text-xs font-semibold [writing-mode:vertical-rl] rotate-180">{t('admin.designAssistant.title')}</span>
           </span>
         </button>
     );

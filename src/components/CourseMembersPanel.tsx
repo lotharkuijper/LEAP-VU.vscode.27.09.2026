@@ -229,7 +229,7 @@ export function CourseMembersPanel({ courseId, courseName, canEdit, reloadKey = 
                 const busy = busyId === m.user_id;
                 return (
                   <tr key={m.user_id} className="border-b border-gray-100" data-testid={`row-member-${m.user_id}`}>
-                    <td className="py-2 px-2">{m.full_name || '—'}</td>
+                    <td className="py-2 px-2 min-w-[9rem]">{m.full_name || '—'}</td>
                     <td className="py-2 px-2 text-gray-600">
                       <div className="min-w-0 break-words">{m.email || '—'}</div>
                       {m.invitation && (

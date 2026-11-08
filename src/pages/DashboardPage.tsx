@@ -502,7 +502,7 @@ export function DashboardPage() {
 
       {/* Action tiles */}
       <section
-        className="grid grid-cols-1 md:grid-cols-2 gap-5"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-5"
         aria-label={t('dashboard.tilesAriaLabel')}
       >
         {tiles.map((tile) => {

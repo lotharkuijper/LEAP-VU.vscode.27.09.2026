@@ -230,9 +230,10 @@ export function ChatPage() {
   const viewerSeqRef = useRef(0);
   const [viewerContext, setViewerContext] = useState<ViewerContext | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  // Telefoon: één paneel tegelijk (gesprekkenlijst, gesprek of document) en de
+  // Telefoon en tablet: één paneel tegelijk (gesprekkenlijst, gesprek of document) en de
   // instellingen onder het gesprek ingeklapt, zodat het gesprek de ruimte krijgt.
-  const narrow = useIsNarrow();
+  // Naast de hoofdmenubalk passen lijst en gesprek pas vanaf 1024px naast elkaar.
+  const narrow = useIsNarrow(1024);
   const [mobileListOpen, setMobileListOpen] = useState(false);
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
   const mobilePane: 'list' | 'chat' | 'viewer' =
@@ -882,7 +883,7 @@ export function ChatPage() {
       </div>
     )}
     <div ref={splitRef} className="h-[calc(100dvh-6rem)] md:h-[calc(100dvh-8rem)] flex gap-4">
-      <div className={`w-full md:w-64 chic-card p-4 flex-col ${paneHidden('list') ? 'hidden' : 'flex'}`} data-testid="panel-conversations">
+      <div className={`w-full lg:w-64 chic-card p-4 flex-col ${paneHidden('list') ? 'hidden' : 'flex'}`} data-testid="panel-conversations">
         <button
           onClick={createNewConversation}
           disabled={!profile}
@@ -930,7 +931,7 @@ export function ChatPage() {
         </div>
       </div>
 
-      <div className={`min-w-0 md:min-w-[20rem] flex-1 chic-card flex-col ${paneHidden('chat') ? 'hidden' : 'flex'}`} onDragOver={att.onDragOver} onDrop={att.onDrop} data-testid="panel-chat">
+      <div className={`min-w-0 lg:min-w-[20rem] flex-1 chic-card flex-col ${paneHidden('chat') ? 'hidden' : 'flex'}`} onDragOver={att.onDragOver} onDrop={att.onDrop} data-testid="panel-chat">
         {narrow && currentConversationId && (
           <div className="flex items-center gap-2 border-b border-gray-200 px-2 py-1.5">
             <button
@@ -1254,7 +1255,7 @@ export function ChatPage() {
           role="separator"
           aria-orientation="vertical"
           title={t('chat.viewerResizeHint')}
-          className="hidden md:flex w-2 shrink-0 cursor-col-resize items-center justify-center group touch-none"
+          className="hidden lg:flex w-2 shrink-0 cursor-col-resize items-center justify-center group touch-none"
           data-testid="divider-document-viewer"
         >
           <div className="h-16 w-1 rounded-full bg-gray-300 group-hover:bg-green-500 transition-colors" />
