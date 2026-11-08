@@ -1325,7 +1325,7 @@ const tabGroups = [
   ].filter(Boolean).join(' → ');
 
   return (
-    <div className={`space-y-6 ${designOpen ? 'xl:pr-[25rem]' : ''}`}>
+    <div className={`space-y-4 md:space-y-6 ${designOpen ? 'xl:pr-[25rem]' : ''}`}>
       <DesignAssistantDock
         courseId={activeCourseId}
         courseName={activeCourse?.name}
@@ -1336,8 +1336,8 @@ const tabGroups = [
       />
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('admin.header.title')}</h1>
-          <p className="text-gray-600">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">{t('admin.header.title')}</h1>
+          <p className="hidden sm:block text-gray-600">
             {isAdmin ? t('admin.header.subtitleAdmin') : t('admin.header.subtitleDocent')}
           </p>
         </div>
@@ -1396,10 +1396,10 @@ const tabGroups = [
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-4 md:items-start">
+      <div className="flex flex-col xl:flex-row gap-4 xl:items-start">
 
-        {/* Mobiel: dropdown */}
-        <div className="md:hidden w-full">
+        {/* Telefoon en tablet: keuzelijst. Daar is naast de hoofdmenubalk geen ruimte voor een tweede zijbalk. */}
+        <div className="xl:hidden w-full">
           <select
             value={activeTab}
             onChange={e => setActiveTab(e.target.value as TabType)}
@@ -1414,8 +1414,8 @@ const tabGroups = [
           </select>
         </div>
 
-        {/* Desktop: verticale zijbalk */}
-        <nav className="hidden md:block w-60 flex-shrink-0 chic-card overflow-hidden self-start sticky top-4">
+        {/* Vanaf laptopbreedte (1280px): verticale zijbalk */}
+        <nav className="hidden xl:block w-60 flex-shrink-0 chic-card overflow-hidden self-start sticky top-4">
           {tabGroups.map((group, gi) => (
             <div key={group.key} className={gi > 0 ? 'border-t border-gray-100' : ''}>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-4 pt-4 pb-1">
@@ -1872,7 +1872,7 @@ const tabGroups = [
                 <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50">
                   <SlidersHorizontal className="h-4 w-4 text-gray-500" aria-hidden />
                   {t('admin.conceptPicker.moreSettings')}
-                  <span className="min-w-0 text-xs font-normal text-gray-500">{t('admin.conceptPicker.moreSettingsHint')}</span>
+                  <span className="hidden sm:inline min-w-0 text-xs font-normal text-gray-500">{t('admin.conceptPicker.moreSettingsHint')}</span>
                   <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180" aria-hidden />
                 </summary>
                 <div className="space-y-4 border-t border-gray-100 p-4">
@@ -1895,7 +1895,7 @@ const tabGroups = [
                   .filter(Boolean).sort().reverse()[0] ?? null;
                 return !effectiveRegen || conceptsMeta.lastDocumentChange > effectiveRegen;
               })() && (
-                <div className="flex items-start justify-between gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3" data-testid="banner-docs-changed">
+                <div className="flex flex-wrap items-start justify-between gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3" data-testid="banner-docs-changed">
                   <div className="flex items-start gap-2 text-sm text-amber-800">
                     <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
                     <span>
@@ -2279,14 +2279,14 @@ const tabGroups = [
                   <p className="text-sm font-medium text-blue-900 flex items-center gap-1.5">{t('admin.ragSettings.adjustFor')}<HelpTip id="searchSensitivity.courseOverride" /></p>
                   <p className="text-xs text-blue-600 mt-0.5">{t('admin.ragSettings.overrideNote')}</p>
                 </div>
-                <div className="relative">
+                <div className="relative min-w-0">
                   <select
                     value={ragSelectedCourseId || ''}
                     onChange={e => {
                       setRagSelectedCourseId(e.target.value || null);
                       setRagSettingsMsg(null);
                     }}
-                    className="appearance-none pl-3 pr-8 py-2 text-sm bg-white border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 min-w-[220px]"
+                    className="appearance-none pl-3 pr-8 py-2 text-sm bg-white border border-blue-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 text-gray-800 w-full max-w-full sm:w-80"
                     data-testid="select-rag-course"
                   >
                     {isAdmin && <option value="">{t('admin.ragSettings.globalDefault')}</option>}
@@ -2356,7 +2356,7 @@ const tabGroups = [
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       {t('admin.ragSettings.extraction.thresholdLabel')} (<span className="font-mono">{ragSettingsState.extraction.similarity_threshold.toFixed(2)}</span>)
@@ -2449,7 +2449,7 @@ const tabGroups = [
 
                     <details className="rounded-lg border border-gray-200 bg-white px-4 py-3" data-testid={`details-advanced-${mod}`}>
                       <summary className="cursor-pointer text-sm font-medium text-gray-700">{t('ragPresets.advanced')}</summary>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-3">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           {t('admin.ragSettings.modules.thresholdLabel')} (<span className="font-mono">{s.similarity_threshold.toFixed(2)}</span>)

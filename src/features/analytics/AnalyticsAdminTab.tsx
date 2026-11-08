@@ -184,14 +184,14 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
               </p>
             ) : (
               <div className="space-y-2">
-                <div className="hidden sm:flex gap-3 text-xs text-gray-400">
+                <div className="hidden lg:flex gap-3 text-xs text-gray-400">
                   <div className="w-[40%] min-w-0">{t('analytics.thermometer.colConcept')}</div>
                   <div className="flex-1">{t('analytics.thermometer.colQuiz')}</div>
-                  <div className="w-28 text-right">{t('analytics.thermometer.colChat')}</div>
+                  <div className="w-40 text-right">{t('analytics.thermometer.colChat')}</div>
                 </div>
                 {rows.map(c => (
-                  <div key={c.name} className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1" data-testid={`row-concept-${c.name}`}>
-                    <div className="w-full sm:w-[40%] min-w-0 truncate text-sm text-gray-800" title={c.name}>{c.name}</div>
+                  <div key={c.name} className="flex flex-wrap lg:flex-nowrap items-center gap-x-3 gap-y-1" data-testid={`row-concept-${c.name}`}>
+                    <div className="w-full lg:w-[40%] min-w-0 truncate text-sm text-gray-800" title={c.name}>{c.name}</div>
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       {c.quiz.avgScore != null ? (
                         <>
@@ -206,7 +206,7 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
                         </span>
                       )}
                     </div>
-                    <div className="w-28 text-right text-xs text-gray-500 whitespace-nowrap">
+                    <div className="lg:w-40 shrink-0 text-right text-xs text-gray-500 whitespace-nowrap">
                       {c.chat.asked > 0 ? t('analytics.thermometer.chatCell', { n: String(c.chat.asked), miss: String(c.chat.misses) }) : '—'}
                     </div>
                   </div>
@@ -304,7 +304,7 @@ export function PlatformHealth({ weeks }: { weeks: number }) {
             <div className="chic-card p-4 min-w-0" data-testid="block-parts">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('analytics.platform.perPart')}</h4>
               <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+                <table className="w-full text-xs whitespace-nowrap">
                   <thead className="text-gray-400">
                     <tr>
                       <th className="text-left font-normal py-1">{t('analytics.platform.colPart')}</th>

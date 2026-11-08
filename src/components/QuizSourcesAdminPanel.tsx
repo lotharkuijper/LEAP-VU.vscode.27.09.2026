@@ -1197,7 +1197,7 @@ export function QuizSourcesAdminPanel() {
               if (file) setCsvText(await file.text());
               e.target.value = '';
             }}
-            className="text-xs"
+            className="max-w-full text-xs"
             data-testid="input-csv-file"
           />
           <button

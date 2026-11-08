@@ -107,7 +107,7 @@ export function ConceptPicker({ courseId, token, concepts, moduleCounts, onChang
   return (
     <section className="rounded-xl border border-blue-200 bg-blue-50/40 p-4" data-testid="panel-concept-picker">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[12rem] flex-1">
           <h3 className="flex items-center gap-2 font-semibold text-gray-900">
             <ListChecks className="h-5 w-5 text-blue-600" aria-hidden />
             {t('admin.conceptPicker.title')}
