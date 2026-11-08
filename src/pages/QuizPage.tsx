@@ -1093,10 +1093,11 @@ export function QuizPage() {
               );
             })()}
 
+            {/* Telefoon: de knop blijft onderaan in beeld terwijl je door het lange formulier scrolt. */}
             <button
               onClick={handleStartQuiz}
               disabled={loading || selectedTopicIds.size === 0}
-              className="w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="sticky bottom-3 z-10 md:static w-full px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               data-testid="button-generate-quiz"
             >
               {loading ? (

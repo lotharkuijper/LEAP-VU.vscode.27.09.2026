@@ -298,6 +298,14 @@ export function ExplainPage() {
   const mode: ExplainPart = !partSelf.visible ? 'explainImprove' : !partImprove.visible ? 'explainSelf' : modeChoice;
   const [explanation, setExplanation] = useState('');
   const explanationRef = useRef<HTMLTextAreaElement>(null);
+  // Onder laptopbreedte staat de oefening onder de begrippenlijst: na het kiezen
+  // van een begrip ernaartoe scrollen, anders lijkt er niets te gebeuren.
+  const exerciseRef = useRef<HTMLDivElement>(null);
+  const scrollToExercise = () => {
+    if (!window.matchMedia?.('(max-width: 1023.98px)').matches) return false;
+    setTimeout(() => exerciseRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+    return true;
+  };
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackSections, setFeedbackSections] = useState<ExplainFeedbackSections | null>(null);
   const [feedbackScore, setFeedbackScore] = useState<{ total: number; reason: string } | null>(null);
@@ -423,6 +431,7 @@ export function ExplainPage() {
         (data.concept ? { ...data.concept, id: data.conceptId } as Concept : null);
       if (fullConcept) {
         setSelectedConcept(fullConcept);
+        scrollToExercise();
       }
       setExplanation(data.explanationText || '');
       setFeedback(data.feedback || null);
@@ -555,7 +564,7 @@ export function ExplainPage() {
     setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
     setFeedbackError(null);
     setActiveExplanationId(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (!scrollToExercise()) window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // /explain?concept=<id>: dat begrip alvast kiezen (bv. vanuit een verwant begrip of een link).
@@ -809,6 +818,7 @@ export function ExplainPage() {
                     setExplanation('');
                     setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
                     setFeedbackError(null);
+                    scrollToExercise();
                   }}
                   className={`w-full text-left p-3 rounded-lg transition-all ${
                     selectedConcept?.id === concept.id
@@ -1082,7 +1092,7 @@ export function ExplainPage() {
         </div>
         </div>
 
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 scroll-mt-20" ref={exerciseRef}>
           {partSelf.visible && partImprove.visible && (
             <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('explain.modes.label')} data-testid="tabs-explain-mode">
               {(['explainSelf', 'explainImprove'] as const).map(p => {

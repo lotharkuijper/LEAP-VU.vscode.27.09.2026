@@ -183,3 +183,13 @@ math-field::part(menu-toggle),
 math-field::part(virtual-keyboard-toggle) {
   display: none;
 }
+/* Telefoon: Safari op de iPhone zoomt in op een invoerveld met een letter kleiner
+   dan 16px, en de student moet daarna terugzoomen. Op smalle schermen daarom
+   altijd minstens 16px in invoervelden, ook waar de pagina text-xs of text-sm zet. */
+@media (max-width: 767.98px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

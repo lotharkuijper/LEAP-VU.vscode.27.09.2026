@@ -16,7 +16,7 @@ import { TokenBudgetBadge } from '../components/TokenBudgetBadge';
 import { HelpTip } from '../components/help/HelpTip';
 import { FormulaButton } from '../components/formula/FormulaButton';
 import { MathText } from '../components/MathText';
-import { Send, MessageSquare, Plus, AlertCircle, RefreshCw, LogOut, BookText, Trash2, X, Loader2, Eye, Download, FileText, TrendingUp, Coffee, Copy, Check } from 'lucide-react';
+import { Send, MessageSquare, Plus, AlertCircle, RefreshCw, LogOut, BookText, Trash2, X, Loader2, Eye, Download, FileText, TrendingUp, Coffee, Copy, Check, ArrowLeft, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { type ChatExcerptAttachment } from '../components/ChatExcerptCard';
 import { RAGStatusIndicator } from '../components/RAGStatusIndicator';
@@ -26,6 +26,7 @@ import { NoticeBanner, useNotice } from '../components/Notice';
 import { PromptDebugBadge } from '../components/PromptDebugBadge';
 import { useLearningLevel } from '../hooks/useLearningLevel';
 import { useRefocusAfterLoading } from '../hooks/useRefocusAfterLoading';
+import { useIsNarrow } from '../hooks/useIsNarrow';
 import { LevelUpCelebration, ReadinessNotice } from '../components/LevelUpCelebration';
 import { shouldCelebrate, type ReadinessResult } from '../lib/readiness';
 import { LearningLevelSelector } from '../components/LearningLevelSelector';
@@ -229,6 +230,15 @@ export function ChatPage() {
   const viewerSeqRef = useRef(0);
   const [viewerContext, setViewerContext] = useState<ViewerContext | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  // Telefoon: één paneel tegelijk (gesprekkenlijst, gesprek of document) en de
+  // instellingen onder het gesprek ingeklapt, zodat het gesprek de ruimte krijgt.
+  const narrow = useIsNarrow();
+  const [mobileListOpen, setMobileListOpen] = useState(false);
+  const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+  const mobilePane: 'list' | 'chat' | 'viewer' =
+    viewerDoc ? 'viewer' : (mobileListOpen || !currentConversationId) ? 'list' : 'chat';
+  const paneHidden = (pane: typeof mobilePane) => narrow && mobilePane !== pane;
+  useEffect(() => { setMobileListOpen(false); }, [currentConversationId]);
   // Bijlagen in de chat: alleen in het geheugen van deze pagina (src/lib/chatAttachments.ts).
   const att = useChatAttachments(activeCourse, currentConversationId);
   // Leerlijn: onderdeel bij de bronnen en de keuze "Ik werk aan …" (server/courses/courseUnits.js).
@@ -871,8 +881,8 @@ export function ChatPage() {
         <NoticeBanner notice={pageNotice} onDismiss={clearPageNotice} />
       </div>
     )}
-    <div ref={splitRef} className="h-[calc(100vh-8rem)] flex gap-4">
-      <div className="w-64 chic-card p-4 flex flex-col">
+    <div ref={splitRef} className="h-[calc(100dvh-6rem)] md:h-[calc(100dvh-8rem)] flex gap-4">
+      <div className={`w-full md:w-64 chic-card p-4 flex-col ${paneHidden('list') ? 'hidden' : 'flex'}`} data-testid="panel-conversations">
         <button
           onClick={createNewConversation}
           disabled={!profile}
@@ -898,7 +908,7 @@ export function ChatPage() {
             >
               <button
                 data-testid={`btn-conversation-${conv.id}`}
-                onClick={() => setCurrentConversationId(conv.id)}
+                onClick={() => { setCurrentConversationId(conv.id); setMobileListOpen(false); }}
                 className="flex-1 text-left p-3"
               >
                 <div className="flex items-start gap-2">
@@ -910,7 +920,8 @@ export function ChatPage() {
                 data-testid={`btn-delete-${conv.id}`}
                 onClick={(e) => { e.stopPropagation(); setDeleteDialog({ conversationId: conv.id, title: conv.title }); }}
                 title={t('chat.deleteTitle')}
-                className="absolute right-2 top-2.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-100 text-red-600"
+                aria-label={t('chat.deleteTitle')}
+                className="absolute right-1 top-1 md:right-2 md:top-2.5 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100 transition-opacity p-2.5 md:p-1 rounded hover:bg-red-100 text-red-600"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -919,7 +930,23 @@ export function ChatPage() {
         </div>
       </div>
 
-      <div className="min-w-[20rem] flex-1 chic-card flex flex-col" onDragOver={att.onDragOver} onDrop={att.onDrop}>
+      <div className={`min-w-0 md:min-w-[20rem] flex-1 chic-card flex-col ${paneHidden('chat') ? 'hidden' : 'flex'}`} onDragOver={att.onDragOver} onDrop={att.onDrop} data-testid="panel-chat">
+        {narrow && currentConversationId && (
+          <div className="flex items-center gap-2 border-b border-gray-200 px-2 py-1.5">
+            <button
+              type="button"
+              onClick={() => setMobileListOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-medium text-green-700 hover:bg-green-50"
+              data-testid="button-mobile-conversations"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t('chat.mobile.conversations')}
+            </button>
+            <span className="min-w-0 flex-1 truncate text-sm text-gray-600">
+              {conversations.find(c => c.id === currentConversationId)?.title}
+            </span>
+          </div>
+        )}
         {!currentConversationId ? (
           <div className="flex-1 flex items-center justify-center text-gray-500">
             <div className="text-center">
@@ -930,7 +957,7 @@ export function ChatPage() {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4">
               {messages.length === 0 && (
                 <div className="text-center text-gray-500 mt-8">
                   <p className="text-lg font-semibold mb-2">{t('chat.startConversation')}</p>
@@ -944,7 +971,7 @@ export function ChatPage() {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                    className={`min-w-0 max-w-[92%] md:max-w-[80%] rounded-2xl px-3 py-2.5 md:px-4 md:py-3 ${
                       msg.role === 'user'
                         ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white'
                         : 'bg-gray-100 text-gray-900'
@@ -1070,7 +1097,7 @@ export function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className="border-t border-gray-200 p-4">
+            <div className="border-t border-gray-200 p-2 md:p-4">
               {readinessResult && shouldCelebrate(readinessResult) && (
                 <LevelUpCelebration
                   result={readinessResult}
@@ -1081,7 +1108,20 @@ export function ChatPage() {
               {readinessResult && !shouldCelebrate(readinessResult) && (
                 <ReadinessNotice result={readinessResult} onClose={() => setReadinessResult(null)} />
               )}
-              <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+              {narrow && (
+                <button
+                  type="button"
+                  onClick={() => setMobileSettingsOpen(v => !v)}
+                  aria-expanded={mobileSettingsOpen}
+                  className="mb-2 flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                  data-testid="button-mobile-chat-settings"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  {t('chat.mobile.settings')}
+                  <ChevronDown className={`h-4 w-4 transition-transform ${mobileSettingsOpen ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+              <div className={`mb-3 flex-wrap items-end justify-between gap-3 ${narrow && !mobileSettingsOpen ? 'hidden' : 'flex'}`} data-testid="block-chat-settings">
                 <RAGStatusIndicator strictMode={ragSettings.chat.rag_strict_mode} />
                 <div className="flex flex-wrap items-end gap-2 ml-auto">
                   {leerlijn.units.length > 0 && (
@@ -1160,7 +1200,7 @@ export function ChatPage() {
                 onRemove={att.remove}
                 onClearError={att.clearError}
               />
-              <div className="flex gap-3 items-end">
+              <div className="flex gap-2 md:gap-3 items-end">
                 {att.showClip && (
                   <div className="flex flex-col items-center gap-1">
                     <HelpTip id="student.chat.attachments" always />
@@ -1183,14 +1223,15 @@ export function ChatPage() {
                   placeholder={att.pending.length ? t('chat.attachments.inputPlaceholder') : t('chat.inputPlaceholder')}
                   aria-label={t('chat.inputPlaceholder')}
                   rows={3}
-                  className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-none leading-relaxed min-h-[88px] max-h-[200px] overflow-y-auto"
+                  className="min-w-0 flex-1 px-3 py-2.5 md:px-4 md:py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all outline-none resize-none leading-relaxed min-h-[64px] md:min-h-[88px] max-h-[200px] overflow-y-auto"
                   disabled={loading}
                   data-testid="input-chat-message"
                 />
                 <button
                   onClick={() => handleSendMessage()}
                   disabled={loading || !input.trim() || att.busy}
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  aria-label={t('chat.send')}
+                  className="shrink-0 px-4 md:px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -1223,7 +1264,9 @@ export function ChatPage() {
       {viewerDoc && (
         <div
           className="flex shrink-0 chic-card flex-col overflow-hidden p-0"
-          style={{ width: viewerWidth, minWidth: VIEWER_MIN_PX, maxWidth: `calc(100% - ${VIEWER_RESERVED_PX}px)` }}
+          style={narrow
+            ? { width: '100%' }
+            : { width: viewerWidth, minWidth: VIEWER_MIN_PX, maxWidth: `calc(100% - ${VIEWER_RESERVED_PX}px)` }}
           data-testid="panel-document-viewer"
         >
           <ViewerErrorBoundary
@@ -1244,7 +1287,12 @@ export function ChatPage() {
               openSeq={viewerDoc.seq}
               onClose={() => { setViewerDoc(null); setViewerContext(null); }}
               onContextChange={setViewerContext}
-              onQuote={(text) => { setInput((prev) => appendQuote(prev, text)); focusAtEnd(chatInputRef.current); }}
+              onQuote={(text) => {
+                setInput((prev) => appendQuote(prev, text));
+                // Op een telefoon staat het document over het gesprek heen: sluit het, anders zie je het citaat niet.
+                if (narrow) { setViewerDoc(null); setViewerContext(null); setTimeout(() => focusAtEnd(chatInputRef.current), 0); }
+                else focusAtEnd(chatInputRef.current);
+              }}
             />
           </ViewerErrorBoundary>
         </div>
