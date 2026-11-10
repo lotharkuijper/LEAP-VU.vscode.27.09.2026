@@ -7,12 +7,13 @@
 // Onder de motorkap blijven het gewone beoordelaar-persona's en projectdocumenten
 // (docs/decisions/projecten.md); dit blok laat de docent in doelen denken.
 import { useState } from 'react';
-import { Eye, EyeOff, FileText, Loader2, Paperclip, Plus, Save, Scale } from 'lucide-react';
+import { Eye, EyeOff, FileText, Loader2, Paperclip, Pencil, Plus, Save, Scale, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { AdminHint } from '../../components/help/AdminHint';
 import { PersonaAvatar } from '../../components/PersonaAvatar';
-import { PreassessorPicker } from './ProjectPreassessment';
+import { Tooltip } from '../../components/help/Tooltip';
+import { HelpTip } from '../../components/help/HelpTip';
 import type { AvatarConfig } from '../../lib/personaAvatar';
 
 export interface FeedbackPersona {
@@ -54,7 +55,7 @@ function Step({ n, title, who, children, testId }: { n: number; title: string; w
 
 export function ProjectFeedbackSetup({
   project, token, personas, docs, accept, preassessorId, onPreassessorChange,
-  onToggleDocVisibility, onUploadRubric, uploading, onNewEvaluator, onPersonasChanged, onError, onInfo,
+  onToggleDocVisibility, onUploadRubric, uploading, onNewEvaluator, onPersonasChanged, onEditPersona, onDeletePersona, onError, onInfo,
 }: {
   project: { id: string; rubric_criteria: unknown; submissions_enabled: boolean | null };
   token: string;
@@ -71,6 +72,8 @@ export function ProjectFeedbackSetup({
   /** Opent de persona-editor met een beoordelaar die de rubric al kent. */
   onNewEvaluator: (purpose: 'feedback' | 'marking') => void;
   onPersonasChanged: () => void;
+  onEditPersona: (p: FeedbackPersona) => void;
+  onDeletePersona: (p: FeedbackPersona) => void;
   onError: (m: string) => void;
   onInfo: (m: string) => void;
 }) {
@@ -104,6 +107,17 @@ export function ProjectFeedbackSetup({
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { onError(d.error || t('admin.projects.personas.saveFailed')); return; }
     onPersonasChanged();
+  };
+  // Nakijkhulp aanwijzen of loslaten (null: de bot wordt weer feedbackgever, stap 2).
+  const setMarker = async (personaId: string | null) => {
+    const r = await fetch(`/api/projects/${project.id}/preassessment-persona`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ personaId }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { onError(d.error || t('admin.projects.personas.saveFailed')); return; }
+    onPreassessorChange(personaId);
   };
   const linkRubric = (p: FeedbackPersona) =>
     patchPersona(p, { project_knowledge_doc_ids: [...new Set([...(p.project_knowledge_doc_ids || []), ...rubricIds])] });
@@ -141,6 +155,14 @@ export function ProjectFeedbackSetup({
       ) : (
         <span className="text-[11px] text-amber-700">{t('admin.projects.fb.noRubricYet')}</span>
       )}
+      <span className="flex items-center gap-0.5">
+        <Tooltip label={t('admin.projects.personas.editBtn')}>
+          <button type="button" onClick={() => onEditPersona(p)} className="p-1 rounded text-gray-600 hover:bg-gray-100" data-testid={`button-fb-edit-${p.id}`}><Pencil className="w-3.5 h-3.5" /></button>
+        </Tooltip>
+        <Tooltip label={t('admin.projects.personas.deleteTitle')}>
+          <button type="button" onClick={() => onDeletePersona(p)} className="p-1 rounded text-red-500 hover:bg-red-50" data-testid={`button-fb-delete-${p.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
+        </Tooltip>
+      </span>
     </li>
   );
 
@@ -210,21 +232,19 @@ export function ProjectFeedbackSetup({
         {!project.submissions_enabled ? (
           <AdminHint variant="tip">{t('admin.projects.fb.needSubmissions')}</AdminHint>
         ) : marker ? (
-          // Alleen de eigen nakijkhulp is te kiezen: wie hier een feedbackgever
-          // aanwees, haalde die stilletjes weg uit stap 2.
-          <PreassessorPicker
-            projectId={project.id}
-            token={token}
-            evaluators={[marker]}
-            value={marker.id}
-            rubricCount={(marker.project_knowledge_doc_ids || []).length}
-            onChange={onPreassessorChange}
-            onError={onError}
-            onInfo={onInfo}
-          />
+          // Een vaste nakijkhulp: geen keuzelijst met feedbackgevers (die haalde
+          // een feedbackgever stilletjes weg uit stap 2). Uitzetten = verwijderen.
+          <>
+            <p className="text-xs text-gray-600">{t('admin.projects.fb.step3Desc')} <HelpTip id="projects.preassessment" /></p>
+            <ul data-testid="fb-marker">{evaluatorRow(marker, false)}</ul>
+            <button type="button" onClick={() => void setMarker(null)}
+              className="text-[11px] text-gray-600 hover:underline" data-testid="button-fb-marker-to-feedback">
+              {t('admin.projects.fb.markerToFeedback')}
+            </button>
+          </>
         ) : (
           <>
-            <p className="text-xs text-gray-600" data-testid="text-fb-marking-none">{t('admin.projects.fb.markingNone')}</p>
+            <p className="text-xs text-gray-600" data-testid="text-fb-marking-none">{t('admin.projects.fb.markingNone')} <HelpTip id="projects.preassessment" /></p>
             <button type="button" onClick={() => onNewEvaluator('marking')}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:underline" data-testid="button-fb-add-marking">
               <Plus className="w-3.5 h-3.5" /> {t('admin.projects.fb.addMarking')}

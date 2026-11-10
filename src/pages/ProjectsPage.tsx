@@ -29,6 +29,8 @@ interface OverviewProject {
   allow_self_signup?: boolean | null;
   /** Project van een vorige editie (gearchiveerd): alleen je afgeronde groep terugkijken. */
   archived?: boolean;
+  /** Concept: alleen de docent ziet het, om het uit te proberen in een eigen testgroep. */
+  draft?: boolean;
 }
 
 interface OverviewCourse {
@@ -216,7 +218,9 @@ export function ProjectsPage() {
                     const completed = p.sessions.some(s => s.status === 'completed');
                     const groupMode = p.group_mode || (p.allow_self_signup === false ? 'teacher' : 'self');
                     const archived = !!p.archived;
-                    const selfGroups = groupMode === 'self' && !archived;
+                    // Een concept probeert de docent uit in een eigen testgroep, ook als
+                    // de docent of Canvas straks de groepen indeelt.
+                    const selfGroups = (groupMode === 'self' || !!p.draft) && !archived;
                     return (
                       <div key={p.id} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-3" data-testid={`overview-project-${p.id}`}>
                         <div>
@@ -226,6 +230,7 @@ export function ProjectsPage() {
                             {t('projects.groupSize', { min: String(p.min_group_size ?? 1), max: String(p.max_group_size ?? 5) })}
                             {inProgress && <span className="ml-2 inline-block px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded">{t('projects.inProgress')}</span>}
                             {completed && !inProgress && <span className="ml-2 inline-block px-1.5 py-0.5 bg-green-100 text-green-700 rounded">{t('projects.previouslyCompleted')}</span>}
+                            {p.draft && <span className="ml-2 inline-block px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded" data-testid={`badge-draft-${p.id}`}>{t('projects.draftBadge')}</span>}
                             {archived && <span className="ml-2 inline-block px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded" data-testid={`badge-archived-${p.id}`}>{t('editions.previousEdition')}</span>}
                           </div>
                         </div>
@@ -270,7 +275,7 @@ export function ProjectsPage() {
                             className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 disabled:opacity-40"
                             data-testid={`button-start-${p.id}`}
                           >
-                            <PlayCircle className="w-4 h-4" /> {t('projects.startNewProject')}
+                            <PlayCircle className="w-4 h-4" /> {t(p.draft ? 'projects.startTryout' : 'projects.startNewProject')}
                           </button>
                           )}
                           {selfGroups && (inProgress || completed) && (
