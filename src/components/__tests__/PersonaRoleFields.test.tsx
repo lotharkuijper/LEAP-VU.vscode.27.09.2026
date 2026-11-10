@@ -61,7 +61,9 @@ describe('PersonaRoleFields', () => {
   it('payload: velden die niet bij de rol horen gaan neutraal naar de server', () => {
     expect(roleFieldsPayload({ persona_type: 'conversational', reputation_enabled: true, max_reviews: 3 }))
       .toMatchObject({ persona_type: 'conversational', reputation_enabled: false, conduct_rules: null, max_reviews: null });
-    expect(roleFieldsPayload({ persona_type: 'evaluator', max_reviews: 2, deliverable_label: ' Eindproduct ', badge_award_mode: 'group' }))
-      .toMatchObject({ max_reviews: 2, deliverable_label: 'Eindproduct', badge_award_mode: 'group', reputation_enabled: false });
+    expect(roleFieldsPayload({ persona_type: 'evaluator', max_reviews: 2, deliverable_label: ' Eindproduct ' }))
+      .toMatchObject({ max_reviews: 2, deliverable_label: 'Eindproduct', reputation_enabled: false });
+    // Feedback is zuiver formatief: geen badge-instelling meer (2026-11-10).
+    expect(roleFieldsPayload({ persona_type: 'evaluator' })).not.toHaveProperty('badge_award_mode');
   });
 });

@@ -45,25 +45,31 @@ export function reviewRefs(r) {
 
 export const isSaved = (refs, savedSet) => refs.some((ref) => savedSet.has(ref));
 
-/** Dagboekregel voor een oordeel van een beoordelaar; met badge als deze gebruiker die kreeg. */
-export function reviewEntry(r, { hasBadge = false } = {}) {
-  const je = r.journal_entry;
-  if (je && je.title) {
-    const badge = hasBadge && je.badge ? je.badge : null;
-    return {
-      title: badge ? `${badge.emoji} ${je.title}` : je.title,
-      content: badge ? `${je.content}\n\nBadge: ${badge.emoji} ${badge.label}` : je.content,
-      sections: je.sections || null,
-    };
-  }
-  // Oordeel van vóór 2026-10-27 (geen opgeslagen dagboektekst).
-  const parts = [`Feedback: ${r.reasoning || ''}`];
-  if (r.feed_forward) parts.push(`Feed-forward: ${r.feed_forward}`);
+/** Dagboektekst bij feedback van een beoordelaar: zuiver formatief, zonder cijfer of oordeel (2026-11-10). */
+export function formativeJournalEntry({ personaName = '', emoji = '', title = '', feedback = '', feedForward = '' } = {}) {
+  const head = [personaName, title ? `"${title}"` : ''].filter(Boolean).join(' over ');
+  const parts = [`Feedback: ${feedback}`];
+  if (feedForward) parts.push(`Volgende stap: ${feedForward}`);
   return {
-    title: `🧑‍⚖️ ${r.verdict || ''}`.trim(),
+    title: `${emoji || '🧑‍⚖️'} Feedback${head ? ` — ${head}` : ''}`,
     content: parts.join('\n\n'),
-    sections: { ...EMPTY_SECTIONS, feedback: r.reasoning || '', next_steps: r.feed_forward ? [r.feed_forward] : [] },
+    sections: { ...EMPTY_SECTIONS, feedback, next_steps: feedForward ? [feedForward] : [] },
+    formative: true,
   };
+}
+
+/**
+ * Dagboekregel voor feedback van een beoordelaar. Feedback van vóór 2026-11-10
+ * had een cijfer, oordeel en soms een badge in de opgeslagen tekst; die bouwen
+ * we opnieuw op uit de feedback zelf, zodat er nergens meer een cijfer staat.
+ */
+export function reviewEntry(r) {
+  const je = r.journal_entry;
+  if (je && je.formative && je.title) {
+    return { title: je.title, content: je.content, sections: je.sections || null };
+  }
+  const { title, content, sections } = formativeJournalEntry({ feedback: r.reasoning || '', feedForward: r.feed_forward || '' });
+  return { title, content, sections };
 }
 
 /** Eigen reflectie van de student bij een tussenstand of de eindreflectie. */

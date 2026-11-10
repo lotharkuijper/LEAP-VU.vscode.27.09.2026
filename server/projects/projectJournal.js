@@ -3,7 +3,7 @@
 // goed / wat kan beter) en vervolgstappen (2026-10-09).
 //
 // Bij een tussenstand of eindreflectie (POST /api/projects/groups/:id/checkpoint)
-// ontstaan vier soorten regels. Waar de structuur al bekend is (rubriek-JSON,
+// ontstaan vier soorten regels. Waar de structuur al bekend is (reflectie-JSON,
 // synthese, door de student bewerkte samenvattingen) zetten we die zonder extra
 // taalmodel-aanroep om; vrije tekst laten we het model direct in blokken schrijven.
 
@@ -26,8 +26,14 @@ function fields(sections, lang, extraText = '') {
   return { content: extraText ? `${text}\n\n${extraText}` : text, sections: s };
 }
 
-/** Eindreflectie met rubriek-oordeel van het model (samenvatting, per_criterium, vervolgstappen). */
-export function journalFromRubricFeedback(rf, { lang = 'nl', groupReflection = '' } = {}) {
+/**
+ * Feedback van het model op de eindreflectie (samenvatting, goed_gegaan,
+ * aandachtspunten, vervolgstappen). Sinds 2026-11-10 gaat die over de reflectie
+ * zelf, zonder rubriek of oordeel; antwoorden van daarvoor (per_criterium met een
+ * oordeel per rubriekspunt) zetten we nog op dezelfde manier om.
+ */
+export function journalFromReflectionFeedback(rf, { lang = 'nl', groupReflection = '' } = {}) {
+  const list = (v) => (Array.isArray(v) ? v.map(x => String(x || '').trim()).filter(Boolean) : []);
   const per = Array.isArray(rf?.per_criterium) ? rf.per_criterium : [];
   const item = (c) => [c.criterium, c.feedback].filter(Boolean).join(': ');
   const reflectionNote = groupReflection
@@ -35,8 +41,8 @@ export function journalFromRubricFeedback(rf, { lang = 'nl', groupReflection = '
     : '';
   return fields({
     summary: rf?.samenvatting || '',
-    went_well: per.filter(c => !ATTENTION_RE.test(String(c.oordeel || ''))).map(item),
-    to_improve: per.filter(c => ATTENTION_RE.test(String(c.oordeel || ''))).map(item),
+    went_well: [...list(rf?.goed_gegaan), ...per.filter(c => !ATTENTION_RE.test(String(c.oordeel || ''))).map(item)],
+    to_improve: [...list(rf?.aandachtspunten), ...per.filter(c => ATTENTION_RE.test(String(c.oordeel || ''))).map(item)],
     next_steps: splitSteps(rf?.vervolgstappen),
   }, lang, reflectionNote);
 }

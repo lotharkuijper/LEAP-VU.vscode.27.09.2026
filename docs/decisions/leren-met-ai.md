@@ -80,7 +80,7 @@ Concept order and grouping per unit in Ik leg uit: see `docs/decisions/cursusmat
 
 ### Learning journal
 - Automatic journal entries (reflections) are stored in three blocks: summary, feedback (went well / to improve) and next steps, in `learning_journal_entries.sections`, plus `learning_level` (the student's level at that moment, where applicable). New generators append `journalFormatInstruction(lang)` to the prompt and save `...journalFieldsFromModel(text, lang)` (`server/journal/journalSections.js`); `content` always stays filled as readable text. The model uses fixed `### SUMMARY` etc. headings, not JSON, so LaTeX survives.
-- Project texts (interim checkpoint, final reflection, overview across conversations, summary per persona conversation, evaluator feedback rounds, "Beoordeling opvragen") use the same blocks. Structured input is converted without an extra LLM call (`server/projects/projectJournal.js`); free text is generated in blocks directly.
+- Project texts (interim checkpoint, final reflection, overview across conversations, summary per persona conversation, evaluator feedback rounds, "Feedback op jullie aanpak") use the same blocks. Structured input is converted without an extra LLM call (`server/projects/projectJournal.js`); free text is generated in blocks directly.
 - The project never writes to the journals of all group members; members save to their OWN journal on request (2026-10-27): see `docs/decisions/projecten.md`.
 - Every server write to `learning_journal_entries` must first check the journal switch (see `docs/decisions/cursusmateriaal-en-rag.md`); students cannot update journal entries and the browser never calls `.update()` on them (see `docs/decisions/privacy-en-data.md`).
 - Chat reflections ("Opslaan in leerdagboek"): see `docs/decisions/leren-met-ai.md`.
@@ -88,7 +88,7 @@ Concept order and grouping per unit in Ik leg uit: see `docs/decisions/cursusmat
 
 ### Achievements
 - Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/chat/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input (only server-signed turns count, see `docs/decisions/privacy-en-data.md`), and the topic must be an approved course concept.
-- Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Future kinds (quiz, project badges, learning goals) reuse this table.
+- Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Kind `reputation` (since 2026-11-10) is the project badge for the best relationship with a role player (`server/projects/reputationBadge.js`; level NULL, so the server checks for an existing row first). Feedback from an evaluator never gives a badge. Future kinds (quiz, learning goals) reuse this table.
 
 ## Subject-neutral texts and tutor instructions (2026-10-15)
 

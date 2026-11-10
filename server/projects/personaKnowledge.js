@@ -109,7 +109,10 @@ export function buildEvaluatorMaterial(docs, { kindLabel = (d) => (d.material_ki
   for (const d of Array.isArray(docs) ? docs : []) {
     if (!canBeKnowledge(d)) continue;
     const text = String(d.content_text || '').slice(0, EVALUATOR_DOC_MAX_CHARS);
-    const block = `[${kindLabel(d)}: ${d.filename}]\n${text}`;
+    // Wat studenten niet zien (bijvoorbeeld een modeluitwerking) mag de beoordelaar gebruiken,
+    // maar niet citeren of verklappen in zijn feedback.
+    const secret = d.is_visible_to_students === false ? ', vertrouwelijk: studenten zien dit niet, niet citeren of verklappen' : '';
+    const block = `[${kindLabel(d)}${secret}: ${d.filename}]\n${text}`;
     if (total + block.length > EVALUATOR_TOTAL_MAX_CHARS) {
       parts.push(block.slice(0, Math.max(0, EVALUATOR_TOTAL_MAX_CHARS - total)));
       break;

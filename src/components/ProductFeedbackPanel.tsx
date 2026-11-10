@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { CheckCircle2, AlertTriangle, XCircle, Gavel, Loader2, Upload } from 'lucide-react';
+import { MessageSquare, Loader2, Upload } from 'lucide-react';
 import { useLanguage } from '../i18n';
 import { PersonaAvatar } from './PersonaAvatar';
 import { SaveToJournalButton } from './projects/SaveToJournalButton';
 
-type Verdict = 'accepted' | 'conditional' | 'rejected';
-type Badge = 'platina' | 'goud' | 'zilver' | 'brons';
 interface FeedbackItem {
   productId: string;
   filename: string;
   createdAt: string;
-  review: { id: string; verdict: Verdict; grade: number | null; reasoning: string; feed_forward: string | null; created_at: string } | null;
-  badge: Badge | null;
+  /** Zuiver formatief (2026-11-10): geen cijfer, oordeel of badge. */
+  review: { id: string; reasoning: string; feed_forward: string | null; created_at: string } | null;
   /** Staat dit oordeel al in MIJN leerdagboek? */
   journalSaved?: boolean;
 }
@@ -29,12 +27,6 @@ interface EvaluatorFeedback {
 }
 
 const ACCEPT = '.txt,.md,.pdf,.docx,.pptx,.odt,.odp,.rtf,.csv,.xlsx,.ods';
-const VERDICT: Record<Verdict, { Icon: typeof CheckCircle2; cls: string; key: 'room.review.verdictAccepted' | 'room.review.verdictConditional' | 'room.review.verdictRejected' }> = {
-  accepted: { Icon: CheckCircle2, cls: 'bg-green-50 text-green-700 border-green-200', key: 'room.review.verdictAccepted' },
-  conditional: { Icon: AlertTriangle, cls: 'bg-amber-50 text-amber-700 border-amber-200', key: 'room.review.verdictConditional' },
-  rejected: { Icon: XCircle, cls: 'bg-red-50 text-red-700 border-red-200', key: 'room.review.verdictRejected' },
-};
-const BADGE_EMOJI: Record<Badge, string> = { platina: '💎', goud: '🥇', zilver: '🥈', brons: '🥉' };
 
 /**
  * "Feedback op jullie werk": per beoordelaar het product waarover hij feedback
@@ -88,12 +80,11 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
 
   if (!evaluators || evaluators.length === 0) return null;
 
-  const fmtGrade = (g: number | null) => (g === null || !Number.isFinite(Number(g)) ? null : Number(g).toFixed(1).replace('.', t('common.locale') === 'nl-NL' ? ',' : '.'));
 
   return (
     <div className="mt-3 pt-3 border-t border-gray-100" data-testid="panel-product-feedback">
       <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-        <Gavel className="w-3 h-3" /> {t('room.feedback.title')}
+        <MessageSquare className="w-3 h-3" /> {t('room.feedback.title')}
       </div>
       {error && <p className="mb-2 text-[11px] text-red-700" data-testid="text-feedback-error">{error}</p>}
       <div className="space-y-3">
@@ -134,21 +125,12 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
             {ev.items.length > 0 && (
               <ul className="mt-2 space-y-1.5">
                 {ev.items.map((it, idx) => {
-                  const meta = it.review ? VERDICT[it.review.verdict] : null;
-                  const grade = it.review ? fmtGrade(it.review.grade) : null;
                   return (
                     <li key={it.productId} data-testid={`feedback-item-${it.productId}`}>
                       <details open={idx === 0} className="rounded bg-gray-50 px-2 py-1.5 text-[11px] text-gray-700">
                         <summary className="flex cursor-pointer flex-wrap items-center gap-1.5">
                           <span className="font-medium">{t('room.feedback.round', { n: String(ev.items.length - idx) })}</span>
                           <span className="min-w-0 truncate text-gray-500">{it.filename}</span>
-                          {meta && (
-                            <span className={`inline-flex items-center gap-0.5 rounded border px-1 py-0.5 text-[10px] ${meta.cls}`}>
-                              <meta.Icon className="w-2.5 h-2.5" />{t(meta.key)}
-                            </span>
-                          )}
-                          {grade && <span className="font-semibold tabular-nums">{grade}</span>}
-                          {it.badge && <span title={t(`room.review.badge.${it.badge}`)}>{BADGE_EMOJI[it.badge]}</span>}
                         </summary>
                         {it.review && (
                           <div className="mt-1.5">

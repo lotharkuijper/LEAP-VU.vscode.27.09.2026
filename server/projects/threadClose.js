@@ -16,6 +16,7 @@ import {
   validateConductJudgement,
 } from './personaRelationship.js';
 import { reputationActive, clampStartLevel } from './personaRoles.js';
+import { awardReputationBadge, earnsReputationBadge } from './reputationBadge.js';
 
 /** Gesprek als tekst voor de beoordeling ("Student: …" / "<naam>: …"). */
 export function transcriptOf(allMsgs, personaName = 'Persona') {
@@ -144,5 +145,10 @@ export async function applyConversationJudgement(deps, { persona, projectId, gro
     compute: (cur) => nextLevel(cur, step),
     event: { source: 'persona_chat_close', refId: `thread_close:${threadId}`, step, note: reason },
   });
-  return { step, reason, from, to: row ? clampLevel(row.score) : nextLevel(from, step) };
+  const to = row ? clampLevel(row.score) : nextLevel(from, step);
+  // Voor het eerst het hoogste niveau: badge voor elk groepslid (reputationBadge.js).
+  const badge = earnsReputationBadge(from, to)
+    ? (await awardReputationBadge(deps.supabaseAdmin, { projectId, groupId, persona })) > 0
+    : false;
+  return { step, reason, from, to, badge };
 }

@@ -36,6 +36,8 @@ export const EXPORT_SOURCES = [
   { table: 'project_persona_documents', column: 'uploaded_by', label: "documenten voor persona's" },
   { table: 'student_project_sessions', column: 'student_id', label: 'projectsessies' },
   { table: 'project_review_badges', column: 'user_id', label: 'projectbadges' },
+  // Oude badges voor feedback, bewaard om het besluit van 2026-11-10 terug te kunnen draaien.
+  { table: 'project_review_badges_backup', column: 'user_id', label: 'oude projectbadges (bewaard)' },
   { table: 'collaboration_messages', column: 'user_id', label: 'samenwerkingsberichten' },
   { table: 'collaboration_participants', column: 'user_id', label: 'samenwerkingen' },
   { table: 'studiecafe_threads', column: 'author_id', label: 'studiecafé: onderwerpen' },

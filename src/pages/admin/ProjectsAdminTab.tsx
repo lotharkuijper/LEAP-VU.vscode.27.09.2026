@@ -20,7 +20,8 @@ import {
 import { MATERIAL_KIND_ORDER } from '../../components/material/purposeUi';
 import { ProjectGroupsAdmin } from './ProjectGroupsAdmin';
 import { ListRow } from '../../components/ui/ListRow';
-import { usePreassessments, PreassessorPicker, PreassessmentBadge, PreassessmentModal, DownloadAllButton } from './ProjectPreassessment';
+import { usePreassessments, PreassessmentBadge, PreassessmentModal, DownloadAllButton } from './ProjectPreassessment';
+import { ProjectFeedbackSetup } from './ProjectFeedbackSetup';
 import type { AvatarConfig } from '../../lib/personaAvatar';
 import {
   AlertDialog,
@@ -87,7 +88,6 @@ interface ProjectPersona {
   max_reviews?: number | null;
   max_consultations?: number | null;
   auto_close_hours?: number | null;
-  badge_award_mode?: string;
 }
 
 interface ProjectDoc {
@@ -196,7 +196,6 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
   const token = session?.access_token || '';
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [editing, setEditing] = useState<Partial<ProjectRow> | null>(null);
-  const [rubricLines, setRubricLines] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -253,7 +252,6 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
   const startEdit = (p: Partial<ProjectRow> | null) => {
     if (p) {
       setEditing(p);
-      setRubricLines((p.rubric_criteria || []).map((c: any) => typeof c === 'string' ? c : (c.title || c.name || '')).join('\n'));
     } else {
       setEditing({
         title: '', research_question: '', briefing_markdown: '', goals: '',
@@ -263,7 +261,6 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
         submissions_enabled: false,
         course_id: activeCourseId || null, status: 'active',
       });
-      setRubricLines('');
     }
   };
 
@@ -275,14 +272,13 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
     }
     setSaving(true);
     setError(null);
-    const rubric = rubricLines.split('\n').map(s => s.trim()).filter(Boolean).map(s => ({ title: s }));
     const payload = {
       title: editing.title.trim(),
       research_question: editing.research_question.trim(),
       description: editing.description || null,
       briefing_markdown: editing.briefing_markdown || null,
       goals: editing.goals || null,
-      rubric_criteria: rubric,
+      // De criteria (rubric_criteria) stel je in bij Feedback en beoordeling (ProjectFeedbackSetup).
       course_id: editing.course_id || activeCourseId || null,
       min_group_size: editing.min_group_size ?? 1,
       max_group_size: editing.max_group_size ?? 5,
@@ -301,7 +297,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
         const { error: e } = await supabase.from('projects').update(payload).eq('id', editing.id);
         if (e) throw new Error(e.message);
       } else {
-        const { error: e } = await supabase.from('projects').insert(payload);
+        const { error: e } = await supabase.from('projects').insert({ ...payload, rubric_criteria: [] });
         if (e) throw new Error(e.message);
       }
       setEditing(null);
@@ -455,11 +451,6 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldBriefing')}<Audience kind="students" /></label>
                 <textarea value={editing.briefing_markdown || ''} onChange={e => setEditing({ ...editing, briefing_markdown: e.target.value })} rows={6} className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono" data-testid="textarea-project-briefing" />
               </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldRubric')}<Audience kind="students" /><Audience kind="ai" /></label>
-                <textarea value={rubricLines} onChange={e => setRubricLines(e.target.value)} rows={4} placeholder={t('admin.projects.rubricPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="textarea-project-rubric" />
-                <p className="text-[10px] text-gray-400 mt-1">{t('admin.projects.rubricHint')}</p>
-              </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldMinSize')}</label>
@@ -535,7 +526,8 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
   const [knowledge, setKnowledge] = useState<KnowledgeOptions | null>(null);
   const [personas, setPersonas] = useState<ProjectPersona[]>([]);
   const [adding, setAdding] = useState(false);
-  const [editingPersona, setEditingPersona] = useState<Partial<ProjectPersona> | null>(null);
+  // purpose 'marking': aangemaakt vanuit stap 3 van Feedback en beoordeling; wordt meteen de nakijkhulp.
+  const [editingPersona, setEditingPersona] = useState<(Partial<ProjectPersona> & { purpose?: 'marking' }) | null>(null);
   const [ppFaceOpen, setPpFaceOpen] = useState(false);
   useEffect(() => { setPpFaceOpen(false); setPersonaError(null); }, [editingPersona?.id, editingPersona === null]);
   const [projectDocs, setProjectDocs] = useState<ProjectDoc[]>([]);
@@ -583,7 +575,7 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
   };
 
   // Voorbeoordeling van het eindproduct (alleen voor docenten).
-  const pre = usePreassessments(project.id, token, !!project.submissions_enabled);
+  const pre = usePreassessments(project.id, token, !!project.submissions_enabled, project.preassessment_persona_id ?? null);
   const [viewPre, setViewPre] = useState<SubmissionRow | null>(null);
   useEffect(() => { void pre.reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [submissions]);
   const preFail = (e: unknown) => setLocalError((e instanceof Error && e.message) || t('admin.projects.pre.downloadFailed'));
@@ -697,6 +689,14 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || t('admin.projects.personas.saveFailed'));
+      if (isNew && editingPersona.purpose === 'marking' && d.persona?.id) {
+        const pr = await fetch(`/api/projects/${project.id}/preassessment-persona`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ personaId: d.persona.id }),
+        });
+        if (pr.ok) pre.setPersonaId(d.persona.id);
+      }
       setEditingPersona(null);
       await Promise.all([loadPersonas(), loadKnowledge()]);
     } catch (e: any) {
@@ -737,8 +737,8 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
     }
   };
 
-  const uploadProjectDoc = async (file: File) => {
-    if (file.size > 15_000_000) { setLocalError(t('admin.projects.docs.tooLarge')); return; }
+  const uploadProjectDoc = async (file: File): Promise<ProjectDoc | null> => {
+    if (file.size > 15_000_000) { setLocalError(t('admin.projects.docs.tooLarge')); return null; }
     setUploadingPDoc(true);
     setLocalError(null);
     setLocalInfo(null);
@@ -755,8 +755,10 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
       setLocalInfo(d.warning
         ? t('admin.projects.docs.uploadedNote', { name: file.name, warning: d.warning })
         : t('admin.projects.docs.uploaded', { name: file.name }));
+      return d.document as ProjectDoc;
     } catch (e: any) {
       setLocalError(e.message);
+      return null;
     } finally {
       setUploadingPDoc(false);
       if (pdocFileRef.current) pdocFileRef.current.value = '';
@@ -772,6 +774,37 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
     setProjectDocs(prev => prev.filter(d => d.id !== doc.id));
     // Persona's die het kenden, kennen het niet meer.
     await Promise.all([loadPersonas(), loadKnowledge()]);
+  };
+
+  // Feedback en beoordeling, stap 1: een rubric is een projectdocument van soort
+  // rubric dat studenten zien (de criteria zijn openbaar, besluit 2026-11-10).
+  const uploadRubric = async (file: File) => {
+    const doc = await uploadProjectDoc(file);
+    if (!doc) return;
+    const r = await fetch(`/api/projects/${project.id}/documents/${doc.id}`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ material_kind: 'rubric', is_visible_to_students: true }),
+    });
+    if (!r.ok) { onError(t('admin.projects.docs.kindFailed')); return; }
+    setProjectDocs(prev => prev.map(x => x.id === doc.id ? { ...x, material_kind: 'rubric', is_visible_to_students: true } : x));
+    void loadKnowledge();
+  };
+
+  // Feedback en beoordeling, stap 2 en 3: een beoordelaar die de rubric al kent.
+  const newEvaluator = (purpose: 'feedback' | 'marking') => {
+    const marking = purpose === 'marking';
+    setEditingPersona({
+      name: t(marking ? 'admin.projects.fb.markingName' : 'admin.projects.fb.feedbackName'),
+      avatar_emoji: marking ? '📝' : '💬',
+      system_prompt: '',
+      persona_type: 'evaluator',
+      deliverable_label: marking ? t('admin.projects.fb.finalProduct') : '',
+      max_reviews: marking ? null : 3,
+      course_knowledge: 'none', course_knowledge_doc_ids: [],
+      project_knowledge_doc_ids: projectDocs.filter(d => d.material_kind === 'rubric').map(d => d.id),
+      ...(marking ? { purpose: 'marking' as const } : {}),
+    });
   };
 
   // Soort van een projectdocument (opdracht, literatuur, rubric, data, overig).
@@ -944,6 +977,23 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
         )}
       </div>
 
+      <ProjectFeedbackSetup
+        project={project}
+        token={token}
+        personas={personas}
+        docs={projectDocs}
+        accept={UPLOAD_ACCEPT}
+        preassessorId={pre.personaId}
+        onPreassessorChange={pre.setPersonaId}
+        onToggleDocVisibility={(d) => { const doc = projectDocs.find(x => x.id === d.id); if (doc) void toggleDocVisibility(doc); }}
+        onUploadRubric={(f) => void uploadRubric(f)}
+        uploading={uploadingPDoc}
+        onNewEvaluator={newEvaluator}
+        onPersonasChanged={() => { void loadPersonas(); void loadKnowledge(); }}
+        onError={setLocalError}
+        onInfo={setLocalInfo}
+      />
+
       {/* Ingeleverde projectproducten */}
       {!project.submissions_enabled && (
         <AdminHint variant="tip" testId="section-project-submissions-disabled">
@@ -959,20 +1009,6 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
             <AdminHint variant="intro">
               {t('admin.projects.subs.projectDesc')}
             </AdminHint>
-          </div>
-          <div className="mb-3">
-            <PreassessorPicker
-              projectId={project.id}
-              token={token}
-              evaluators={personas.filter(p => p.persona_type === 'evaluator')}
-              value={pre.personaId}
-              rubricCount={pre.personaId && knowledge
-                ? (personas.find(p => p.id === pre.personaId)?.project_knowledge_doc_ids || []).length
-                : undefined}
-              onChange={pre.setPersonaId}
-              onError={setLocalError}
-              onInfo={setLocalInfo}
-            />
           </div>
           {loadingSubs ? (
             <p className="text-xs text-gray-500"><Loader2 className="w-3 h-3 inline animate-spin mr-1" /> {t('admin.projects.subs.loading')}</p>

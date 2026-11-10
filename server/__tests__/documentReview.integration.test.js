@@ -1,28 +1,37 @@
 // Beoordelaars (herzien 2026-09-29): een beoordelaar geeft feedback op werk dat
 // de groep inlevert, met een vast aantal rondes, en heeft GEEN verstandhouding.
 // Hier de regels die de server daarvoor gebruikt:
-//   - alleen staff of groepsleden mogen feedback vragen;
-//   - een oordeel moet geldig zijn (anders geen ronde verbruikt);
+//   - feedback is zuiver formatief: geen cijfer, oordeel of badge (2026-11-10);
+//   - feedback moet geldig zijn (anders geen ronde verbruikt);
 //   - het aantal rondes is begrensd door max_reviews (null = onbeperkt);
 //   - het oordeel wijzigt geen verstandhouding (relationship_delta telt niet mee).
 
 import { describe, it, expect } from 'vitest';
-import { validateReviewResponse, canRequestDocumentReview, feedbackRoundsState } from '../projects/documentReview.js';
+import { validateReviewResponse, feedbackRoundsState } from '../projects/documentReview.js';
 import { reputationActive, roleFieldsFrom } from '../projects/personaRoles.js';
+import { functionSource, routeSource } from './helpers/serverSource.js';
 
 describe('feedback vragen bij een beoordelaar', () => {
-  it('alleen staff of groepsleden', () => {
-    expect(canRequestDocumentReview({ isStaff: true, isGroupMember: false }).allowed).toBe(true);
-    expect(canRequestDocumentReview({ isStaff: false, isGroupMember: true }).allowed).toBe(true);
-    const no = canRequestDocumentReview({ isStaff: false, isGroupMember: false });
-    expect(no).toMatchObject({ allowed: false, status: 403 });
+  it('feedback zonder inhoud wordt afgewezen; een cijfer of oordeel komt er nooit door', () => {
+    expect(validateReviewResponse('{"grade": 7, "verdict": "accepted"}').ok).toBe(false);
+    const ok = validateReviewResponse('{"verdict": "conditional", "grade": 6.4, "feedback": "Redelijk.", "feed_forward": "Onderbouw je keuze."}');
+    expect(ok.ok).toBe(true);
+    expect(ok.value).toEqual({ feedback: 'Redelijk.', feed_forward: 'Onderbouw je keuze.' });
   });
 
-  it('een ongeldig oordeel (geen verdict) wordt afgewezen', () => {
-    expect(validateReviewResponse('{"grade": 7, "reasoning": "mist verdict"}').ok).toBe(false);
-    const ok = validateReviewResponse('{"verdict": "conditional", "grade": 6.4, "reasoning": "Redelijk.", "feed_forward": "Onderbouw je keuze."}');
-    expect(ok.ok).toBe(true);
-    expect(ok.value).toMatchObject({ verdict: 'conditional', grade: 6.4, feed_forward: 'Onderbouw je keuze.' });
+  it('de server slaat geen cijfer, oordeel of badge meer op en geeft ze niet terug', () => {
+    const review = functionSource('runEvaluatorReview');
+    expect(review).toMatch(/verdict: null,/);
+    expect(review).toMatch(/grade: null,/);
+    expect(review).not.toMatch(/project_review_badges|badge/);
+    expect(routeSource("app.get('/api/projects/:projectId/groups/:groupId/feedback'")).not.toMatch(/verdict|grade|badge/);
+  });
+
+  it('"Feedback op jullie aanpak" telt als feedbackronde en respecteert het maximum', () => {
+    expect(functionSource('countFeedbackRounds')).toMatch(/project_group_assessments/);
+    const evaluate = routeSource("app.post('/api/projects/groups/:groupId/evaluate'");
+    expect(evaluate).toContain('feedbackRoundsState(ev.max_reviews, await countFeedbackRounds(groupId, ev.id)).canSubmit');
+    expect(evaluate).toContain('for (const evalPersona of withRounds)');
   });
 
   it('rondes: onbeperkt, of tot het maximum', () => {

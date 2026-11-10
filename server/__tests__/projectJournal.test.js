@@ -2,7 +2,7 @@
 // uit en quiz (2026-10-09).
 import { describe, it, expect } from 'vitest';
 import { routeSource } from './helpers/serverSource.js';
-import { journalFromRubricFeedback, journalFromSynthesis, journalFromPersonaSummary, splitSteps } from '../projects/projectJournal.js';
+import { journalFromReflectionFeedback, journalFromSynthesis, journalFromPersonaSummary, splitSteps } from '../projects/projectJournal.js';
 
 describe('eindreflectie (rubriek-oordeel)', () => {
   const rf = {
@@ -15,7 +15,7 @@ describe('eindreflectie (rubriek-oordeel)', () => {
     vervolgstappen: '- Zoek twee extra bronnen\n- Herschrijf de discussie',
   };
   it('sterk/voldoende → ging goed, aandacht → kan beter, vervolgstappen als lijst', () => {
-    const { sections, content } = journalFromRubricFeedback(rf, { lang: 'nl', groupReflection: 'Wij vonden het leerzaam.' });
+    const { sections, content } = journalFromReflectionFeedback(rf, { lang: 'nl', groupReflection: 'Wij vonden het leerzaam.' });
     expect(sections.summary).toBe('Jullie hebben een helder advies gegeven.');
     expect(sections.went_well).toEqual(['Onderzoeksvraag: Scherp afgebakend.', 'Analyse: Correct uitgevoerd.']);
     expect(sections.to_improve).toEqual(['Bronnen: Te weinig onderbouwd.']);
@@ -24,7 +24,7 @@ describe('eindreflectie (rubriek-oordeel)', () => {
     expect(content).toContain('Wij vonden het leerzaam.'); // reflectie van de groep blijft leesbaar
   });
   it('Engelse oordelen ("needs attention") worden ook herkend', () => {
-    const { sections } = journalFromRubricFeedback({ samenvatting: 'x', per_criterium: [{ criterium: 'A', oordeel: 'needs attention', feedback: 'y' }] }, { lang: 'en' });
+    const { sections } = journalFromReflectionFeedback({ samenvatting: 'x', per_criterium: [{ criterium: 'A', oordeel: 'needs attention', feedback: 'y' }] }, { lang: 'en' });
     expect(sections.to_improve).toEqual(['A: y']);
   });
 });
