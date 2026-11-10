@@ -79,6 +79,7 @@ export function ProjectFeedbackSetup({
   const rubricIds = rubrics.map((d) => d.id);
   const evaluators = personas.filter((p) => p.persona_type === 'evaluator');
   const feedbackGivers = evaluators.filter((p) => p.id !== preassessorId);
+  const marker = evaluators.find((p) => p.id === preassessorId) || null;
   const knowsRubric = (p: FeedbackPersona) => rubricIds.length > 0 && (p.project_knowledge_doc_ids || []).some((id) => rubricIds.includes(id));
 
   const [criteria, setCriteria] = useState(() => criteriaLines(project.rubric_criteria));
@@ -208,24 +209,26 @@ export function ProjectFeedbackSetup({
       <Step n={3} title={t('admin.projects.fb.step3')} who={t('admin.projects.fb.step3Who')} testId="fb-step-marking">
         {!project.submissions_enabled ? (
           <AdminHint variant="tip">{t('admin.projects.fb.needSubmissions')}</AdminHint>
+        ) : marker ? (
+          // Alleen de eigen nakijkhulp is te kiezen: wie hier een feedbackgever
+          // aanwees, haalde die stilletjes weg uit stap 2.
+          <PreassessorPicker
+            projectId={project.id}
+            token={token}
+            evaluators={[marker]}
+            value={marker.id}
+            rubricCount={(marker.project_knowledge_doc_ids || []).length}
+            onChange={onPreassessorChange}
+            onError={onError}
+            onInfo={onInfo}
+          />
         ) : (
           <>
-            <PreassessorPicker
-              projectId={project.id}
-              token={token}
-              evaluators={evaluators}
-              value={preassessorId}
-              rubricCount={preassessorId ? (evaluators.find((p) => p.id === preassessorId)?.project_knowledge_doc_ids || []).length : undefined}
-              onChange={onPreassessorChange}
-              onError={onError}
-              onInfo={onInfo}
-            />
-            {!preassessorId && (
-              <button type="button" onClick={() => onNewEvaluator('marking')}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:underline" data-testid="button-fb-add-marking">
-                <Plus className="w-3.5 h-3.5" /> {t('admin.projects.fb.addMarking')}
-              </button>
-            )}
+            <p className="text-xs text-gray-600" data-testid="text-fb-marking-none">{t('admin.projects.fb.markingNone')}</p>
+            <button type="button" onClick={() => onNewEvaluator('marking')}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:underline" data-testid="button-fb-add-marking">
+              <Plus className="w-3.5 h-3.5" /> {t('admin.projects.fb.addMarking')}
+            </button>
           </>
         )}
       </Step>

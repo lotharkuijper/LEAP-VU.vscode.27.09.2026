@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Tylko ty to widzisz.",
   "admin.projects.fb.needSubmissions": "Najpierw włącz przesyłanie produktu końcowego w ustawieniach projektu.",
   "admin.projects.fb.addMarking": "Dodaj pomoc w ocenianiu",
+  "admin.projects.fb.markingNone": "Nie ma jeszcze asystenta sprawdzania. Dodaj go: przeczyta każdy oddany produkt końcowy i napisze komentarz do każdego kryterium, widoczny tylko dla Ciebie. Twoi dawcy informacji zwrotnej z kroku 2 pozostaną dawcami informacji zwrotnej.",
   "admin.projects.fb.youAssess": "To ty oceniasz. Komentarz pomocniczy to twoje przygotowanie, a nie ocena.",
   "admin.projects.fb.feedbackName": "Osoba udzielająca informacji zwrotnej",
   "admin.projects.fb.markingName": "Pomoc w ocenianiu",

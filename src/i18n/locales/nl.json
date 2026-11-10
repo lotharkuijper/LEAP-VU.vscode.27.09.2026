@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Alleen jij ziet dit.",
   "admin.projects.fb.needSubmissions": "Zet eerst in de projectinstellingen het inleveren van een eindproduct aan.",
   "admin.projects.fb.addMarking": "Nakijkhulp toevoegen",
+  "admin.projects.fb.markingNone": "Nog geen nakijkhulp. Voeg er een toe: die leest elk ingeleverd eindproduct en schrijft per criterium commentaar dat alleen jij ziet. Je feedbackgevers uit stap 2 blijven feedbackgevers.",
   "admin.projects.fb.youAssess": "Jij beoordeelt. Het nakijkcommentaar is je voorbereiding, geen oordeel.",
   "admin.projects.fb.feedbackName": "Feedbackgever",
   "admin.projects.fb.markingName": "Nakijkhulp",

@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Samo ti to vidiš.",
   "admin.projects.fb.needSubmissions": "Najprije u postavkama projekta uključi predaju završnog proizvoda.",
   "admin.projects.fb.addMarking": "Dodaj pomoć pri ocjenjivanju",
+  "admin.projects.fb.markingNone": "Još nema pomoći za ocjenjivanje. Dodaj je: čita svaki predani završni proizvod i piše komentare po kriteriju koje vidiš samo ti. Tvoji davatelji povratnih informacija iz 2. koraka ostaju davatelji povratnih informacija.",
   "admin.projects.fb.youAssess": "Ti ocjenjuješ. Komentari za ispravljanje tvoja su priprema, a ne ocjena.",
   "admin.projects.fb.feedbackName": "Davatelj povratnih informacija",
   "admin.projects.fb.markingName": "Pomoć pri ocjenjivanju",

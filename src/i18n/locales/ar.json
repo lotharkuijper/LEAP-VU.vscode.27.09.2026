@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "أنت فقط ترى هذا.",
   "admin.projects.fb.needSubmissions": "فعّل أولًا تسليم المنتج النهائي في إعدادات المشروع.",
   "admin.projects.fb.addMarking": "إضافة مساعدة للتصحيح",
+  "admin.projects.fb.markingNone": "لا يوجد مساعد تصحيح بعد. أضِف واحدًا: سيقرأ كل منتج نهائي مُسلَّم ويكتب تعليقًا لكل معيار لا يراه سواك. سيبقى مقدّمو الملاحظات من الخطوة 2 مقدّمي ملاحظات.",
   "admin.projects.fb.youAssess": "أنت من يقيّم. تعليقات التصحيح هي تحضيرك، وليست حكمًا.",
   "admin.projects.fb.feedbackName": "مقدّم الملاحظات",
   "admin.projects.fb.markingName": "مساعدة التصحيح",

@@ -71,6 +71,18 @@ describe('ProjectFeedbackSetup', () => {
     expect(p.onNewEvaluator).toHaveBeenCalledWith('marking');
   });
 
+  it('stap 3 biedt geen feedbackgever aan: aanwijzen zou die uit stap 2 weghalen', () => {
+    setup();
+    const options = Array.from(screen.getByTestId('select-preassessor').querySelectorAll('option')).map((o) => o.textContent);
+    expect(options.some((o) => o?.includes('Nakijkhulp'))).toBe(true);
+    expect(options.some((o) => o?.includes('Feedbackgever'))).toBe(false);
+    cleanup();
+    setup({ preassessorId: null });
+    expect(screen.queryByTestId('select-preassessor')).toBeNull();
+    expect(screen.getByTestId('text-fb-marking-none')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-step-feedback')).toHaveTextContent('Nakijkhulp');
+  });
+
   it('criteria: oud (tekst) en nieuw ({ title }) formaat', () => {
     expect(criteriaLines(['A', { title: 'B' }, { name: 'C' }, null])).toBe('A\nB\nC');
     expect(criteriaLines(undefined)).toBe('');

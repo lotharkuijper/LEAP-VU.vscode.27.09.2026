@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Nur du siehst dies.",
   "admin.projects.fb.needSubmissions": "Aktiviere zuerst in den Projekteinstellungen die Abgabe eines Endprodukts.",
   "admin.projects.fb.addMarking": "Korrekturhilfe hinzufügen",
+  "admin.projects.fb.markingNone": "Noch keine Korrekturhilfe. Füge eine hinzu: Sie liest jedes eingereichte Endprodukt und schreibt pro Kriterium Kommentare, die nur du siehst. Deine Feedbackgeber aus Schritt 2 bleiben Feedbackgeber.",
   "admin.projects.fb.youAssess": "Du bewertest. Der Korrekturkommentar ist deine Vorbereitung, kein Urteil.",
   "admin.projects.fb.feedbackName": "Feedbackgebende Person",
   "admin.projects.fb.markingName": "Korrekturhilfe",

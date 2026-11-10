@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "これはあなただけに表示されます。",
   "admin.projects.fb.needSubmissions": "まずプロジェクト設定で最終成果物の提出をオンにしてね。",
   "admin.projects.fb.addMarking": "採点サポートを追加",
+  "admin.projects.fb.markingNone": "まだ採点アシスタントがいません。追加すると、提出された各最終成果物を読み、基準ごとにあなただけが見られるコメントを書きます。ステップ2のフィードバック担当者は引き続きフィードバック担当者のままです。",
   "admin.projects.fb.youAssess": "評価するのはあなたです。採点コメントは準備用であり、評価そのものではありません。",
   "admin.projects.fb.feedbackName": "フィードバック提供者",
   "admin.projects.fb.markingName": "採点サポート",

@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Toi seul vois ceci.",
   "admin.projects.fb.needSubmissions": "Active d’abord la remise d’un produit final dans les paramètres du projet.",
   "admin.projects.fb.addMarking": "Ajouter une aide à la correction",
+  "admin.projects.fb.markingNone": "Pas encore d’aide à la correction. Ajoutes-en une : elle lit chaque produit final remis et rédige, pour chaque critère, un commentaire que toi seul vois. Tes donneurs de feedback de l’étape 2 restent des donneurs de feedback.",
   "admin.projects.fb.youAssess": "C’est toi qui évalues. Le commentaire de correction est ta préparation, pas une évaluation.",
   "admin.projects.fb.feedbackName": "Donneur de feedback",
   "admin.projects.fb.markingName": "Aide à la correction",

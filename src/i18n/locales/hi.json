@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "यह केवल तुम देखोगे।",
   "admin.projects.fb.needSubmissions": "पहले प्रोजेक्ट सेटिंग्स में अंतिम उत्पाद जमा करना चालू करो।",
   "admin.projects.fb.addMarking": "जांच सहायता जोड़ो",
+  "admin.projects.fb.markingNone": "अभी तक कोई जाँच सहायक नहीं है। एक जोड़ो: यह जमा किए गए हर अंतिम उत्पाद को पढ़ता है और हर मानदंड पर टिप्पणी लिखता है, जिसे सिर्फ तुम देख सकते हो। चरण 2 के तुम्हारे फ़ीडबैक देने वाले फ़ीडबैक देने वाले ही रहेंगे।",
   "admin.projects.fb.youAssess": "तुम मूल्यांकन करते हो। जांच टिप्पणी तुम्हारी तैयारी है, निर्णय नहीं।",
   "admin.projects.fb.feedbackName": "फ़ीडबैक देने वाला",
   "admin.projects.fb.markingName": "जांच सहायता",

@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Hanya kamu yang melihat ini.",
   "admin.projects.fb.needSubmissions": "Aktifkan penyerahan produk akhir terlebih dahulu di pengaturan proyek.",
   "admin.projects.fb.addMarking": "Tambahkan bantuan penilaian",
+  "admin.projects.fb.markingNone": "Belum ada bantuan penilaian. Tambahkan satu: bantuan ini membaca setiap produk akhir yang dikumpulkan dan menulis komentar per kriteria yang hanya kamu lihat. Pemberi feedback-mu dari langkah 2 tetap menjadi pemberi feedback.",
   "admin.projects.fb.youAssess": "Kamu yang menilai. Komentar koreksi adalah persiapanmu, bukan penilaian.",
   "admin.projects.fb.feedbackName": "Pemberi umpan balik",
   "admin.projects.fb.markingName": "Bantuan penilaian",
