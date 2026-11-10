@@ -55,7 +55,7 @@ en daarnaast de modules met de eigenlijke regels. Die modules zijn zoveel mogeli
 | `server/journal/` | Leerdagboek | `routes.js`, `journalSections.js` (de drie blokken), `journalCourse.js` |
 | `server/lib/` | Gedeelde basis voor alle onderwerpen (zie hieronder) | |
 | `server/lti/` | Canvas-koppeling (LTI 1.3) | `lti.js`, `routes.js` |
-| `server/projects/` | Projecten, groepen, persona's (begeleider, beoordelaar, rolspeler), inleveren en nakijkcommentaar | `groupRoutes.js`, `roomRoutes.js`, `personaRoutes.js`, `documentRoutes.js`, `access.js`, `personaRoles.js`, `personaKnowledge.js`, `personaRelationship.js`, `threadClose.js`, `preassessment.js`, `projectJournalSave.js` |
+| `server/projects/` | Projecten, groepen, persona's (begeleider, beoordelaar, rolspeler), inleveren en nakijkcommentaar | `groupRoutes.js`, `roomRoutes.js`, `personaRoutes.js`, `documentRoutes.js`, `access.js`, `personaRoles.js`, `personaKnowledge.js`, `personaRelationship.js`, `threadClose.js`, `preassessment.js`, `projectJournalSave.js`, `evaluatorReview.js`, `reputationBadge.js` |
 | `server/prompts/` | Tutor-instructies per cursus en de sjablonen | `routes.js`, `promptStore.js`, `promptTemplates.js` |
 | `server/quiz/` | Quiz, bronnenmix en vraagbanken (ShareStats, CSV) | `routes.js`, `itembankRoutes.js`, `itembankScope.js`, `itembankCsv.js`, `quizSourcesMix.js` |
 | `server/rag/` | Zoeken in het cursusmateriaal (RAG) | `routes.js` (o.a. `/api/embeddings`, zoekinstellingen), `search.js`, `chunking.js`, `crossLingual.js`, `queryExpansion.js`, `filePurpose.js`, `documentScope.js`, `ragFolder.js` |

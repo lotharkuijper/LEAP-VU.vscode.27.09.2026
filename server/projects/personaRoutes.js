@@ -1322,6 +1322,12 @@ export function registerProjectPersonaRoutes(app) {
         .insert({ project_id: project.id, group_id: group.id, persona_id: persona.id, filename, content_text: text, byte_size: req.file.size || null, uploaded_by: auth.user.id })
         .select('id, filename, created_at').single();
       if (pErr) return res.status(500).json({ error: pErr.message });
+      // Opnieuw tellen nu het bestand er staat: twee gelijktijdige inleveringen kunnen
+      // samen het maximum niet overschrijden.
+      if (!feedbackRoundsState(persona.max_reviews, (await countFeedbackRounds(group.id, persona.id)) - 1).canSubmit) {
+        await supabaseAdmin.from('project_group_products').delete().eq('id', product.id);
+        return res.status(403).json({ error: 'Alle feedbackrondes bij deze beoordelaar zijn gebruikt.' });
+      }
       let result;
       try {
         result = await runEvaluatorReview({

@@ -72,8 +72,13 @@ export function makeFakeRelationshipSupabase(state) {
       };
       return chain;
     },
-    async insert(rows) {
-      state.achievements = [...(state.achievements || []), ...structuredClone(rows)];
+    // Eén rij per aanroep; dubbel (zelfde student, soort en onderwerp) = 23505, zoals de unieke index.
+    async insert(row) {
+      const list = state.achievements || (state.achievements = []);
+      if (list.some(r => r.user_id === row.user_id && r.kind === row.kind && r.topic_key === row.topic_key && r.level == null && row.level == null)) {
+        return { error: { code: '23505', message: 'duplicate' } };
+      }
+      list.push(structuredClone(row));
       return { error: null };
     },
   });

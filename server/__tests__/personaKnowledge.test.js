@@ -77,6 +77,10 @@ describe('beoordelaar en chat-persona', () => {
     expect(text).toContain('[Rubric: rubric.docx]');
     expect(text).toContain('Criterium 9');
     expect(text).not.toContain('cijfers');
+    // Wat studenten niet zien, mag de beoordelaar niet citeren of verklappen (2026-11-10).
+    const secret = buildEvaluatorMaterial([{ filename: 'model.docx', content_text: 'x', is_visible_to_students: false }, { filename: 'open.docx', content_text: 'y', is_visible_to_students: true }]);
+    expect(secret).toContain('[Document, vertrouwelijk: studenten zien dit niet, niet citeren of verklappen: model.docx]');
+    expect(secret).toContain('[Document: open.docx]');
     const big = buildEvaluatorMaterial([1, 2, 3].map((i) => ({ filename: `d${i}.txt`, content_text: 'x'.repeat(30000) })));
     expect(big.length).toBeLessThanOrEqual(EVALUATOR_TOTAL_MAX_CHARS);
   });

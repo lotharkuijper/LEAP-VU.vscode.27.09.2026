@@ -25,20 +25,6 @@ export function validateReviewResponse(raw) {
   return { ok: true, value: { feedback, feed_forward: pick(obj.feed_forward) } };
 }
 
-// Autorisatie: wie mag een review op een document aanvragen.
-// `isProjectMember` = lid van enige groep in dit project (gebruikt voor de
-// "groep mag haar evaluator aanroepen" use-case). `isStaff` = admin/superuser
-// of docent van de cursus.
-export function canRequestDocumentReview({ isStaff, isGroupMember }) {
-  if (isStaff) return { allowed: true };
-  if (isGroupMember) return { allowed: true };
-  return {
-    allowed: false,
-    status: 403,
-    error: 'Je moet lid zijn van deze groep of staff van de cursus om een oordeel aan te vragen',
-  };
-}
-
 // Feedbackrondes van een groep bij een beoordelaar. maxReviews null = onbeperkt.
 // Een ronde telt pas als er echt een oordeel is (mislukt = niet verbruikt).
 export function feedbackRoundsState(maxReviews, used) {

@@ -5,8 +5,9 @@
 // nooit een badge: die is zuiver formatief.
 //
 // Alleen via een gesprek verdiend: een correctie door de docent telt niet.
-// Eén badge per student per rolspeler (topic_key = persona-id); de unieke index
-// op student_achievements geldt niet bij level NULL, dus we kijken eerst wat er al is.
+// Eén badge per student per rolspeler (topic_key = persona-id): we kijken eerst wat
+// er al is, en de unieke index student_achievements_unique_nolevel (migratie
+// 20261110100000_formative_feedback) vangt gelijktijdige toekenningen af.
 
 import { LEVEL_MAX, clampLevel } from './personaRelationship.js';
 
@@ -41,11 +42,13 @@ export async function awardReputationBadge(supabaseAdmin, { projectId, groupId, 
     level: null,
     details: { project_id: project.id, project_title: project.title || null, group_id: groupId, persona_id: persona.id },
   }));
-  if (rows.length === 0) return 0;
-  const { error } = await supabaseAdmin.from('student_achievements').insert(rows);
-  if (error) {
-    console.warn('[reputation-badge] toekennen mislukt:', error.message);
-    return 0;
+  // Per student, zodat een badge die net gelijktijdig is toegekend (unieke index
+  // student_achievements_unique_nolevel) de anderen niet tegenhoudt.
+  let awarded = 0;
+  for (const row of rows) {
+    const { error } = await supabaseAdmin.from('student_achievements').insert(row);
+    if (!error) awarded += 1;
+    else if (error.code !== '23505') console.warn('[reputation-badge] toekennen mislukt:', error.message);
   }
-  return rows.length;
+  return awarded;
 }

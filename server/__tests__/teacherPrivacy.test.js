@@ -20,6 +20,7 @@ const GROUP_CONTENT_ROUTES = [
   "app.get('/api/projects/:projectId/groups/:groupId/relationships'",
   "app.post('/api/projects/:projectId/groups/:groupId/personas/:personaId/consultations-grant'",
   "app.get('/api/projects/:projectId/personas/:personaId/documents'",
+  "app.post('/api/projects/groups/:groupId/evaluate'",
 ];
 
 describe('docenten zien de inhoud van projectgroepen niet', () => {
