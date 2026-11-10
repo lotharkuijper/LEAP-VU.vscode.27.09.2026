@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "Este endpoint solo procesa archivos .docx/.doc/.odt",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "Este endpoint solo procesa archivos .pptx",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "Este es el último docente del curso. Asigna primero otro docente o pide a un admin que fuerce el cambio.",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "Este es el grupo de prueba de un docente; pon a los estudiantes en otro grupo",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "Este componente no se usa en este curso",
   "Dit project heeft geen beoordelaar-persona": "Este proyecto no tiene persona evaluadora",
   "Dit project is gearchiveerd": "Este proyecto está archivado",

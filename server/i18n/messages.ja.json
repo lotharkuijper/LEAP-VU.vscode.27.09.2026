@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "このendpointは .docx/.doc/.odt ファイルのみ処理します",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "このendpointは .pptx ファイルのみ処理します",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "これはコースの最後の教員です。先に別の教員を割り当てるか、adminに変更を強制してもらってください。",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "これは教員のテストグループです。学生は別のグループに入れてください",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "この項目はこのコースでは使用されていません",
   "Dit project heeft geen beoordelaar-persona": "このプロジェクトには評価者ペルソナがありません",
   "Dit project is gearchiveerd": "このプロジェクトはアーカイブされています",

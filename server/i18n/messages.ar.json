@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "يعالج هذا endpoint ملفات .docx/.doc/.odt فقط",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "يعالج هذا endpoint ملفات .pptx فقط",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "هذا هو آخر مدرس في الدورة. عيّن مدرسًا آخر أولًا، أو اطلب من مسؤول فرض التغيير.",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "هذه مجموعة اختبار خاصة بمدرّس؛ ضع الطلاب في مجموعة أخرى",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "هذا الجزء غير مستخدم في هذه الدورة",
   "Dit project heeft geen beoordelaar-persona": "لا يحتوي هذا المشروع على persona للمقيّم",
   "Dit project is gearchiveerd": "تمت أرشفة هذا المشروع",

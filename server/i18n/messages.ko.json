@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "이 endpoint는 .docx/.doc/.odt 파일만 처리해",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "이 endpoint는 .pptx 파일만 처리해",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "이 사람이 이 course의 마지막 교원이야. 먼저 다른 교원을 지정하거나, admin이 변경을 강제로 적용하게 해.",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "이건 교사의 테스트 그룹이야. 학생들은 다른 그룹에 넣어줘",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "이 항목은 이 코스에서 사용되지 않아",
   "Dit project heeft geen beoordelaar-persona": "이 프로젝트에는 평가자 persona가 없어",
   "Dit project is gearchiveerd": "이 프로젝트는 보관 처리되었어",

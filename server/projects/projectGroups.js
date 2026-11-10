@@ -103,6 +103,24 @@ export async function placeInCanvasGroup(db, { projectId, userId, ref, name, gen
   return group.id;
 }
 
+/** Alleen studenten van de cursus (geen docenten): de rest valt weg. */
+export async function studentsOfCourse(db, courseId, userIds) {
+  if (!courseId || userIds.length === 0) return [];
+  const { data } = await db.from('course_members').select('user_id, member_role')
+    .eq('course_id', courseId).in('user_id', userIds);
+  return (data || []).filter((m) => !m.member_role || m.member_role === 'student').map((m) => m.user_id);
+}
+
+/** Zit er een docent van de cursus in deze groep (bijvoorbeeld de eigen testgroep)? */
+export async function groupHasTeacher(db, courseId, groupId) {
+  const { data: members } = await db.from('project_group_members').select('user_id').eq('group_id', groupId);
+  const ids = (members || []).map((m) => m.user_id);
+  if (!courseId || ids.length === 0) return false;
+  const { data } = await db.from('course_members').select('user_id')
+    .eq('course_id', courseId).eq('member_role', 'teacher').in('user_id', ids);
+  return (data || []).length > 0;
+}
+
 /**
  * Beheerroutes voor de docent. deps: supabaseAdmin, authUser(req), loadProfile(userId),
  * requireProjectStaff(projectId, user, profile), genInviteCode().
@@ -178,7 +196,10 @@ export function registerProjectGroupRoutes(app, deps) {
     const s = await staff(req, res);
     if (!s) return;
     try {
-      const unassigned = Array.isArray(req.body?.userIds) ? req.body.userIds.filter((x) => typeof x === 'string') : [];
+      // Alleen studenten van de cursus: een docent in een groep met studenten zou
+      // hun groepsinhoud zien (privacybesluit 2026-10-08).
+      const requested = Array.isArray(req.body?.userIds) ? req.body.userIds.filter((x) => typeof x === 'string') : [];
+      const unassigned = await studentsOfCourse(db, s.project.course_id, requested);
       const parts = splitIntoGroups(unassigned, req.body?.size);
       const { count } = await db.from('project_groups').select('id', { count: 'exact', head: true }).eq('project_id', req.params.projectId);
       let made = 0;
@@ -230,6 +251,10 @@ export function registerProjectGroupRoutes(app, deps) {
         const { data: g } = await db.from('project_groups').select('id, status').eq('id', groupId).eq('project_id', req.params.projectId).maybeSingle();
         if (!g) return res.status(404).json({ error: 'Groep niet gevonden' });
         if (g.status !== 'active') return res.status(400).json({ error: 'Deze groep is afgerond' });
+        // Niet in de testgroep van een docent: die zou dan de groepsinhoud van de student zien.
+        if (await groupHasTeacher(db, s.project.course_id, groupId)) {
+          return res.status(403).json({ error: 'Dit is de testgroep van een docent; zet studenten in een andere groep', code: 'teacherGroup' });
+        }
       }
       // Alleen studenten van de cursus van dit project. Een docent in een groep
       // zetten zou hem toegang geven tot de chats en bestanden van die groep

@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "यह endpoint केवल .docx/.doc/.odt-bestanden process करता है",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "यह endpoint केवल .pptx-bestanden process करता है",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "यह cursus का आख़िरी docent है। पहले किसी और docent को नियुक्त करो, या admin से बदलाव force करवाओ।",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "यह शिक्षक का परीक्षण समूह है; छात्रों को किसी दूसरे समूह में डालो",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "यह भाग इस कोर्स में उपयोग नहीं किया जाता",
   "Dit project heeft geen beoordelaar-persona": "इस project में geen beoordelaar-persona नहीं है",
   "Dit project is gearchiveerd": "यह project archived है",

@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "This endpoint only processes .docx/.doc/.odt files",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "This endpoint only processes .pptx files",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "This is the last teacher of the course. Assign another teacher first, or have an admin force the change.",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "This is the teacher's test group; put students in another group",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "This component is not used in this course",
   "Dit project heeft geen beoordelaar-persona": "This project has no assessor persona",
   "Dit project is gearchiveerd": "This project is archived",

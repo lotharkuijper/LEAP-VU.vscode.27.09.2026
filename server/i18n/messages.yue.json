@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "呢個 endpoint 只處理 .docx/.doc/.odt 檔案",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "呢個 endpoint 只處理 .pptx 檔案",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "呢位係課程最後一位教師。請先指定另一位教師，或者由 admin 強制變更。",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "呢個係老師嘅測試群組；請將學生放入另一個群組",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "呢個課程唔使用呢個部分",
   "Dit project heeft geen beoordelaar-persona": "呢個項目冇評核者 persona",
   "Dit project is gearchiveerd": "呢個項目已封存",

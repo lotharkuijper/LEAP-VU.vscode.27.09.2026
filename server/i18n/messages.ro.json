@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "Acest endpoint procesează doar fișiere .docx/.doc/.odt",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "Acest endpoint procesează doar fișiere .pptx",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "Acesta este ultimul profesor al cursului. Atribuie mai întâi un alt profesor sau lasă un admin să forțeze modificarea.",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "Acesta este grupul de test al unui profesor; pune studenții într-un alt grup",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "Această componentă nu este folosită în acest curs",
   "Dit project heeft geen beoordelaar-persona": "Acest proiect nu are persona de evaluator",
   "Dit project is gearchiveerd": "Acest proiect este arhivat",

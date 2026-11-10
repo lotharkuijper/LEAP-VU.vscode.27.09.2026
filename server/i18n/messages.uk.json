@@ -181,6 +181,7 @@
   "Dit endpoint verwerkt alleen .docx/.doc/.odt-bestanden": "Цей endpoint обробляє лише файли .docx/.doc/.odt",
   "Dit endpoint verwerkt alleen .pptx-bestanden": "Цей endpoint обробляє лише файли .pptx",
   "Dit is de laatste docent van de cursus. Wijs eerst een andere docent aan, of laat een admin de wijziging forceren.": "Це останній викладач курсу. Спершу признач іншого викладача або попроси адміна примусово внести зміну.",
+  "Dit is de testgroep van een docent; zet studenten in een andere groep": "Це тестова група викладача; додай студентів до іншої групи",
   "Dit onderdeel wordt in deze cursus niet gebruikt": "Цей компонент не використовується в цьому курсі",
   "Dit project heeft geen beoordelaar-persona": "У цього проєкту немає persona оцінювача",
   "Dit project is gearchiveerd": "Цей проєкт заархівовано",
