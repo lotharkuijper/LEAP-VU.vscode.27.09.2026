@@ -36,6 +36,14 @@ describe('PersonaRoleFields', () => {
     render(<LanguageProvider><PersonaRoleFields idPrefix="t" value={{ persona_type: 'evaluator' }} onChange={() => {}} personaName="X" courseId="c1" token="tok" roles={['evaluator']} /></LanguageProvider>);
     expect(screen.queryByTestId('t-role-evaluator')).toBeNull();
     expect(screen.getByTestId('t-deliverable')).toBeInTheDocument();
+    expect(screen.getByTestId('t-max-reviews')).toBeInTheDocument();
+  });
+
+  it('de nakijkhulp heeft geen feedbackrondes (eindproduct gaat één keer in)', () => {
+    try { localStorage.setItem('lair-vu-lang', 'nl'); } catch { /* */ }
+    render(<LanguageProvider><PersonaRoleFields idPrefix="t" value={{ persona_type: 'evaluator' }} onChange={() => {}} personaName="X" courseId="c1" token="tok" roles={['evaluator']} marking /></LanguageProvider>);
+    expect(screen.getByTestId('t-deliverable')).toBeInTheDocument();
+    expect(screen.queryByTestId('t-max-reviews')).toBeNull();
   });
 
   it('beoordelaar: product en aantal rondes', () => {

@@ -328,6 +328,7 @@
   "Je mag deze reactie niet bewerken": "Tu n’as pas le droit de modifier cette réaction",
   "Je mag deze reactie niet verwijderen": "Tu n’as pas le droit de supprimer cette réaction",
   "Je mag dit niet markeren": "Tu n’as pas le droit de marquer ceci",
+  "Jullie groep heeft het eindproduct al ingeleverd": "Votre groupe a déjà rendu le produit final",
   "Kan cursus \"{0}\" niet verwijderen: er is nog gekoppelde data ({1}). Verwijder die eerst of deactiveer de cursus.": "Impossible de supprimer le cours « {0} » : des données y sont encore liées ({1}). Supprime-les d’abord ou désactive le cours.",
   "keepId en dupIds zijn vereist": "keepId et dupIds sont requis",
   "Kies een Beoordelaar van dit project": "Choisis un évaluateur pour ce projet",

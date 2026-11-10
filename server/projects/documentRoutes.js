@@ -175,11 +175,23 @@ async function uploadProjectSubmissionHandler(req, res) {
     const member = await isGroupMember(groupId, auth.user.id);
     if (!member) return res.status(403).json({ error: 'Je bent geen lid van deze groep' });
 
-    // Vervang oudere inleveringen in één transactie: nieuwe rij invoegen,
-    // dan alle eerdere rijen voor deze (project, groep) verwijderen.
+    // Eén keer inleveren per groep (besluit 2026-11-11). Alleen in een concept
+    // vervangt een nieuwe upload de vorige: daar probeert de docent het uit.
+    // De groepsrij op slot, zodat twee groepsleden niet tegelijk inleveren.
     const client = await pgPool.connect();
     try {
       await client.query('BEGIN');
+      await client.query('SELECT id FROM project_groups WHERE id = $1 FOR UPDATE', [groupId]);
+      if (project.status !== 'draft') {
+        const prev = await client.query(
+          'SELECT 1 FROM project_submissions WHERE project_id = $1 AND group_id = $2 LIMIT 1',
+          [projectId, groupId]
+        );
+        if (prev.rowCount > 0) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'Jullie groep heeft het eindproduct al ingeleverd', code: 'alreadySubmitted' });
+        }
+      }
       const insRes = await client.query(
         `INSERT INTO project_submissions
            (project_id, group_id, uploaded_by, filename, mime_type, file_bytes, byte_size)

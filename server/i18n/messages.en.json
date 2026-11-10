@@ -328,6 +328,7 @@
   "Je mag deze reactie niet bewerken": "You may not edit this comment",
   "Je mag deze reactie niet verwijderen": "You may not delete this comment",
   "Je mag dit niet markeren": "You may not mark this",
+  "Jullie groep heeft het eindproduct al ingeleverd": "Your group has already submitted the final product",
   "Kan cursus \"{0}\" niet verwijderen: er is nog gekoppelde data ({1}). Verwijder die eerst of deactiveer de cursus.": "Cannot delete course \"{0}\": there is still linked data ({1}). Delete it first or deactivate the course.",
   "keepId en dupIds zijn vereist": "keepId and dupIds are required",
   "Kies een Beoordelaar van dit project": "Choose an assessor for this project",

@@ -79,7 +79,7 @@ export function ProjectTaskStep({ project, onSaved, onError, onInfo }: {
         <input type="checkbox" className="mt-0.5" checked={!!form.submissions_enabled} onChange={(e) => setForm({ ...form, submissions_enabled: e.target.checked })} data-testid="checkbox-project-submissions-enabled" />
         <span>
           <span className="font-medium">{t('admin.projects.subs.enable')}</span>
-          <span className="block text-[11px] text-gray-500">{t('admin.projects.subs.enableHint')}</span>
+          <span className="block text-[11px] text-gray-500">{t('admin.projects.subs.enableHintOnce')}</span>
         </span>
       </label>
       <div className="flex justify-end">
