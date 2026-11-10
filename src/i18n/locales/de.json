@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Für Studierende sichtbar — klicken, um zu verbergen",
   "admin.projects.docs.hiddenTitle": "Für Studierende verborgen — klicken, um sichtbar zu machen",
   "admin.projects.personas.title": "Personas in diesem Projekt ({count})",
-  "admin.projects.personas.desc": "Erstelle Gesprächspartner oder Beurteiler. Beurteiler erscheinen nicht im Studierenden-Chat.",
+  "admin.projects.personas.descTalkers": "Betreuende und Rollenspieler: Mit ihnen sprechen Studierende. Bewertende erstellst du in Schritt 4, Feedback und Bewertung.",
   "admin.projects.personas.addBtn": "Neue Persona",
   "admin.projects.personas.noPersonas": "Noch keine Personas. Füge eine hinzu.",
   "admin.projects.personas.deleteConfirm": "\"{name}\" aus diesem Projekt entfernen? Alle Gespräche mit dieser Persona gehen verloren.",

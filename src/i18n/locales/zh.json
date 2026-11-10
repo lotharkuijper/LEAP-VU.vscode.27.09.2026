@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "学生可见 — 点击隐藏",
   "admin.projects.docs.hiddenTitle": "学生不可见 — 点击设为可见",
   "admin.projects.personas.title": "此项目中的角色 ({count})",
-  "admin.projects.personas.desc": "创建对话伙伴或评审者。评审者不会出现在学生聊天中。",
+  "admin.projects.personas.descTalkers": "导师和角色扮演者：学生会与他们交谈。评分者请在第 4 步“反馈和评分”中创建。",
   "admin.projects.personas.addBtn": "新建角色",
   "admin.projects.personas.noPersonas": "还没有角色。添加一个吧。",
   "admin.projects.personas.deleteConfirm": "从此项目中删除“{name}”？与此角色的所有对话都将丢失。",

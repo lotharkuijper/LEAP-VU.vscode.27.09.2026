@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "学生に表示中 — クリックして非表示にする",
   "admin.projects.docs.hiddenTitle": "学生には非表示 — クリックして表示する",
   "admin.projects.personas.title": "このプロジェクトのペルソナ（{count}）",
-  "admin.projects.personas.desc": "会話相手や評価者を作成します。評価者は学生チャットには表示されません。",
+  "admin.projects.personas.descTalkers": "指導者とロールプレイヤー：学生は彼らと対話します。評価者はステップ4「フィードバックと評価」で作成します。",
   "admin.projects.personas.addBtn": "新しいペルソナ",
   "admin.projects.personas.noPersonas": "まだペルソナがありません。1つ追加してください。",
   "admin.projects.personas.deleteConfirm": "このプロジェクトから「{name}」を削除しますか？このペルソナとのすべての会話が失われます。",

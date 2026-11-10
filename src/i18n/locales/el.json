@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Ορατό στους φοιτητές — κάνε κλικ για απόκρυψη",
   "admin.projects.docs.hiddenTitle": "Κρυφό από τους φοιτητές — κάνε κλικ για να γίνει ορατό",
   "admin.projects.personas.title": "Persona σε αυτό το έργο ({count})",
-  "admin.projects.personas.desc": "Δημιούργησε συνομιλητές ή αξιολογητές. Οι αξιολογητές δεν εμφανίζονται στη συνομιλία των φοιτητών.",
+  "admin.projects.personas.descTalkers": "Καθοδηγητές και παίκτες ρόλων: μαζί τους μιλούν οι φοιτητές. Τους αξιολογητές τους δημιουργείς στο βήμα 4, Ανατροφοδότηση και αξιολόγηση.",
   "admin.projects.personas.addBtn": "Νέο persona",
   "admin.projects.personas.noPersonas": "Δεν υπάρχουν ακόμη persona. Πρόσθεσε ένα.",
   "admin.projects.personas.deleteConfirm": "Να διαγραφεί το \"{name}\" από αυτό το έργο; Όλες οι συνομιλίες με αυτό το persona θα χαθούν.",

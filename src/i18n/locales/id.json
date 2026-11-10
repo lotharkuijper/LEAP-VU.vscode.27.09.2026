@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Terlihat oleh mahasiswa — klik untuk menyembunyikan",
   "admin.projects.docs.hiddenTitle": "Disembunyikan dari mahasiswa — klik untuk membuat terlihat",
   "admin.projects.personas.title": "Persona dalam proyek ini ({count})",
-  "admin.projects.personas.desc": "Buat lawan bicara atau penilai. Penilai tidak muncul di chat mahasiswa.",
+  "admin.projects.personas.descTalkers": "Pembimbing dan pemain peran: dengan mereka mahasiswa berbicara. Penilai kamu buat pada langkah 4, Umpan balik dan penilaian.",
   "admin.projects.personas.addBtn": "Persona baru",
   "admin.projects.personas.noPersonas": "Belum ada persona. Tambahkan satu.",
   "admin.projects.personas.deleteConfirm": "Hapus \"{name}\" dari proyek ini? Semua percakapan dengan persona ini akan hilang.",

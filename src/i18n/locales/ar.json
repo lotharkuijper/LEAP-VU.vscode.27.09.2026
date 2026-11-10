@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "مرئي للطلاب — انقر للإخفاء",
   "admin.projects.docs.hiddenTitle": "مخفي عن الطلاب — انقر لجعله مرئيًا",
   "admin.projects.personas.title": "الشخصيات في هذا المشروع ({count})",
-  "admin.projects.personas.desc": "أنشئ شركاء محادثة أو مقيّمين. لا يظهر المقيّمون في دردشة الطالب.",
+  "admin.projects.personas.descTalkers": "المشرفون ولاعبو الأدوار: يتحدث الطلاب معهم. يمكنك إنشاء المقيّمين في الخطوة 4، التغذية الراجعة والتقييم.",
   "admin.projects.personas.addBtn": "شخصية جديدة",
   "admin.projects.personas.noPersonas": "لا توجد شخصيات بعد. أضف واحدة.",
   "admin.projects.personas.deleteConfirm": "هل تريد حذف \"{name}\" من هذا المشروع؟ ستفقد كل المحادثات مع هذه الشخصية.",

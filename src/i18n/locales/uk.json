@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Видимо для студентів — натисни, щоб приховати",
   "admin.projects.docs.hiddenTitle": "Приховано від студентів — натисни, щоб зробити видимим",
   "admin.projects.personas.title": "Персони в цьому проєкті ({count})",
-  "admin.projects.personas.desc": "Створюй співрозмовників або оцінювачів. Оцінювачі не з’являються в студентському чаті.",
+  "admin.projects.personas.descTalkers": "Наставники та учасники рольових ігор: з ними спілкуються студенти. Оцінювачів ти створюєш на кроці 4, «Зворотний зв’язок і оцінювання».",
   "admin.projects.personas.addBtn": "Нова персона",
   "admin.projects.personas.noPersonas": "Персон ще немає. Додай одну.",
   "admin.projects.personas.deleteConfirm": "Видалити \"{name}\" із цього проєкту? Усі розмови з цією персоною буде втрачено.",

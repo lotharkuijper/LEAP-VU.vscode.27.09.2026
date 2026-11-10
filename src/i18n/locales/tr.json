@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Öğrencilere görünür — gizlemek için tıkla",
   "admin.projects.docs.hiddenTitle": "Öğrencilerden gizli — görünür yapmak için tıkla",
   "admin.projects.personas.title": "Bu projedeki personalar ({count})",
-  "admin.projects.personas.desc": "Sohbet partnerleri veya değerlendiriciler oluştur. Değerlendiriciler öğrenci sohbetinde görünmez.",
+  "admin.projects.personas.descTalkers": "Rehberler ve rol oyuncuları: öğrenciler onlarla konuşur. Değerlendiricileri 4. adımda, Geri bildirim ve değerlendirme bölümünde oluşturursun.",
   "admin.projects.personas.addBtn": "Yeni persona",
   "admin.projects.personas.noPersonas": "Henüz persona yok. Bir tane ekle.",
   "admin.projects.personas.deleteConfirm": "\"{name}\" bu projeden kaldırılsın mı? Bu persona ile yapılan tüm konuşmalar kaybolacak.",

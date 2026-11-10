@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "छात्रों को दिखाई देता है — छिपाने के लिए क्लिक करें",
   "admin.projects.docs.hiddenTitle": "छात्रों से छिपा हुआ — दिखाने के लिए क्लिक करें",
   "admin.projects.personas.title": "इस प्रोजेक्ट में पर्सोना ({count})",
-  "admin.projects.personas.desc": "बातचीत के साथी या मूल्यांकनकर्ता बनाओ। मूल्यांकनकर्ता छात्र चैट में दिखाई नहीं देते।",
+  "admin.projects.personas.descTalkers": "मार्गदर्शक और भूमिका निभाने वाले: छात्र उनसे बात करते हैं। मूल्यांकनकर्ता तुम चरण 4, फ़ीडबैक और मूल्यांकन में बनाते हो।",
   "admin.projects.personas.addBtn": "नया पर्सोना",
   "admin.projects.personas.noPersonas": "अभी कोई पर्सोना नहीं है। एक जोड़ो।",
   "admin.projects.personas.deleteConfirm": "\"{name}\" को इस प्रोजेक्ट से हटाएँ? इस पर्सोना के साथ सभी बातचीत खो जाएँगी।",

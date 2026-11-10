@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Visible pour les étudiants — clique pour masquer",
   "admin.projects.docs.hiddenTitle": "Masqué pour les étudiants — clique pour rendre visible",
   "admin.projects.personas.title": "Personas dans ce projet ({count})",
-  "admin.projects.personas.desc": "Crée des interlocuteurs ou des évaluateurs. Les évaluateurs n’apparaissent pas dans le chat étudiant.",
+  "admin.projects.personas.descTalkers": "Accompagnateurs et acteurs de jeu de rôle : les étudiants discutent avec eux. Tu crées les évaluateurs à l’étape 4, Feedback et évaluation.",
   "admin.projects.personas.addBtn": "Nouveau persona",
   "admin.projects.personas.noPersonas": "Pas encore de personas. Ajoutes-en un.",
   "admin.projects.personas.deleteConfirm": "Supprimer « {name} » de ce projet ? Toutes les conversations avec ce persona seront perdues.",
