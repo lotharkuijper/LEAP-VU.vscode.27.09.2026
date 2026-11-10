@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Visível para os estudantes — clica para ocultar",
   "admin.projects.docs.hiddenTitle": "Oculto para os estudantes — clica para tornar visível",
   "admin.projects.personas.title": "Personas neste projeto ({count})",
-  "admin.projects.personas.desc": "Cria interlocutores ou avaliadores. Os avaliadores não aparecem no chat dos estudantes.",
+  "admin.projects.personas.descTalkers": "Orientadores e atores de role-play: é com eles que os estudantes falam. Podes criar avaliadores no passo 4, Feedback e avaliação.",
   "admin.projects.personas.addBtn": "Nova persona",
   "admin.projects.personas.noPersonas": "Ainda não há personas. Adiciona uma.",
   "admin.projects.personas.deleteConfirm": "Eliminar \"{name}\" deste projeto? Todas as conversas com esta persona serão perdidas.",

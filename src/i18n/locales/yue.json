@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "學生可見 — 按一下即可隱藏",
   "admin.projects.docs.hiddenTitle": "已對學生隱藏 — 按一下即可顯示",
   "admin.projects.personas.title": "呢個項目入面嘅 Persona（{count}）",
-  "admin.projects.personas.desc": "建立對話夥伴或評審。評審唔會出現喺學生聊天入面。",
+  "admin.projects.personas.descTalkers": "導師同角色扮演者：學生會同佢哋傾偈。評核員喺第 4 步「反饋同評核」建立。",
   "admin.projects.personas.addBtn": "新增 Persona",
   "admin.projects.personas.noPersonas": "仲未有 persona。新增一個啦。",
   "admin.projects.personas.deleteConfirm": "要將「{name}」從呢個項目移除嗎？同呢個 persona 嘅所有對話都會遺失。",

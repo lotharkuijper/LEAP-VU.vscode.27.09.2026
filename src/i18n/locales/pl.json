@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Widoczne dla studentów — kliknij, aby ukryć",
   "admin.projects.docs.hiddenTitle": "Ukryte dla studentów — kliknij, aby pokazać",
   "admin.projects.personas.title": "Persony w tym projekcie ({count})",
-  "admin.projects.personas.desc": "Twórz partnerów do rozmowy lub oceniających. Oceniający nie pojawiają się na czacie studenta.",
+  "admin.projects.personas.descTalkers": "Opiekunowie i uczestnicy scenek: z nimi rozmawiają studenci. Oceniających utworzysz w kroku 4, Informacja zwrotna i ocena.",
   "admin.projects.personas.addBtn": "Nowa persona",
   "admin.projects.personas.noPersonas": "Nie ma jeszcze żadnych person. Dodaj jedną.",
   "admin.projects.personas.deleteConfirm": "Usunąć „{name}” z tego projektu? Wszystkie rozmowy z tą personą zostaną utracone.",

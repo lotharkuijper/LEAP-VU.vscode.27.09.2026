@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Zichtbaar voor studenten — klik om te verbergen",
   "admin.projects.docs.hiddenTitle": "Verborgen voor studenten — klik om zichtbaar te maken",
   "admin.projects.personas.title": "Persona's in dit project ({count})",
-  "admin.projects.personas.desc": "Maak gespreksparters of beoordelaars. Beoordelaars verschijnen niet in de student-chat.",
+  "admin.projects.personas.descTalkers": "Begeleiders en rolspelers: met hen praten studenten. Beoordelaars maak je bij stap 4, Feedback en beoordeling.",
   "admin.projects.personas.addBtn": "Nieuwe persona",
   "admin.projects.personas.noPersonas": "Nog geen persona's. Voeg er één toe.",
   "admin.projects.personas.deleteConfirm": "Verwijder \"{name}\" uit dit project? Alle gesprekken met deze persona gaan verloren.",

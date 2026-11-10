@@ -47,8 +47,9 @@ const ROLES: Array<{ role: PersonaRole; Icon: typeof Compass; tone: string }> = 
  * Rolkeuze (Begeleider / Beoordelaar / Rolspeler) met alleen de instellingen die
  * bij die rol horen. Bij een rolspeler kan de docent de verstandhouding aanzetten
  * en de gedragsregels invullen, en die meteen uitproberen met een proefgesprek.
+ * `roles` beperkt de keuze; bij één rol valt de keuze weg.
  */
-export function PersonaRoleFields({ value, onChange, personaName, courseId, token, idPrefix }: {
+export function PersonaRoleFields({ value, onChange, personaName, courseId, token, idPrefix, roles }: {
   value: RoleFieldValues;
   onChange: (next: RoleFieldValues) => void;
   personaName: string;
@@ -56,6 +57,7 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
   courseId: string | null;
   token: string | null;
   idPrefix: string;
+  roles?: PersonaRole[];
 }) {
   const { t, lang } = useLanguage();
   const role = (value.persona_type || 'conversational') as PersonaRole;
@@ -88,14 +90,16 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
     }
   };
 
+  const choices = roles ? ROLES.filter((r) => roles.includes(r.role)) : ROLES;
+
   return (
     <div className="space-y-3">
-      <fieldset>
+      {choices.length > 1 && <fieldset>
         <legend className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-700">
           {t('admin.personaRole.label')}<HelpTip id="personas.role" />
         </legend>
         <div className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(min(11rem,100%),1fr))]">
-          {ROLES.map(({ role: r, Icon, tone }) => {
+          {choices.map(({ role: r, Icon, tone }) => {
             const active = role === r;
             return (
               <label
@@ -118,7 +122,7 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
             );
           })}
         </div>
-      </fieldset>
+      </fieldset>}
 
       {role === 'evaluator' && (
         <div className="grid gap-3 rounded-lg border border-purple-100 bg-purple-50/40 p-3 grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))]">

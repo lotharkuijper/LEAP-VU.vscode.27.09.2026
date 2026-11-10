@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Vizibil pentru studenți — apasă pentru a ascunde",
   "admin.projects.docs.hiddenTitle": "Ascuns pentru studenți — apasă pentru a face vizibil",
   "admin.projects.personas.title": "Persona în acest proiect ({count})",
-  "admin.projects.personas.desc": "Creează parteneri de conversație sau evaluatori. Evaluatorii nu apar în chatul studenților.",
+  "admin.projects.personas.descTalkers": "Îndrumători și participanți la jocuri de rol: studenții vorbesc cu ei. Evaluatorii îi creezi la pasul 4, Feedback și evaluare.",
   "admin.projects.personas.addBtn": "Persona nouă",
   "admin.projects.personas.noPersonas": "Încă nu există persona. Adaugă una.",
   "admin.projects.personas.deleteConfirm": "Ștergi „{name}” din acest proiect? Toate conversațiile cu această persona se vor pierde.",

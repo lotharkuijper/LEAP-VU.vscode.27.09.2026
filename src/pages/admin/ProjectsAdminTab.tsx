@@ -1041,7 +1041,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(talkers.length) })}<HelpTip id="personas.inProject" /></h3>
-            <AdminHint variant="intro" className="flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></AdminHint>
+            <AdminHint variant="intro" className="flex items-center gap-1.5">{t('admin.projects.personas.descTalkers')}<HelpTip id="personas.saveAsTemplate" /></AdminHint>
           </div>
           <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', persona_type: 'conversational', course_knowledge: 'none', course_knowledge_doc_ids: [], project_knowledge_doc_ids: [] })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
             <Plus className="w-4 h-4" />{t('admin.projects.personas.addBtn')}
@@ -1193,6 +1193,8 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                 personaName={editingPersona.name || ''}
                 courseId={project.course_id}
                 token={token}
+                // Personages (stap 3) en beoordelaars (stap 4) blijven elk in hun eigen stap.
+                roles={editingPersona.persona_type === 'evaluator' ? ['evaluator'] : ['conversational', 'roleplayer']}
               />
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldPrompt')}</label>

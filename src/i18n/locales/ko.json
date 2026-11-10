@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "학생에게 표시됨 — 숨기려면 클릭",
   "admin.projects.docs.hiddenTitle": "학생에게 숨김 — 표시하려면 클릭",
   "admin.projects.personas.title": "이 프로젝트의 페르소나 ({count})",
-  "admin.projects.personas.desc": "대화 상대나 평가자를 만들어. 평가자는 학생 채팅에 표시되지 않아.",
+  "admin.projects.personas.descTalkers": "진행자와 롤플레이어: 학생들이 이들과 대화해. 평가자는 4단계 ‘피드백 및 평가’에서 만들어.",
   "admin.projects.personas.addBtn": "새 페르소나",
   "admin.projects.personas.noPersonas": "아직 페르소나가 없어. 하나 추가해.",
   "admin.projects.personas.deleteConfirm": "이 프로젝트에서 \"{name}\"을(를) 삭제할까? 이 페르소나와의 모든 대화가 사라져.",

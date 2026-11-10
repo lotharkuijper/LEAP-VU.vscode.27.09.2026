@@ -27,6 +27,17 @@ describe('PersonaRoleFields', () => {
     expect(screen.queryByTestId('t-max-reviews')).toBeNull();
   });
 
+  it('roles beperkt de keuze; bij één rol valt de keuze weg', () => {
+    try { localStorage.setItem('lair-vu-lang', 'nl'); } catch { /* */ }
+    const { unmount } = render(<LanguageProvider><PersonaRoleFields idPrefix="t" value={{ persona_type: 'conversational' }} onChange={() => {}} personaName="X" courseId="c1" token="tok" roles={['conversational', 'roleplayer']} /></LanguageProvider>);
+    expect(screen.getByTestId('t-role-roleplayer')).toBeInTheDocument();
+    expect(screen.queryByTestId('t-role-evaluator')).toBeNull();
+    unmount();
+    render(<LanguageProvider><PersonaRoleFields idPrefix="t" value={{ persona_type: 'evaluator' }} onChange={() => {}} personaName="X" courseId="c1" token="tok" roles={['evaluator']} /></LanguageProvider>);
+    expect(screen.queryByTestId('t-role-evaluator')).toBeNull();
+    expect(screen.getByTestId('t-deliverable')).toBeInTheDocument();
+  });
+
   it('beoordelaar: product en aantal rondes', () => {
     setup();
     fireEvent.click(screen.getByTestId('t-role-evaluator').querySelector('input')!);

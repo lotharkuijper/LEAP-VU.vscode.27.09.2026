@@ -1376,7 +1376,7 @@
   "admin.projects.docs.visibleTitle": "Visible to students — click to hide",
   "admin.projects.docs.hiddenTitle": "Hidden from students — click to show",
   "admin.projects.personas.title": "Personas in this project ({count})",
-  "admin.projects.personas.desc": "Create conversation partners or evaluators. Evaluators do not appear in the student chat.",
+  "admin.projects.personas.descTalkers": "Facilitators and role-players: students talk to them. You create assessors in step 4, Feedback and assessment.",
   "admin.projects.personas.addBtn": "New persona",
   "admin.projects.personas.noPersonas": "No personas yet. Add one.",
   "admin.projects.personas.deleteConfirm": "Delete \"{name}\" from this project? All conversations with this persona will be lost.",
