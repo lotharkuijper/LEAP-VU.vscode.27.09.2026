@@ -1,4 +1,4 @@
--- Project in concept (besluit 2026-11-10): een docent richt een project stap
+-- Project in concept (besluit 2026-11-11): een docent richt een project stap
 -- voor stap in en probeert het zelf uit in een eigen testgroep. Studenten zien
 -- een conceptproject niet tot de docent het opent voor studenten.
 -- Bestaande projecten blijven 'active'; alleen nieuwe projecten starten als concept.

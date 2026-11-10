@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
-import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, ShieldAlert, Bot, Drama } from 'lucide-react';
+import { Plus, Save, Trash2, FolderOpen, Settings, X, ArrowLeft, Paperclip, Loader2, FileText, Copy, Download, Eye, EyeOff, Database, Bot, Drama } from 'lucide-react';
 import { PersonaLibraryTab } from './PersonaLibraryTab';
 import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
@@ -592,17 +592,16 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
 
   useEffect(() => { loadPersonas(); loadProjectDocs(); loadLibPersonas(); loadSubmissions(); loadKnowledge(); }, [loadPersonas, loadProjectDocs, loadLibPersonas, loadSubmissions, loadKnowledge]);
 
-  // Korte samenvatting per persona in de lijst: wat kent hij?
+  // Korte samenvatting per personage in de lijst (stap 3, geen beoordelaars): wat kent hij?
   const knowledgeSummary = (p: ProjectPersona) => {
     const docs = (knowledge?.projectDocs || []).filter(d => (p.project_knowledge_doc_ids || []).includes(d.id));
-    const isEval = p.persona_type === 'evaluator';
-    const course = isEval || !p.course_knowledge || p.course_knowledge === 'none' ? null
+    const course = !p.course_knowledge || p.course_knowledge === 'none' ? null
       : p.course_knowledge === 'all' ? t('admin.personaKnowledge.courseAllShort')
       : t('admin.personaKnowledge.courseSelectedShort', { count: String((p.course_knowledge_doc_ids || []).length) });
     const parts = [course, ...docs.map(d => d.filename)].filter(Boolean) as string[];
     return parts.length
       ? t('admin.personaKnowledge.rowKnows', { list: parts.join(', ') })
-      : t(isEval ? 'admin.personaKnowledge.rowNothingEvaluator' : 'admin.personaKnowledge.rowNothing');
+      : t('admin.personaKnowledge.rowNothing');
   };
 
   const savePersona = async () => {
@@ -1092,7 +1091,6 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
         ) : (
           <ul className="divide-y divide-gray-100">
             {talkers.map(p => {
-              const isEval = p.persona_type === 'evaluator';
               return (
                 <li key={p.id} className="py-3" data-testid={`pp-row-${p.id}`}>
                   <div className="flex items-start gap-3">
@@ -1100,7 +1098,6 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-gray-900 flex items-center gap-2">
                         {p.name}
-                        {isEval && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded flex items-center gap-1"><ShieldAlert className="w-3 h-3" />{t('admin.projects.personas.badge.evaluator')}</span>}
                         {p.persona_type === 'roleplayer' && <span className="text-[10px] bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded flex items-center gap-1"><Drama className="w-3 h-3" />{t('admin.personaRole.roleplayer.title')}{p.reputation_enabled ? ` · ${t('admin.personaRole.roleplayer.badgeReputation')}` : ''}</span>}
                         {p.source_persona_id && <span className="text-[10px] text-gray-400">{t('admin.projects.personas.fromLib')}</span>}
                       </div>
@@ -1118,7 +1115,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                       </Tooltip>
                     </div>
                   </div>
-                  <p className={`mt-1 ml-[52px] text-[11px] ${isEval && !(p.project_knowledge_doc_ids || []).length ? 'text-amber-800' : 'text-gray-500'}`} data-testid={`pp-knowledge-${p.id}`}>
+                  <p className="mt-1 ml-[52px] text-[11px] text-gray-500" data-testid={`pp-knowledge-${p.id}`}>
                     {knowledgeSummary(p)}
                   </p>
                 </li>

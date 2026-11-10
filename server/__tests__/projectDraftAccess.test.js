@@ -31,7 +31,7 @@ vi.mock('../lib/supabase.js', () => ({
 }));
 vi.mock('../lib/courseFeatureGate.js', () => ({ loadCourseFeatures: async () => ({}) }));
 
-const { isGroupMember, userHasProjectAccess } = await import('../projects/access.js');
+const { isGroupMember, userHasProjectAccess, projectAcceptsWork } = await import('../projects/access.js');
 
 const draft = { status: 'draft', course_id: 'c1' };
 const open = { status: 'active', course_id: 'c1' };
@@ -71,5 +71,14 @@ describe('userHasProjectAccess bij een project in concept', () => {
 
   it('de docent van de cursus wel', async () => {
     expect(await userHasProjectAccess({ id: 'teacher' }, { role: 'docent' }, { id: 'p', ...draft })).toBe(true);
+  });
+});
+
+describe('projectAcceptsWork', () => {
+  it('in een concept kan de docent in zijn testgroep inleveren en feedback vragen', () => {
+    expect(projectAcceptsWork({ status: 'draft' })).toBe(true);
+    expect(projectAcceptsWork({ status: 'active' })).toBe(true);
+    expect(projectAcceptsWork({ status: null })).toBe(true);
+    expect(projectAcceptsWork({ status: 'archived' })).toBe(false);
   });
 });

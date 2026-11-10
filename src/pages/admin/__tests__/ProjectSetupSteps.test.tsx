@@ -7,6 +7,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { LanguageProvider } from '../../../i18n';
 import { setupIssues, ProjectStepNav, type SetupFacts } from '../ProjectSetupSteps';
 import { ProjectReadyStep } from '../ProjectReadyStep';
+import nl from '../../../i18n/locales/nl.json';
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -45,6 +46,18 @@ describe('setupIssues', () => {
       'task:noBriefing', 'material:noMaterial?', 'personas:noPersonas',
       'feedback:rubricHidden', 'feedback:evaluatorNoRubric', 'feedback:noMarking?', 'groups:canvasNotLinked?',
     ]);
+  });
+
+  it('elk aandachtspunt heeft een Nederlandse tekst', () => {
+    const all = setupIssues({
+      project: { status: 'draft', submissions_enabled: true, group_mode: 'canvas' },
+      docs: [{ material_kind: 'rubric', is_visible_to_students: false }, { material_kind: 'assignment', is_visible_to_students: false }],
+      personas: [{ id: 'g', name: 'G' }, { id: 'e', name: 'E', persona_type: 'evaluator' }],
+      preassessorId: null, canvasLinked: false,
+    }).concat(setupIssues({ ...ready, docs: [], personas: [] }));
+    const keys = new Set(all.map((i) => i.key));
+    expect(keys.size).toBeGreaterThanOrEqual(9);
+    for (const k of keys) expect((nl as Record<string, string>)[`admin.projects.ready.issue.${k}`], k).toBeTruthy();
   });
 
   it('Canvas nog niet gekoppeld: de stap Groepen mag overgeslagen worden (geen probleem in de balk)', () => {

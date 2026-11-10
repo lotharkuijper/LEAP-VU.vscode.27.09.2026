@@ -15,7 +15,7 @@ import { SUPERUSER_EMAIL, pgPool, supabaseAdmin } from '../lib/supabase.js';
 import { docUpload, extractTextFromUpload } from '../lib/uploads.js';
 import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
 import { isSaved, reviewRefs } from './projectJournalSave.js';
-import { isGroupMember, requireProjectStaff, userHasProjectAccess } from './access.js';
+import { isGroupMember, projectAcceptsWork, requireProjectStaff, userHasProjectAccess } from './access.js';
 import { loadFeedbackContext } from './evaluatorReview.js';
 import { createProjectDocumentFromBuffer } from './projectFiles.js';
 
@@ -159,7 +159,7 @@ async function uploadProjectSubmissionHandler(req, res) {
     if (!project.submissions_enabled) {
       return res.status(403).json({ error: 'Inleveren is niet ingeschakeld voor dit project' });
     }
-    if (project.status && project.status !== 'active') {
+    if (!projectAcceptsWork(project)) {
       return res.status(403).json({ error: 'Project is niet meer actief' });
     }
 

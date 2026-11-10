@@ -17,6 +17,12 @@ export async function isGroupMember(groupId, userId) {
   return project?.status !== 'draft' || mayUseDraftProject(userId, project.course_id);
 }
 
+/** Kan een groep in dit project nog werk inleveren? Ook een concept: de docent
+ *  probeert het daar uit in zijn testgroep (wie erin mag, bepaalt isGroupMember). */
+export function projectAcceptsWork(project) {
+  return !project.status || project.status === 'active' || project.status === 'draft';
+}
+
 /** Mag deze gebruiker een conceptproject gebruiken? Docent van de cursus of beheerder. */
 export async function mayUseDraftProject(userId, courseId) {
   if (await isCourseTeacher(userId, courseId)) return true;

@@ -59,7 +59,7 @@ import { loadRagSettings, searchChunksServerSide } from '../rag/search.js';
 import { indexProjectKnowledgeText } from '../ingestion/ragProcessing.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { setRelationshipLevelImpl } from './threadClose.js';
-import { isGroupMember, requireProjectStaff, userHasProjectAccess } from './access.js';
+import { isGroupMember, projectAcceptsWork, requireProjectStaff, userHasProjectAccess } from './access.js';
 import { countFeedbackRounds, loadFeedbackContext, runEvaluatorReview } from './evaluatorReview.js';
 import { autoCloseStaleThreads } from './threadCloseService.js';
 
@@ -1301,7 +1301,7 @@ export function registerProjectPersonaRoutes(app) {
       if (!ctx) return;
       const { auth, project, group, persona, memberOfGroup, isStaff } = ctx;
       if (!memberOfGroup && !isStaff) return res.status(403).json({ error: 'Je bent geen lid van deze groep' });
-      if (project.status && project.status !== 'active') return res.status(403).json({ error: 'Project is niet meer actief' });
+      if (!projectAcceptsWork(project)) return res.status(403).json({ error: 'Project is niet meer actief' });
       if (group.status === 'archived') return res.status(403).json({ error: 'Groep is gearchiveerd' });
       if (!req.file) return res.status(400).json({ error: 'Geen bestand ontvangen (veld "file")' });
       const used = await countFeedbackRounds(group.id, persona.id);
