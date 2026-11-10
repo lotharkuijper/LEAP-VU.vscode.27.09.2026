@@ -27,6 +27,8 @@ import {
 import { courseFeatureOnFor, loadCourseFeatures, rejectIfFeatureOff } from '../lib/courseFeatureGate.js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseAdmin } from '../lib/supabase.js';
 import { loadEvaluatorMaterial } from './personaKnowledge.js';
+import { feedbackRoundsState } from './documentReview.js';
+import { countFeedbackRounds } from './evaluatorReview.js';
 import {
   isBroken as relIsBroken,
   levelKey as relLevelKey,
@@ -34,7 +36,7 @@ import {
 } from './personaRelationship.js';
 import {
   journalFromPersonaSummary,
-  journalFromRubricFeedback,
+  journalFromReflectionFeedback,
   journalFromSynthesis,
 } from './projectJournal.js';
 import {
@@ -623,6 +625,7 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
           key: relLevelKey(reputation.to),
           label: relLevelLabel(reputation.to, lang),
           broken: relIsBroken(reputation.to),
+          badge: !!reputation.badge,
         };
       }
       return res.json(response);
@@ -863,57 +866,48 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
       }
 
       const { data: project } = await supabaseAdmin
-        .from('projects').select('id, title, briefing_markdown, rubric_criteria, research_question')
+        .from('projects').select('id, title, briefing_markdown, research_question')
         .eq('id', group.project_id).maybeSingle();
 
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 
-      const rubric = Array.isArray(project?.rubric_criteria) ? project.rubric_criteria : [];
-      const rubricText = rubric.length > 0
-        ? rubric.map((r, i) => typeof r === 'string' ? `${i + 1}. ${r}` : `${i + 1}. ${r.title || r.name || JSON.stringify(r)}`).join('\n')
-        : '(geen rubriek beschikbaar)';
-
       let aiSummary = '';
-      let rubricFeedback = null;
+      let reflectionFeedback = null;
       let checkpointFields = null;
 
       if (kind === 'final') {
         const prompt = (enMode
-          ? `You are a "critical friend" for a group of VU students. The group has completed a research project and submits a joint final reflection below. Assess the work per rubric criterion — honestly, formatively and concretely. Address the group as "you" (plural).
+          ? `You are a "critical friend" for a group of VU students. The group has completed a research project and looks back on it in a joint final reflection below. Give formative feedback on the REFLECTION: what they say they learned, how they worked together, the choices they made and what they would do differently. The product itself is not assessed here. Address the group as "you" (plural). Do NOT give a grade, score or verdict.
 
 Project: ${project?.title || '(unnamed)'}
 Intended project deliverable: ${project?.research_question || '(none)'}
-
-Rubric:
-${rubricText}
 
 Group's final reflection:
 ${reflection}
 
 Return ONLY valid JSON with this structure:
 {
-  "samenvatting": "<2-4 sentences overall assessment, second person>",
-  "per_criterium": [{"criterium": "<name>", "oordeel": "<strong/sufficient/needs attention>", "feedback": "<2-3 sentences>"}],
-  "vervolgstappen": "<1-3 concrete suggestions>"
+  "samenvatting": "<2-4 sentences, second person: what stands out in how you look back>",
+  "goed_gegaan": ["<what you see clearly or did well, 1-2 sentences each>"],
+  "aandachtspunten": ["<where the reflection could go deeper or what to take along, 1-2 sentences each>"],
+  "vervolgstappen": "<1-3 concrete suggestions for a next project>"
 }
 
 No text outside the JSON.`
-          : (`Je bent een "critical friend" voor een groep VU-studenten. De groep heeft een onderzoeksproject afgerond en geeft hieronder een gezamenlijke eindreflectie. Beoordeel het werk per rubriekspunt — eerlijk, formatief en concreet. Spreek de groep aan met "jullie".
+          : (`Je bent een "critical friend" voor een groep VU-studenten. De groep heeft een onderzoeksproject afgerond en kijkt hieronder terug in een gezamenlijke eindreflectie. Geef formatieve feedback op de REFLECTIE: wat ze zeggen geleerd te hebben, hoe ze samenwerkten, welke keuzes ze maakten en wat ze anders zouden doen. Het product zelf beoordeel je hier niet. Spreek de groep aan met "jullie". Geef GEEN cijfer, score of oordeel.
 
 Project: ${project?.title || '(naamloos)'}
 Beoogd projectresultaat: ${project?.research_question || '(geen)'}
-
-Rubriek:
-${rubricText}
 
 Eindreflectie van de groep:
 ${reflection}
 
 Geef je antwoord ALLEEN als geldige JSON met deze structuur:
 {
-  "samenvatting": "<2-4 zinnen overall oordeel, in tweede persoon>",
-  "per_criterium": [{"criterium": "<naam>", "oordeel": "<sterk/voldoende/aandacht>", "feedback": "<2-3 zinnen>"}],
-  "vervolgstappen": "<1-3 concrete suggesties>"
+  "samenvatting": "<2-4 zinnen, in tweede persoon: wat valt op aan hoe jullie terugkijken>",
+  "goed_gegaan": ["<wat jullie scherp zien of goed deden, telkens 1-2 zinnen>"],
+  "aandachtspunten": ["<waar de reflectie dieper kan of wat jullie meenemen, telkens 1-2 zinnen>"],
+  "vervolgstappen": "<1-3 concrete suggesties voor een volgend project>"
 }
 
 Geen tekst buiten de JSON.`)) + buildLanguageInstruction(lang, { json: true });
@@ -930,8 +924,8 @@ Geen tekst buiten de JSON.`)) + buildLanguageInstruction(lang, { json: true });
         const data = await chatResp.json();
         const raw = data.choices?.[0]?.message?.content || '{}';
         try {
-          rubricFeedback = JSON.parse(raw);
-          aiSummary = rubricFeedback.samenvatting || '';
+          reflectionFeedback = JSON.parse(raw);
+          aiSummary = reflectionFeedback.samenvatting || '';
         } catch {
           aiSummary = raw;
         }
@@ -976,7 +970,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
         kind,
         reflection: storedReflection,
         ai_summary: aiSummary,
-        rubric_feedback: rubricFeedback,
+        rubric_feedback: reflectionFeedback,
         created_by: auth.user.id,
         request_id: requestId || null,
       };
@@ -1010,8 +1004,8 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       const projectTitle = project?.title || '(naamloos project)';
       const titleLabel = kind === 'final' ? `Eindreflectie: ${projectTitle}` : `Projectreflectie: ${projectTitle}`;
       // Dezelfde drie blokken als chat, Ik leg uit en quiz (server/projects/projectJournal.js).
-      const entryFields = (kind === 'final' && rubricFeedback)
-        ? journalFromRubricFeedback(rubricFeedback, { lang, groupReflection: reflection })
+      const entryFields = (kind === 'final' && reflectionFeedback)
+        ? journalFromReflectionFeedback(reflectionFeedback, { lang, groupReflection: reflection })
         : (checkpointFields || { content: aiSummary || reflection || '', sections: null });
       const journalItems = [];
       if (entryFields.content || entryFields.sections) {
@@ -1187,9 +1181,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       } else {
         const { data: r } = await supabaseAdmin.from('project_document_reviews').select('*').eq('id', id).eq('group_id', groupId).maybeSingle();
         if (!r) return res.status(404).json({ error: 'Feedback niet gevonden' });
-        const { data: myBadge } = await supabaseAdmin.from('project_review_badges').select('id')
-          .eq('review_id', r.id).eq('user_id', auth.user.id).maybeSingle();
-        parts.push({ refs: reviewRefs(r), entry: reviewEntry(r, { hasBadge: !!myBadge }) });
+        parts.push({ refs: reviewRefs(r), entry: reviewEntry(r) });
       }
       if (!parts.length) return res.status(404).json({ error: 'Er is niets om te bewaren' });
 
@@ -1222,7 +1214,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
   });
 
   // =============================================================================
-  // Beoordeling opvragen — voor elke evaluator-persona van het project: rubric
+  // Feedback op jullie aanpak (was: "Beoordeling opvragen") — voor elke beoordelaar: rubric
   // + alle persona-gesprekken van de groep + projectdocumenten naar OpenAI, en
   // schrijf één journal-entry per groepslid per evaluator. Alleen leden of staff.
   // =============================================================================
@@ -1261,6 +1253,16 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       if (!evaluators || evaluators.length === 0) {
         return res.status(400).json({ error: 'Dit project heeft geen beoordelaar-persona' });
       }
+      // Telt bij elke beoordelaar als één feedbackronde (besluit 2026-11-10): de docent
+      // bepaalt met één maximum hoeveel feedback een groep krijgt. Beoordelaars waarbij de
+      // rondes op zijn, doen niet mee.
+      const withRounds = [];
+      for (const ev of evaluators) {
+        if (feedbackRoundsState(ev.max_reviews, await countFeedbackRounds(groupId, ev.id)).canSubmit) withRounds.push(ev);
+      }
+      if (withRounds.length === 0) {
+        return res.status(403).json({ error: 'Alle feedbackrondes zijn gebruikt.' });
+      }
 
       // Alle persona-gesprekken van de groep verzamelen.
       const { data: threads } = await supabaseAdmin
@@ -1290,7 +1292,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
 
       const results = [];
-      for (const evalPersona of evaluators) {
+      for (const evalPersona of withRounds) {
         // Idempotency: als deze (groep, persona, requestId)-combinatie al een
         // beoordeling (of oudere journal-entry) heeft, sla de OpenAI-call over —
         // bespaart tokens en tijd bij netwerk-retries van dezelfde knopdruk.
@@ -1323,38 +1325,38 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
 ${langInstruction}
 
 ${enMode
-  ? `Below you will find the learning objectives, your assessment material (for your eyes only — students cannot see this), and all conversations the group has had with the other personas. Provide a formative assessment per learning objective/criterion. Address the students as "you" (plural).
+  ? `Below you will find the learning objectives, the rubric and material you know, and all conversations the group has had with the other personas. Give formative feedback on how the group is approaching the project: what already works and where the most is to be gained. Address the students as "you" (plural). Do NOT give a grade, score or verdict (such as sufficient/insufficient or strong/weak) and do not predict a final assessment.
 
 Project: ${project?.title || '(unnamed)'}
 Intended project deliverable: ${project?.research_question || '(none)'}
 Learning objectives: ${project?.goals || '(none)'}
 
-Your assessment material (rubric and documents you know):
+Rubric and material you know:
 ${rubricBlock || '(no material linked; use the learning objectives above)'}
 
 Group conversations:
 ${conversationsBlock || '(no conversations found)'}
 
-Write your assessment as markdown with per criterion:
-- **<criterion name>** (strong / sufficient / needs attention): 2–3 sentences of feedback with a concrete example from the conversations.
+Write your feedback as markdown, for the criteria where the most is to be gained:
+- **<criterion name>**: 2–3 sentences: what already works and the biggest gain, with a concrete example from the conversations.
 
-End with a short heading "Next steps" with 2-3 suggestions. Do NOT quote exact rubric text and do not spoil the criteria.`
-  : `Je krijgt hieronder de leerdoelen, je beoordelingsmateriaal (alléén voor jou — de studenten zien dit niet), en alle gesprekken die de groep met de andere persona's heeft gevoerd. Geef een formatieve beoordeling per leerdoel/criterium. Spreek de studenten aan met "jullie".
+End with a short heading "Next steps" with 2-3 suggestions.`
+  : `Je krijgt hieronder de leerdoelen, de rubric en het materiaal dat je kent, en alle gesprekken die de groep met de andere persona's heeft gevoerd. Geef formatieve feedback op de aanpak van de groep: wat al goed werkt en waar de meeste winst zit. Spreek de studenten aan met "jullie". Geef GEEN cijfer, score of oordeel (zoals voldoende/onvoldoende of sterk/zwak) en voorspel geen eindbeoordeling.
 
 Project: ${project?.title || '(naamloos)'}
 Beoogd projectresultaat: ${project?.research_question || '(geen)'}
 Leerdoelen: ${project?.goals || '(geen)'}
 
-Je beoordelingsmateriaal (rubric en documenten die je kent):
+Rubric en materiaal dat je kent:
 ${rubricBlock || '(geen materiaal gekoppeld; gebruik dan de leerdoelen hierboven)'}
 
 Gesprekken van de groep:
 ${conversationsBlock || '(geen gesprekken gevonden)'}
 
-Schrijf je beoordeling als markdown met per criterium:
-- **<naam criterium>** (sterk / voldoende / aandacht nodig): 2–3 zinnen feedback met concreet voorbeeld uit de gesprekken.
+Schrijf je feedback als markdown, voor de criteria waar de meeste winst zit:
+- **<naam criterium>**: 2–3 zinnen: wat al goed werkt en waar de meeste winst zit, met een concreet voorbeeld uit de gesprekken.
 
-Sluit af met een kort kopje "Vervolgstappen" met 2-3 suggesties. Noem GEEN exacte rubric-tekst letterlijk en spoiler de criteria niet.`}`;
+Sluit af met een kort kopje "Vervolgstappen" met 2-3 suggesties.`}`;
 
         const gr = await openaiChatCompletion({
           model: OPENAI_MODEL,

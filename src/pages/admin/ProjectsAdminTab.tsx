@@ -87,7 +87,6 @@ interface ProjectPersona {
   max_reviews?: number | null;
   max_consultations?: number | null;
   auto_close_hours?: number | null;
-  badge_award_mode?: string;
 }
 
 interface ProjectDoc {

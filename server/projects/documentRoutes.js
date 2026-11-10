@@ -1,6 +1,6 @@
-import { canRequestDocumentReview, feedbackRoundsState } from './documentReview.js';
+import { feedbackRoundsState } from './documentReview.js';
 import { MATERIAL_KINDS } from '../rag/filePurpose.js';
-import { buildLanguageInstruction, normalizeLang } from '../i18n/languages.js';
+import { buildLanguageInstruction } from '../i18n/languages.js';
 import {
   authUser,
   isCourseTeacher,
@@ -12,11 +12,11 @@ import {
 } from '../lib/auth.js';
 import { AZURE_CHAT_READY, OPENAI_MODEL, chatModelParams, openaiChatCompletion } from '../lib/azureOpenai.js';
 import { SUPERUSER_EMAIL, pgPool, supabaseAdmin } from '../lib/supabase.js';
-import { BINARY_DOWNLOAD_EXT_RE, docUpload, extractTextFromUpload } from '../lib/uploads.js';
+import { docUpload, extractTextFromUpload } from '../lib/uploads.js';
 import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
 import { isSaved, reviewRefs } from './projectJournalSave.js';
 import { isGroupMember, requireProjectStaff, userHasProjectAccess } from './access.js';
-import { loadFeedbackContext, runEvaluatorReview } from './evaluatorReview.js';
+import { loadFeedbackContext } from './evaluatorReview.js';
 import { createProjectDocumentFromBuffer } from './projectFiles.js';
 
 // PATCH /api/projects/:projectId/documents/:docId — zichtbaarheid voor studenten
@@ -442,19 +442,12 @@ export function registerProjectDocumentRoutes(app) {
       if (!isStaff && !memberOfGroup) {
         return res.status(403).json({ error: 'Geen toegang tot deze groep' });
       }
-      let { data, error: e } = await supabaseAdmin
+      // Formatieve feedback: zonder cijfer, oordeel of badge (besluit 2026-11-10).
+      const { data, error: e } = await supabaseAdmin
         .from('project_document_reviews')
-        .select('id, document_id, persona_id, group_id, verdict, grade, reasoning, feed_forward, relationship_delta, requested_by, created_at')
+        .select('id, document_id, persona_id, group_id, reasoning, feed_forward, requested_by, created_at')
         .eq('document_id', docId).eq('group_id', groupId)
         .order('created_at', { ascending: false });
-      // Defensief: oude DB zonder grade/feed_forward-kolommen.
-      if (e && (e.code === '42703' || /grade|feed_forward/i.test(e.message || ''))) {
-        ({ data, error: e } = await supabaseAdmin
-          .from('project_document_reviews')
-          .select('id, document_id, persona_id, group_id, verdict, reasoning, relationship_delta, requested_by, created_at')
-          .eq('document_id', docId).eq('group_id', groupId)
-          .order('created_at', { ascending: false }));
-      }
       if (e) {
         // Tabel bestaat nog niet → defensief leeg antwoord met duidelijke uitleg.
         if (e.code === '42P01' || /project_document_reviews/i.test(e.message || '')) {
@@ -465,21 +458,7 @@ export function registerProjectDocumentRoutes(app) {
         }
         return res.status(500).json({ error: e.message });
       }
-      const reviews = data || [];
-      // Task #253: badges per review voor deze groep ophalen. Studenten zien
-      // alleen hun eigen badges; staff ziet ze allemaal.
-      let badges = [];
-      if (reviews.length > 0) {
-        const reviewIds = reviews.map(r => r.id);
-        let bq = supabaseAdmin
-          .from('project_review_badges')
-          .select('review_id, user_id, grade, badge, award_mode')
-          .in('review_id', reviewIds);
-        if (!isStaff) bq = bq.eq('user_id', auth.user.id);
-        const { data: bData, error: bErr } = await bq;
-        if (!bErr) badges = bData || [];
-      }
-      return res.json({ reviews, badges });
+      return res.json({ reviews: data || [] });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }
@@ -492,7 +471,7 @@ export function registerProjectDocumentRoutes(app) {
     try {
       const ctx = await loadFeedbackContext(req, res, { requirePersona: false });
       if (!ctx) return;
-      const { project, group, auth, isStaff } = ctx;
+      const { project, group, auth } = ctx;
       const { data: evaluators } = await supabaseAdmin
         .from('project_personas')
         .select('id, name, avatar_emoji, avatar, deliverable_label, max_reviews, sort_order')
@@ -509,17 +488,14 @@ export function registerProjectDocumentRoutes(app) {
       if (productIds.length) {
         const { data } = await supabaseAdmin
           .from('project_document_reviews')
-          .select('id, product_id, document_id, persona_id, verdict, grade, reasoning, feed_forward, created_at')
+          .select('id, product_id, document_id, persona_id, reasoning, feed_forward, created_at')
           .in('product_id', productIds);
         reviews = data || [];
       }
-      let badges = [];
-      if (reviews.length) {
-        let bq = supabaseAdmin.from('project_review_badges').select('review_id, user_id, badge').in('review_id', reviews.map(r => r.id));
-        if (!isStaff) bq = bq.eq('user_id', auth.user.id);
-        const { data } = await bq;
-        badges = data || [];
-      }
+      // "Feedback op jullie aanpak" telt ook als ronde (countFeedbackRounds in evaluatorReview.js).
+      const { data: assessments } = await supabaseAdmin
+        .from('project_group_assessments').select('persona_id')
+        .eq('group_id', group.id).in('persona_id', evIds);
       const reviewByProduct = new Map(reviews.map(r => [r.product_id, r]));
       // Staat dit oordeel al in MIJN leerdagboek? (projectJournalSave.js)
       const { data: mySaved } = reviews.length
@@ -530,10 +506,10 @@ export function registerProjectDocumentRoutes(app) {
       const out = (evaluators || []).map(ev => {
         const items = (products || []).filter(p => p.persona_id === ev.id).map(p => {
           const review = reviewByProduct.get(p.id) || null;
-          const badge = review ? (badges.find(b => b.review_id === review.id)?.badge || null) : null;
-          return { productId: p.id, filename: p.filename, createdAt: p.created_at, review, badge, journalSaved: review ? isSaved(reviewRefs(review), mySavedSet) : false };
+          return { productId: p.id, filename: p.filename, createdAt: p.created_at, review, journalSaved: review ? isSaved(reviewRefs(review), mySavedSet) : false };
         });
-        const rounds = feedbackRoundsState(ev.max_reviews, items.filter(i => i.review).length);
+        const asked = (assessments || []).filter(a => a.persona_id === ev.id).length;
+        const rounds = feedbackRoundsState(ev.max_reviews, items.filter(i => i.review).length + asked);
         return {
           personaId: ev.id, name: ev.name, avatarEmoji: ev.avatar_emoji, avatar: ev.avatar ?? null,
           deliverableLabel: ev.deliverable_label || null,
@@ -544,96 +520,6 @@ export function registerProjectDocumentRoutes(app) {
       return res.json({ evaluators: out });
     } catch (err) {
       console.error('[feedback list]', err);
-      return res.status(500).json({ error: err.message });
-    }
-  });
-
-  app.post('/api/projects/:projectId/documents/:docId/reviews', async (req, res) => {
-    if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
-    const auth = await authUser(req);
-    if (auth.error) return res.status(auth.error.status).json(auth.error.body);
-    const { projectId, docId } = req.params;
-    const { personaId, groupId, lang } = req.body || {};
-    const reviewLang = normalizeLang(lang);
-    if (!personaId || !groupId) {
-      return res.status(400).json({ error: 'personaId en groupId zijn vereist' });
-    }
-    try {
-      const { data: project } = await supabaseAdmin
-        .from('projects').select('id, course_id, title, research_question, goals, briefing_markdown')
-        .eq('id', projectId).maybeSingle();
-      if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
-
-      const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
-      const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
-      const memberOfGroup = await isGroupMember(groupId, auth.user.id);
-      const authzCheck = canRequestDocumentReview({ isStaff, isGroupMember: memberOfGroup });
-      if (!authzCheck.allowed) {
-        return res.status(authzCheck.status).json({ error: authzCheck.error });
-      }
-
-      // Groep moet bij dit project horen.
-      const { data: group } = await supabaseAdmin
-        .from('project_groups').select('id, project_id, name').eq('id', groupId).maybeSingle();
-      if (!group || group.project_id !== projectId) {
-        return res.status(404).json({ error: 'Groep niet gevonden in dit project' });
-      }
-
-      // Persona moet evaluator zijn én bij dit project horen.
-      let { data: persona } = await supabaseAdmin
-        .from('project_personas').select('id, project_id, name, avatar_emoji, system_prompt, persona_type, badge_award_mode')
-        .eq('id', personaId).maybeSingle();
-      // Defensief: oude DB zonder badge_award_mode-kolom.
-      if (!persona) {
-        ({ data: persona } = await supabaseAdmin
-          .from('project_personas').select('id, project_id, name, avatar_emoji, system_prompt, persona_type')
-          .eq('id', personaId).maybeSingle());
-      }
-      if (!persona || persona.project_id !== projectId) {
-        return res.status(404).json({ error: 'Persona niet gevonden in dit project' });
-      }
-      if (persona.persona_type !== 'evaluator') {
-        return res.status(400).json({ error: 'Alleen evaluator-persona\'s kunnen oordelen afgeven' });
-      }
-      {
-        const { data: pre } = await supabaseAdmin.from('projects').select('preassessment_persona_id').eq('id', projectId).maybeSingle();
-        if (pre?.preassessment_persona_id === persona.id) {
-          return res.status(400).json({ error: 'Deze beoordelaar maakt alleen de voorbeoordeling van het eindproduct voor de docent' });
-        }
-      }
-
-      // Document moet bij dit project horen en moet tekst-extraheerbaar zijn.
-      const { data: doc } = await supabaseAdmin
-        .from('project_documents')
-        .select('id, project_id, filename, content_text, is_visible_to_students')
-        .eq('id', docId).eq('project_id', projectId).maybeSingle();
-      if (!doc) return res.status(404).json({ error: 'Document niet gevonden' });
-      if (BINARY_DOWNLOAD_EXT_RE.test(doc.filename || '')) {
-        return res.status(400).json({
-          error: 'Dit bestand is geen tekstbestand — daarover kan geen tekstueel oordeel worden gegeven.',
-        });
-      }
-      if (!doc.content_text || !doc.content_text.trim()) {
-        return res.status(400).json({ error: 'Document bevat geen leesbare tekst om te beoordelen' });
-      }
-      if (!isStaff && !doc.is_visible_to_students) {
-        return res.status(403).json({ error: 'Dit document is niet zichtbaar voor studenten' });
-      }
-
-      try {
-        const { inserted, badge, awardMode, badgeRecipients } = await runEvaluatorReview({
-          project, group, persona, title: doc.filename, text: doc.content_text,
-          lang: reviewLang, requesterId: auth.user.id, documentId: docId,
-        });
-        return res.json({
-          review: { ...inserted, badge: badge || null, award_mode: awardMode, badge_recipients: badgeRecipients },
-        });
-      } catch (e) {
-        if (e && e.status) return res.status(e.status).json(e.body);
-        throw e;
-      }
-    } catch (err) {
-      console.error('[document_review]', err);
       return res.status(500).json({ error: err.message });
     }
   });

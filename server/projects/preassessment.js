@@ -144,7 +144,7 @@ Beoordelaar: ${persona?.name || '(onbekend)'}${persona?.deliverable_label ? `\nP
 Achtergrond en focus van deze beoordelaar:
 ${String(persona?.system_prompt || '').trim().slice(0, 3000) || '(geen)'}
 
-Verborgen rubric (alleen voor jou):
+Rubric:
 ${rubricText || '(geen rubric-bestand gekoppeld; gebruik de leerdoelen en het beoogde projectresultaat, en meld onder attention dat er geen rubric was)'}
 
 Groep: ${groupName || '(onbekend)'}
@@ -191,7 +191,7 @@ export async function assessText({ ctx, text, callModel }) {
       raw = await callModel([...messages, { role: 'user', content: 'Je vorige antwoord was geen geldig JSON-object volgens het schema. Antwoord nu uitsluitend met dat JSON-object.' }]);
       parsed = normalizePreassessment(raw, source);
     }
-    if (!parsed) throw new Error('De voorbeoordelaar gaf geen bruikbaar antwoord');
+    if (!parsed) throw new Error('De beoordelaar gaf geen bruikbaar nakijkcommentaar');
     return parsed;
   };
 
@@ -492,7 +492,7 @@ export function registerPreassessmentRoutes(app, deps) {
   app.post('/api/projects/:projectId/submissions/:subId/preassessment', async (req, res) => {
     const ctx = await staffProject(req, res);
     if (!ctx) return;
-    if (!ctx.project.preassessment_persona_id) return res.status(400).json({ error: 'Wijs eerst een voorbeoordelaar aan' });
+    if (!ctx.project.preassessment_persona_id) return res.status(400).json({ error: 'Wijs eerst een beoordelaar voor het nakijkcommentaar aan' });
     const { data: sub } = await db.from('project_submissions').select('id')
       .eq('id', req.params.subId).eq('project_id', ctx.project.id).maybeSingle();
     if (!sub) return res.status(404).json({ error: 'Inlevering niet gevonden' });

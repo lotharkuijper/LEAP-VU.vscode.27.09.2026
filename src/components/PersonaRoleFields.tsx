@@ -22,7 +22,6 @@ export interface RoleFieldValues {
   start_level?: number | null;
   deliverable_label?: string | null;
   max_reviews?: number | null;
-  badge_award_mode?: string | null;
 }
 
 /** Wat er naar de server gaat; velden die niet bij de rol horen worden daar neutraal gezet. */
@@ -35,7 +34,6 @@ export function roleFieldsPayload(v: RoleFieldValues) {
     start_level: role === 'roleplayer' ? (v.start_level ?? 0) : 0,
     deliverable_label: role === 'evaluator' ? (v.deliverable_label?.trim() || null) : null,
     max_reviews: role === 'evaluator' ? (v.max_reviews ?? null) : null,
-    badge_award_mode: role === 'evaluator' && v.badge_award_mode === 'group' ? 'group' : 'individual',
   };
 }
 
@@ -151,19 +149,6 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
               className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
               data-testid={`${idPrefix}-max-reviews`}
             />
-          </div>
-          <div>
-            <label htmlFor={`${idPrefix}-badge-mode`} className="text-xs font-medium text-gray-700">{t('admin.projects.personas.badgeAwardModeLabel')}</label>
-            <select
-              id={`${idPrefix}-badge-mode`}
-              value={value.badge_award_mode === 'group' ? 'group' : 'individual'}
-              onChange={e => onChange({ ...value, badge_award_mode: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm bg-white"
-              data-testid={`${idPrefix}-badge-mode`}
-            >
-              <option value="individual">{t('admin.projects.personas.badgeAwardModeIndividual')}</option>
-              <option value="group">{t('admin.projects.personas.badgeAwardModeGroup')}</option>
-            </select>
           </div>
           <AdminHint variant="tip" className="col-span-full">{t('admin.personaRole.evaluator.hint')}</AdminHint>
         </div>

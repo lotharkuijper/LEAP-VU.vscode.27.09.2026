@@ -48,7 +48,6 @@ interface CoursePersona {
   start_level?: number | null;
   deliverable_label?: string | null;
   max_reviews?: number | null;
-  badge_award_mode?: string | null;
 }
 
 interface ProjectOption {
@@ -70,7 +69,6 @@ const EMPTY_FORM = {
   start_level: 0 as number,
   deliverable_label: null as string | null,
   max_reviews: null as number | null,
-  badge_award_mode: 'individual' as string,
 };
 
 export function PersonaLibraryTab({ onOpenProjects }: {
@@ -179,7 +177,6 @@ export function PersonaLibraryTab({ onOpenProjects }: {
       start_level: p.start_level ?? 0,
       deliverable_label: p.deliverable_label ?? null,
       max_reviews: p.max_reviews ?? null,
-      badge_award_mode: p.badge_award_mode || 'individual',
     });
     setEditingId(p.id);
     setFaceOpen(false);

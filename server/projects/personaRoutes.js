@@ -14,7 +14,7 @@ import {
   normalizeExtraGrant as conNormalizeExtra,
   normalizeMaxConsultations as conNormalizeMax,
 } from './consultationLimit.js';
-import { feedbackRoundsState, normalizeBadgeAwardMode } from './documentReview.js';
+import { feedbackRoundsState } from './documentReview.js';
 import { purposeAllowsModule } from '../rag/filePurpose.js';
 import { buildLanguageInstruction, languageEnglishName, normalizeLang } from '../i18n/languages.js';
 import { authUser, isLeapAdmin, isStaffForCourse, loadProfileRoleEmail, profileCache } from '../lib/auth.js';
@@ -60,7 +60,7 @@ import { indexProjectKnowledgeText } from '../ingestion/ragProcessing.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
 import { setRelationshipLevelImpl } from './threadClose.js';
 import { isGroupMember, requireProjectStaff, userHasProjectAccess } from './access.js';
-import { loadFeedbackContext, runEvaluatorReview } from './evaluatorReview.js';
+import { countFeedbackRounds, loadFeedbackContext, runEvaluatorReview } from './evaluatorReview.js';
 import { autoCloseStaleThreads } from './threadCloseService.js';
 
 // ── Kennis van persona's (personaKnowledge.js, 2026-10-27) ─────────────────
@@ -200,16 +200,6 @@ async function loadConsultationGrant(projectId, groupId, personaId) {
   return conNormalizeExtra(data?.extra_consultations);
 }
 
-// Aantal gebruikte feedbackrondes van een groep bij een beoordelaar (ingeleverd werk).
-async function countFeedbackRounds(groupId, personaId) {
-  const { count, error } = await supabaseAdmin
-    .from('project_document_reviews')
-    .select('id', { count: 'exact', head: true })
-    .eq('group_id', groupId).eq('persona_id', personaId)
-    .not('product_id', 'is', null);
-  if (error) throw error;
-  return count || 0;
-}
 
 // =============================================================================
 // Verstandhouding tussen een rolspeler en een groep (herzien 2026-09-29).
@@ -697,8 +687,6 @@ export function registerProjectPersonaRoutes(app) {
         // Task #252: raadpleeglimiet + auto-close meekopiëren uit de bibliotheek.
         max_consultations: conNormalizeMax(p.max_consultations),
         auto_close_hours: conNormalizeAutoCloseHours(p.auto_close_hours),
-        // Task #253: badge-toekenningsmodus meekopiëren uit de bibliotheek.
-        badge_award_mode: normalizeBadgeAwardMode(p.badge_award_mode),
       }));
       let { error: iErr } = await supabaseAdmin.from('project_personas').insert(rows);
       if (iErr && (iErr.code === '42703' || /max_consultations|auto_close_hours/i.test(iErr.message || ''))) {
@@ -710,12 +698,6 @@ export function registerProjectPersonaRoutes(app) {
         // Oude DB zonder kolom: opnieuw zonder veld.
         const rowsNoCue = rows.map(({ cue_emission_enabled: _ignored, max_consultations: _m, auto_close_hours: _a, ...rest }) => rest);
         ({ error: iErr } = await supabaseAdmin.from('project_personas').insert(rowsNoCue));
-      }
-      if (iErr && (iErr.code === '42703' || /badge_award_mode/i.test(iErr.message || ''))) {
-        // Oude DB zonder Task #253-kolom: opnieuw zonder veld. Cumulatief: ook de
-        // eventueel ontbrekende Task #252-kolommen weglaten zodat één retry volstaat.
-        const rowsNoBadge = rows.map(({ badge_award_mode: _b, cue_emission_enabled: _c, max_consultations: _m, auto_close_hours: _a, ...rest }) => rest);
-        ({ error: iErr } = await supabaseAdmin.from('project_personas').insert(rowsNoBadge));
       }
       if (iErr) return res.status(500).json({ error: iErr.message });
       return res.json({ copied: rows.length });
@@ -771,8 +753,6 @@ export function registerProjectPersonaRoutes(app) {
           // Task #252: raadpleeglimiet + auto-close uit de bibliotheek.
           max_consultations: conNormalizeMax(cp.max_consultations),
           auto_close_hours: conNormalizeAutoCloseHours(cp.auto_close_hours),
-          // Task #253: badge-toekenningsmodus uit de bibliotheek.
-          badge_award_mode: normalizeBadgeAwardMode(cp.badge_award_mode),
         };
       } else {
         if (!name || !String(name).trim()) return res.status(400).json({ error: 'Naam is vereist' });
@@ -793,8 +773,6 @@ export function registerProjectPersonaRoutes(app) {
           // Task #252: raadpleeglimiet + auto-close (null = onbeperkt / uit).
           max_consultations: maxConsultInput,
           auto_close_hours: autoCloseInput,
-          // Task #253: badge-toekenningsmodus (individual | group).
-          badge_award_mode: normalizeBadgeAwardMode(req.body?.badge_award_mode),
         };
       }
       let { data: inserted, error: iErr } = await supabaseAdmin
@@ -810,13 +788,6 @@ export function registerProjectPersonaRoutes(app) {
         const { cue_emission_enabled: _ignored, max_consultations: _m, auto_close_hours: _a, ...rowNoCue } = row;
         ({ data: inserted, error: iErr } = await supabaseAdmin
           .from('project_personas').insert(rowNoCue).select('*').single());
-      }
-      // Defensief: oude DB zonder Task #253 badge_award_mode-kolom. Cumulatief: ook
-      // de eventueel ontbrekende Task #252-kolommen weglaten zodat één retry volstaat.
-      if (iErr && (iErr.code === '42703' || /badge_award_mode/i.test(iErr.message || ''))) {
-        const { badge_award_mode: _b, cue_emission_enabled: _c, max_consultations: _m, auto_close_hours: _a, ...rowNoBadge } = row;
-        ({ data: inserted, error: iErr } = await supabaseAdmin
-          .from('project_personas').insert(rowNoBadge).select('*').single());
       }
       if (iErr) return res.status(500).json({ error: iErr.message });
       indexPersonaKnowledgeInBackground(inserted);
@@ -867,8 +838,6 @@ export function registerProjectPersonaRoutes(app) {
         // Task #252: raadpleeglimiet + auto-close uit de bibliotheek.
         max_consultations: conNormalizeMax(cp.max_consultations),
         auto_close_hours: conNormalizeAutoCloseHours(cp.auto_close_hours),
-        // Task #253: badge-toekenningsmodus uit de bibliotheek.
-        badge_award_mode: normalizeBadgeAwardMode(cp.badge_award_mode),
       };
       let { data: inserted, error: iErr } = await supabaseAdmin
         .from('project_personas').insert(baseRow).select('*').single();
@@ -881,11 +850,6 @@ export function registerProjectPersonaRoutes(app) {
         const { cue_emission_enabled: _ignored, max_consultations: _m, auto_close_hours: _a, ...rowNoCue } = baseRow;
         ({ data: inserted, error: iErr } = await supabaseAdmin
           .from('project_personas').insert(rowNoCue).select('*').single());
-      }
-      if (iErr && (iErr.code === '42703' || /badge_award_mode/i.test(iErr.message || ''))) {
-        const { badge_award_mode: _b, cue_emission_enabled: _c, max_consultations: _m, auto_close_hours: _a, ...rowNoBadge } = baseRow;
-        ({ data: inserted, error: iErr } = await supabaseAdmin
-          .from('project_personas').insert(rowNoBadge).select('*').single());
       }
       if (iErr) return res.status(500).json({ error: iErr.message });
       return res.status(201).json({ persona: inserted });
@@ -958,7 +922,7 @@ export function registerProjectPersonaRoutes(app) {
       const access = await requireProjectStaff(projectId, auth.user, profile);
       if (!access.ok) return res.status(access.status).json({ error: access.error });
 
-      const allowed = ['name', 'avatar_emoji', 'system_prompt', 'rag_enabled', 'rag_folder_ids', 'sort_order', 'max_consultations', 'auto_close_hours', 'badge_award_mode'];
+      const allowed = ['name', 'avatar_emoji', 'system_prompt', 'rag_enabled', 'rag_folder_ids', 'sort_order', 'max_consultations', 'auto_close_hours'];
       const patch = {};
       for (const k of allowed) if (k in (req.body || {})) patch[k] = req.body[k];
       if (req.body && 'persona_type' in req.body && !['conversational', 'evaluator', 'roleplayer'].includes(req.body.persona_type)) {
@@ -979,8 +943,6 @@ export function registerProjectPersonaRoutes(app) {
       // Task #252: normaliseer raadpleeglimiet + auto-close (null = onbeperkt / uit).
       if ('max_consultations' in patch) patch.max_consultations = conNormalizeMax(patch.max_consultations);
       if ('auto_close_hours' in patch) patch.auto_close_hours = conNormalizeAutoCloseHours(patch.auto_close_hours);
-      // Task #253: normaliseer badge-toekenningsmodus.
-      if ('badge_award_mode' in patch) patch.badge_award_mode = normalizeBadgeAwardMode(patch.badge_award_mode);
       if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Geen wijzigingen' });
       // Gezicht vóór de wijziging: alleen een ECHT gewijzigd gezicht gaat naar het
       // sjabloon (anders zou een kopie zonder gezicht het sjabloon leegmaken).
@@ -1005,15 +967,6 @@ export function registerProjectPersonaRoutes(app) {
         if (Object.keys(patchNoCue).length === 0) return res.json({ persona: null });
         ({ data, error: e } = await supabaseAdmin
           .from('project_personas').update(patchNoCue)
-          .eq('id', personaId).eq('project_id', projectId).select('*').single());
-      }
-      if (e && (e.code === '42703' || /badge_award_mode/i.test(e.message || ''))) {
-        // Defensief: Task #253-kolom ontbreekt in oude DB — verwijder en retry.
-        // Cumulatief: ook de eventueel ontbrekende Task #252-kolommen weglaten.
-        const { badge_award_mode: _b, cue_emission_enabled: _c, max_consultations: _m, auto_close_hours: _a, ...patchNoBadge } = patch;
-        if (Object.keys(patchNoBadge).length === 0) return res.json({ persona: null });
-        ({ data, error: e } = await supabaseAdmin
-          .from('project_personas').update(patchNoBadge)
           .eq('id', personaId).eq('project_id', projectId).select('*').single());
       }
       if (e) return res.status(500).json({ error: e.message });
@@ -1166,12 +1119,12 @@ export function registerProjectPersonaRoutes(app) {
       // evaluator-persona. Project-scoped (group_id mag NULL zijn).
       let isHiddenRubric = false;
       if (requestedHiddenEarly) {
-        if (!isStaffForProject) return res.status(403).json({ error: 'Alleen docent/admin mag een verborgen rubric uploaden' });
+        if (!isStaffForProject) return res.status(403).json({ error: 'Alleen docent/admin mag een rubric uploaden' });
         // Docent moet bij dit project horen (geen kruis-cursus-uploads).
         const access = await requireProjectStaff(projectId, auth.user, profile);
         if (!access.ok) return res.status(access.status).json({ error: access.error || 'Geen toegang tot dit project' });
         if (persona.persona_type !== 'evaluator') {
-          return res.status(400).json({ error: 'Verborgen rubric kan alleen aan een beoordelaar-persona worden gekoppeld' });
+          return res.status(400).json({ error: 'Een rubric kan alleen aan een beoordelaar-persona worden gekoppeld' });
         }
         isHiddenRubric = true;
       }
@@ -1385,7 +1338,6 @@ export function registerProjectPersonaRoutes(app) {
       return res.json({
         product,
         review: result.inserted,
-        badge: result.badge || null,
         used: after.used,
         remaining: after.remaining,
       });
@@ -1586,17 +1538,10 @@ export function registerProjectPersonaRoutes(app) {
         ...copyKnowledgeFields(pp, { project: false }),
         max_consultations: pp.max_consultations ?? null,
         auto_close_hours: pp.auto_close_hours ?? null,
-        // Task #253: badge-toekenningsmodus mee terug naar de bibliotheek.
-        badge_award_mode: normalizeBadgeAwardMode(pp.badge_award_mode),
         created_by: auth.user.id,
       };
       let { data: inserted, error: iErr } = await supabaseAdmin
         .from('course_personas').insert(libRow).select('*').single();
-      if (iErr && (iErr.code === '42703' || /badge_award_mode/i.test(iErr.message || ''))) {
-        const { badge_award_mode: _b, ...rowNoBadge } = libRow;
-        ({ data: inserted, error: iErr } = await supabaseAdmin
-          .from('course_personas').insert(rowNoBadge).select('*').single());
-      }
       if (iErr) return res.status(500).json({ error: iErr.message });
       return res.json({ persona: inserted });
     } catch (err) {
@@ -1653,7 +1598,7 @@ export function registerProjectPersonaRoutes(app) {
     if (auth.error) return res.status(auth.error.status).json(auth.error.body);
     try {
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
-      const { course_id, name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, badge_award_mode } = req.body || {};
+      const { course_id, name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids } = req.body || {};
       if (!course_id || !name?.trim()) return res.status(400).json({ error: 'course_id en name zijn verplicht' });
       if (!(await isStaffForCourse(auth.user, profile, course_id))) {
         return res.status(403).json({ error: 'Alleen docenten van deze cursus kunnen persona-sjablonen aanmaken' });
@@ -1672,17 +1617,10 @@ export function registerProjectPersonaRoutes(app) {
         ...roleFieldsFrom(req.body),
         max_consultations: conNormalizeMax(req.body?.max_consultations),
         auto_close_hours: conNormalizeAutoCloseHours(req.body?.auto_close_hours),
-        // Task #253: badge-toekenningsmodus (individual | group).
-        badge_award_mode: normalizeBadgeAwardMode(badge_award_mode),
         created_by: auth.user.id,
       };
       let { data: inserted, error: iErr } = await supabaseAdmin
         .from('course_personas').insert(libRow).select('*').single();
-      if (iErr && (iErr.code === '42703' || /badge_award_mode/i.test(iErr.message || ''))) {
-        const { badge_award_mode: _b, ...rowNoBadge } = libRow;
-        ({ data: inserted, error: iErr } = await supabaseAdmin
-          .from('course_personas').insert(rowNoBadge).select('*').single());
-      }
       if (iErr) return res.status(500).json({ error: iErr.message });
       return res.status(201).json({ persona: inserted });
     } catch (err) {
@@ -1699,7 +1637,7 @@ export function registerProjectPersonaRoutes(app) {
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       const found = await loadCoursePersonaForStaff(personaId, auth.user, profile);
       if (found.error) return res.status(found.status).json({ error: found.error });
-      const { name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids, badge_award_mode } = req.body || {};
+      const { name, avatar_emoji, system_prompt, rag_enabled, rag_folder_ids } = req.body || {};
       const patch = {};
       if (name !== undefined) patch.name = String(name).trim();
       if (avatar_emoji !== undefined) patch.avatar_emoji = avatar_emoji;
@@ -1716,15 +1654,8 @@ export function registerProjectPersonaRoutes(app) {
         { courseId: found.persona?.course_id })).fields);
       if (req.body && 'max_consultations' in req.body) patch.max_consultations = conNormalizeMax(req.body.max_consultations);
       if (req.body && 'auto_close_hours' in req.body) patch.auto_close_hours = conNormalizeAutoCloseHours(req.body.auto_close_hours);
-      if (badge_award_mode !== undefined) patch.badge_award_mode = normalizeBadgeAwardMode(badge_award_mode);
       let { data: updated, error: uErr } = await supabaseAdmin
         .from('course_personas').update(patch).eq('id', personaId).select('*').maybeSingle();
-      if (uErr && (uErr.code === '42703' || /badge_award_mode/i.test(uErr.message || ''))) {
-        const { badge_award_mode: _b, ...patchNoBadge } = patch;
-        if (Object.keys(patchNoBadge).length === 0) return res.json({ persona: null });
-        ({ data: updated, error: uErr } = await supabaseAdmin
-          .from('course_personas').update(patchNoBadge).eq('id', personaId).select('*').maybeSingle());
-      }
       if (uErr) return res.status(500).json({ error: uErr.message });
       if (!updated) return res.status(404).json({ error: 'Persona niet gevonden' });
       // Eén persona = één gezicht: het nieuwe gezicht meteen in alle projecten.

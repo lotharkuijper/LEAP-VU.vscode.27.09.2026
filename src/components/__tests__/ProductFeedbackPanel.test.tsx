@@ -31,7 +31,16 @@ describe('ProductFeedbackPanel', () => {
     expect(await screen.findByTestId('text-feedback-rounds-ev1')).toHaveTextContent('Nog 1 van 2 feedbackrondes');
     expect(screen.getByText('Feedback op: Tussenproduct 1')).toBeInTheDocument();
     expect(screen.getByTestId('feedback-item-p1')).toHaveTextContent('Onderbouwing mist.');
-    expect(screen.getByTestId('feedback-item-p1')).toHaveTextContent('6,5');
+    expect(screen.getByTestId('feedback-item-p1')).toHaveTextContent('Volgende stap');
+    expect(screen.getByTestId('feedback-item-p1')).toHaveTextContent('Voeg bronnen toe.');
+  });
+
+  it('zuiver formatief: nooit een cijfer, oordeel of badge, ook niet als oude gegevens die nog hebben', async () => {
+    setup([evaluator()]);
+    const item = await screen.findByTestId('feedback-item-p1');
+    expect(item).not.toHaveTextContent('6,5');
+    expect(item).not.toHaveTextContent(/Onder voorwaarden|Zilver/);
+    expect(item.textContent).not.toContain('🥈');
   });
 
   it('alle rondes op: geen inleverknop meer', async () => {

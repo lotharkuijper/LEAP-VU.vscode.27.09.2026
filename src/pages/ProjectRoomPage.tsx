@@ -998,8 +998,8 @@ export function ProjectRoomPage() {
             name: d.reputation.personaName || '',
             label: t(`room.relationship.label.${d.reputation.key as RelationshipKey}`),
             reason: d.reputation.reason || '',
-          }));
-        setTimeout(() => setInfo(null), 9000);
+          }) + (d.reputation.badge ? ` ${t('room.relationship.badgeToast', { name: d.reputation.personaName || '' })}` : ''));
+        setTimeout(() => setInfo(null), d.reputation.badge ? 14000 : 9000);
         loadRelationships();
       } else {
         setInfo(t('room.conversationClosed'));

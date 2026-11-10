@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Trophy, Lock, ArrowRight, Loader2, Handshake } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
@@ -14,6 +14,8 @@ export interface AchievementRow {
   level: number | null;
   evidence_journal_id: string | null;
   earned_at: string;
+  /** Bij kind 'reputation': het project waarin de badge is verdiend. */
+  details?: { project_title?: string | null } | null;
 }
 
 /** Medaillekleur per niveau: Beginner brons, Gemiddeld zilver, Gevorderd goud, Expert platina. */
@@ -65,7 +67,7 @@ export function AchievementsView({ onOpenEvidence }: { onOpenEvidence: (journalE
     (async () => {
       const { data, error } = await supabase
         .from('student_achievements' as never)
-        .select('id, course_id, kind, topic_label, level, evidence_journal_id, earned_at')
+        .select('id, course_id, kind, topic_label, level, evidence_journal_id, earned_at, details')
         .eq('user_id', profile.id)
         .order('earned_at', { ascending: false });
       if (cancelled) return;
@@ -114,11 +116,25 @@ export function AchievementsView({ onOpenEvidence }: { onOpenEvidence: (journalE
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map(r => (
             <li key={r.id} className="chic-card flex flex-col items-center p-5 text-center" data-testid={`achievement-${r.id}`}>
-              <div className={`mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br ${LEVEL_MEDAL[r.level ?? 2] || LEVEL_MEDAL[2]} shadow-md ring-4 ring-white`}>
-                <Trophy className="h-8 w-8 text-white drop-shadow" aria-hidden />
-              </div>
-              <h3 className="font-bold text-slate-900">{t('achievements.levelTitle', { level: levelLabel(r.level ?? 2) })}</h3>
-              <p className="mt-0.5 text-sm font-semibold text-accent-700">{r.topic_label || t('achievements.wholeCourse')}</p>
+              {r.kind === 'reputation' ? (
+                // Beste verstandhouding met een rolspeler in een project (server/projects/reputationBadge.js).
+                <>
+                  <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-300 to-orange-500 shadow-md ring-4 ring-white">
+                    <Handshake className="h-8 w-8 text-white drop-shadow" aria-hidden />
+                  </div>
+                  <h3 className="font-bold text-slate-900">{t('achievements.reputationTitle')}</h3>
+                  <p className="mt-0.5 text-sm font-semibold text-accent-700">{r.topic_label}</p>
+                  {r.details?.project_title && <p className="mt-0.5 text-xs text-slate-500">{r.details.project_title}</p>}
+                </>
+              ) : (
+                <>
+                  <div className={`mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br ${LEVEL_MEDAL[r.level ?? 2] || LEVEL_MEDAL[2]} shadow-md ring-4 ring-white`}>
+                    <Trophy className="h-8 w-8 text-white drop-shadow" aria-hidden />
+                  </div>
+                  <h3 className="font-bold text-slate-900">{t('achievements.levelTitle', { level: levelLabel(r.level ?? 2) })}</h3>
+                  <p className="mt-0.5 text-sm font-semibold text-accent-700">{r.topic_label || t('achievements.wholeCourse')}</p>
+                </>
+              )}
               {r.course_id && courseNames[r.course_id] && (
                 <p className="mt-0.5 text-xs text-slate-500">{courseNames[r.course_id]}</p>
               )}

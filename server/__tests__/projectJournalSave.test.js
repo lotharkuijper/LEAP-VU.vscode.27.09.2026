@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { functionSource, routeSource } from './helpers/serverSource.js';
 import {
-  checkpointItems, checkpointItemRefs, assessmentRefs, reviewRefs, isSaved, reviewEntry, noteEntry, NOTE_MAX_CHARS,
+  checkpointItems, checkpointItemRefs, assessmentRefs, reviewRefs, isSaved, reviewEntry, formativeJournalEntry, noteEntry, NOTE_MAX_CHARS,
 } from '../projects/projectJournalSave.js';
 
 // Project → leerdagboek alleen op verzoek van de student (2026-10-27). Groeps-
@@ -33,11 +33,15 @@ describe('onderdelen en source_refs', () => {
       .toEqual([{ key: 'main', title: 'Eindreflectie: P', content: 'Goed werk', sections: null }]);
     expect(checkpointItems({ id: 'c', kind: 'checkpoint' })).toEqual([]);
   });
-  it('een badge staat alleen in het dagboek van wie hem kreeg', () => {
-    const r = { journal_entry: { title: 'Oordeel', content: 'Feedback: ok', sections: { feedback: 'ok' }, badge: { emoji: '🥇', label: 'Goud' } } };
-    expect(reviewEntry(r, { hasBadge: true }).title).toBe('🥇 Oordeel');
-    expect(reviewEntry(r, { hasBadge: true }).content).toContain('Badge: 🥇 Goud');
-    expect(reviewEntry(r).title).toBe('Oordeel');
+  it('feedback in het dagboek: nooit een cijfer, oordeel of badge, ook niet bij oude feedback', () => {
+    const old = { reasoning: 'Sterke opzet.', feed_forward: 'Onderbouw de keuze.', verdict: 'accepted', grade: 8.2,
+      journal_entry: { title: 'Cijfer 8,2 (Aanvaard)', content: 'Cijfer: 8,2', badge: { emoji: '🥇', label: 'Goud' } } };
+    const e = reviewEntry(old);
+    expect(`${e.title} ${e.content}`).not.toMatch(/Cijfer|8,2|Aanvaard|Goud|🥇/);
+    expect(e.content).toContain('Sterke opzet.');
+    expect(e.sections.next_steps).toEqual(['Onderbouw de keuze.']);
+    const nu = { journal_entry: formativeJournalEntry({ personaName: 'Wethouder', title: 'Rapport', feedback: 'ok' }) };
+    expect(reviewEntry(nu).title).toBe('🧑‍⚖️ Feedback — Wethouder over "Rapport"');
   });
   it('eigen reflectie: alleen als er iets staat, met plafond', () => {
     expect(noteEntry('   ')).toBeNull();
@@ -52,7 +56,7 @@ describe('koppeling in de server', () => {
     expect(route("app.post('/api/projects/groups/:groupId/evaluate'")).not.toMatch(/learning_journal_entries'\)\.insert/);
     const review = functionSource('runEvaluatorReview');
     expect(review).not.toMatch(/learning_journal_entries/);
-    expect(review).toMatch(/update\(\{ journal_entry: journalEntry \}\)/);
+    expect(review).toMatch(/journal_entry: formativeJournalEntry\(/);
   });
   it('bewaren: alleen groepsleden, leerdagboek-schakelaar, en alleen in het eigen dagboek', () => {
     const save = route("app.post('/api/projects/groups/:groupId/journal-save'");
