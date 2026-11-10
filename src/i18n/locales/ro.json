@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Doar tu vezi asta.",
   "admin.projects.fb.needSubmissions": "Activează mai întâi predarea unui produs final în setările proiectului.",
   "admin.projects.fb.addMarking": "Adaugă ajutor pentru corectare",
+  "admin.projects.fb.markingNone": "Încă nu ai asistent de evaluare. Adaugă unul: acesta citește fiecare produs final predat și scrie comentarii pentru fiecare criteriu, pe care doar tu le vezi. Furnizorii tăi de feedback de la pasul 2 rămân furnizori de feedback.",
   "admin.projects.fb.youAssess": "Tu evaluezi. Comentariul de corectare este pregătirea ta, nu o evaluare.",
   "admin.projects.fb.feedbackName": "Persoană care oferă feedback",
   "admin.projects.fb.markingName": "Ajutor pentru corectare",

@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "너만 이 내용을 볼 수 있어.",
   "admin.projects.fb.needSubmissions": "먼저 프로젝트 설정에서 최종 산출물 제출을 켜줘.",
   "admin.projects.fb.addMarking": "채점 도우미 추가",
+  "admin.projects.fb.markingNone": "아직 채점 도우미가 없어. 하나 추가해 봐: 제출된 최종 결과물을 모두 읽고, 각 기준별로 너만 볼 수 있는 코멘트를 작성해 줘. 2단계의 피드백 제공자들은 계속 피드백 제공자로 남아 있어.",
   "admin.projects.fb.youAssess": "네가 평가해. 채점 코멘트는 평가가 아니라 준비 자료야.",
   "admin.projects.fb.feedbackName": "피드백 제공자",
   "admin.projects.fb.markingName": "채점 도우미",

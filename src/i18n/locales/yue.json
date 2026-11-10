@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "只有你會見到呢個。",
   "admin.projects.fb.needSubmissions": "請先喺專案設定入面開啟提交最終作品。",
   "admin.projects.fb.addMarking": "新增批改輔助",
+  "admin.projects.fb.markingNone": "仲未有批改助手。新增一個：佢會讀取每份已提交嘅最終作品，並按每項準則寫低只有你睇到嘅評語。你喺第 2 步嘅回饋者會繼續係回饋者。",
   "admin.projects.fb.youAssess": "由你評分。批改評語係你嘅準備，唔係評價。",
   "admin.projects.fb.feedbackName": "回饋者",
   "admin.projects.fb.markingName": "批改輔助",

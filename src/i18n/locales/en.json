@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Only you see this.",
   "admin.projects.fb.needSubmissions": "First, enable final product submission in the project settings.",
   "admin.projects.fb.addMarking": "Add marking assistant",
+  "admin.projects.fb.markingNone": "No marking assistant yet. Add one: it reads each submitted final product and writes comments for each criterion that only you can see. Your feedback providers from step 2 remain feedback providers.",
   "admin.projects.fb.youAssess": "You assess. The marking comments are your preparation, not a judgment.",
   "admin.projects.fb.feedbackName": "Feedback provider",
   "admin.projects.fb.markingName": "Marking assistant",

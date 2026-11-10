@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "只有你能看到此内容。",
   "admin.projects.fb.needSubmissions": "请先在项目设置中开启最终作品提交。",
   "admin.projects.fb.addMarking": "添加批改助手",
+  "admin.projects.fb.markingNone": "还没有评阅助手。添加一个：它会阅读每个已提交的最终作品，并按每项标准撰写只有你能看到的评论。你在第 2 步中的反馈者仍然是反馈者。",
   "admin.projects.fb.youAssess": "由你来评价。批改评语是你的准备，不是评判。",
   "admin.projects.fb.feedbackName": "反馈者",
   "admin.projects.fb.markingName": "批改助手",

@@ -1350,6 +1350,7 @@
   "admin.projects.fb.step3Who": "Solo tu lo vedi.",
   "admin.projects.fb.needSubmissions": "Attiva prima nelle impostazioni del progetto la consegna di un prodotto finale.",
   "admin.projects.fb.addMarking": "Aggiungi supporto alla correzione",
+  "admin.projects.fb.markingNone": "Non c’è ancora un assistente alla valutazione. Aggiungine uno: leggerà ogni prodotto finale consegnato e scriverà per ciascun criterio un commento visibile solo a te. I tuoi fornitori di feedback del passaggio 2 rimangono fornitori di feedback.",
   "admin.projects.fb.youAssess": "Valuti tu. Il commento di correzione è la tua preparazione, non un giudizio.",
   "admin.projects.fb.feedbackName": "Fornitore di feedback",
   "admin.projects.fb.markingName": "Supporto alla correzione",
