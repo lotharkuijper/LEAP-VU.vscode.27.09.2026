@@ -46,9 +46,10 @@ async function downloadBlob(url: string, token: string, fallbackName: string) {
 }
 
 /** Voorbeoordelingen van een project; ververst vanzelf zolang er één bezig is. */
-export function usePreassessments(projectId: string, token: string, enabled: boolean) {
+export function usePreassessments(projectId: string, token: string, enabled: boolean, initialPersonaId: string | null = null) {
   const [byId, setById] = useState<Record<string, Preassessment>>({});
-  const [personaId, setPersonaId] = useState<string | null>(null);
+  // Beginwaarde uit het project: ook zonder inleveren hoort deze beoordelaar niet bij de feedbackgevers.
+  const [personaId, setPersonaId] = useState<string | null>(initialPersonaId);
   const load = useCallback(async () => {
     if (!enabled) return;
     try {

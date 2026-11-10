@@ -28,7 +28,7 @@ import { courseFeatureOnFor, loadCourseFeatures, rejectIfFeatureOff } from '../l
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseAdmin } from '../lib/supabase.js';
 import { loadEvaluatorMaterial } from './personaKnowledge.js';
 import { feedbackRoundsState } from './documentReview.js';
-import { countFeedbackRounds } from './evaluatorReview.js';
+import { countFeedbackRounds, criteriaLine } from './evaluatorReview.js';
 import {
   isBroken as relIsBroken,
   levelKey as relLevelKey,
@@ -1241,7 +1241,7 @@ ${reflection}`) + journalFormatInstruction(enMode ? 'en' : 'nl') + buildLanguage
         if (!access.ok) return res.status(access.status).json({ error: access.error || 'Geen toegang tot deze groep' });
       }
       const { data: project } = await supabaseAdmin
-        .from('projects').select('id, title, research_question, goals, briefing_markdown, preassessment_persona_id')
+        .from('projects').select('id, title, research_question, goals, rubric_criteria, briefing_markdown, preassessment_persona_id')
         .eq('id', group.project_id).maybeSingle();
 
       // De voorbeoordelaar van het eindproduct doet hier niet aan mee: zijn
@@ -1329,7 +1329,7 @@ ${enMode
 
 Project: ${project?.title || '(unnamed)'}
 Intended project deliverable: ${project?.research_question || '(none)'}
-Learning objectives: ${project?.goals || '(none)'}
+Learning objectives: ${project?.goals || '(none)'}${criteriaLine(project)}
 
 Rubric and material you know:
 ${rubricBlock || '(no material linked; use the learning objectives above)'}
@@ -1345,7 +1345,7 @@ End with a short heading "Next steps" with 2-3 suggestions.`
 
 Project: ${project?.title || '(naamloos)'}
 Beoogd projectresultaat: ${project?.research_question || '(geen)'}
-Leerdoelen: ${project?.goals || '(geen)'}
+Leerdoelen: ${project?.goals || '(geen)'}${criteriaLine(project)}
 
 Rubric en materiaal dat je kent:
 ${rubricBlock || '(geen materiaal gekoppeld; gebruik dan de leerdoelen hierboven)'}

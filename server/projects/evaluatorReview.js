@@ -22,6 +22,13 @@ import { formativeJournalEntry } from './projectJournalSave.js';
 // bewaren (projectJournalSave.js).
 // =============================================================================
 
+/** De criteria in het kort uit het project (Feedback en beoordeling, stap 1). */
+export function criteriaLine(project) {
+  const list = (Array.isArray(project?.rubric_criteria) ? project.rubric_criteria : [])
+    .map((c) => (typeof c === 'string' ? c : (c?.title || c?.name || ''))).filter(Boolean);
+  return list.length ? `\nCriteria van het project: ${list.join('; ')}` : '';
+}
+
 // Feedback van een beoordelaar-persona op een tekst: rubric + LLM (JSON) en
 // opslaan. Gebruikt door 'Inleveren voor feedback' (ingeleverd werk van de
 // groep, `productId`). Fouten gooien we als { status, body } zodat de route ze
@@ -48,7 +55,7 @@ ${personaIntro || '(geen extra persona-instructies)'}
 
 Project: ${project.title || '(naamloos)'}
 Beoogd projectresultaat: ${project.research_question || '(geen)'}
-Leerdoelen: ${project.goals || '(geen)'}${productLine}
+Leerdoelen: ${project.goals || '(geen)'}${criteriaLine(project)}${productLine}
 
 Rubric en materiaal:
 ${rubricBlock || '(geen rubric gekoppeld; gebruik dan de leerdoelen hierboven)'}
@@ -146,7 +153,7 @@ export async function loadFeedbackContext(req, res, { requirePersona = true } = 
   if (auth.error) { res.status(auth.error.status).json(auth.error.body); return null; }
   const { projectId, groupId, personaId } = req.params;
   const { data: project } = await supabaseAdmin
-    .from('projects').select('id, course_id, title, research_question, goals, status, preassessment_persona_id').eq('id', projectId).maybeSingle();
+    .from('projects').select('id, course_id, title, research_question, goals, rubric_criteria, status, preassessment_persona_id').eq('id', projectId).maybeSingle();
   if (!project) { res.status(404).json({ error: 'Project niet gevonden' }); return null; }
   const { data: group } = await supabaseAdmin
     .from('project_groups').select('id, project_id, name, status').eq('id', groupId).maybeSingle();
