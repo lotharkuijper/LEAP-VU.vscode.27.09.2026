@@ -47,9 +47,10 @@ const ROLES: Array<{ role: PersonaRole; Icon: typeof Compass; tone: string }> = 
  * Rolkeuze (Begeleider / Beoordelaar / Rolspeler) met alleen de instellingen die
  * bij die rol horen. Bij een rolspeler kan de docent de verstandhouding aanzetten
  * en de gedragsregels invullen, en die meteen uitproberen met een proefgesprek.
- * `roles` beperkt de keuze; bij één rol valt de keuze weg.
+ * `roles` beperkt de keuze; bij één rol valt de keuze weg. `marking`: de
+ * nakijkhulp, die geen feedbackrondes heeft (het eindproduct gaat één keer in).
  */
-export function PersonaRoleFields({ value, onChange, personaName, courseId, token, idPrefix, roles }: {
+export function PersonaRoleFields({ value, onChange, personaName, courseId, token, idPrefix, roles, marking }: {
   value: RoleFieldValues;
   onChange: (next: RoleFieldValues) => void;
   personaName: string;
@@ -58,6 +59,7 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
   token: string | null;
   idPrefix: string;
   roles?: PersonaRole[];
+  marking?: boolean;
 }) {
   const { t, lang } = useLanguage();
   const role = (value.persona_type || 'conversational') as PersonaRole;
@@ -137,7 +139,7 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
               data-testid={`${idPrefix}-deliverable`}
             />
           </div>
-          <div>
+          {!marking && <div>
             <label htmlFor={`${idPrefix}-max-reviews`} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">{t('admin.personaRole.evaluator.maxReviews')}<HelpTip id="personas.feedbackRounds" /></label>
             <input
               id={`${idPrefix}-max-reviews`}
@@ -153,8 +155,8 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
               className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
               data-testid={`${idPrefix}-max-reviews`}
             />
-          </div>
-          <AdminHint variant="tip" className="col-span-full">{t('admin.personaRole.evaluator.hint')}</AdminHint>
+          </div>}
+          <AdminHint variant="tip" className="col-span-full">{t(marking ? 'admin.personaRole.evaluator.markingHint' : 'admin.personaRole.evaluator.hint')}</AdminHint>
         </div>
       )}
 

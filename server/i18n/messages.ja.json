@@ -328,6 +328,7 @@
   "Je mag deze reactie niet bewerken": "この返信を編集する権限がありません",
   "Je mag deze reactie niet verwijderen": "この返信を削除する権限がありません",
   "Je mag dit niet markeren": "これをマークする権限がありません",
+  "Jullie groep heeft het eindproduct al ingeleverd": "君たちのグループはすでに最終成果物を提出済みです",
   "Kan cursus \"{0}\" niet verwijderen: er is nog gekoppelde data ({1}). Verwijder die eerst of deactiveer de cursus.": "コース「{0}」を削除できません: まだ関連データがあります（{1}）。先に削除するか、コースを無効化してください。",
   "keepId en dupIds zijn vereist": "keepId と dupIds は必須です",
   "Kies een Beoordelaar van dit project": "このプロジェクトの評価者を選んでください",

@@ -52,6 +52,7 @@ interface Project {
   allow_self_signup?: boolean | null;
   preassessment_persona_id?: string | null;
   course_id?: string | null;
+  status?: string | null;
 }
 interface Submission {
   id: string;
@@ -285,6 +286,8 @@ export function ProjectRoomPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitFileRef = useRef<HTMLInputElement>(null);
+  // Eindproduct één keer inleveren: eerst kiezen, dan bevestigen (besluit 2026-11-11).
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [evaluating, setEvaluating] = useState(false);
   const [evaluateRequestId, setEvaluateRequestId] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -386,6 +389,7 @@ export function ProjectRoomPage() {
       if (!r.ok) throw new Error(d.error || t('room.uploadFailed'));
       await loadSubmissions();
       setShowSubmitModal(false);
+      setPendingFile(null);
       setInfo(t('room.submission.submitted'));
       setTimeout(() => setInfo(null), 4000);
     } catch (e: any) {
@@ -1023,6 +1027,8 @@ export function ProjectRoomPage() {
 
   const activePersona = personas.find(p => p.id === activePersonaId);
   const isFinalized = group?.status === 'finalized';
+  // Ingeleverd is ingeleverd; alleen in een concept probeert de docent opnieuw.
+  const submissionLocked = submissions.length > 0 && project?.status !== 'draft';
 
   // Vertaal docent-content (briefing, persona-namen, rubric-criteria) naar de
   // actieve taal (Task #288). Hooks vóór de early-returns zodat de volgorde
@@ -1093,13 +1099,13 @@ export function ProjectRoomPage() {
           </span>
           {project.submissions_enabled && !isFinalized && (
             <button
-              onClick={() => { setSubmitError(null); setShowSubmitModal(true); }}
+              onClick={() => { setSubmitError(null); setPendingFile(null); setShowSubmitModal(true); }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white hover:bg-amber-600 rounded-lg text-xs font-medium"
               data-testid="button-open-submit-product"
               title={t('room.submission.buttonTitle')}
             >
               <UploadCloud className="w-4 h-4" />
-              {submissions.length > 0 ? t('room.submission.replace') : t('room.submission.submitProduct')}
+              {submissions.length === 0 ? t('room.submission.submitProduct') : submissionLocked ? t('room.submission.viewSubmitted') : t('room.submission.replace')}
             </button>
           )}
           {!isFinalized && (
@@ -2382,7 +2388,7 @@ export function ProjectRoomPage() {
               <UploadCloud className="w-5 h-5 text-amber-600" /> {t('room.submission.modalTitle')}
             </h3>
             <p className="text-sm text-gray-600 mb-3">
-              {t('room.submission.modalIntro')}
+              {t('room.submission.modalIntroOnce')}
             </p>
             {project?.preassessment_persona_id && (
               <p className="text-xs text-gray-600 mb-3 rounded-lg bg-blue-50 border border-blue-100 p-2" data-testid="text-preassessment-notice">
@@ -2418,18 +2424,48 @@ export function ProjectRoomPage() {
             {submitError && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm mb-3" data-testid="text-submit-error">{submitError}</div>
             )}
-            <input
-              ref={submitFileRef}
-              type="file"
-              accept=".pdf,.docx,.pptx,.xlsx,.odt,.ods,.odp,.zip,.txt,.md,.markdown,.csv,.tsv,.json,.rtf,.jpg,.jpeg,.png,.html,.htm"
-              onChange={e => { const f = e.target.files?.[0]; if (f) submitProduct(f); }}
-              disabled={submitting}
-              className="block w-full text-sm"
-              data-testid="input-submit-file"
-            />
+            {submissionLocked ? (
+              <p className="text-sm text-gray-700 rounded-lg bg-green-50 border border-green-100 p-2" data-testid="text-submission-locked">{t('room.submission.lockedNote')}</p>
+            ) : pendingFile ? (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 space-y-2" data-testid="panel-confirm-submission">
+                <p className="text-sm font-semibold text-amber-900">{t('room.submission.confirmTitle')}</p>
+                <p className="text-sm text-amber-900">{t('room.submission.confirmBody', { name: pendingFile.name })}</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => void submitProduct(pendingFile)}
+                    disabled={submitting}
+                    className="px-3 py-1.5 bg-amber-600 text-white hover:bg-amber-700 rounded-lg text-sm font-medium disabled:opacity-40"
+                    data-testid="button-confirm-submission"
+                  >
+                    {t('room.submission.confirmBtn')}
+                  </button>
+                  <button
+                    onClick={() => setPendingFile(null)}
+                    disabled={submitting}
+                    className="px-3 py-1.5 text-amber-900 hover:bg-amber-100 rounded-lg text-sm disabled:opacity-40"
+                    data-testid="button-other-file"
+                  >
+                    {t('room.submission.otherFile')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {submissions.length > 0 && <p className="text-xs text-gray-600 mb-2" data-testid="text-draft-resubmit">{t('room.submission.draftNote')}</p>}
+                <input
+                  ref={submitFileRef}
+                  type="file"
+                  accept=".pdf,.docx,.pptx,.xlsx,.odt,.ods,.odp,.zip,.txt,.md,.markdown,.csv,.tsv,.json,.rtf,.jpg,.jpeg,.png,.html,.htm"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) setPendingFile(f); }}
+                  disabled={submitting}
+                  className="block w-full text-sm"
+                  data-testid="input-submit-file"
+                />
+              </>
+            )}
             <div className="flex justify-end gap-2 mt-4">
               <button
-                onClick={() => setShowSubmitModal(false)}
+                onClick={() => { setShowSubmitModal(false); setPendingFile(null); }}
                 disabled={submitting}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg disabled:opacity-40"
                 data-testid="button-cancel-submit"

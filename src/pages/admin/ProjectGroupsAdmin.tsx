@@ -70,16 +70,16 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
   const activeGroups = (groups || []).filter(g => g.status === 'active');
   const label = (p: Person) => p.name || p.email || '—';
 
-  const moveSelect = (p: Person, current: string | null) => (
+  const moveSelect = (p: Person, current: string) => (
     <select
-      value={current || ''}
+      value={current}
       disabled={busy}
       onChange={e => void run(() => call('PUT', `/members/${p.userId}`, { groupId: e.target.value || null }))}
       aria-label={t('admin.projects.groups.moveLabel', { name: label(p) })}
       className="max-w-[10rem] rounded border border-gray-300 bg-white px-1 py-0.5 text-[11px]"
       data-testid={`select-move-${p.userId}`}
     >
-      <option value="">{current ? t('admin.projects.groups.removeFromGroup') : t('admin.projects.groups.placeIn')}</option>
+      <option value="">{t('admin.projects.groups.removeFromGroup')}</option>
       {activeGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
     </select>
   );
@@ -112,6 +112,7 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
         </div>
       )}
       {mode === 'self' && <AdminHint variant="tip" className="mb-3">{t('admin.projects.groups.selfHow')}</AdminHint>}
+      {mode === 'teacher' && <AdminHint variant="tip" className="mb-3">{t('admin.projects.groups.teacherHow')}</AdminHint>}
 
       {error && <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">{error}</div>}
 
@@ -136,23 +137,40 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
             <Plus className="w-4 h-4" />{t('admin.projects.groups.newBtn')}
           </button>
         </span>
-        {unassigned.length > 1 && (
-          <span className="flex flex-nowrap items-center gap-1">
-            <label className="text-xs text-gray-600 whitespace-nowrap" htmlFor="auto-size">{t('admin.projects.groups.autoSize')}</label>
-            <input id="auto-size" type="number" min={1} max={20} value={autoSize} onChange={e => setAutoSize(Math.max(1, Number(e.target.value) || 4))} className="w-14 rounded border border-gray-300 px-1.5 py-1 text-sm" />
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void run(() => call('POST', '/auto', { size: autoSize, userIds: unassigned.map(p => p.userId) }))}
-              className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-gray-300 px-2.5 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
-              data-testid="button-auto-groups"
-            >
-              <Shuffle className="w-4 h-4" />{t('admin.projects.groups.autoBtn', { count: String(unassigned.length) })}
-            </button>
-          </span>
-        )}
         {busy && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
       </div>
+
+      {/* Wie nog geen groep heeft: bovenaan, met automatisch verdelen. Toevoegen doe je in de groep zelf. */}
+      {groups !== null && (
+        unassigned.length > 0 ? (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3" data-testid="panel-unassigned">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="flex-1 text-xs font-medium text-amber-900">{t('admin.projects.groups.unassigned', { count: String(unassigned.length) })}</p>
+              {unassigned.length > 1 && (
+                <span className="flex flex-nowrap items-center gap-1">
+                  <label className="text-xs text-gray-600 whitespace-nowrap" htmlFor="auto-size">{t('admin.projects.groups.autoSize')}</label>
+                  <input id="auto-size" type="number" min={1} max={20} value={autoSize} onChange={e => setAutoSize(Math.max(1, Number(e.target.value) || 4))} className="w-14 rounded border border-gray-300 bg-white px-1.5 py-1 text-sm" />
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void run(() => call('POST', '/auto', { size: autoSize, userIds: unassigned.map(p => p.userId) }))}
+                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+                    data-testid="button-auto-groups"
+                  >
+                    <Shuffle className="w-4 h-4" />{t('admin.projects.groups.autoBtn', { count: String(unassigned.length) })}
+                  </button>
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-amber-900">{unassigned.map(label).join(', ')}</p>
+            {activeGroups.length === 0 && <p className="mt-1 text-[11px] text-gray-600">{t('admin.projects.groups.createFirst')}</p>}
+          </div>
+        ) : groups.some(g => g.members.length > 0) ? (
+          <p className="mb-3 text-xs text-emerald-700" data-testid="text-all-assigned">{t('admin.projects.groups.allAssigned')}</p>
+        ) : (
+          <p className="mb-3 text-xs text-gray-500" data-testid="text-no-students">{t('admin.projects.groups.noStudents')}</p>
+        )
+      )}
 
       {groups === null ? (
         <p className="text-sm text-gray-500 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />{t('common.loading')}</p>
@@ -196,24 +214,24 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
                   ))}
                 </ul>
               )}
+              {g.status === 'active' && unassigned.length > 0 && (
+                <select
+                  value=""
+                  disabled={busy}
+                  onChange={e => { const id = e.target.value; if (id) void run(() => call('PUT', `/members/${id}`, { groupId: g.id })); }}
+                  aria-label={t('admin.projects.groups.addStudentLabel', { group: g.name })}
+                  className="mt-2 w-full rounded border border-dashed border-blue-300 bg-blue-50/50 px-1.5 py-1 text-xs text-blue-800"
+                  data-testid={`select-add-to-${g.id}`}
+                >
+                  <option value="">{t('admin.projects.groups.addStudent')}</option>
+                  {unassigned.map(p => <option key={p.userId} value={p.userId}>{label(p)}</option>)}
+                </select>
+              )}
             </li>
           ))}
         </ul>
       )}
 
-      {unassigned.length > 0 && (
-        <div className="mt-4" data-testid="panel-unassigned">
-          <p className="text-xs font-medium text-gray-700 mb-1">{t('admin.projects.groups.unassigned', { count: String(unassigned.length) })}</p>
-          <ul className="grid gap-1 grid-cols-[repeat(auto-fill,minmax(min(16rem,100%),1fr))] text-xs text-gray-700">
-            {unassigned.map(p => (
-              <li key={p.userId} className="flex items-center gap-2 rounded border border-dashed border-gray-200 px-2 py-1">
-                <span className="min-w-0 flex-1 truncate">{label(p)}</span>
-                {activeGroups.length > 0 && moveSelect(p, null)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

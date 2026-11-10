@@ -970,7 +970,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
               <FileText className="w-4 h-4" /> {t('admin.projects.subs.projectTitle')}<HelpTip id="projects.submissions" />
             </h3>
             <AdminHint variant="intro">
-              {t('admin.projects.subs.projectDesc')}
+              {t('admin.projects.subs.projectDescOnce')}
             </AdminHint>
           </div>
           {loadingSubs ? (
@@ -1195,6 +1195,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                 token={token}
                 // Personages (stap 3) en beoordelaars (stap 4) blijven elk in hun eigen stap.
                 roles={editingPersona.persona_type === 'evaluator' ? ['evaluator'] : ['conversational', 'roleplayer']}
+                marking={editingPersona.purpose === 'marking' || (!!editingPersona.id && editingPersona.id === pre.personaId)}
               />
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldPrompt')}</label>
