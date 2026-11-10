@@ -2,7 +2,7 @@
 // Feedback en beoordeling (2026-11-10): drie stappen, de rubric is openbaar, de
 // nakijkhulp hoort niet bij de feedbackgevers voor studenten.
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { LanguageProvider } from '../../../i18n';
 
 const update = vi.fn(() => ({ eq: async () => ({ error: null }) }));
@@ -28,7 +28,7 @@ function setup(over: Partial<Parameters<typeof ProjectFeedbackSetup>[0]> = {}) {
     project: { id: 'p1', rubric_criteria: [{ title: 'Methode' }], submissions_enabled: true },
     token: 't', personas, docs, accept: '.pdf', preassessorId: 'e2',
     onPreassessorChange: vi.fn(), onToggleDocVisibility: vi.fn(), onUploadRubric: vi.fn(), uploading: false,
-    onNewEvaluator: vi.fn(), onPersonasChanged: vi.fn(), onError: vi.fn(), onInfo: vi.fn(),
+    onNewEvaluator: vi.fn(), onPersonasChanged: vi.fn(), onEditPersona: vi.fn(), onDeletePersona: vi.fn(), onError: vi.fn(), onInfo: vi.fn(),
     ...over,
   };
   render(<LanguageProvider><ProjectFeedbackSetup {...props} /></LanguageProvider>);
@@ -71,16 +71,34 @@ describe('ProjectFeedbackSetup', () => {
     expect(p.onNewEvaluator).toHaveBeenCalledWith('marking');
   });
 
-  it('stap 3 biedt geen feedbackgever aan: aanwijzen zou die uit stap 2 weghalen', () => {
+  it('stap 3 biedt geen feedbackgever aan: geen keuzelijst, alleen de eigen nakijkhulp', () => {
     setup();
-    const options = Array.from(screen.getByTestId('select-preassessor').querySelectorAll('option')).map((o) => o.textContent);
-    expect(options.some((o) => o?.includes('Nakijkhulp'))).toBe(true);
-    expect(options.some((o) => o?.includes('Feedbackgever'))).toBe(false);
+    expect(screen.queryByTestId('select-preassessor')).toBeNull();
+    expect(screen.getByTestId('fb-marker')).toHaveTextContent('Nakijkhulp');
+    expect(screen.getByTestId('fb-step-marking')).not.toHaveTextContent('Feedbackgever');
     cleanup();
     setup({ preassessorId: null });
-    expect(screen.queryByTestId('select-preassessor')).toBeNull();
+    expect(screen.queryByTestId('fb-marker')).toBeNull();
     expect(screen.getByTestId('text-fb-marking-none')).toBeInTheDocument();
     expect(screen.getByTestId('fb-step-feedback')).toHaveTextContent('Nakijkhulp');
+  });
+
+  it('nakijkhulp loslaten maakt er bewust een feedbackgever van', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal('fetch', fetchMock);
+    const p = setup();
+    fireEvent.click(screen.getByTestId('button-fb-marker-to-feedback'));
+    await waitFor(() => expect(p.onPreassessorChange).toHaveBeenCalledWith(null));
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/preassessment-persona', expect.objectContaining({ method: 'PUT', body: JSON.stringify({ personaId: null }) }));
+    vi.unstubAllGlobals();
+  });
+
+  it('elke bot is hier te bewerken en te verwijderen', () => {
+    const p = setup();
+    fireEvent.click(screen.getByTestId('button-fb-edit-e1'));
+    expect(p.onEditPersona).toHaveBeenCalledWith(personas[0]);
+    fireEvent.click(screen.getByTestId('button-fb-delete-e2'));
+    expect(p.onDeletePersona).toHaveBeenCalledWith(personas[1]);
   });
 
   it('criteria: oud (tekst) en nieuw ({ title }) formaat', () => {

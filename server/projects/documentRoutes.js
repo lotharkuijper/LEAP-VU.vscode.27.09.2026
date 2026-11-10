@@ -287,7 +287,7 @@ export function registerProjectDocumentRoutes(app) {
     const { projectId, docId } = req.params;
     try {
       const { data: project } = await supabaseAdmin
-        .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
+        .from('projects').select('id, course_id, status').eq('id', projectId).maybeSingle();
       if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       if (!(await userHasProjectAccess(auth.user, profile, project))) {
@@ -418,7 +418,7 @@ export function registerProjectDocumentRoutes(app) {
     if (!groupId) return res.status(400).json({ error: 'groupId is vereist' });
     try {
       const { data: project } = await supabaseAdmin
-        .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
+        .from('projects').select('id, course_id, status').eq('id', projectId).maybeSingle();
       if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       if (!(await userHasProjectAccess(auth.user, profile, project))) {

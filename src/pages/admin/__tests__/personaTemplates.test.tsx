@@ -142,6 +142,7 @@ describe('Persona\'s in een project', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({}) })));
     renderAt('/admin?tab=projects_admin');
     fireEvent.click(await screen.findByTestId('button-detail-project-p1'));
+    fireEvent.click(await screen.findByTestId('step-personas'));
     fireEvent.click(await screen.findByTestId('button-open-templates'));
     await waitFor(() => expect(screen.getByTestId('location').textContent).toContain('view=templates'));
     vi.unstubAllGlobals();
@@ -154,6 +155,7 @@ describe('Persona\'s in een project', () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({}) })));
     renderAt('/admin?tab=projects_admin');
     fireEvent.click(await screen.findByTestId('button-detail-project-p1'));
+    fireEvent.click(await screen.findByTestId('step-personas'));
     const select = await screen.findByTestId('select-lib-persona');
     await waitFor(() => expect(select.textContent).toMatch(/Wethouder.*(al in dit project|already in this project)/));
     expect(select.textContent).not.toMatch(/Journalist.*(al in dit project|already in this project)/);

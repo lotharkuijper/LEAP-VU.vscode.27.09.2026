@@ -1,15 +1,27 @@
-import { isCourseTeacher, isStaffForCourse, userHasCourseAccess } from '../lib/auth.js';
+import { isCourseTeacher, isLeapAdmin, isStaffForCourse, loadProfileRoleEmail, profileCache, userHasCourseAccess } from '../lib/auth.js';
 import { loadCourseFeatures } from '../lib/courseFeatureGate.js';
 import { SUPERUSER_EMAIL, supabaseAdmin } from '../lib/supabase.js';
 
+// Lid van de groep. In een project dat nog in concept is, telt alleen de docent
+// van de cursus of een beheerder (de eigen testgroep); studenten komen er pas in
+// als de docent het project opent voor studenten.
 export async function isGroupMember(groupId, userId) {
   const { data } = await supabaseAdmin
     .from('project_group_members')
-    .select('id')
+    .select('id, project_groups!inner(projects!inner(status, course_id))')
     .eq('group_id', groupId)
     .eq('user_id', userId)
     .maybeSingle();
-  return !!data;
+  if (!data) return false;
+  const project = data.project_groups?.projects;
+  return project?.status !== 'draft' || mayUseDraftProject(userId, project.course_id);
+}
+
+/** Mag deze gebruiker een conceptproject gebruiken? Docent van de cursus of beheerder. */
+export async function mayUseDraftProject(userId, courseId) {
+  if (await isCourseTeacher(userId, courseId)) return true;
+  const { data: profile } = await profileCache.get(userId, loadProfileRoleEmail);
+  return isLeapAdmin(profile);
 }
 
 // Bepaalt of de huidige user toegang heeft tot een project. Toegang =
@@ -19,6 +31,7 @@ export async function userHasProjectAccess(user, profile, project) {
   if (!project) return false;
   const isStaff = await isStaffForCourse(user, profile, project.course_id);
   if (isStaff) return true;
+  if (project.status === 'draft') return false;
   // Projecten uit in deze cursus: ook groepsleden kunnen er niet meer in.
   if (project.course_id && (await loadCourseFeatures(project.course_id)).projects === false) return false;
   if (project.course_id) {

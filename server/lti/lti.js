@@ -430,7 +430,7 @@ export async function processLaunch(db, admin, { claims, platform, now = new Dat
     if (project && project.course_id === course.id) {
       next = '/projects';
       const group = canvasGroupFromClaims(claims);
-      if (role === 'student' && project.group_mode === 'canvas' && group && project.status !== 'archived') {
+      if (role === 'student' && project.group_mode === 'canvas' && group && !['archived', 'draft'].includes(project.status)) {
         const groupId = await placeInCanvasGroup(db, {
           projectId: project.id, userId, ref: canvasGroupRef(platform.issuer, group.id), name: group.name,
           genInviteCode: () => randomBytes(4).toString('hex').slice(0, 6).toUpperCase(),

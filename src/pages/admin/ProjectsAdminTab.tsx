@@ -18,7 +18,10 @@ import {
   type CourseKnowledge, type KnowledgeCourseDoc, type KnowledgeProjectDoc,
 } from '../../components/PersonaKnowledgeFields';
 import { MATERIAL_KIND_ORDER } from '../../components/material/purposeUi';
-import { ProjectGroupsAdmin } from './ProjectGroupsAdmin';
+import { ProjectGroupsStep, type GroupMode } from './ProjectGroupsStep';
+import { ProjectTaskStep, Audience } from './ProjectTaskStep';
+import { ProjectReadyStep } from './ProjectReadyStep';
+import { ProjectStepNav, NextStepButton, setupIssues, type ProjectStep } from './ProjectSetupSteps';
 import { ListRow } from '../../components/ui/ListRow';
 import { usePreassessments, PreassessmentBadge, PreassessmentModal, DownloadAllButton } from './ProjectPreassessment';
 import { ProjectFeedbackSetup } from './ProjectFeedbackSetup';
@@ -102,16 +105,16 @@ interface ProjectDoc {
   created_at: string;
 }
 
-type GroupMode = 'self' | 'teacher' | 'canvas';
 const CANVAS_ENROLLMENT = ['canvas', 'canvas_open'];
 const groupModeOf = (p: Partial<ProjectRow>): GroupMode =>
   p.group_mode || (p.allow_self_signup === false ? 'teacher' : 'self');
 
-/** Wie ziet dit veld? Klein label naast het veld in het projectformulier. */
-function Audience({ kind }: { kind: 'students' | 'ai' | 'nobody' }) {
+/** Concept (alleen docenten), open voor studenten of gearchiveerd. */
+function ProjectStatusBadge({ status }: { status: string | null }) {
   const { t } = useLanguage();
-  const tone = kind === 'students' ? 'bg-green-50 text-green-800' : kind === 'ai' ? 'bg-purple-50 text-purple-800' : 'bg-gray-100 text-gray-600';
-  return <span className={`ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-medium ${tone}`}>{t(`admin.projects.audience.${kind}` as 'admin.projects.audience.students')}</span>;
+  const s = status === 'draft' ? 'draft' : status === 'archived' ? 'archived' : 'open';
+  const tone = s === 'draft' ? 'bg-amber-100 text-amber-800' : s === 'archived' ? 'bg-gray-100 text-gray-600' : 'bg-emerald-100 text-emerald-800';
+  return <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${tone}`} data-testid="badge-project-status">{t(`admin.projects.status.${s}` as 'admin.projects.status.draft')}</span>;
 }
 
 interface KnowledgeOptions {
@@ -249,22 +252,11 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
   };
 
 
-  const startEdit = (p: Partial<ProjectRow> | null) => {
-    if (p) {
-      setEditing(p);
-    } else {
-      setEditing({
-        title: '', research_question: '', briefing_markdown: '', goals: '',
-        rubric_criteria: [], min_group_size: 1, max_group_size: 5,
-        // Canvas-cursus: groepen uit Canvas; anders deelt de docent in.
-        group_mode: CANVAS_ENROLLMENT.includes(enrollmentMode || '') ? 'canvas' : 'teacher',
-        submissions_enabled: false,
-        course_id: activeCourseId || null, status: 'active',
-      });
-    }
-  };
+  // Nieuw project: alleen titel en onderzoeksvraag, daarna verder in de stappen.
+  // Het start als concept: alleen docenten zien het, tot stap 6 (Klaar voor studenten).
+  const startNew = () => setEditing({ title: '', research_question: '' });
 
-  const save = async () => {
+  const createProject = async () => {
     if (!editing) return;
     if (!editing.title?.trim() || !editing.research_question?.trim()) {
       setError(t('admin.projects.errorTitleRequired'));
@@ -272,36 +264,21 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
     }
     setSaving(true);
     setError(null);
-    const payload = {
-      title: editing.title.trim(),
-      research_question: editing.research_question.trim(),
-      description: editing.description || null,
-      briefing_markdown: editing.briefing_markdown || null,
-      goals: editing.goals || null,
-      // De criteria (rubric_criteria) stel je in bij Feedback en beoordeling (ProjectFeedbackSetup).
-      course_id: editing.course_id || activeCourseId || null,
-      min_group_size: editing.min_group_size ?? 1,
-      max_group_size: editing.max_group_size ?? 5,
-      group_mode: groupModeOf(editing),
-      // Oude code leest allow_self_signup nog; die volgt de groepsindeling.
-      allow_self_signup: groupModeOf(editing) === 'self',
-      submissions_enabled: editing.submissions_enabled ?? false,
-      status: editing.status || 'active',
-    };
-    if ((payload.min_group_size as number) > (payload.max_group_size as number)) {
-      setError(t('admin.projects.errorMinMax'));
-      setSaving(false); return;
-    }
+    // Canvas-cursus: groepen uit Canvas; anders deelt de docent in (aan te passen bij Groepen).
+    const groupMode: GroupMode = isCanvasCourse ? 'canvas' : 'teacher';
     try {
-      if (editing.id) {
-        const { error: e } = await supabase.from('projects').update(payload).eq('id', editing.id);
-        if (e) throw new Error(e.message);
-      } else {
-        const { error: e } = await supabase.from('projects').insert({ ...payload, rubric_criteria: [] });
-        if (e) throw new Error(e.message);
-      }
+      const { data, error: e } = await supabase.from('projects').insert({
+        title: editing.title.trim(),
+        research_question: editing.research_question.trim(),
+        course_id: activeCourseId || null,
+        rubric_criteria: [], min_group_size: 1, max_group_size: 5,
+        group_mode: groupMode, allow_self_signup: false,
+        submissions_enabled: false, status: 'draft',
+      } as never).select('*').single();
+      if (e) throw new Error(e.message);
       setEditing(null);
       await load();
+      setDetailProject(data as ProjectRow);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -323,6 +300,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
       onError={(m) => setError(m)}
       onInfo={(m) => setInfo(m)}
       onOpenTemplates={onOpenTemplates}
+      isCanvasCourse={isCanvasCourse}
     />;
   }
 
@@ -335,7 +313,7 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
             <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><FolderOpen className="w-5 h-5" />{t('admin.projects.title')}<HelpTip id="projects.overview" /></h2>
             <p className="text-sm text-gray-500">{activeCourse ? t('admin.projects.courseLabel', { name: activeCourse.name }) : t('admin.projects.allCourses')}.</p>
           </div>
-          <button onClick={() => startEdit(null)} className="whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-testid="button-add-project">
+          <button onClick={startNew} className="whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" data-testid="button-add-project">
             <Plus className="w-4 h-4" />{t('admin.projects.addBtn')}
           </button>
         </div>
@@ -348,7 +326,10 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
             {projects.map(p => (
               <li key={p.id} className="py-3 flex items-start gap-3" data-testid={`project-row-${p.id}`}>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900">{p.title}</div>
+                  <div className="font-medium text-gray-900 flex flex-wrap items-center gap-2">
+                    {p.title}
+                    <ProjectStatusBadge status={p.status} />
+                  </div>
                   <p className="text-xs text-gray-500 line-clamp-1">{p.research_question}</p>
                   <div className="text-[10px] text-gray-400 mt-1">
                     {t('admin.projects.groupSize', { min: String(p.min_group_size ?? 1), max: String(p.max_group_size ?? 5) })} · {Array.isArray(p.rubric_criteria) ? t('admin.projects.rubricPoints', { count: String(p.rubric_criteria.length) }) : t('admin.projects.noRubric')}
@@ -358,7 +339,6 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
                   <button onClick={() => setDetailProject(p)} className="flex items-center gap-1 px-2 py-1 text-sm text-blue-700 hover:bg-blue-50 rounded" data-testid={`button-detail-project-${p.id}`}>
                     <Settings className="w-4 h-4" />{t('admin.projects.manageBtn')}
                   </button>
-                  <button onClick={() => startEdit(p)} className="px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded" data-testid={`button-edit-project-${p.id}`}>{t('admin.projects.editBtn')}</button>
                   <Tooltip label={t('admin.projects.deleteTitle')}>
                     <button onClick={() => remove(p.id)} className="p-2 text-red-500 hover:bg-red-50 rounded" data-testid={`button-delete-project-${p.id}`}>
                       <Trash2 className="w-4 h-4" />
@@ -428,71 +408,17 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
 
       {editing && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold mb-3">{editing.id ? t('admin.projects.editTitle') : t('admin.projects.newTitle')}</h3>
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" data-testid="dialog-new-project">
+            <h3 className="text-lg font-bold mb-1">{t('admin.projects.newTitle')}</h3>
+            <AdminHint variant="intro" className="mb-3">{t('admin.projects.newIntro')}</AdminHint>
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldTitle')}<Audience kind="students" /></label>
-                <input value={editing.title || ''} onChange={e => setEditing({ ...editing, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-title" />
+                <label htmlFor="np-title" className="text-xs font-medium text-gray-700">{t('admin.projects.fieldTitle')}<Audience kind="students" /></label>
+                <input id="np-title" value={editing.title || ''} onChange={e => setEditing({ ...editing, title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-new-project-title" />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldQuestion')}<Audience kind="students" /><Audience kind="ai" /></label>
-                <input value={editing.research_question || ''} onChange={e => setEditing({ ...editing, research_question: e.target.value })} placeholder={t('admin.projects.fieldQuestionPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-question" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldDesc')}<Audience kind="nobody" /></label>
-                <textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={2} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="textarea-project-description" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldGoals')}<Audience kind="ai" /></label>
-                <textarea value={editing.goals || ''} onChange={e => setEditing({ ...editing, goals: e.target.value })} rows={3} placeholder={t('admin.projects.fieldGoalsPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="textarea-project-goals" />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldBriefing')}<Audience kind="students" /></label>
-                <textarea value={editing.briefing_markdown || ''} onChange={e => setEditing({ ...editing, briefing_markdown: e.target.value })} rows={6} className="w-full px-3 py-2 border border-gray-300 rounded text-sm font-mono" data-testid="textarea-project-briefing" />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldMinSize')}</label>
-                  <input type="number" min={1} max={20} value={editing.min_group_size ?? 1} onChange={e => setEditing({ ...editing, min_group_size: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-minsize" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-700">{t('admin.projects.fieldMaxSize')}</label>
-                  <input type="number" min={1} max={20} value={editing.max_group_size ?? 5} onChange={e => setEditing({ ...editing, max_group_size: parseInt(e.target.value) || 5 })} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-project-maxsize" />
-                </div>
-              </div>
-              <fieldset className="border-t border-gray-100 pt-3" data-testid="fieldset-group-mode">
-                <legend className="text-xs font-medium text-gray-700 flex items-center gap-1">{t('admin.projects.groupMode.title')}<HelpTip id="projects.groupMode" /></legend>
-                <div className="mt-1 space-y-1">
-                  {(['canvas', 'teacher', 'self'] as GroupMode[]).filter(m => m !== 'canvas' || isCanvasCourse || groupModeOf(editing) === 'canvas').map(m => (
-                    <label key={m} className="flex items-start gap-2 text-sm">
-                      <input type="radio" name="group-mode" className="mt-1" checked={groupModeOf(editing) === m}
-                        onChange={() => setEditing({ ...editing, group_mode: m, allow_self_signup: m === 'self' })}
-                        data-testid={'radio-group-mode-' + m} />
-                      <span>
-                        <span className="font-medium">{t(('admin.projects.groupMode.' + m) as 'admin.projects.groupMode.self')}</span>
-                        <span className="block text-[11px] text-gray-500">{t(('admin.projects.groupMode.' + m + 'Hint') as 'admin.projects.groupMode.selfHint')}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-              <div className="border-t border-gray-100 pt-3">
-                <label className="flex items-start gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5"
-                    checked={!!editing.submissions_enabled}
-                    onChange={e => setEditing({ ...editing, submissions_enabled: e.target.checked })}
-                    data-testid="checkbox-project-submissions-enabled"
-                  />
-                  <span>
-                    <span className="font-medium">{t('admin.projects.subs.enable')}</span>
-                    <span className="block text-[11px] text-gray-500">
-                      {t('admin.projects.subs.enableHint')}
-                    </span>
-                  </span>
-                </label>
+                <label htmlFor="np-question" className="text-xs font-medium text-gray-700">{t('admin.projects.fieldQuestion')}<Audience kind="students" /><Audience kind="ai" /></label>
+                <input id="np-question" value={editing.research_question || ''} onChange={e => setEditing({ ...editing, research_question: e.target.value })} placeholder={t('admin.projects.fieldQuestionPlaceholder')} className="w-full px-3 py-2 border border-gray-300 rounded text-sm" data-testid="input-new-project-question" />
               </div>
             </div>
             {error && (
@@ -500,8 +426,8 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
             )}
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => { setEditing(null); setError(null); }} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg" data-testid="button-cancel-project">{t('admin.projects.cancelBtn')}</button>
-              <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-40" data-testid="button-save-project">
-                <Save className="w-4 h-4" /> {saving ? t('admin.projects.saving') : t('admin.projects.saveBtn')}
+              <button onClick={() => void createProject()} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg disabled:opacity-40" data-testid="button-create-project">
+                <Plus className="w-4 h-4" /> {saving ? t('admin.projects.saving') : t('admin.projects.createBtn')}
               </button>
             </div>
           </div>
@@ -511,13 +437,28 @@ function ProjectsListView({ switcher, onOpenTemplates }: { switcher: ReactNode; 
   );
 }
 
-function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
+function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemplates, isCanvasCourse }: {
   project: ProjectRow; token: string;
   onBack: () => void; onError: (m: string) => void; onInfo: (m: string) => void;
   /** Naar Projecten → Persona-sjablonen (bv. als er nog geen sjablonen zijn). */
   onOpenTemplates?: () => void;
+  isCanvasCourse: boolean;
 }) {
   const { t, lang } = useLanguage();
+  // Het project verandert in de stappen (opdracht, groepen, status).
+  const [project, setProject] = useState<ProjectRow>(initialProject);
+  const patchProject = (patch: Partial<ProjectRow>) => setProject(p => ({ ...p, ...patch }));
+  // Concept: begin bij de opdracht. Loopt het al: bij "Tijdens het project".
+  const [step, setStep] = useState<ProjectStep>(initialProject.status === 'draft' ? 'task' : 'running');
+  // Is de cursus al eens vanuit Canvas geopend? (stap Groepen mag anders overgeslagen worden)
+  const [canvasLinked, setCanvasLinked] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!project.course_id || !token) return;
+    fetch(`/api/lti/course-link/${project.course_id}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => setCanvasLinked(d ? (d.canvasCourses || []).length > 0 : null))
+      .catch(() => setCanvasLinked(null));
+  }, [project.course_id, token]);
   // Meldingen tonen in dit paneel zelf: de meldingen van de lijst staan niet in
   // beeld zolang dit paneel open is (fouten waren onzichtbaar, 2026-10-27).
   const onError = (m: string) => setLocalError(m);
@@ -840,6 +781,12 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
     void loadKnowledge();
   };
 
+  // Stap 3 toont de gesprekspartners; beoordelaars (feedbackgever, nakijkhulp) staan bij stap 4.
+  const talkers = personas.filter(p => p.persona_type !== 'evaluator');
+  const evaluatorCount = personas.length - talkers.length;
+  const issues = setupIssues({ project, docs: projectDocs, personas, preassessorId: pre.personaId, canvasLinked });
+  const changeStep = (s: ProjectStep) => { setStep(s); setLocalError(null); setLocalInfo(null); };
+
   return (
     <div className="space-y-4">
       <div className="chic-card p-5">
@@ -851,8 +798,8 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
               </button>
             </Tooltip>
             <div>
-              <h2 className="text-lg font-bold text-gray-900">{project.title}</h2>
-              <AdminHint variant="intro">{t('admin.projects.detail.subtitle')}</AdminHint>
+              <h2 className="text-lg font-bold text-gray-900 flex flex-wrap items-center gap-2">{project.title}<ProjectStatusBadge status={project.status} /></h2>
+              <AdminHint variant="intro">{t(project.status === 'draft' ? 'admin.projects.detail.subtitleDraft' : 'admin.projects.detail.subtitle')}</AdminHint>
             </div>
           </div>
         </div>
@@ -881,7 +828,19 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
         </div>
       )}
 
-      {/* Projectdocumenten */}
+      <ProjectStepNav step={step} onStep={changeStep} issues={issues} isOpen={project.status !== 'draft'} />
+
+      {step === 'task' && (
+        <ProjectTaskStep
+          project={project}
+          onSaved={patchProject}
+          onError={setLocalError}
+          onInfo={setLocalInfo}
+        />
+      )}
+
+      {/* Stap 2: projectdocumenten (opdracht, literatuur, data; rubrics staan bij stap 4) */}
+      {step === 'material' && (
       <div className="chic-card p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -976,7 +935,9 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
           </ul>
         )}
       </div>
+      )}
 
+      {step === 'feedback' && (
       <ProjectFeedbackSetup
         project={project}
         token={token}
@@ -990,17 +951,20 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
         uploading={uploadingPDoc}
         onNewEvaluator={newEvaluator}
         onPersonasChanged={() => { void loadPersonas(); void loadKnowledge(); }}
+        onEditPersona={(p) => { const full = personas.find(x => x.id === p.id); if (full) setEditingPersona(full); }}
+        onDeletePersona={(p) => { const full = personas.find(x => x.id === p.id); if (full) void removePersona(full); }}
         onError={setLocalError}
         onInfo={setLocalInfo}
       />
+      )}
 
-      {/* Ingeleverde projectproducten */}
-      {!project.submissions_enabled && (
+      {/* Tijdens het project: ingeleverde projectproducten met nakijkcommentaar */}
+      {step === 'running' && !project.submissions_enabled && (
         <AdminHint variant="tip" testId="section-project-submissions-disabled">
           {t('admin.projects.subs.disabled')}
         </AdminHint>
       )}
-      {project.submissions_enabled && (
+      {step === 'running' && project.submissions_enabled && (
         <div className="chic-card p-5" data-testid="section-project-submissions">
           <div className="mb-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
@@ -1059,14 +1023,25 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
         />
       )}
 
-      {/* Groepen: indelen, verplaatsen, Canvas (ProjectGroupsAdmin). Alleen wie erin zit. */}
-      <ProjectGroupsAdmin projectId={project.id} courseId={project.course_id} token={token} />
+      {/* Stap 5 / tijdens het project: groepen. Alleen wie erin zit (ProjectGroupsAdmin). */}
+      {(step === 'groups' || step === 'running') && (
+        <ProjectGroupsStep
+          project={{ id: project.id, course_id: project.course_id, group_mode: groupModeOf(project), min_group_size: project.min_group_size ?? 1, max_group_size: project.max_group_size ?? 5 }}
+          token={token}
+          isCanvasCourse={isCanvasCourse}
+          canvasLinked={canvasLinked}
+          onSaved={(g) => patchProject({ ...g, allow_self_signup: g.group_mode === 'self' })}
+          onError={setLocalError}
+          onInfo={setLocalInfo}
+        />
+      )}
 
-      {/* Persona's */}
+      {/* Stap 3: personages (begeleider, rolspelers). Beoordelaars staan bij stap 4. */}
+      {step === 'personas' && (
       <div className="chic-card p-5">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(personas.length) })}<HelpTip id="personas.inProject" /></h3>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2">{t('admin.projects.personas.title', { count: String(talkers.length) })}<HelpTip id="personas.inProject" /></h3>
             <AdminHint variant="intro" className="flex items-center gap-1.5">{t('admin.projects.personas.desc')}<HelpTip id="personas.saveAsTemplate" /></AdminHint>
           </div>
           <button onClick={() => setEditingPersona({ name: '', system_prompt: '', avatar_emoji: '🤖', persona_type: 'conversational', course_knowledge: 'none', course_knowledge_doc_ids: [], project_knowledge_doc_ids: [] })} className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded-lg" data-testid="button-add-custom-persona">
@@ -1112,11 +1087,11 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
             </button>
           </div>
         )}
-        {personas.length === 0 ? (
+        {talkers.length === 0 ? (
           <p className="text-sm text-gray-500">{t('admin.projects.personas.noPersonas')}</p>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {personas.map(p => {
+            {talkers.map(p => {
               const isEval = p.persona_type === 'evaluator';
               return (
                 <li key={p.id} className="py-3" data-testid={`pp-row-${p.id}`}>
@@ -1151,7 +1126,28 @@ function ProjectDetailPanel({ project, token, onBack, onOpenTemplates }: {
             })}
           </ul>
         )}
+        {evaluatorCount > 0 && (
+          <p className="mt-2 text-xs text-gray-600" data-testid="text-evaluators-elsewhere">
+            {t('admin.projects.personas.evaluatorsInStep4', { count: String(evaluatorCount) })}{' '}
+            <button type="button" onClick={() => changeStep('feedback')} className="font-medium text-sky-700 hover:underline">{t('admin.projects.steps.feedback')}</button>
+          </p>
+        )}
       </div>
+      )}
+
+      {step === 'open' && (
+        <ProjectReadyStep
+          projectId={project.id}
+          status={project.status}
+          issues={issues}
+          token={token}
+          onGoTo={changeStep}
+          onStatusChanged={(status) => { patchProject({ status }); setLocalInfo(t(status === 'draft' ? 'admin.projects.ready.nowDraft' : 'admin.projects.ready.nowOpen')); }}
+          onError={setLocalError}
+        />
+      )}
+
+      <NextStepButton step={step} onStep={changeStep} />
 
       {editingPersona && createPortal(
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">

@@ -24,6 +24,8 @@ function genInviteCode() {
   return code;
 }
 
+const PROJECT_STATUSES = ['draft', 'active', 'archived'];
+
 export function registerProjectRoutes(app) {
   // POST /api/projects/groups — maak een nieuwe groep voor een project. De
   // initiator wordt direct als 'owner' lid. Voor solo-werk: groep van 1.
@@ -46,6 +48,8 @@ export function registerProjectRoutes(app) {
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
       if (!isStaff) {
+        // Concept: alleen de docent probeert het uit in een eigen testgroep.
+        if (project.status === 'draft') return res.status(403).json({ error: 'Dit project is nog niet geopend voor studenten', code: 'draft' });
         if (!project.course_id || !(await userHasCourseAccess(auth.user, profile, project.course_id))) {
           return res.status(403).json({ error: 'Geen toegang tot de cursus van dit project' });
         }
@@ -119,9 +123,12 @@ export function registerProjectRoutes(app) {
       // mogen aansluiten. Een geldige invite-code is niet voldoende — anders kan
       // een gelekte code een buitenstaander toegang tot de chat geven.
       const { data: project } = await supabaseAdmin
-        .from('projects').select('id, course_id, allow_self_signup, group_mode').eq('id', group.project_id).maybeSingle();
+        .from('projects').select('id, course_id, allow_self_signup, group_mode, status').eq('id', group.project_id).maybeSingle();
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       const isStaff = await isStaffForCourse(auth.user, profile, project?.course_id);
+      if (!isStaff && project?.status === 'draft') {
+        return res.status(403).json({ error: 'Dit project is nog niet geopend voor studenten', code: 'draft' });
+      }
       if (!isStaff && !studentMayFormGroups(project)) {
           return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });
       }
@@ -214,6 +221,7 @@ export function registerProjectRoutes(app) {
         patch.allow_self_signup = patch.group_mode === 'self';
       }
       if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Geen wijzigingen' });
+      if ('status' in patch && !PROJECT_STATUSES.includes(patch.status)) return res.status(400).json({ error: 'Onbekende status' });
       if (patch.min_group_size != null && patch.max_group_size != null
           && Number(patch.min_group_size) > Number(patch.max_group_size)) {
         return res.status(400).json({ error: 'Minimum groepsgrootte mag niet groter zijn dan het maximum' });
@@ -240,6 +248,8 @@ export function registerProjectRoutes(app) {
       // (canAccessCourseContent; toegang = lidmaatschap sinds 2026-10-20). De
       // frontend filtert vervolgens op de actieve cursus.
       const courseMap = new Map(); // id -> { id, name }
+      // Cursussen waar je docent bent: daar zie je ook projecten in concept.
+      const teacherCourseIds = new Set();
       const memberCols = coursesHasStudentVisible
         ? 'course_id, member_role, courses(id, name, is_active, student_visible)'
         : 'course_id, member_role, courses(id, name, is_active)';
@@ -258,6 +268,7 @@ export function registerProjectRoutes(app) {
           studentVisible,
         });
         if (allowed) courseMap.set(c.id, { id: c.id, name: c.name });
+        if (allowed && m.member_role === 'teacher') teacherCourseIds.add(c.id);
       }
       // Oud-deelnemer van een vorige editie (server/courses/courseEditions.js): alleen de
       // afgeronde groepen van toen, geen nieuwe projecten.
@@ -278,7 +289,10 @@ export function registerProjectRoutes(app) {
       const { data: ovProfile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       if (ovProfile?.role === 'admin' || ovProfile?.email === SUPERUSER_EMAIL) {
         const { data: allCourses } = await supabaseAdmin.from('courses').select('id, name');
-        for (const c of (allCourses || [])) if (!courseMap.has(c.id)) courseMap.set(c.id, { id: c.id, name: c.name });
+        for (const c of (allCourses || [])) {
+          if (!courseMap.has(c.id)) courseMap.set(c.id, { id: c.id, name: c.name });
+          teacherCourseIds.add(c.id);
+        }
       }
 
       // Cursussen waar Projecten uit staat vallen weg (behalve voor de docent).
@@ -291,7 +305,7 @@ export function registerProjectRoutes(app) {
 
       const { data: projects } = await supabaseAdmin
         .from('projects').select('id, title, research_question, course_id, status, briefing_markdown, max_group_size, min_group_size, group_mode, allow_self_signup')
-        .in('course_id', courseIds).in('status', ['active', 'archived']);
+        .in('course_id', courseIds).in('status', ['active', 'archived', 'draft']);
       const projectIds = (projects || []).map(p => p.id);
 
       let sessions = [];
@@ -364,11 +378,12 @@ export function registerProjectRoutes(app) {
           // de eindreflectie terugzien en in het eigen leerdagboek bewaren (2026-10-27).
           const finishedGroup = groups.filter(g => g.status === 'finalized')
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
-          return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup, archived: p.status === 'archived' };
+          return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup, archived: p.status === 'archived', draft: p.status === 'draft' };
         })
           // Gearchiveerde projecten (vorige editie) en cursussen waarvan je oud-deelnemer
           // bent: alleen zichtbaar als terugblik op je eigen afgeronde groep.
-          .filter(p => (p.status === 'active' && !alumniCourseIds.has(c.id)) || p.finishedGroup);
+          // Een project in concept ziet alleen de docent, om het zelf uit te proberen.
+          .filter(p => (p.status === 'draft' ? teacherCourseIds.has(c.id) : (p.status === 'active' && !alumniCourseIds.has(c.id)) || p.finishedGroup));
         return { course: c, projects: cps, alumni: alumniCourseIds.has(c.id) };
       });
       return res.json({ courses: result });
@@ -390,6 +405,9 @@ export function registerProjectRoutes(app) {
         .from('projects').select('id, course_id, status, allow_self_signup, group_mode').eq('id', projectId).maybeSingle();
       if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
       if (project.status === 'archived') return res.status(400).json({ error: 'Project is gearchiveerd' });
+      if (project.status === 'draft' && !(await isStaffForCourse(auth.user, (await profileCache.get(auth.user.id, loadProfileRoleEmail)).data, project.course_id))) {
+        return res.status(403).json({ error: 'Dit project is nog niet geopend voor studenten', code: 'draft' });
+      }
       // Een ingedeelde groep verlaat een student niet op eigen houtje; de docent verplaatst.
       if (!studentMayFormGroups(project) && !(await isStaffForCourse(auth.user, (await profileCache.get(auth.user.id, loadProfileRoleEmail)).data, project.course_id))) {
           return res.status(403).json({ error: 'De groepen voor dit project worden door je docent of via Canvas ingedeeld', code: 'groupsAssigned' });

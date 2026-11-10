@@ -1250,7 +1250,7 @@ export function registerProjectPersonaRoutes(app) {
     try {
       const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
       const { data: project } = await supabaseAdmin
-        .from('projects').select('id, course_id').eq('id', projectId).maybeSingle();
+        .from('projects').select('id, course_id, status').eq('id', projectId).maybeSingle();
       if (!project) return res.status(404).json({ error: 'Project niet gevonden' });
       const isStaff = await isStaffForCourse(auth.user, profile, project.course_id);
       if (!isStaff && !(await userHasProjectAccess(auth.user, profile, project))) {

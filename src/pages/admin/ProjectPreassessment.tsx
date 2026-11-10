@@ -3,13 +3,12 @@ import { createPortal } from 'react-dom';
 import { Loader2, X, FileDown, RefreshCw, Archive } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { AdminHint } from '../../components/help/AdminHint';
-import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { StatusBadge } from '../../components/ui/ListRow';
 
 // Voorbeoordeling van het ingeleverde eindproduct (server/projects/preassessment.js).
-// Alleen voor docenten van de cursus: een Beoordelaar aanwijzen, per
-// inlevering de voorbeoordeling bekijken of als Word downloaden, en alles in
+// Alleen voor docenten van de cursus (de nakijkhulp wijs je aan in
+// ProjectFeedbackSetup): per inlevering de voorbeoordeling bekijken of als Word downloaden, en alles in
 // één zip. Studenten zien alleen dát er een voorbeoordeling voor de docent is.
 
 export type Indication = 'strong' | 'adequate' | 'weak' | 'unclear';
@@ -78,70 +77,6 @@ export function usePreassessments(projectId: string, token: string, enabled: boo
   const downloadAll = useCallback(() =>
     downloadBlob(`/api/projects/${projectId}/submissions-export.zip`, token, 'project.zip'), [projectId, token]);
   return { byId, personaId, setPersonaId, reload: load, rerun, downloadWord, downloadAll };
-}
-
-/** Kiezen welke Beoordelaar het eindproduct voorbeoordeelt. */
-export function PreassessorPicker({ projectId, token, evaluators, value, rubricCount, onChange, onError, onInfo }: {
-  projectId: string;
-  token: string;
-  evaluators: Array<{ id: string; name: string; avatar_emoji?: string }>;
-  value: string | null;
-  /** Aantal verborgen rubrics van de gekozen beoordelaar (undefined = onbekend). */
-  rubricCount?: number;
-  onChange: (id: string | null) => void;
-  onError: (m: string) => void;
-  onInfo: (m: string) => void;
-}) {
-  const { t } = useLanguage();
-  const [saving, setSaving] = useState(false);
-  const save = async (id: string | null) => {
-    setSaving(true);
-    try {
-      const r = await fetch(`/api/projects/${projectId}/preassessment-persona`, {
-        method: 'PUT',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ personaId: id }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) throw new Error(d.error || '');
-      onChange(id);
-      onInfo(t('admin.projects.pre.saved'));
-    } catch (e) {
-      onError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setSaving(false);
-    }
-  };
-  return (
-    <div className="rounded-lg border border-gray-200 p-3 space-y-2" data-testid="section-preassessor">
-      <div className="flex items-center gap-1 font-medium text-gray-900 text-sm">
-        {t('admin.projects.pre.title')}<HelpTip id="projects.preassessment" />
-      </div>
-      <AdminHint variant="intro">{t('admin.projects.pre.intro')}</AdminHint>
-      {evaluators.length === 0 ? (
-        <AdminHint variant="warning">{t('admin.projects.pre.noEvaluators')}</AdminHint>
-      ) : (
-        <>
-          <label className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="text-gray-700">{t('admin.projects.pre.select')}</span>
-            <select
-              value={value || ''}
-              disabled={saving}
-              onChange={(e) => void save(e.target.value || null)}
-              className="min-w-0 rounded border border-gray-300 px-2 py-1 text-sm"
-              data-testid="select-preassessor"
-            >
-              <option value="">{t('admin.projects.pre.none')}</option>
-              {evaluators.map((ev) => <option key={ev.id} value={ev.id}>{ev.avatar_emoji ? `${ev.avatar_emoji} ` : ''}{ev.name}</option>)}
-            </select>
-            {saving && <Loader2 className="h-4 w-4 animate-spin text-gray-400" />}
-          </label>
-          {value && rubricCount === 0 && <AdminHint variant="warning">{t('admin.projects.pre.noRubric')}</AdminHint>}
-          {value && <AdminHint variant="tip">{t('admin.projects.pre.excluded')}</AdminHint>}
-        </>
-      )}
-    </div>
-  );
 }
 
 /** Statuslabel bij een inlevering. */

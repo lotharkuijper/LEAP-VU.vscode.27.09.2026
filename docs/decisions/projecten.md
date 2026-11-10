@@ -6,6 +6,12 @@ Besluiten en werking van LEAP op dit gebied, zoals ze in de oude CLAUDE.md stond
 
 Group content (group chat, persona conversations, sessions, feedback, relationship, group files) is for group members and LEAP admins only: `isLeapAdmin(profile)` plus membership (`isGroupMember` in `server/projects/access.js`), never `isStaffForCourse`. Full privacy model: `docs/decisions/privacy-en-data.md`.
 
+### Setting up a project in steps; draft projects (2026-11-11)
+
+- A teacher sets up a project in six steps, like Course material: the assignment (`ProjectTaskStep`), material, characters (talking personas only), feedback and assessment (`ProjectFeedbackSetup`; evaluators are created, edited and deleted only here), groups (`ProjectGroupsStep`), ready for students (`ProjectReadyStep`). For an open project there is also "During the project" (submissions with marking comments, groups). The step bar and the checklist come from `setupIssues` in `src/pages/admin/ProjectSetupSteps.tsx`; items marked `optional` (no material, a persona that knows nothing, no marking assistant, Canvas not yet linked) never count as a problem, so a teacher can skip the groups step when the course is not linked to Canvas.
+- A new project starts as `status = 'draft'` (migration `20261111100000_project_draft` + rollback; existing projects stay `active`). Only teachers of the course and LEAP admins can use a draft: the read rule on `projects` hides it from students; `userHasProjectAccess` refuses non-staff; `isGroupMember` only counts a member of a draft project if they are teacher of the course or admin (`mayUseDraftProject`), so students already placed in a group (by the teacher or Canvas) get in only once the project is opened; creating, joining or restarting a group and the Canvas launch are refused for students. The student overview lists drafts only for teachers/admins, with "Try it out in your own test group" whatever the group mode. Opening and back to draft go through `PATCH /api/projects/:id` (`status` limited to draft/active/archived). `server/__tests__/projectDraftAccess.test.js`.
+- The marking assistant is its own bot (decided 2026-11-11): step 3 of Feedback and assessment never offers feedback providers to pick from, because picking one silently took it away from step 2. Without a marking assistant there is only "Add marking assistant"; turning a marking assistant into a feedback provider is an explicit action.
+
 ### Project bots (personas)
 - Three roles in `persona_type`:
   - `conversational` = Begeleider (guide);
