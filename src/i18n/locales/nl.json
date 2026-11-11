@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Kies een groep…",
   "admin.projects.students.newGroup": "+ Nieuwe groep",
   "admin.projects.students.assignBtn": "Indelen",
-  "projects.tryoutHint": "Als docent werk je hier in je eigen testgroep van één. Studenten komen er niet in en zien niet wat je doet."
+  "projects.tryoutHint": "Als docent werk je hier in je eigen testgroep van één. Studenten komen er niet in en zien niet wat je doet.",
+  "room.evaluatorChatHint": "Bij een beoordelaar kun je terecht met vragen over inleveren: wat, waar, hoe en hoeveel feedbackrondes je nog hebt. Inhoudelijke feedback vraag je rechts bij Feedback op jullie werk (tabblad Briefing)."
 }

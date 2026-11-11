@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Wybierz grupę…",
   "admin.projects.students.newGroup": "+ Nowa grupa",
   "admin.projects.students.assignBtn": "Przypisz",
-  "projects.tryoutHint": "Jako wykładowca pracujesz tutaj we własnej jednoosobowej grupie testowej. Studenci nie mają do niej dostępu i nie widzą, co robisz."
+  "projects.tryoutHint": "Jako wykładowca pracujesz tutaj we własnej jednoosobowej grupie testowej. Studenci nie mają do niej dostępu i nie widzą, co robisz.",
+  "room.evaluatorChatHint": "Do oceniającego możesz zwrócić się z pytaniami dotyczącymi oddawania pracy: co, gdzie, jak oraz ile rund informacji zwrotnej jeszcze masz. O feedback merytoryczny poproś po prawej stronie w sekcji Feedback na temat waszej pracy (zakładka Briefing)."
 }

@@ -17,11 +17,6 @@ export function normalizePersonaType(value) {
   return PERSONA_TYPES.includes(value) ? value : 'conversational';
 }
 
-/** Chat de groep met deze persona? (Beoordelaars niet: die geven alleen feedback op werk.) */
-export function isChatPersona(persona) {
-  return normalizePersonaType(persona?.persona_type) !== 'evaluator';
-}
-
 /** Houdt deze persona een verstandhouding met de groep bij? Alleen een rolspeler, en alleen als de docent dat aanzet. */
 export function reputationActive(persona) {
   return normalizePersonaType(persona?.persona_type) === 'roleplayer' && persona?.reputation_enabled === true;

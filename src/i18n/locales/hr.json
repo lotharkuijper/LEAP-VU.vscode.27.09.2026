@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Odaberi grupu…",
   "admin.projects.students.newGroup": "+ Nova grupa",
   "admin.projects.students.assignBtn": "Rasporedi",
-  "projects.tryoutHint": "Kao nastavnik ovdje radiš u vlastitoj testnoj grupi od jednog člana. Studenti ne ulaze u nju i ne vide što radiš."
+  "projects.tryoutHint": "Kao nastavnik ovdje radiš u vlastitoj testnoj grupi od jednog člana. Studenti ne ulaze u nju i ne vide što radiš.",
+  "room.evaluatorChatHint": "Ocjenjivaču se možeš obratiti s pitanjima o predaji: što, gdje, kako i koliko krugova povratnih informacija još imaš. Sadržajne povratne informacije zatraži desno u odjeljku Povratne informacije o vašem radu (kartica Briefing)."
 }

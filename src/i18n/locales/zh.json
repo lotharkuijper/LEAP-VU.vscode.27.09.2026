@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "选择一个小组…",
   "admin.projects.students.newGroup": "+ 新建小组",
   "admin.projects.students.assignBtn": "分配",
-  "projects.tryoutHint": "作为教师，你将在这里使用你自己的单人测试小组。学生无法进入，也看不到你做了什么。"
+  "projects.tryoutHint": "作为教师，你将在这里使用你自己的单人测试小组。学生无法进入，也看不到你做了什么。",
+  "room.evaluatorChatHint": "你可以向评阅人询问有关提交的问题：提交什么、在哪里提交、如何提交，以及你还剩多少轮反馈。关于内容的反馈，请在右侧“对你们作品的反馈”（“简报”选项卡）中提问。"
 }

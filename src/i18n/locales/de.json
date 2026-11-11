@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Wähle eine Gruppe aus …",
   "admin.projects.students.newGroup": "+ Neue Gruppe",
   "admin.projects.students.assignBtn": "Einteilen",
-  "projects.tryoutHint": "Als Lehrkraft arbeitest du hier in deiner eigenen Testgruppe mit nur einer Person. Studierende kommen dort nicht hinein und sehen nicht, was du tust."
+  "projects.tryoutHint": "Als Lehrkraft arbeitest du hier in deiner eigenen Testgruppe mit nur einer Person. Studierende kommen dort nicht hinein und sehen nicht, was du tust.",
+  "room.evaluatorChatHint": "An eine beurteilende Person kannst du dich mit Fragen zur Abgabe wenden: was, wo, wie und wie viele Feedbackrunden du noch hast. Inhaltliches Feedback fragst du rechts unter Feedback zu eurer Arbeit (Tab Briefing) an."
 }

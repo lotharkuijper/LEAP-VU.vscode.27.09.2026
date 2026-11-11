@@ -389,11 +389,16 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
         // UI-knop precies overeenkomt met wat /evaluate kan beoordelen
         // (course-fallback-personas zijn nooit evaluator-bronnen).
         evaluatorCount = pp.filter(p => p.persona_type === 'evaluator' && p.id !== project.preassessment_persona_id).length;
-        const filtered = isStaff ? pp : pp.filter(p => p.persona_type !== 'evaluator');
-        // Wat een persona kent, is voor de docent; studenten krijgen het niet mee.
+        // Beoordelaars staan sinds 2026-11-11 ook voor studenten in de keuzelijst: in de
+        // chat helpen ze bij inleveren (evaluatorChat.js). De nakijkhulp van het
+        // eindproduct blijft alleen voor de docent.
+        const filtered = isStaff ? pp : pp.filter(p => p.persona_type !== 'evaluator' || p.id !== project.preassessment_persona_id);
+        // Wat een persona kent, is voor de docent; studenten krijgen het niet mee,
+        // en van een beoordelaar ook niet hoe hij beoordeelt.
         personas = filtered.map(p => {
           if (isStaff) return { ...p, _source: 'project' };
           const { course_knowledge: _ck, course_knowledge_doc_ids: _cd, project_knowledge_doc_ids: _pd, rag_folder_ids: _rf, ...rest } = p;
+          if (p.persona_type === 'evaluator') delete rest.system_prompt;
           return { ...rest, _source: 'project' };
         });
       } else if (project.course_id) {

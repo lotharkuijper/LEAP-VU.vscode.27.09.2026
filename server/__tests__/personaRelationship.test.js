@@ -3,7 +3,7 @@ import {
   clampLevel, levelKey, levelLabel, isBroken, nextLevel, appendHistory, hasHistoryRef,
   sanitizeEventNote, lastReason, buildReputationPromptBlock, buildConductJudgeMessages, validateConductJudgement,
 } from '../projects/personaRelationship.js';
-import { normalizePersonaType, isChatPersona, reputationActive, sanitizeConductRules, roleFieldsFrom, copyRoleFields, normalizeMaxReviews, clampStartLevel } from '../projects/personaRoles.js';
+import { normalizePersonaType, reputationActive, sanitizeConductRules, roleFieldsFrom, copyRoleFields, normalizeMaxReviews, clampStartLevel } from '../projects/personaRoles.js';
 
 describe('rollen', () => {
   it('drie rollen; onbekend wordt begeleider', () => {
@@ -16,10 +16,6 @@ describe('rollen', () => {
     expect(reputationActive({ persona_type: 'roleplayer', reputation_enabled: false })).toBe(false);
     expect(reputationActive({ persona_type: 'conversational', reputation_enabled: true })).toBe(false);
     expect(reputationActive({ persona_type: 'evaluator', reputation_enabled: true })).toBe(false);
-  });
-  it('met beoordelaars wordt niet gechat', () => {
-    expect(isChatPersona({ persona_type: 'evaluator' })).toBe(false);
-    expect(isChatPersona({ persona_type: 'roleplayer' })).toBe(true);
   });
   it('velden die niet bij de rol horen worden neutraal gezet', () => {
     expect(roleFieldsFrom({ persona_type: 'conversational', reputation_enabled: true, max_reviews: 3, deliverable_label: 'X' }))

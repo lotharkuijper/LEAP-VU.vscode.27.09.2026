@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Choose a group…",
   "admin.projects.students.newGroup": "+ New group",
   "admin.projects.students.assignBtn": "Assign",
-  "projects.tryoutHint": "As a teacher, you work here in your own test group of one. Students can’t access it and won’t see what you do."
+  "projects.tryoutHint": "As a teacher, you work here in your own test group of one. Students can’t access it and won’t see what you do.",
+  "room.evaluatorChatHint": "You can contact an evaluator with questions about submissions: what, where, how, and how many feedback rounds you have left. For content-related feedback, ask on the right under Feedback on your work (Briefing tab)."
 }

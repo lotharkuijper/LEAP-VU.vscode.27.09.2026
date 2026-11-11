@@ -29,7 +29,9 @@ interface Persona {
   name: string;
   avatar_emoji: string;
   avatar?: unknown;
-  system_prompt: string;
+  /** Ontbreekt voor studenten bij een beoordelaar (hoe hij beoordeelt, blijft voor de docent). */
+  system_prompt?: string;
+  persona_type?: 'conversational' | 'roleplayer' | 'evaluator' | null;
   rag_enabled: boolean;
   rag_folder_ids: string[];
   _source: 'project' | 'course' | 'default';
@@ -1207,7 +1209,11 @@ export function ProjectRoomPage() {
                 );
               })()}
             </div>
-            {activePersona && activePersonaId !== '__default__' && (
+            {/* Beoordelaar: in de chat alleen hulp bij inleveren; feedback via de feedbackrondes. */}
+            {activePersona?.persona_type === 'evaluator' && (
+              <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900" data-testid="hint-evaluator-chat">{t('room.evaluatorChatHint')}</p>
+            )}
+            {activePersona && activePersonaId !== '__default__' && activePersona.persona_type !== 'evaluator' && (
               <div className="flex items-center justify-between gap-2 text-xs text-gray-600">
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
                   <span className="text-gray-500">{t('room.documents')} ({personaDocs.length}):</span>
