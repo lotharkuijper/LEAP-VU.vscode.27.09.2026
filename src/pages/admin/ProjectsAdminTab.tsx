@@ -140,6 +140,9 @@ interface CourseSubmissionRow extends SubmissionRow {
 // maakt de sjablonen deelbaar als link.
 export type ProjectsView = 'projects' | 'templates';
 
+/** Bewerkt de docent de nakijkhulp (nieuw, of de aangewezen)? */
+const isMarkerEdit = (p: { purpose?: string; id?: string }, preId: string | null) => p.purpose === 'marking' || (!!p.id && p.id === preId);
+
 export function ProjectsViewSwitch({ view, onChange }: { view: ProjectsView; onChange: (v: ProjectsView) => void }) {
   const { t } = useLanguage();
   const items: Array<{ id: ProjectsView; label: string; icon: typeof FolderOpen }> = [
@@ -741,8 +744,12 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
       persona_type: 'evaluator',
       deliverable_label: marking ? t('admin.projects.fb.finalProduct') : '',
       max_reviews: marking ? null : 3,
-      course_knowledge: 'none', course_knowledge_doc_ids: [],
-      project_knowledge_doc_ids: projectDocs.filter(d => d.material_kind === 'rubric').map(d => d.id),
+      // Nakijkhulp: standaard de rubric, de opdracht en overige projectdocumenten
+      // (bv. de planning) en alle leerstof als maatstaf. Feedbackgever: alleen de rubric.
+      course_knowledge: marking ? 'all' : 'none', course_knowledge_doc_ids: [],
+      project_knowledge_doc_ids: projectDocs
+        .filter(d => d.material_kind === 'rubric' || (marking && (d.material_kind === 'assignment' || d.material_kind === 'other')))
+        .map(d => d.id),
       ...(marking ? { purpose: 'marking' as const } : {}),
     });
   };
@@ -954,6 +961,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
         onDeletePersona={(p) => { const full = personas.find(x => x.id === p.id); if (full) void removePersona(full); }}
         onError={setLocalError}
         onInfo={setLocalInfo}
+        onProjectPatched={patchProject}
       />
       )}
 
@@ -1195,7 +1203,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                 token={token}
                 // Personages (stap 3) en beoordelaars (stap 4) blijven elk in hun eigen stap.
                 roles={editingPersona.persona_type === 'evaluator' ? ['evaluator'] : ['conversational', 'roleplayer']}
-                marking={editingPersona.purpose === 'marking' || (!!editingPersona.id && editingPersona.id === pre.personaId)}
+                marking={isMarkerEdit(editingPersona, pre.personaId)}
               />
               <div>
                 <label className="text-xs font-medium text-gray-700">{t('admin.projects.personas.fieldPrompt')}</label>
@@ -1208,6 +1216,8 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                 courseDocs={knowledge ? knowledge.courseDocs : null}
                 projectDocs={knowledge ? knowledge.projectDocs : null}
                 isEvaluator={(editingPersona.persona_type || 'conversational') === 'evaluator'}
+                // De nakijkhulp mag de leerstof als maatstaf gebruiken (server/projects/preassessment.js).
+                courseForEvaluator={isMarkerEdit(editingPersona, pre.personaId)}
               />
               {(editingPersona.persona_type || 'conversational') !== 'evaluator' && (
               <div className="border-t border-gray-100 pt-2 grid grid-cols-2 gap-3">

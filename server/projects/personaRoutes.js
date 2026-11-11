@@ -463,7 +463,8 @@ export function registerProjectPersonaRoutes(app) {
           })
           : null,
         (async () => {
-          // Een beoordelaar zoekt in de chat niets op: hij helpt alleen bij inleveren.
+          // Een beoordelaar zoekt in de chat niets op: hij helpt alleen bij inleveren. (De
+          // course_knowledge van de nakijkhulp gebruikt alleen preassessment.js.)
           const mode = isEvaluator ? 'none' : (persona.course_knowledge || 'none');
           if (mode === 'none') return { context: '', sources: [] };
           const [ragSettings, courseFolders] = await Promise.all([

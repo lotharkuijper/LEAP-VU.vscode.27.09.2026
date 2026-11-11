@@ -14,11 +14,23 @@ import { StatusBadge } from '../../components/ui/ListRow';
 export type Indication = 'strong' | 'adequate' | 'weak' | 'unclear';
 export interface PreassessmentContent {
   summary: string;
-  criteria: Array<{ criterion: string; indication: Indication; strengths: string[]; concerns: string[]; quotes: string[] }>;
+  criteria: Array<{
+    criterion: string; indication: Indication; strengths: string[]; concerns: string[]; quotes: string[];
+    /** Onderbouwing uit het cursusmateriaal; source verwijst naar courseSources[].index. */
+    course_evidence?: Array<{ source: number; note: string }>;
+  }>;
   attention: string[];
   parts?: number;
   truncated?: boolean;
   rubricFiles?: string[];
+  courseKnowledge?: 'none' | 'all' | 'selected';
+  courseSources?: CourseSource[];
+  courseNoMatch?: boolean;
+}
+export interface CourseSource {
+  index: number; title: string; documentId: string | null;
+  /** Titel met pagina of dia, gemaakt door de server (preassessment.js sourceLabel). */
+  label?: string;
 }
 export interface Preassessment {
   submissionId: string;
@@ -159,9 +171,34 @@ export function PreassessmentModal({ groupName, a, onClose, onRerun, onDownload 
                         {cr.quotes.map((q, j) => <blockquote key={j} className="mt-1 border-l-2 border-gray-300 pl-2 italic text-gray-700">“{q}”</blockquote>)}
                       </div>
                     )}
+                    {!!cr.course_evidence?.length && (
+                      <div className="mt-2" data-testid="preassessment-course-evidence">
+                        <div className="text-xs font-semibold text-gray-600">{tk('projects.preassessment.doc.courseEvidence')}</div>
+                        <ul className="ml-4 list-disc text-gray-800">
+                          {cr.course_evidence.map((e, j) => {
+                            const src = c.courseSources?.find((s) => s.index === e.source);
+                            return (
+                              <li key={j}>
+                                <span className="mr-1 rounded bg-sky-50 px-1 text-xs font-medium text-sky-800" title={src ? (src.label || src.title) : undefined}>[{e.source}]</span>
+                                {e.note}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
                   </div>
                 ))}
               </section>
+              {c.courseNoMatch && <AdminHint variant="warning">{tk('projects.preassessment.doc.courseNoMatch')}</AdminHint>}
+              {!!c.courseSources?.length && (
+                <section data-testid="preassessment-course-sources">
+                  <h4 className="font-semibold text-gray-900">{tk('projects.preassessment.doc.courseSources')}</h4>
+                  <ul className="mt-1 space-y-0.5 text-xs text-gray-700">
+                    {c.courseSources.map((s) => <li key={s.index}><span className="font-medium">[{s.index}]</span> {(s.label || s.title)}</li>)}
+                  </ul>
+                </section>
+              )}
               {c.attention.length > 0 && (
                 <section>
                   <h4 className="font-semibold text-gray-900">{tk('projects.preassessment.doc.attention')}</h4>

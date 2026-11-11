@@ -29,6 +29,7 @@ function setup(over: Partial<Parameters<typeof ProjectFeedbackSetup>[0]> = {}) {
     token: 't', personas, docs, accept: '.pdf', preassessorId: 'e2',
     onPreassessorChange: vi.fn(), onToggleDocVisibility: vi.fn(), onUploadRubric: vi.fn(), uploading: false,
     onNewEvaluator: vi.fn(), onPersonasChanged: vi.fn(), onEditPersona: vi.fn(), onDeletePersona: vi.fn(), onError: vi.fn(), onInfo: vi.fn(),
+    onProjectPatched: vi.fn(),
     ...over,
   };
   render(<LanguageProvider><ProjectFeedbackSetup {...props} /></LanguageProvider>);
@@ -64,9 +65,12 @@ describe('ProjectFeedbackSetup', () => {
 
   it('stap 3 vraagt eerst om inleveren; zonder nakijkhulp een knop om er een toe te voegen', () => {
     setup({ project: { id: 'p1', rubric_criteria: [], submissions_enabled: false } });
-    expect(screen.getByTestId('fb-step-marking')).toHaveTextContent('inleveren');
+    expect(screen.getByTestId('fb-step-marking')).toHaveTextContent(/inleveren/i);
     cleanup();
     const p = setup({ preassessorId: null });
+    // Alleen feedbackgevers: stap 3 is uit beeld tot de docent ook nakijkcommentaar kiest.
+    expect(screen.queryByTestId('fb-step-marking')).toBeNull();
+    fireEvent.click(screen.getByTestId('radio-fb-mode-both'));
     fireEvent.click(screen.getByTestId('button-fb-add-marking'));
     expect(p.onNewEvaluator).toHaveBeenCalledWith('marking');
   });
@@ -78,6 +82,7 @@ describe('ProjectFeedbackSetup', () => {
     expect(screen.getByTestId('fb-step-marking')).not.toHaveTextContent('Feedbackgever');
     cleanup();
     setup({ preassessorId: null });
+    fireEvent.click(screen.getByTestId('radio-fb-mode-both'));
     expect(screen.queryByTestId('fb-marker')).toBeNull();
     expect(screen.getByTestId('text-fb-marking-none')).toBeInTheDocument();
     expect(screen.getByTestId('fb-step-feedback')).toHaveTextContent('Nakijkhulp');
@@ -99,6 +104,57 @@ describe('ProjectFeedbackSetup', () => {
     expect(p.onEditPersona).toHaveBeenCalledWith(personas[0]);
     fireEvent.click(screen.getByTestId('button-fb-delete-e2'));
     expect(p.onDeletePersona).toHaveBeenCalledWith(personas[1]);
+  });
+
+  it('keuze bovenaan: begint bij wat er al is; niets ingesteld = eerst kiezen', () => {
+    setup();
+    expect(screen.getByTestId('radio-fb-mode-both')).toBeChecked();
+    cleanup();
+    setup({ personas: [personas[2]], preassessorId: null });
+    expect(screen.getByTestId('text-fb-mode-choose')).toBeInTheDocument();
+    expect(screen.queryByTestId('fb-step-feedback')).toBeNull();
+    expect(screen.queryByTestId('fb-step-marking')).toBeNull();
+    fireEvent.click(screen.getByTestId('radio-fb-mode-marking'));
+    expect(screen.getByTestId('fb-step-marking')).toBeInTheDocument();
+    expect(screen.queryByTestId('fb-step-feedback')).toBeNull();
+  });
+
+  it('alleen nakijkcommentaar terwijl er nog feedbackgevers zijn: waarschuwing, en ze blijven te verwijderen', () => {
+    setup();
+    fireEvent.click(screen.getByTestId('radio-fb-mode-marking'));
+    expect(screen.getByTestId('hint-fb-leftover-feedback')).toBeInTheDocument();
+    expect(screen.getByTestId('button-fb-delete-e1')).toBeInTheDocument();
+  });
+
+  it('inleveren staat uit: aanzetten kan hier', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal('fetch', fetchMock);
+    const p = setup({ project: { id: 'p1', rubric_criteria: [], submissions_enabled: false } });
+    fireEvent.click(screen.getByTestId('button-fb-enable-submissions'));
+    await waitFor(() => expect(p.onProjectPatched).toHaveBeenCalledWith({ submissions_enabled: true }));
+    expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1', expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ submissions_enabled: true }) }));
+    vi.unstubAllGlobals();
+  });
+
+  it('wat leest de nakijkhulp: product, rubric, projectdocumenten en de leerstof als maatstaf', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal('fetch', fetchMock);
+    setup();
+    const card = screen.getByTestId('card-marker-reads');
+    expect(card).toHaveTextContent('Het ingeleverde eindproduct');
+    expect(screen.getByTestId('marker-doc-d1')).not.toBeChecked();
+    expect(screen.getByTestId('marker-course-none')).toBeChecked();
+    fireEvent.click(screen.getByTestId('marker-doc-d2'));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/personas/e2', expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ project_knowledge_doc_ids: ['d2'] }) })));
+    fireEvent.click(screen.getByTestId('marker-course-all'));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith('/api/projects/p1/personas/e2', expect.objectContaining({ body: JSON.stringify({ course_knowledge: 'all' }) })));
+    cleanup();
+    const marker = { ...personas[1], course_knowledge: 'selected' as const, course_knowledge_doc_ids: ['x', 'y'] };
+    const p2 = setup({ personas: [personas[0], marker] });
+    expect(screen.getByTestId('card-marker-reads')).toHaveTextContent('2 bestand(en) gekozen');
+    fireEvent.click(screen.getByTestId('button-marker-choose-files'));
+    expect(p2.onEditPersona).toHaveBeenCalledWith(marker);
+    vi.unstubAllGlobals();
   });
 
   it('criteria: oud (tekst) en nieuw ({ title }) formaat', () => {

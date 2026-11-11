@@ -15,6 +15,7 @@ import { PersonaAvatar } from '../../components/PersonaAvatar';
 import { Tooltip } from '../../components/help/Tooltip';
 import { HelpTip } from '../../components/help/HelpTip';
 import type { AvatarConfig } from '../../lib/personaAvatar';
+import { MarkerReadsCard } from './MarkerReadsCard';
 
 export interface FeedbackPersona {
   id: string;
@@ -25,6 +26,16 @@ export interface FeedbackPersona {
   deliverable_label?: string | null;
   max_reviews?: number | null;
   project_knowledge_doc_ids?: string[] | null;
+  course_knowledge?: 'none' | 'all' | 'selected' | null;
+  course_knowledge_doc_ids?: string[] | null;
+}
+/** Wat de docent wil (2026-11-11): bepaalt welke stappen in beeld zijn. */
+export type FeedbackMode = 'marking' | 'both' | 'feedback';
+function feedbackModeOf(hasMarker: boolean, feedbackGivers: number): FeedbackMode | null {
+  if (hasMarker && feedbackGivers > 0) return 'both';
+  if (hasMarker) return 'marking';
+  if (feedbackGivers > 0) return 'feedback';
+  return null;
 }
 export interface FeedbackDoc {
   id: string;
@@ -56,7 +67,10 @@ function Step({ n, title, who, children, testId }: { n: number; title: string; w
 export function ProjectFeedbackSetup({
   project, token, personas, docs, accept, preassessorId, onPreassessorChange,
   onToggleDocVisibility, onUploadRubric, uploading, onNewEvaluator, onPersonasChanged, onEditPersona, onDeletePersona, onError, onInfo,
+  onProjectPatched,
 }: {
+  /** Na het aanzetten van inleveren vanuit deze stap. */
+  onProjectPatched: (patch: { submissions_enabled: boolean }) => void;
   project: { id: string; rubric_criteria: unknown; submissions_enabled: boolean | null };
   token: string;
   personas: FeedbackPersona[];
@@ -84,6 +98,20 @@ export function ProjectFeedbackSetup({
   const feedbackGivers = evaluators.filter((p) => p.id !== preassessorId);
   const marker = evaluators.find((p) => p.id === preassessorId) || null;
   const knowsRubric = (p: FeedbackPersona) => rubricIds.length > 0 && (p.project_knowledge_doc_ids || []).some((id) => rubricIds.includes(id));
+  // Welke stappen zijn in beeld? Begint bij wat er al is; de docent kiest bovenaan.
+  const [mode, setMode] = useState<FeedbackMode | null>(() => feedbackModeOf(!!marker, feedbackGivers.length));
+  const showFeedback = mode === 'feedback' || mode === 'both' || (mode === 'marking' && feedbackGivers.length > 0);
+  const showMarking = mode === 'marking' || mode === 'both' || (mode === 'feedback' && !!marker);
+  const enableSubmissions = async () => {
+    const r = await fetch(`/api/projects/${project.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ submissions_enabled: true }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { onError(d.error || t('admin.projects.personas.saveFailed')); return; }
+    onProjectPatched({ submissions_enabled: true });
+  };
 
   const [criteria, setCriteria] = useState(() => criteriaLines(project.rubric_criteria));
   const [savedCriteria, setSavedCriteria] = useState(criteria);
@@ -173,6 +201,20 @@ export function ProjectFeedbackSetup({
         <AdminHint variant="intro">{t('admin.projects.fb.intro')}</AdminHint>
       </div>
 
+      <fieldset className="rounded-lg border border-gray-200 p-3 space-y-1.5" data-testid="fb-mode">
+        <legend className="px-1 text-sm font-medium text-gray-900">{t('admin.projects.fb.modeTitle')}</legend>
+        {(['marking', 'both', 'feedback'] as FeedbackMode[]).map((m) => (
+          <label key={m} className="flex items-start gap-2 text-sm">
+            <input type="radio" name={`fb-mode-${project.id}`} className="mt-1" checked={mode === m} onChange={() => setMode(m)} data-testid={`radio-fb-mode-${m}`} />
+            <span>
+              <span className="font-medium">{t(`admin.projects.fb.mode.${m}` as 'admin.projects.fb.mode.marking')}</span>
+              <span className="block text-[11px] text-gray-500">{t(`admin.projects.fb.mode.${m}Hint` as 'admin.projects.fb.mode.markingHint')}</span>
+            </span>
+          </label>
+        ))}
+        {mode === null && <p className="text-xs text-gray-600" data-testid="text-fb-mode-choose">{t('admin.projects.fb.modeChoose')}</p>}
+      </fieldset>
+
       <Step n={1} title={t('admin.projects.fb.step1')} who={t('admin.projects.fb.step1Who')} testId="fb-step-criteria">
         {rubrics.length === 0 ? (
           <p className="text-xs text-gray-600">{t('admin.projects.fb.noRubric')}</p>
@@ -217,7 +259,9 @@ export function ProjectFeedbackSetup({
         </div>
       </Step>
 
+      {showFeedback && (
       <Step n={2} title={t('admin.projects.fb.step2')} who={t('admin.projects.fb.step2Who')} testId="fb-step-feedback">
+        {mode === 'marking' && <AdminHint variant="warning" testId="hint-fb-leftover-feedback">{t('admin.projects.fb.leftoverFeedback')}</AdminHint>}
         <p className="text-xs text-gray-600">{t('admin.projects.fb.step2Desc')}</p>
         {feedbackGivers.length === 0
           ? <p className="text-xs text-gray-500" data-testid="text-fb-feedback-off">{t('admin.projects.fb.feedbackOff')}</p>
@@ -227,16 +271,26 @@ export function ProjectFeedbackSetup({
           <Plus className="w-3.5 h-3.5" /> {t('admin.projects.fb.addFeedback')}
         </button>
       </Step>
+      )}
 
-      <Step n={3} title={t('admin.projects.fb.step3')} who={t('admin.projects.fb.step3Who')} testId="fb-step-marking">
+      {showMarking && (
+      <Step n={showFeedback ? 3 : 2} title={t('admin.projects.fb.step3')} who={t('admin.projects.fb.step3Who')} testId="fb-step-marking">
+        {mode === 'feedback' && <AdminHint variant="warning" testId="hint-fb-leftover-marker">{t('admin.projects.fb.leftoverMarker')}</AdminHint>}
         {!project.submissions_enabled ? (
-          <AdminHint variant="tip">{t('admin.projects.fb.needSubmissions')}</AdminHint>
+          <div className="space-y-2">
+            <AdminHint variant="tip">{t('admin.projects.fb.needSubmissionsHere')}</AdminHint>
+            <button type="button" onClick={() => void enableSubmissions()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700" data-testid="button-fb-enable-submissions">
+              {t('admin.projects.fb.enableSubmissions')}
+            </button>
+          </div>
         ) : marker ? (
           // Een vaste nakijkhulp: geen keuzelijst met feedbackgevers (die haalde
           // een feedbackgever stilletjes weg uit stap 2). Uitzetten = verwijderen.
           <>
             <p className="text-xs text-gray-600">{t('admin.projects.fb.step3Desc')} <HelpTip id="projects.preassessment" /></p>
             <ul data-testid="fb-marker">{evaluatorRow(marker, false)}</ul>
+            <MarkerReadsCard marker={marker} docs={docs} onPatch={(body) => void patchPersona(marker, body)} onChooseFiles={() => onEditPersona(marker)} />
             <button type="button" onClick={() => void setMarker(null)}
               className="text-[11px] text-gray-600 hover:underline" data-testid="button-fb-marker-to-feedback">
               {t('admin.projects.fb.markerToFeedback')}
@@ -252,6 +306,7 @@ export function ProjectFeedbackSetup({
           </>
         )}
       </Step>
+      )}
 
       <p className="text-sm font-medium text-gray-800" data-testid="text-fb-you-assess">{t('admin.projects.fb.youAssess')}</p>
     </div>
