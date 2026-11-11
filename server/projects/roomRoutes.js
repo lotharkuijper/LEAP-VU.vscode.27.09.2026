@@ -347,7 +347,7 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
           isGroupMember(g.id, auth.user.id),
           supabaseAdmin
             .from('project_group_members')
-            .select('id, user_id, role, joined_at, profiles(id, full_name, email)')
+            .select('id, user_id, role, joined_at, profiles!user_id(id, full_name, email)')
             .eq('group_id', g.id),
         ]);
         if (!isMember && !isLeapAdmin(profile)) return res.status(403).json({ error: 'Geen toegang tot deze groep' });

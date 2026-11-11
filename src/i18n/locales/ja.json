@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} 件選択 →",
   "admin.projects.students.target": "グループを選択…",
   "admin.projects.students.newGroup": "+ 新しいグループ",
-  "admin.projects.students.assignBtn": "割り当てる"
+  "admin.projects.students.assignBtn": "割り当てる",
+  "projects.tryoutHint": "教員として、ここでは1人だけの自分専用のテストグループで作業します。学生はここに入れず、あなたが何をしているかも見えません。"
 }

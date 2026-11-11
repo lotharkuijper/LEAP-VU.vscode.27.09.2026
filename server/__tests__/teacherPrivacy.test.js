@@ -53,7 +53,7 @@ describe('docenten zien de inhoud van projectgroepen niet', () => {
 
   it('wie zit in welke groep mag wel: alleen namen, geen inhoud', () => {
     const block = routeBlock("app.get('/api/projects/:projectId/groups-overview'");
-    expect(block).toContain("select('group_id, user_id, profiles(full_name, email)')");
+    expect(block).toContain("select('group_id, user_id, profiles!user_id(full_name, email)')");
     expect(block).not.toMatch(/group_chat_messages|group_persona|reviews|relationships/);
   });
 });

@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count}명 선택됨 →",
   "admin.projects.students.target": "그룹 선택…",
   "admin.projects.students.newGroup": "+ 새 그룹",
-  "admin.projects.students.assignBtn": "배정"
+  "admin.projects.students.assignBtn": "배정",
+  "projects.tryoutHint": "교수자로서 여기서는 혼자만의 테스트 그룹에서 작업해. 학생들은 들어올 수 없고 네가 하는 작업도 볼 수 없어."
 }

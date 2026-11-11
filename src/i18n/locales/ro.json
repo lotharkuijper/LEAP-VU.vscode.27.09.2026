@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} selectați →",
   "admin.projects.students.target": "Alege un grup…",
   "admin.projects.students.newGroup": "+ Grup nou",
-  "admin.projects.students.assignBtn": "Împarte"
+  "admin.projects.students.assignBtn": "Împarte",
+  "projects.tryoutHint": "Ca profesor, lucrezi aici în propriul tău grup de testare de unul singur. Studenții nu intră aici și nu văd ce faci."
 }

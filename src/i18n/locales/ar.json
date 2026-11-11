@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "تم تحديد {count} ←",
   "admin.projects.students.target": "اختر مجموعة…",
   "admin.projects.students.newGroup": "+ مجموعة جديدة",
-  "admin.projects.students.assignBtn": "تقسيم"
+  "admin.projects.students.assignBtn": "تقسيم",
+  "projects.tryoutHint": "بصفتك مدرسًا، تعمل هنا في مجموعة الاختبار الخاصة بك والمكوّنة من شخص واحد. لا يدخلها الطلاب ولا يرون ما تفعله."
 }

@@ -68,7 +68,8 @@ export function registerProjectRoutes(app) {
         .from('project_groups')
         .insert({
           project_id: projectId,
-          name: name || `Groep van ${(auth.user.email || 'student').split('@')[0]}`,
+          // De groep van een docent is zijn testgroep (groep van één); zo herkent hij hem ook bij Groepen.
+          name: name || `${isStaff ? 'Testgroep' : 'Groep'} van ${(auth.user.email || 'student').split('@')[0]}`,
           invite_code: inviteCode,
           created_by: auth.user.id,
         })
@@ -378,7 +379,11 @@ export function registerProjectRoutes(app) {
           // de eindreflectie terugzien en in het eigen leerdagboek bewaren (2026-10-27).
           const finishedGroup = groups.filter(g => g.status === 'finalized')
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null;
-          return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup, archived: p.status === 'archived', draft: p.status === 'draft' };
+          // tryout: docent van de cursus (of beheerder). Die start altijd zelf een eigen
+          // groep van één om het project uit te proberen, ook als de docent of Canvas
+          // de studenten indeelt (POST /api/projects/groups laat staff toe; niemand
+          // anders komt in die groep: groups/join en group-admin weren dat).
+          return { ...p, sessions: pSessions, lastSession, activeGroup: activeGroupWithCp, finishedGroup, archived: p.status === 'archived', draft: p.status === 'draft', tryout: teacherCourseIds.has(c.id) };
         })
           // Gearchiveerde projecten (vorige editie) en cursussen waarvan je oud-deelnemer
           // bent: alleen zichtbaar als terugblik op je eigen afgeronde groep.
@@ -480,7 +485,7 @@ export function registerProjectRoutes(app) {
         .eq('project_id', req.params.projectId).order('created_at');
       const ids = (groups || []).map(g => g.id);
       const { data: members } = ids.length
-        ? await supabaseAdmin.from('project_group_members').select('group_id, user_id, profiles(full_name, email)').in('group_id', ids)
+        ? await supabaseAdmin.from('project_group_members').select('group_id, user_id, profiles!user_id(full_name, email)').in('group_id', ids)
         : { data: [] };
       return res.json({
         groups: (groups || []).map(g => ({

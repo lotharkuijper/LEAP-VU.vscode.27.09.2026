@@ -31,6 +31,8 @@ interface OverviewProject {
   archived?: boolean;
   /** Concept: alleen de docent ziet het, om het uit te proberen in een eigen testgroep. */
   draft?: boolean;
+  /** Docent van de cursus (of beheerder): start altijd een eigen groep van één om uit te proberen. */
+  tryout?: boolean;
 }
 
 interface OverviewCourse {
@@ -218,9 +220,10 @@ export function ProjectsPage() {
                     const completed = p.sessions.some(s => s.status === 'completed');
                     const groupMode = p.group_mode || (p.allow_self_signup === false ? 'teacher' : 'self');
                     const archived = !!p.archived;
-                    // Een concept probeert de docent uit in een eigen testgroep, ook als
-                    // de docent of Canvas straks de groepen indeelt.
-                    const selfGroups = (groupMode === 'self' || !!p.draft) && !archived;
+                    // De docent probeert een project altijd uit in een eigen testgroep van
+                    // één, ook als de docent of Canvas de studenten indeelt.
+                    const tryout = !!p.tryout || !!p.draft;
+                    const selfGroups = (groupMode === 'self' || tryout) && !archived;
                     return (
                       <div key={p.id} className="border border-gray-200 rounded-xl p-5 flex flex-col gap-3" data-testid={`overview-project-${p.id}`}>
                         <div>
@@ -275,8 +278,11 @@ export function ProjectsPage() {
                             className="flex items-center justify-center gap-2 px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 disabled:opacity-40"
                             data-testid={`button-start-${p.id}`}
                           >
-                            <PlayCircle className="w-4 h-4" /> {t(p.draft ? 'projects.startTryout' : 'projects.startNewProject')}
+                            <PlayCircle className="w-4 h-4" /> {t(tryout ? 'projects.startTryout' : 'projects.startNewProject')}
                           </button>
+                          )}
+                          {tryout && !archived && (
+                            <p className="text-[11px] text-gray-500" data-testid={'text-tryout-' + p.id}>{t('projects.tryoutHint')}</p>
                           )}
                           {selfGroups && (inProgress || completed) && (
                             <button

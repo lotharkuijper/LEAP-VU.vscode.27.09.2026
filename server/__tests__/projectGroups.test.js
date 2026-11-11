@@ -80,3 +80,31 @@ describe('koppeling', () => {
     expect(fs.existsSync(path.join(root, 'supabase', 'rollback', '20261027160000_project_group_modes_down.sql'))).toBe(true);
   });
 });
+
+describe('testgroep van de docent (2026-11-11)', () => {
+  it('het overzicht geeft docenten en beheerders altijd "uitproberen", ook bij een open project', () => {
+    const ov = routeSource("app.get('/api/projects/student-overview'");
+    expect(ov).toMatch(/tryout: teacherCourseIds\.has\(c\.id\)/);
+    expect(ov).toMatch(/if \(allowed && m\.member_role === 'teacher'\) teacherCourseIds\.add\(c\.id\)/);
+  });
+  it('de projectenpagina toont de startknop voor wie mag uitproberen', () => {
+    const page = fs.readFileSync(path.join(root, 'src', 'pages', 'ProjectsPage.tsx'), 'utf8');
+    expect(page).toMatch(/const tryout = !!p\.tryout \|\| !!p\.draft;/);
+    expect(page).toMatch(/const selfGroups = \(groupMode === 'self' \|\| tryout\) && !archived;/);
+  });
+  it('een student maakt nog steeds geen eigen groep als de docent of Canvas indeelt', () => {
+    const block = route("app.post('/api/projects/groups',");
+    expect(block).toMatch(/if \(!isStaff\) \{[\s\S]*if \(!studentMayFormGroups\(project\)\)/);
+  });
+});
+
+describe('leden met naam ophalen', () => {
+  it('project_group_members verwijst twee keer naar profiles (user_id en added_by): altijd de kolom noemen', () => {
+    // Zonder hint weigert de database de vraag ("more than one relationship") en
+    // toont de projectruimte 0 leden.
+    const src = allServerSource();
+    const calls = src.match(/from\('project_group_members'\)[^;]*?profiles[!(][^)]*\)/g) || [];
+    expect(calls.length).toBeGreaterThan(0);
+    for (const c of calls) expect(c).toMatch(/profiles!user_id\(/);
+  });
+});

@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} selected →",
   "admin.projects.students.target": "Choose a group…",
   "admin.projects.students.newGroup": "+ New group",
-  "admin.projects.students.assignBtn": "Assign"
+  "admin.projects.students.assignBtn": "Assign",
+  "projects.tryoutHint": "As a teacher, you work here in your own test group of one. Students can’t access it and won’t see what you do."
 }

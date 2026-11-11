@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} चुने गए →",
   "admin.projects.students.target": "एक समूह चुनो…",
   "admin.projects.students.newGroup": "+ नया समूह",
-  "admin.projects.students.assignBtn": "बाँटो"
+  "admin.projects.students.assignBtn": "बाँटो",
+  "projects.tryoutHint": "शिक्षक के रूप में, तुम यहाँ एक व्यक्ति वाले अपने टेस्ट समूह में काम करते हो। छात्र इसमें नहीं आते और नहीं देखते कि तुम क्या करते हो।"
 }

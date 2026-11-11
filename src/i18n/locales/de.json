@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} ausgewählt →",
   "admin.projects.students.target": "Wähle eine Gruppe aus …",
   "admin.projects.students.newGroup": "+ Neue Gruppe",
-  "admin.projects.students.assignBtn": "Einteilen"
+  "admin.projects.students.assignBtn": "Einteilen",
+  "projects.tryoutHint": "Als Lehrkraft arbeitest du hier in deiner eigenen Testgruppe mit nur einer Person. Studierende kommen dort nicht hinein und sehen nicht, was du tust."
 }

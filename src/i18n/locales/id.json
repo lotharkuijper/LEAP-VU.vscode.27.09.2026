@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} dipilih →",
   "admin.projects.students.target": "Pilih kelompok…",
   "admin.projects.students.newGroup": "+ Kelompok baru",
-  "admin.projects.students.assignBtn": "Bagi"
+  "admin.projects.students.assignBtn": "Bagi",
+  "projects.tryoutHint": "Sebagai dosen, di sini kamu bekerja dalam grup uji milikmu sendiri yang beranggotakan satu orang. Mahasiswa tidak masuk ke sana dan tidak melihat apa yang kamu lakukan."
 }

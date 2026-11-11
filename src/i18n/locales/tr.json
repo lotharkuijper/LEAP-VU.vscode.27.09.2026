@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} seçildi →",
   "admin.projects.students.target": "Bir grup seç…",
   "admin.projects.students.newGroup": "+ Yeni grup",
-  "admin.projects.students.assignBtn": "Gruplandır"
+  "admin.projects.students.assignBtn": "Gruplandır",
+  "projects.tryoutHint": "Öğretim görevlisi olarak burada tek kişilik kendi test grubunda çalışırsın. Öğrenciler buraya giremez ve ne yaptığını görmez."
 }

@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} geselecteerd →",
   "admin.projects.students.target": "Kies een groep…",
   "admin.projects.students.newGroup": "+ Nieuwe groep",
-  "admin.projects.students.assignBtn": "Indelen"
+  "admin.projects.students.assignBtn": "Indelen",
+  "projects.tryoutHint": "Als docent werk je hier in je eigen testgroep van één. Studenten komen er niet in en zien niet wat je doet."
 }
