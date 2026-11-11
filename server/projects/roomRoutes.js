@@ -391,8 +391,9 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
         evaluatorCount = pp.filter(p => p.persona_type === 'evaluator' && p.id !== project.preassessment_persona_id).length;
         // Beoordelaars staan sinds 2026-11-11 ook voor studenten in de keuzelijst: in de
         // chat helpen ze bij inleveren (evaluatorChat.js). De nakijkhulp van het
-        // eindproduct blijft alleen voor de docent.
-        const filtered = isStaff ? pp : pp.filter(p => p.persona_type !== 'evaluator' || p.id !== project.preassessment_persona_id);
+        // eindproduct is geen gesprekspartner, ook niet voor de docent: hij schrijft
+        // alleen nakijkcommentaar na het inleveren (beheer, ProjectPreassessment).
+        const filtered = pp.filter(p => p.id !== project.preassessment_persona_id);
         // Wat een persona kent, is voor de docent; studenten krijgen het niet mee,
         // en van een beoordelaar ook niet hoe hij beoordeelt.
         personas = filtered.map(p => {
@@ -458,12 +459,11 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
             if (list.length) rubricsByPersona.set(p.id, list);
           });
         }
-        // De voorbeoordelaar van het eindproduct is alleen voor de docent.
-        const hidePre = !isStaff && project.preassessment_persona_id;
-        evaluators = (evRows || []).filter(p => !hidePre || p.id !== project.preassessment_persona_id).map(p => ({
-          id: p.id, name: p.name, avatar_emoji: p.avatar_emoji, avatar: p.avatar ?? null,
-          rubrics: rubricsByPersona.get(p.id) || [],
-        }));
+        // De rubric van de nakijkhulp kan de groep openen als de docent hem zichtbaar
+        // maakte; de nakijkhulp zelf (naam, avatar) blijft uit beeld.
+        evaluators = (evRows || []).map(p => (p.id === project.preassessment_persona_id
+          ? { id: p.id, name: null, avatar_emoji: null, avatar: null, marker: true, rubrics: rubricsByPersona.get(p.id) || [] }
+          : { id: p.id, name: p.name, avatar_emoji: p.avatar_emoji, avatar: p.avatar ?? null, rubrics: rubricsByPersona.get(p.id) || [] }));
       }
 
       // Task #252: raadpleeglimiet per project-persona voor deze groep. Lui

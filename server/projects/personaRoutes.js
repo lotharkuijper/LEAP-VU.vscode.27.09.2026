@@ -313,16 +313,14 @@ export function registerProjectPersonaRoutes(app) {
       if (!persona) return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
       // Een beoordelaar is in de chat alleen een wegwijzer bij het inleveren
       // (evaluatorChat.js); feedback geeft hij alleen in een feedbackronde. De
-      // nakijkhulp van het eindproduct is alleen voor de docent.
+      // nakijkhulp van het eindproduct is geen gesprekspartner.
       const isEvaluator = persona.persona_type === 'evaluator';
       let evaluatorFacts = null;
       if (isEvaluator) {
         evaluatorFacts = await loadEvaluatorChatFacts(supabaseAdmin, { projectId: project.id, groupId, persona });
+        // De nakijkhulp is geen gesprekspartner, voor niemand.
         if (evaluatorFacts.isPreassessor) {
-          const { data: chatProfile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
-          if (!(await isStaffForCourse(auth.user, chatProfile, project.course_id))) {
-            return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
-          }
+          return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
         }
       }
 
