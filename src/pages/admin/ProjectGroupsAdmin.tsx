@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Copy, Check, Loader2, Plus, Shuffle, Trash2, Pencil } from 'lucide-react';
+import { Copy, Check, Loader2, Plus, Trash2, Pencil, Users } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { HelpTip } from '../../components/help/HelpTip';
 import { Tooltip } from '../../components/help/Tooltip';
 import { AdminHint } from '../../components/help/AdminHint';
+import { ProjectStudentsDialog } from './ProjectStudentsDialog';
 
 // Groepen van een project (2026-10-27, server/projects/projectGroups.js). De docent deelt
 // in, verplaatst en maakt groepen; bij groepsindeling via Canvas ontstaan de
@@ -11,12 +12,12 @@ import { AdminHint } from '../../components/help/AdminHint';
 // groepsopdracht. Privacy: alleen wie in welke groep zit.
 
 type GroupMode = 'self' | 'teacher' | 'canvas';
-interface Person { userId: string; name: string | null; email: string | null }
+interface Person { userId: string; name: string | null; email: string | null; student?: boolean }
 interface AdminGroup {
-  id: string; name: string; status: string; source: GroupMode; external_name: string | null; members: Person[];
+  id: string; name: string; status: string; source: GroupMode; external_name: string | null; teacherGroup?: boolean; members: Person[];
 }
 
-export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: string; courseId: string | null; token: string }) {
+export function ProjectGroupsAdmin({ projectId, courseId, token, maxSize = 4 }: { projectId: string; courseId: string | null; token: string; maxSize?: number }) {
   const { t } = useLanguage();
   const [mode, setMode] = useState<GroupMode>('self');
   const [groups, setGroups] = useState<AdminGroup[] | null>(null);
@@ -24,7 +25,7 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newName, setNewName] = useState('');
-  const [autoSize, setAutoSize] = useState(4);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [renaming, setRenaming] = useState<{ id: string; name: string } | null>(null);
   const [canvasLink, setCanvasLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -65,22 +66,28 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
     setError(null);
-    try { await fn(); await load(); } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+    let ok = false;
+    try { await fn(); ok = true; } catch (e) { setError((e as Error).message); }
+    await load();
+    setBusy(false);
+    return ok;
   };
   const activeGroups = (groups || []).filter(g => g.status === 'active');
   const label = (p: Person) => p.name || p.email || '—';
+  const assign = (userIds: string[], groupId: string | null) => call('PUT', '/members', { userIds, groupId });
+  const studentCount = unassigned.length + activeGroups.reduce((n, g) => n + g.members.filter(m => m.student !== false).length, 0);
 
   const moveSelect = (p: Person, current: string) => (
     <select
       value={current}
       disabled={busy}
-      onChange={e => void run(() => call('PUT', `/members/${p.userId}`, { groupId: e.target.value || null }))}
+      onChange={e => void run(() => assign([p.userId], e.target.value || null))}
       aria-label={t('admin.projects.groups.moveLabel', { name: label(p) })}
       className="max-w-[10rem] rounded border border-gray-300 bg-white px-1 py-0.5 text-[11px]"
       data-testid={`select-move-${p.userId}`}
     >
       <option value="">{t('admin.projects.groups.removeFromGroup')}</option>
-      {activeGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+      {activeGroups.filter(g => !g.teacherGroup || g.id === current).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
     </select>
   );
 
@@ -140,36 +147,40 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
         {busy && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
       </div>
 
-      {/* Wie nog geen groep heeft: bovenaan, met automatisch verdelen. Toevoegen doe je in de groep zelf. */}
+      {/* Studenten indelen: de lijst staat in een pop-up, hier alleen de stand. */}
       {groups !== null && (
-        unassigned.length > 0 ? (
-          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3" data-testid="panel-unassigned">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="flex-1 text-xs font-medium text-amber-900">{t('admin.projects.groups.unassigned', { count: String(unassigned.length) })}</p>
-              {unassigned.length > 1 && (
-                <span className="flex flex-nowrap items-center gap-1">
-                  <label className="text-xs text-gray-600 whitespace-nowrap" htmlFor="auto-size">{t('admin.projects.groups.autoSize')}</label>
-                  <input id="auto-size" type="number" min={1} max={20} value={autoSize} onChange={e => setAutoSize(Math.max(1, Number(e.target.value) || 4))} className="w-14 rounded border border-gray-300 bg-white px-1.5 py-1 text-sm" />
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void run(() => call('POST', '/auto', { size: autoSize, userIds: unassigned.map(p => p.userId) }))}
-                    className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-gray-300 bg-white px-2.5 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
-                    data-testid="button-auto-groups"
-                  >
-                    <Shuffle className="w-4 h-4" />{t('admin.projects.groups.autoBtn', { count: String(unassigned.length) })}
-                  </button>
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-amber-900">{unassigned.map(label).join(', ')}</p>
-            {activeGroups.length === 0 && <p className="mt-1 text-[11px] text-gray-600">{t('admin.projects.groups.createFirst')}</p>}
-          </div>
-        ) : groups.some(g => g.members.length > 0) ? (
-          <p className="mb-3 text-xs text-emerald-700" data-testid="text-all-assigned">{t('admin.projects.groups.allAssigned')}</p>
-        ) : (
-          <p className="mb-3 text-xs text-gray-500" data-testid="text-no-students">{t('admin.projects.groups.noStudents')}</p>
-        )
+        <div className={`mb-3 flex flex-wrap items-center gap-2 rounded-lg border p-3 ${unassigned.length > 0 ? 'border-amber-200 bg-amber-50/60' : 'border-gray-200'}`} data-testid="panel-unassigned">
+          <p className="min-w-0 flex-1 text-xs text-gray-700" data-testid={studentCount === 0 ? 'text-no-students' : unassigned.length === 0 ? 'text-all-assigned' : 'text-unassigned'}>
+            {studentCount === 0
+              ? t('admin.projects.groups.noStudents')
+              : unassigned.length === 0
+                ? t('admin.projects.groups.allAssigned')
+                : t('admin.projects.groups.summary', { total: String(studentCount), open: String(unassigned.length) })}
+          </p>
+          <button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+            data-testid="button-open-students"
+          >
+            <Users className="w-4 h-4" />{t('admin.projects.students.open')}
+          </button>
+        </div>
+      )}
+      {dialogOpen && groups !== null && (
+        <ProjectStudentsDialog
+          groups={groups}
+          unassigned={unassigned}
+          maxSize={maxSize}
+          busy={busy}
+          error={error}
+          onAuto={(userIds, size) => run(() => call('POST', '/auto', { size, userIds }))}
+          onAssign={(userIds, target) => run(async () => {
+            const groupId = 'newGroup' in target ? (await call('POST', '/groups', { name: target.newGroup })).group.id : target.groupId;
+            await assign(userIds, groupId);
+          })}
+          onClose={() => setDialogOpen(false)}
+        />
       )}
 
       {groups === null ? (
@@ -214,11 +225,11 @@ export function ProjectGroupsAdmin({ projectId, courseId, token }: { projectId: 
                   ))}
                 </ul>
               )}
-              {g.status === 'active' && unassigned.length > 0 && (
+              {g.status === 'active' && !g.teacherGroup && unassigned.length > 0 && (
                 <select
                   value=""
                   disabled={busy}
-                  onChange={e => { const id = e.target.value; if (id) void run(() => call('PUT', `/members/${id}`, { groupId: g.id })); }}
+                  onChange={e => { const id = e.target.value; if (id) void run(() => assign([id], g.id)); }}
                   aria-label={t('admin.projects.groups.addStudentLabel', { group: g.name })}
                   className="mt-2 w-full rounded border border-dashed border-blue-300 bg-blue-50/50 px-1.5 py-1 text-xs text-blue-800"
                   data-testid={`select-add-to-${g.id}`}

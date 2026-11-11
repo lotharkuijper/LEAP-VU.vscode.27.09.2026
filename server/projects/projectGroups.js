@@ -35,12 +35,19 @@ export const canvasGroupRef = (issuer, groupId) => `canvas:${issuer}:${groupId}`
 
 export const cleanGroupName = (v) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, MAX_NAME);
 
-/** Verdeel studenten over groepen van ongeveer `size` (zo gelijk mogelijk). Pure. */
-export function splitIntoGroups(userIds, size) {
+/**
+ * Verdeel studenten willekeurig over groepen van hoogstens `size`, zo gelijk
+ * mogelijk (10 studenten, max 4 → 4, 3, 3). `random` is te vervangen in tests.
+ */
+export function splitIntoGroups(userIds, size, random = Math.random) {
   const n = Math.max(1, Math.floor(Number(size) || 4));
   const list = [...new Set(userIds)];
   if (!list.length) return [];
-  const groups = Math.max(1, Math.round(list.length / n));
+  for (let i = list.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(random() * (i + 1));
+    [list[i], list[j]] = [list[j], list[i]];
+  }
+  const groups = Math.ceil(list.length / n);
   const out = Array.from({ length: groups }, () => []);
   list.forEach((id, i) => out[i % groups].push(id));
   return out;
@@ -159,19 +166,21 @@ export function registerProjectGroupRoutes(app, deps) {
       const { data: profs } = userIds.length
         ? await db.from('profiles').select('id, full_name, email').in('id', userIds)
         : { data: [] };
+      const studentIds = new Set((courseMembers || []).map((m) => m.user_id));
       const person = (id) => {
         const p = (profs || []).find((x) => x.id === id);
-        return { userId: id, name: p?.full_name || null, email: p?.email || null };
+        return { userId: id, name: p?.full_name || null, email: p?.email || null, student: studentIds.has(id) };
       };
       const activeIds = new Set((groups || []).filter((g) => g.status === 'active').map((g) => g.id));
       const placed = new Set((members || []).filter((m) => activeIds.has(m.group_id)).map((m) => m.user_id));
       const byName = (a, b) => String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''));
       return res.json({
         groupMode: proj?.group_mode || (proj?.allow_self_signup === false ? 'teacher' : 'self'),
-        groups: (groups || []).map((g) => ({
-          ...g,
-          members: (members || []).filter((m) => m.group_id === g.id).map((m) => person(m.user_id)).sort(byName),
-        })),
+        groups: (groups || []).map((g) => {
+          const list = (members || []).filter((m) => m.group_id === g.id).map((m) => person(m.user_id)).sort(byName);
+          // Zit er iemand in die geen student is (de testgroep van een docent), dan kan daar geen student bij.
+          return { ...g, members: list, teacherGroup: list.some((m) => !m.student) };
+        }),
         unassigned: (courseMembers || []).map((m) => m.user_id).filter((id) => !placed.has(id)).map(person).sort(byName),
       });
     } catch (err) {
@@ -199,8 +208,10 @@ export function registerProjectGroupRoutes(app, deps) {
       // Alleen studenten van de cursus: een docent in een groep met studenten zou
       // hun groepsinhoud zien (privacybesluit 2026-10-08).
       const requested = Array.isArray(req.body?.userIds) ? req.body.userIds.filter((x) => typeof x === 'string') : [];
+      if (requested.length > 500) return res.status(400).json({ error: 'Te veel studenten tegelijk' });
+      const size = Math.min(20, Math.max(1, Math.floor(Number(req.body?.size) || 4)));
       const unassigned = await studentsOfCourse(db, s.project.course_id, requested);
-      const parts = splitIntoGroups(unassigned, req.body?.size);
+      const parts = splitIntoGroups(unassigned, size);
       const { count } = await db.from('project_groups').select('id', { count: 'exact', head: true }).eq('project_id', req.params.projectId);
       let made = 0;
       for (const [i, ids] of parts.entries()) {
@@ -241,12 +252,15 @@ export function registerProjectGroupRoutes(app, deps) {
     return res.json({ ok: true });
   });
 
-  // PUT …/group-admin/members/:userId — { groupId | null } indelen, verplaatsen of uit de groep halen.
-  app.put('/api/projects/:projectId/group-admin/members/:userId', async (req, res) => {
+  // PUT …/group-admin/members — { userIds, groupId | null } een of meer studenten
+  // indelen, verplaatsen of uit de groep halen.
+  app.put('/api/projects/:projectId/group-admin/members', async (req, res) => {
     const s = await staff(req, res);
     if (!s) return;
     try {
       const groupId = req.body?.groupId || null;
+      const userIds = [...new Set(Array.isArray(req.body?.userIds) ? req.body.userIds.filter((x) => typeof x === 'string') : [])];
+      if (userIds.length === 0 || userIds.length > 500) return res.status(400).json({ error: 'Kies een of meer studenten' });
       if (groupId) {
         const { data: g } = await db.from('project_groups').select('id, status').eq('id', groupId).eq('project_id', req.params.projectId).maybeSingle();
         if (!g) return res.status(404).json({ error: 'Groep niet gevonden' });
@@ -260,11 +274,13 @@ export function registerProjectGroupRoutes(app, deps) {
       // zetten zou hem toegang geven tot de chats en bestanden van die groep
       // (privacybesluit 2026-10-08: groepsinhoud alleen voor leden en LEAP-admins).
       const { data: cm } = await db.from('course_members').select('user_id, member_role')
-        .eq('course_id', s.project.course_id).eq('user_id', req.params.userId).maybeSingle();
-      if (!cm) return res.status(400).json({ error: 'Deze persoon zit niet in de cursus' });
-      if (groupId && cm.member_role && cm.member_role !== 'student') return res.status(403).json({ error: 'Geen toegang tot deze groep' });
-      await assignStudent(db, { projectId: req.params.projectId, groupId, userId: req.params.userId, by: s.user.id });
-      return res.json({ ok: true });
+        .eq('course_id', s.project.course_id).in('user_id', userIds);
+      if ((cm || []).length !== userIds.length) return res.status(400).json({ error: 'Deze persoon zit niet in de cursus' });
+      if (groupId && (cm || []).some((m) => m.member_role && m.member_role !== 'student')) return res.status(403).json({ error: 'Geen toegang tot deze groep' });
+      for (const userId of userIds) {
+        await assignStudent(db, { projectId: req.params.projectId, groupId, userId, by: s.user.id });
+      }
+      return res.json({ ok: true, count: userIds.length });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

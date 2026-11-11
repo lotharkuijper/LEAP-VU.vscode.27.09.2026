@@ -91,7 +91,7 @@ export function ProjectGroupsStep({ project, token, isCanvasCourse, canvasLinked
         </div>
       </div>
       {/* Opnieuw laden na een andere indeling: de kaart leest de indeling zelf. */}
-      <ProjectGroupsAdmin key={project.group_mode} projectId={project.id} courseId={project.course_id} token={token} />
+      <ProjectGroupsAdmin key={project.group_mode} projectId={project.id} courseId={project.course_id} token={token} maxSize={project.max_group_size} />
     </div>
   );
 }

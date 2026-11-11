@@ -40,6 +40,17 @@ describe('regels', () => {
     expect(parts.map((p) => p.length).sort()).toEqual([3, 3, 4]);
     expect(parts.flat().sort()).toEqual([...ids].sort());
     expect(splitIntoGroups([], 4)).toEqual([]);
+    // Nooit groter dan de gekozen grootte (5 studenten, max 4 → 3 + 2, niet 5).
+    expect(splitIntoGroups(['a', 'b', 'c', 'd', 'e'], 4).map((p) => p.length).sort()).toEqual([2, 3]);
+  });
+  it('automatisch verdelen is willekeurig, niet op naam', () => {
+    const ids = Array.from({ length: 12 }, (_, i) => `u${i}`);
+    let seed = 7;
+    const rng = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const parts = splitIntoGroups(ids, 4, rng);
+    expect(parts.flat().sort()).toEqual([...ids].sort());
+    expect(parts.flat()).not.toEqual(ids);
+    expect(parts.every((p) => p.length === 4)).toBe(true);
   });
 });
 
