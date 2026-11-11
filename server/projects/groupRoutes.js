@@ -25,6 +25,7 @@ function genInviteCode() {
 }
 
 const PROJECT_STATUSES = ['draft', 'active', 'archived'];
+const FEEDBACK_MODES = ['marking', 'both', 'feedback'];
 
 export function registerProjectRoutes(app) {
   // POST /api/projects/groups — maak een nieuwe groep voor een project. De
@@ -211,7 +212,7 @@ export function registerProjectRoutes(app) {
       // cursussen laat groepslidmaatschappen + cursus-toegang inconsistent achter.
       const allowed = ['title', 'research_question', 'description', 'briefing_markdown',
         'goals', 'rubric_criteria', 'min_group_size', 'max_group_size',
-        'allow_self_signup', 'status', 'submissions_enabled', 'group_mode'];
+        'allow_self_signup', 'status', 'submissions_enabled', 'group_mode', 'feedback_mode'];
       const patch = {};
       for (const k of allowed) {
         if (k in (req.body || {})) patch[k] = req.body[k];
@@ -223,6 +224,10 @@ export function registerProjectRoutes(app) {
       }
       if (Object.keys(patch).length === 0) return res.status(400).json({ error: 'Geen wijzigingen' });
       if ('status' in patch && !PROJECT_STATUSES.includes(patch.status)) return res.status(400).json({ error: 'Onbekende status' });
+      // Wat de docent wil met feedback en beoordeling (ProjectFeedbackSetup); null = nog niet gekozen.
+      if ('feedback_mode' in patch && patch.feedback_mode !== null && !FEEDBACK_MODES.includes(patch.feedback_mode)) {
+        return res.status(400).json({ error: 'Onbekende keuze voor feedback en beoordeling' });
+      }
       if (patch.min_group_size != null && patch.max_group_size != null
           && Number(patch.min_group_size) > Number(patch.max_group_size)) {
         return res.status(400).json({ error: 'Minimum groepsgrootte mag niet groter zijn dan het maximum' });

@@ -21,18 +21,23 @@ import { REASONING_TOKEN_HEADROOM } from '../lib/openaiSampling.js';
 // ───────────────────────────────────────────────────────────────────────────
 
 vi.mock('@supabase/supabase-js', () => {
-  // Tabel-bewuste resultaten: alleen de tabellen die persona-chat met de
-  // '__default__'-persona nodig heeft geven data terug; de rest is null zodat
-  // de defensieve fallback-paden gevolgd worden (geen thread, geen RAG, geen
-  // documenten).
+  // Tabel-bewuste resultaten: alleen de tabellen die persona-chat met één
+  // begeleider (zonder cursuskennis of projectdocumenten) nodig heeft geven data
+  // terug; de rest is null zodat de defensieve fallback-paden gevolgd worden
+  // (geen RAG, geen documenten). Er is al een open gesprek (thread t1).
   const tableResult = (table) => {
     if (table === 'project_group_members') return { data: { id: 'm1' }, error: null };
     if (table === 'project_groups') return { data: { id: 'g1', project_id: 'p1' }, error: null };
     if (table === 'projects') return { data: { id: 'p1', course_id: null }, error: null };
+    if (table === 'project_personas') return { data: { id: 'pp1', project_id: 'p1', name: 'Begeleider', persona_type: 'guide', system_prompt: 'Je bent een begeleider die Socratische vragen stelt.', course_knowledge: 'none' }, error: null };
     return { data: null, error: null };
   };
+  // Lijstvragen krijgen een lege lijst, losse rijen het open gesprek.
+  const singleResult = (table) => (table === 'group_persona_threads' ? { data: { id: 't1' }, error: null } : tableResult(table));
+  const listResult = (table) => (table === 'group_persona_threads' || table === 'group_persona_messages' ? { data: [], error: null } : tableResult(table));
   const makeBuilder = (table) => {
-    const result = tableResult(table);
+    const result = listResult(table);
+    const single = singleResult(table);
     const builder = {
       select: () => builder,
       insert: () => builder,
@@ -51,8 +56,8 @@ vi.mock('@supabase/supabase-js', () => {
       order: () => builder,
       limit: () => builder,
       range: () => builder,
-      maybeSingle: async () => result,
-      single: async () => result,
+      maybeSingle: async () => single,
+      single: async () => single,
       then: (resolve) => resolve(result),
     };
     return builder;
@@ -255,7 +260,7 @@ describe('POST /api/chat — leerniveau-injectie (Task #301)', () => {
 // beoordelaar en rolspeler doen er niets mee). De persona-chat negeert een
 // meegestuurd niveau.
 describe('POST /api/projects/persona-chat — geen leerniveau in projecten', () => {
-  const BASE = { groupId: 'g1', personaId: '__default__', message: 'Hoe begin ik mijn onderzoeksvraag?' };
+  const BASE = { groupId: 'g1', personaId: 'pp1', message: 'Hoe begin ik mijn onderzoeksvraag?' };
 
   it('een meegestuurd niveau komt niet in de systeemprompt', async () => {
     const fetchMock = mockChatFetch();
@@ -294,7 +299,7 @@ describe('POST /api/projects/persona-chat — geen leerniveau in projecten', () 
 // reasoning-model (gpt-5.x) telt de reasoning mee in max_completion_tokens en
 // geeft bij een te krap budget een LEGE 200 (finish_reason "length") terug.
 describe('POST /api/projects/persona-chat — lege antwoorden van reasoning-modellen', () => {
-  const BASE = { groupId: 'g1', personaId: '__default__', message: 'Wij dachten aan de relatie tussen slaap en stress.' };
+  const BASE = { groupId: 'g1', personaId: 'pp1', message: 'Wij dachten aan de relatie tussen slaap en stress.' };
   const emptyLength = () => makeResp(200, {
     choices: [{ message: { role: 'assistant', content: '' }, finish_reason: 'length' }],
     usage: { completion_tokens: 700, completion_tokens_details: { reasoning_tokens: 700 } },
@@ -332,7 +337,7 @@ describe('POST /api/projects/persona-chat — lege antwoorden van reasoning-mode
 });
 
 describe('POST /api/projects/persona-chat — tijdelijke storing van het taalmodel', () => {
-  const BASE = { groupId: 'g1', personaId: '__default__', message: 'Hoe sterk is de relatie tussen stress en slaap?' };
+  const BASE = { groupId: 'g1', personaId: 'pp1', message: 'Hoe sterk is de relatie tussen stress en slaap?' };
 
   it('herhaalt een 500 van Azure één keer en geeft dan gewoon het antwoord', async () => {
     const fetchMock = vi.fn()

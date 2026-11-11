@@ -34,7 +34,7 @@ interface Persona {
   persona_type?: 'conversational' | 'roleplayer' | 'evaluator' | null;
   rag_enabled: boolean;
   rag_folder_ids: string[];
-  _source: 'project' | 'course' | 'default';
+  _source: 'project' | 'course';
 }
 interface GroupMember {
   id: string;
@@ -447,7 +447,7 @@ export function ProjectRoomPage() {
 
   // Documenten van de actieve persona ophalen.
   const loadPersonaDocs = useCallback(async () => {
-    if (!token || !projectId || !groupId || !activePersonaId || activePersonaId === '__default__') {
+    if (!token || !projectId || !groupId || !activePersonaId) {
       setPersonaDocs([]); return;
     }
     try {
@@ -461,7 +461,7 @@ export function ProjectRoomPage() {
   useEffect(() => { loadPersonaDocs(); }, [loadPersonaDocs]);
 
   const uploadFile = async (file: File) => {
-    if (!token || !projectId || !activePersonaId || activePersonaId === '__default__') {
+    if (!token || !projectId || !activePersonaId) {
       setError(t('room.addPersonaFirst'));
       return;
     }
@@ -1145,7 +1145,13 @@ export function ProjectRoomPage() {
 
       {/* 3-column body */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0">
-        {/* LEFT: persona-chat */}
+        {/* LEFT: persona-chat; zonder personages (besluit 2026-11-11) geen gesprekspartner. */}
+        {personas.length === 0 ? (
+          <div className="lg:col-span-7 chic-card-sm flex flex-col items-center justify-center gap-2 p-6 text-center" data-testid="room-no-personas">
+            <Bot className="w-8 h-8 text-gray-300" aria-hidden="true" />
+            <p className="text-sm text-gray-700">{t('room.noPersonasProject')}</p>
+          </div>
+        ) : (
         <div className="lg:col-span-7 flex flex-col chic-card-sm min-h-0">
           <div className="border-b border-gray-200 p-3 space-y-2">
             <div className="flex items-center gap-2">
@@ -1160,7 +1166,6 @@ export function ProjectRoomPage() {
                 className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white"
                 data-testid="select-persona"
               >
-                {personas.length === 0 && <option value="">{t('room.noPersonas')}</option>}
                 {personas.map(p => {
                   const rel = relationships.find(r => r.personaId === p.id);
                   const labelSuffix = rel ? ` • ${t(`room.relationship.label.${rel.key}`)}${rel.broken ? ' ⛔' : ''}` : '';
@@ -1213,7 +1218,7 @@ export function ProjectRoomPage() {
             {activePersona?.persona_type === 'evaluator' && (
               <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900" data-testid="hint-evaluator-chat">{t('room.evaluatorChatHint')}</p>
             )}
-            {activePersona && activePersonaId !== '__default__' && activePersona.persona_type !== 'evaluator' && (
+            {activePersona && activePersona.persona_type !== 'evaluator' && (
               <div className="flex items-center justify-between gap-2 text-xs text-gray-600">
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
                   <span className="text-gray-500">{t('room.documents')} ({personaDocs.length}):</span>
@@ -1366,6 +1371,7 @@ export function ProjectRoomPage() {
             </div>
           </div>
         </div>
+        )}
 
         {/* RIGHT col container: groepschat + briefing/checkpoints */}
         <div className="lg:col-span-5 flex flex-col gap-3 min-h-0">

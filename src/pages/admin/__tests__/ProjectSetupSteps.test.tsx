@@ -5,7 +5,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LanguageProvider } from '../../../i18n';
-import { setupIssues, ProjectStepNav, type SetupFacts } from '../ProjectSetupSteps';
+import { setupIssues, ProjectStepNav, PROJECT_STEPS, type SetupFacts } from '../ProjectSetupSteps';
 import { ProjectReadyStep } from '../ProjectReadyStep';
 import nl from '../../../i18n/locales/nl.json';
 
@@ -21,6 +21,7 @@ const ready: SetupFacts = {
   preassessorId: 'm',
   canvasLinked: null,
 };
+const marker = { id: 'm', name: 'Nakijkhulp', persona_type: 'evaluator', project_knowledge_doc_ids: ['r1'] };
 
 function wrap(ui: React.ReactNode) {
   try { localStorage.setItem('lair-vu-lang', 'nl'); } catch { /* */ }
@@ -43,8 +44,8 @@ describe('setupIssues', () => {
     });
     const keys = issues.map((i) => `${i.step}:${i.key}${i.optional ? '?' : ''}`);
     expect(keys).toEqual([
-      'task:noBriefing', 'material:noMaterial?', 'personas:noPersonas',
-      'feedback:rubricHidden', 'feedback:evaluatorNoRubric', 'feedback:noMarking?', 'groups:canvasNotLinked?',
+      'task:noBriefing', 'material:noMaterial?',
+      'feedback:rubricHidden', 'feedback:evaluatorNoRubric', 'personas:noPersonas?', 'groups:canvasNotLinked?',
     ]);
   });
 
@@ -54,10 +55,40 @@ describe('setupIssues', () => {
       docs: [{ material_kind: 'rubric', is_visible_to_students: false }, { material_kind: 'assignment', is_visible_to_students: false }],
       personas: [{ id: 'g', name: 'G' }, { id: 'e', name: 'E', persona_type: 'evaluator' }],
       preassessorId: null, canvasLinked: false,
-    }).concat(setupIssues({ ...ready, docs: [], personas: [] }));
+    }).concat(setupIssues({ ...ready, docs: [], personas: [] }))
+      .concat(setupIssues({ ...ready, project: { ...ready.project, feedback_mode: 'marking', submissions_enabled: false } }))
+      .concat(setupIssues({ ...ready, project: { ...ready.project, feedback_mode: 'both' }, personas: [] }))
+      .concat(setupIssues({ ...ready, project: { ...ready.project, feedback_mode: 'feedback' }, personas: [...ready.personas, marker] }));
     const keys = new Set(all.map((i) => i.key));
     expect(keys.size).toBeGreaterThanOrEqual(9);
     for (const k of keys) expect((nl as Record<string, string>)[`admin.projects.ready.issue.${k}`], k).toBeTruthy();
+  });
+
+  it('beoordeling komt vóór de personages', () => {
+    expect(PROJECT_STEPS).toEqual(['task', 'material', 'feedback', 'personas', 'groups', 'open']);
+  });
+
+  it('geen personages is geen probleem: studenten werken dan zonder gesprekspartner', () => {
+    const issues = setupIssues({ ...ready, project: { ...ready.project, feedback_mode: 'marking' }, personas: [marker] });
+    expect(issues.filter((i) => !i.optional)).toEqual([]);
+    wrap(<ProjectStepNav step="task" onStep={vi.fn()} isOpen={false} issues={issues} />);
+    expect(screen.getByTestId('step-status-personas')).toHaveTextContent('Geen (optioneel)');
+    expect(screen.getByTestId('step-status-feedback')).toHaveTextContent('In orde');
+  });
+
+  it('de stap Feedback en beoordeling volgt de keuze van de docent', () => {
+    const keysFor = (mode: string, personas: SetupFacts['personas'], project: Partial<SetupFacts['project']> = {}) =>
+      setupIssues({ ...ready, personas, project: { ...ready.project, feedback_mode: mode, ...project } })
+        .filter((i) => i.step === 'feedback').map((i) => i.key + (i.optional ? '?' : ''));
+    // Alleen nakijkcommentaar gekozen, nog geen nakijkhulp en inleveren uit: twee echte punten.
+    expect(keysFor('marking', [], { submissions_enabled: false })).toEqual(['markingNeedsSubmissions', 'noMarker']);
+    // Een feedbackgever over, die studenten nog kunnen gebruiken.
+    expect(keysFor('marking', ready.personas)).toEqual(['noMarker', 'leftoverFeedback']);
+    expect(keysFor('marking', [marker])).toEqual([]);
+    // Allebei gekozen, maar nog niemand.
+    expect(keysFor('both', [])).toEqual(['noMarker', 'noFeedbackGiver']);
+    // Nog niets gekozen en nog geen beoordelaars: alleen een tip.
+    expect(keysFor('', [])).toEqual(['chooseFeedbackMode?']);
   });
 
   it('Canvas nog niet gekoppeld: de stap Groepen mag overgeslagen worden (geen probleem in de balk)', () => {

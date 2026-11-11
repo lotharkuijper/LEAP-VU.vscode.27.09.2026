@@ -16,6 +16,7 @@ import { Tooltip } from '../../components/help/Tooltip';
 import { HelpTip } from '../../components/help/HelpTip';
 import type { AvatarConfig } from '../../lib/personaAvatar';
 import { MarkerReadsCard } from './MarkerReadsCard';
+import { effectiveFeedbackMode, type FeedbackMode } from './ProjectSetupSteps';
 
 export interface FeedbackPersona {
   id: string;
@@ -28,14 +29,6 @@ export interface FeedbackPersona {
   project_knowledge_doc_ids?: string[] | null;
   course_knowledge?: 'none' | 'all' | 'selected' | null;
   course_knowledge_doc_ids?: string[] | null;
-}
-/** Wat de docent wil (2026-11-11): bepaalt welke stappen in beeld zijn. */
-export type FeedbackMode = 'marking' | 'both' | 'feedback';
-function feedbackModeOf(hasMarker: boolean, feedbackGivers: number): FeedbackMode | null {
-  if (hasMarker && feedbackGivers > 0) return 'both';
-  if (hasMarker) return 'marking';
-  if (feedbackGivers > 0) return 'feedback';
-  return null;
 }
 export interface FeedbackDoc {
   id: string;
@@ -69,9 +62,9 @@ export function ProjectFeedbackSetup({
   onToggleDocVisibility, onUploadRubric, uploading, onNewEvaluator, onPersonasChanged, onEditPersona, onDeletePersona, onError, onInfo,
   onProjectPatched,
 }: {
-  /** Na het aanzetten van inleveren vanuit deze stap. */
-  onProjectPatched: (patch: { submissions_enabled: boolean }) => void;
-  project: { id: string; rubric_criteria: unknown; submissions_enabled: boolean | null };
+  /** Na het aanzetten van inleveren of het kiezen van een modus vanuit deze stap. */
+  onProjectPatched: (patch: { submissions_enabled?: boolean; feedback_mode?: FeedbackMode }) => void;
+  project: { id: string; rubric_criteria: unknown; submissions_enabled: boolean | null; feedback_mode?: string | null };
   token: string;
   personas: FeedbackPersona[];
   docs: FeedbackDoc[];
@@ -98,20 +91,26 @@ export function ProjectFeedbackSetup({
   const feedbackGivers = evaluators.filter((p) => p.id !== preassessorId);
   const marker = evaluators.find((p) => p.id === preassessorId) || null;
   const knowsRubric = (p: FeedbackPersona) => rubricIds.length > 0 && (p.project_knowledge_doc_ids || []).some((id) => rubricIds.includes(id));
-  // Welke stappen zijn in beeld? Begint bij wat er al is; de docent kiest bovenaan.
-  const [mode, setMode] = useState<FeedbackMode | null>(() => feedbackModeOf(!!marker, feedbackGivers.length));
+  // Welke stappen zijn in beeld? De keuze van de docent (bewaard in het project);
+  // nog niet gekozen: afgeleid uit wat er al is.
+  const mode = effectiveFeedbackMode(project.feedback_mode, !!marker, feedbackGivers.length);
   const showFeedback = mode === 'feedback' || mode === 'both' || (mode === 'marking' && feedbackGivers.length > 0);
   const showMarking = mode === 'marking' || mode === 'both' || (mode === 'feedback' && !!marker);
-  const enableSubmissions = async () => {
+  const patchProject = async (patch: { submissions_enabled?: boolean; feedback_mode?: FeedbackMode }) => {
     const r = await fetch(`/api/projects/${project.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ submissions_enabled: true }),
+      body: JSON.stringify(patch),
     });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { onError(d.error || t('admin.projects.personas.saveFailed')); return; }
-    onProjectPatched({ submissions_enabled: true });
+    onProjectPatched(patch);
   };
+  const enableSubmissions = () => patchProject({ submissions_enabled: true });
+  // Nakijkcommentaar kan alleen bij een ingeleverd eindproduct: kiezen zet inleveren meteen aan.
+  const chooseMode = (m: FeedbackMode) => patchProject(
+    m !== 'feedback' && !project.submissions_enabled ? { feedback_mode: m, submissions_enabled: true } : { feedback_mode: m },
+  );
 
   const [criteria, setCriteria] = useState(() => criteriaLines(project.rubric_criteria));
   const [savedCriteria, setSavedCriteria] = useState(criteria);
@@ -205,7 +204,7 @@ export function ProjectFeedbackSetup({
         <legend className="px-1 text-sm font-medium text-gray-900">{t('admin.projects.fb.modeTitle')}</legend>
         {(['marking', 'both', 'feedback'] as FeedbackMode[]).map((m) => (
           <label key={m} className="flex items-start gap-2 text-sm">
-            <input type="radio" name={`fb-mode-${project.id}`} className="mt-1" checked={mode === m} onChange={() => setMode(m)} data-testid={`radio-fb-mode-${m}`} />
+            <input type="radio" name={`fb-mode-${project.id}`} className="mt-1" checked={mode === m} onChange={() => void chooseMode(m)} data-testid={`radio-fb-mode-${m}`} />
             <span>
               <span className="font-medium">{t(`admin.projects.fb.mode.${m}` as 'admin.projects.fb.mode.marking')}</span>
               <span className="block text-[11px] text-gray-500">{t(`admin.projects.fb.mode.${m}Hint` as 'admin.projects.fb.mode.markingHint')}</span>
