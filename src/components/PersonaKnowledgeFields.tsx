@@ -37,7 +37,9 @@ export function knowledgePayload(v: KnowledgeValues, { project = true }: { proje
   };
 }
 
-export function PersonaKnowledgeFields({ value, onChange, courseDocs, projectDocs, isEvaluator = false, idPrefix }: {
+export function PersonaKnowledgeFields({ value, onChange, courseDocs, projectDocs, isEvaluator = false, courseForEvaluator = false, idPrefix }: {
+  /** Nakijkhulp: een beoordelaar die de leerstof als maatstaf mag gebruiken. */
+  courseForEvaluator?: boolean;
   value: KnowledgeValues;
   onChange: (next: KnowledgeValues) => void;
   /** null = nog aan het laden. */
@@ -62,11 +64,13 @@ export function PersonaKnowledgeFields({ value, onChange, courseDocs, projectDoc
   const toggle = (list: string[], id: string) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]);
 
   const projectCount = (projectDocs || []).filter((d) => projectIds.includes(d.id)).length;
-  const knowsNothing = (isEvaluator || mode === 'none') && projectCount === 0;
+  // Een gewone beoordelaar kent geen leerstof; de nakijkhulp wel als de docent dat kiest.
+  const noCourse = isEvaluator && !courseForEvaluator;
+  const knowsNothing = (noCourse || mode === 'none') && projectCount === 0;
   const summary = knowsNothing
     ? t(isEvaluator ? 'admin.personaKnowledge.summaryNothingEvaluator' : 'admin.personaKnowledge.summaryNothing')
     : t('admin.personaKnowledge.summary', {
-        course: isEvaluator ? t('admin.personaKnowledge.courseNone')
+        course: noCourse ? t('admin.personaKnowledge.courseNone')
           : mode === 'all' ? t('admin.personaKnowledge.courseAllShort')
           : mode === 'selected' ? t('admin.personaKnowledge.courseSelectedShort', { count: String(courseIds.length) })
           : t('admin.personaKnowledge.courseNone'),
@@ -80,7 +84,7 @@ export function PersonaKnowledgeFields({ value, onChange, courseDocs, projectDoc
       </legend>
       <AdminHint variant="tip">{t('admin.personaKnowledge.hint')}</AdminHint>
 
-      {!isEvaluator && (
+      {!noCourse && (
         <div className="space-y-1.5">
           <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
             <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />{t('admin.personaKnowledge.courseTitle')}

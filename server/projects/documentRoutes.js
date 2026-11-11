@@ -14,6 +14,8 @@ import { AZURE_CHAT_READY, OPENAI_MODEL, chatModelParams, openaiChatCompletion }
 import { SUPERUSER_EMAIL, pgPool, supabaseAdmin } from '../lib/supabase.js';
 import { docUpload, extractTextFromUpload } from '../lib/uploads.js';
 import { createPreassessmentRunner, registerPreassessmentRoutes } from './preassessment.js';
+import { loadRagSettings, searchChunksServerSide } from '../rag/search.js';
+import { courseRagFolderIds } from '../lib/courseData.js';
 import { isSaved, reviewRefs } from './projectJournalSave.js';
 import { isGroupMember, projectAcceptsWork, requireProjectStaff, userHasProjectAccess } from './access.js';
 import { loadFeedbackContext } from './evaluatorReview.js';
@@ -51,6 +53,16 @@ const preassessmentRunner = createPreassessmentRunner({
     if (!r.ok) throw new Error(`Taalmodel-fout (${r.status}): ${(await r.text()).slice(0, 200)}`);
     const j = await r.json();
     return (j.choices?.[0]?.message?.content || '').trim();
+  },
+  // Cursusmateriaal dat de nakijkhulp mag kennen (course_knowledge), zoals in de persona-chat.
+  searchCourse: async ({ courseId, persona, query, lang }) => {
+    const [settings, folders] = await Promise.all([loadRagSettings(courseId), courseRagFolderIds(courseId)]);
+    const cfg = settings.project;
+    const { matched } = await searchChunksServerSide(
+      query, cfg.similarity_threshold, cfg.match_count, folders, { enabled: false }, lang, 'project',
+      persona.course_knowledge === 'selected' ? { documentIds: persona.course_knowledge_doc_ids || [] } : {},
+    );
+    return matched || [];
   },
 });
 
