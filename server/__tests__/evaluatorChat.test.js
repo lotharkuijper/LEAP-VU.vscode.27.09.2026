@@ -1,7 +1,7 @@
 // Chatten met een beoordelaar (2026-11-11): alleen wegwijzer bij inleveren, in
 // zijn eigen rol, op basis van de echte stand van de groep. Geen inhoudelijke
 // feedback in de chat, geen beoordelingsinstructies of rubric-inhoud, en de
-// nakijkhulp van het eindproduct blijft voor de docent.
+// nakijkhulp van het eindproduct is geen gesprekspartner, ook niet voor de docent.
 import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,20 +41,6 @@ describe('systeemtekst van de beoordelaar in de chat', () => {
     expect(buildEvaluatorChatPrompt(persona, { ...facts, rounds: null })).toContain('weet je nu niet');
     expect(buildEvaluatorChatPrompt(persona, { ...facts, visibleRubrics: [] })).toContain('geen rubric die de groep kan openen');
   });
-  it('de nakijkhulp belooft geen feedbackrondes die er niet zijn', () => {
-    const marker = { ...facts, rounds: null, isPreassessor: true, feedbackGivers: 0 };
-    const m = buildEvaluatorChatPrompt(persona, marker);
-    expect(m).toContain('Jij geeft geen feedbackrondes');
-    expect(m).toContain('geen feedback op tussentijds werk');
-    expect(m).not.toContain('Lever in voor feedback');
-    expect(m).not.toContain('Feedbackrondes bij jou');
-    expect(m).not.toContain('weet je nu niet');
-    expect(m).not.toMatch(/inhoudelijke feedback alleen geeft in een feedbackronde/);
-    // Zijn er wel andere beoordelaars, dan verwijst hij naar hen.
-    expect(buildEvaluatorChatPrompt(persona, { ...marker, feedbackGivers: 1 })).toContain('andere beoordelaars');
-    // Een gewone beoordelaar noemt zijn rondes nog steeds.
-    expect(p).toContain('Lever in voor feedback');
-  });
   it('de toegestane bestanden kloppen met de inleverroute', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '..', 'projects', 'documentRoutes.js'), 'utf8');
     for (const ext of SUBMISSION_FILE_TYPES.split(', ')) expect(src).toMatch(new RegExp(`SUBMISSION_ACCEPT_RE = /[^\\n]*\\b${ext}\\b`));
@@ -70,12 +56,14 @@ describe('koppeling', () => {
     expect(chat).toMatch(/if \(!persona\.project_id \|\| isEvaluator\) return \{ docs: \[\]/);
     expect(chat).toMatch(/if \(isEvaluator\) return \[\];\s*const \{ data: docs \} = await supabaseAdmin\s*\.from\('project_persona_documents'\)/);
   });
-  it('de nakijkhulp is in de chat alleen voor de docent', () => {
-    expect(chat).toMatch(/if \(evaluatorFacts\.isPreassessor\) \{[\s\S]*?isStaffForCourse\(auth\.user, chatProfile, project\.course_id\)/);
+  it('met de nakijkhulp chat niemand, ook de docent niet', () => {
+    expect(chat).toMatch(/if \(evaluatorFacts\.isPreassessor\) \{\s*return res\.status\(404\)/);
   });
-  it('studenten zien beoordelaars in de keuzelijst, maar niet de nakijkhulp en niet hoe hij beoordeelt', () => {
+  it('beoordelaars staan in de keuzelijst, de nakijkhulp voor niemand, en niet hoe hij beoordeelt', () => {
     const room = routeSource("app.get('/api/projects/:projectId/room'");
-    expect(room).toMatch(/pp\.filter\(p => p\.persona_type !== 'evaluator' \|\| p\.id !== project\.preassessment_persona_id\)/);
+    expect(room).toMatch(/const filtered = pp\.filter\(p => p\.id !== project\.preassessment_persona_id\);/);
+    // Zijn rubric kan de groep wel openen (als die zichtbaar is), zonder naam of avatar.
+    expect(room).toMatch(/\? \{ id: p\.id, name: null, avatar_emoji: null, avatar: null, marker: true,/);
     expect(room).toMatch(/if \(p\.persona_type === 'evaluator'\) delete rest\.system_prompt;/);
   });
 });

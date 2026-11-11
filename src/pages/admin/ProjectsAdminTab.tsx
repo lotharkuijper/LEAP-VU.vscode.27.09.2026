@@ -523,6 +523,8 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
   // Voorbeoordeling van het eindproduct (alleen voor docenten).
   const pre = usePreassessments(project.id, token, !!project.submissions_enabled, project.preassessment_persona_id ?? null);
   const [viewPre, setViewPre] = useState<SubmissionRow | null>(null);
+  /** Concept: de docent probeert het project uit in zijn eigen testgroep. */
+  const tryout = project.status === 'draft';
   useEffect(() => { void pre.reload(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [submissions]);
   const preFail = (e: unknown) => setLocalError((e instanceof Error && e.message) || t('admin.projects.pre.downloadFailed'));
 
@@ -979,14 +981,16 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
           {t('admin.projects.subs.disabled')}
         </AdminHint>
       )}
-      {step === 'running' && project.submissions_enabled && (
+      {/* In een concept: de proefinleveringen uit de eigen testgroep, onder stap 3,
+          zodat de docent ziet wat de nakijkhulp ervan maakt. */}
+      {(step === 'running' || (tryout && step === 'feedback')) && project.submissions_enabled && (
         <div className="chic-card p-5" data-testid="section-project-submissions">
           <div className="mb-3">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <FileText className="w-4 h-4" /> {t('admin.projects.subs.projectTitle')}<HelpTip id="projects.submissions" />
+              <FileText className="w-4 h-4" /> {t(tryout ? 'admin.projects.subs.tryoutTitle' : 'admin.projects.subs.projectTitle')}<HelpTip id="projects.submissions" />
             </h3>
             <AdminHint variant="intro">
-              {t('admin.projects.subs.projectDescOnce')}
+              {t(tryout ? 'admin.projects.subs.tryoutDesc' : 'admin.projects.subs.projectDescOnce')}
             </AdminHint>
           </div>
           {loadingSubs ? (
