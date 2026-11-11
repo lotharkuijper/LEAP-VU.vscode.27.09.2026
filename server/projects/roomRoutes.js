@@ -414,19 +414,8 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
           return { ...rest, _source: 'course' };
         });
       }
-      // Default Consultant als er nog niets is.
-      if (personas.length === 0) {
-        personas = [{
-          id: '__default__',
-          name: 'Consultant',
-          avatar_emoji: '🧑‍🏫',
-          system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
-          rag_enabled: true,
-          course_knowledge: 'all',
-          rag_folder_ids: [],
-          _source: 'default',
-        }];
-      }
+      // Geen personages: dan werken studenten zonder gesprekspartner (besluit
+      // 2026-11-11); er komt geen standaardpersonage voor in de plaats.
 
       const checkpoints = cps || [];
 

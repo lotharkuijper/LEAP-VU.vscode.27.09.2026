@@ -293,32 +293,21 @@ export function registerProjectPersonaRoutes(app) {
 
       // Persona ophalen — moet uiteindelijk een project_persona zijn (FK op
       // group_persona_threads). Wanneer een course_persona-id binnenkomt,
-      // kopiëren we hem eerst naar dit project. '__default__' blijft uniek
-      // en krijgt nooit een thread.
+      // kopiëren we hem eerst naar dit project. Een standaardpersonage zonder
+      // docent bestaat niet (meer): geen personages = geen gesprekspartner.
+      // Eerst proberen als project_persona binnen DIT project.
       let persona = null;
-      if (personaId === '__default__') {
-        persona = {
-          id: '__default__',
-          name: 'Consultant',
-          system_prompt: 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".',
-          rag_enabled: true,
-          course_knowledge: 'all',
-          rag_folder_ids: [],
-        };
+      const { data: pp } = await supabaseAdmin
+        .from('project_personas').select('*')
+        .eq('id', personaId).eq('project_id', project.id).maybeSingle();
+      if (pp) {
+        persona = pp;
       } else {
-        // Eerst proberen als project_persona binnen DIT project.
-        const { data: pp } = await supabaseAdmin
-          .from('project_personas').select('*')
-          .eq('id', personaId).eq('project_id', project.id).maybeSingle();
-        if (pp) {
-          persona = pp;
-        } else {
-          // Fallback: course-persona; kopieer naar project en gebruik kopie.
-          const { data: cp } = await supabaseAdmin
-            .from('course_personas').select('*').eq('id', personaId).maybeSingle();
-          if (cp && project.course_id && cp.course_id === project.course_id) {
-            persona = await ensureProjectPersonaFromCourse(project.id, cp.id);
-          }
+        // Fallback: course-persona; kopieer naar project en gebruik kopie.
+        const { data: cp } = await supabaseAdmin
+          .from('course_personas').select('*').eq('id', personaId).maybeSingle();
+        if (cp && project.course_id && cp.course_id === project.course_id) {
+          persona = await ensureProjectPersonaFromCourse(project.id, cp.id);
         }
       }
       if (!persona) return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
@@ -342,7 +331,7 @@ export function registerProjectPersonaRoutes(app) {
       // meer: er wordt niets opgeslagen en er gaat niets naar het taalmodel. De
       // groep rondt het project zonder hem af (de docent kan nog herstellen).
       let relationship = null;
-      if (persona.id !== '__default__' && reputationActive(persona)) {
+      if (reputationActive(persona)) {
         try {
           relationship = await loadRelationship(project.id, groupId, persona.id, persona.start_level);
         } catch (e) {
@@ -360,75 +349,73 @@ export function registerProjectPersonaRoutes(app) {
         }
       }
 
-      // Thread ophalen of aanmaken (alleen voor echte persona's met uuid).
+      // Thread ophalen of aanmaken.
       let threadId = null;
       let consultation = null;
-      if (persona.id !== '__default__') {
-        // Task #252: lui stille open thread eerst afronden (op basis van
-        // auto_close_hours). Zo telt voortzetten na het venster als een nieuwe
-        // raadpleging en wordt de limiet correct gehandhaafd.
-        try {
-          await autoCloseStaleThreads({
-            groupId, personaId: persona.id,
-            autoCloseHours: persona.auto_close_hours,
-            closedBy: auth.user.id, lang,
-          });
-        } catch (e) {
-          console.warn('[persona-chat] auto-close mislukte:', e.message);
-        }
+      // Task #252: lui stille open thread eerst afronden (op basis van
+      // auto_close_hours). Zo telt voortzetten na het venster als een nieuwe
+      // raadpleging en wordt de limiet correct gehandhaafd.
+      try {
+        await autoCloseStaleThreads({
+          groupId, personaId: persona.id,
+          autoCloseHours: persona.auto_close_hours,
+          closedBy: auth.user.id, lang,
+        });
+      } catch (e) {
+        console.warn('[persona-chat] auto-close mislukte:', e.message);
+      }
 
-        const { data: existingThread } = await supabaseAdmin
-          .from('group_persona_threads')
-          .select('id').eq('group_id', groupId).eq('persona_id', persona.id).is('closed_at', null).maybeSingle();
-        if (existingThread) {
-          threadId = existingThread.id;
-        } else {
-          // Nieuwe raadpleging → limiet handhaven. Effectieve limiet =
-          // persona.max_consultations + per-groep toegekende extra. null = onbeperkt.
-          let used = 0;
-          let extra = 0;
-          try {
-            // group_persona_threads is een kerntabel die altijd bestaat; een
-            // telfout is dus transient. Fail CLOSED zodat de limiet niet stil
-            // wordt omzeild bij een tijdelijke DB-fout.
-            used = await countConsultations(groupId, persona.id);
-          } catch (e) {
-            console.error('[persona-chat] raadpleging tellen mislukte:', e.message);
-            return res.status(503).json({
-              error: 'Raadpleeglimiet kon niet worden gecontroleerd. Probeer het zo opnieuw.',
-            });
-          }
-          try {
-            // Extra grants verhogen de limiet alléén; bij twijfel 0 = strenger =
-            // veilig (en ontbrekende tabel levert intern al 0 op).
-            extra = await loadConsultationGrant(project.id, groupId, persona.id);
-          } catch (e) {
-            console.warn('[persona-chat] extra raadplegingen laden mislukte:', e.message);
-          }
-          // Vragen over inleveren bij een beoordelaar tellen niet als raadpleging.
-          const effLimit = isEvaluator ? null : conComputeEffectiveLimit(persona.max_consultations, extra);
-          if (conIsBlocked(used, effLimit)) {
-            return res.json({
-              reply: conLimitMessage(lang, effLimit),
-              ragSources: [],
-              threadId: null,
-              consultationLimitReached: true,
-              consultation: { used, limit: effLimit, remaining: 0 },
-            });
-          }
-          const { data: newThread, error: tErr } = await supabaseAdmin
-            .from('group_persona_threads')
-            .insert({ group_id: groupId, persona_id: persona.id })
-            .select('id').single();
-          if (tErr) return res.status(500).json({ error: tErr.message });
-          threadId = newThread.id;
-          const newUsed = used + 1;
-          consultation = {
-            used: newUsed,
-            limit: effLimit,
-            remaining: conComputeRemaining(newUsed, effLimit),
-          };
+      const { data: existingThread } = await supabaseAdmin
+        .from('group_persona_threads')
+        .select('id').eq('group_id', groupId).eq('persona_id', persona.id).is('closed_at', null).maybeSingle();
+      if (existingThread) {
+        threadId = existingThread.id;
+      } else {
+        // Nieuwe raadpleging → limiet handhaven. Effectieve limiet =
+        // persona.max_consultations + per-groep toegekende extra. null = onbeperkt.
+        let used = 0;
+        let extra = 0;
+        try {
+          // group_persona_threads is een kerntabel die altijd bestaat; een
+          // telfout is dus transient. Fail CLOSED zodat de limiet niet stil
+          // wordt omzeild bij een tijdelijke DB-fout.
+          used = await countConsultations(groupId, persona.id);
+        } catch (e) {
+          console.error('[persona-chat] raadpleging tellen mislukte:', e.message);
+          return res.status(503).json({
+            error: 'Raadpleeglimiet kon niet worden gecontroleerd. Probeer het zo opnieuw.',
+          });
         }
+        try {
+          // Extra grants verhogen de limiet alléén; bij twijfel 0 = strenger =
+          // veilig (en ontbrekende tabel levert intern al 0 op).
+          extra = await loadConsultationGrant(project.id, groupId, persona.id);
+        } catch (e) {
+          console.warn('[persona-chat] extra raadplegingen laden mislukte:', e.message);
+        }
+        // Vragen over inleveren bij een beoordelaar tellen niet als raadpleging.
+        const effLimit = isEvaluator ? null : conComputeEffectiveLimit(persona.max_consultations, extra);
+        if (conIsBlocked(used, effLimit)) {
+          return res.json({
+            reply: conLimitMessage(lang, effLimit),
+            ragSources: [],
+            threadId: null,
+            consultationLimitReached: true,
+            consultation: { used, limit: effLimit, remaining: 0 },
+          });
+        }
+        const { data: newThread, error: tErr } = await supabaseAdmin
+          .from('group_persona_threads')
+          .insert({ group_id: groupId, persona_id: persona.id })
+          .select('id').single();
+        if (tErr) return res.status(500).json({ error: tErr.message });
+        threadId = newThread.id;
+        const newUsed = used + 1;
+        consultation = {
+          used: newUsed,
+          limit: effLimit,
+          remaining: conComputeRemaining(newUsed, effLimit),
+        };
       }
 
       // Vorige berichten ophalen voor context.
@@ -483,7 +470,7 @@ export function registerProjectPersonaRoutes(app) {
           return matched && matched.length > 0 ? buildNumberedRagContext(matched, 5) : { context: '', sources: [] };
         })(),
         (async () => {
-          if (persona.id === '__default__' || isEvaluator) return [];
+          if (isEvaluator) return [];
           const { data: docs } = await supabaseAdmin
             .from('project_persona_documents')
             .select('id, filename, content_text')
@@ -494,7 +481,7 @@ export function registerProjectPersonaRoutes(app) {
         })(),
         (async () => {
           // Niet voor een beoordelaar: zijn kennis (de rubric) blijft voor de feedbackrondes.
-          if (persona.id === '__default__' || !persona.project_id || isEvaluator) return { docs: [], matched: [], unindexed: [] };
+          if (!persona.project_id || isEvaluator) return { docs: [], matched: [], unindexed: [] };
           const docs = await loadPersonaProjectDocs(supabaseAdmin, persona);
           if (!docs.length) return { docs, matched: [], unindexed: [] };
           const counts = await chunkCounts(supabaseAdmin, docs.map(d => d.document_ref_id));
@@ -513,7 +500,6 @@ export function registerProjectPersonaRoutes(app) {
           return { docs, matched: matched || [], unindexed };
         })(),
         (async () => {
-          if (persona.id === '__default__') return [];
           const { data: closedThreads } = await supabaseAdmin
             .from('group_persona_threads')
             .select('agreements, closed_at')
@@ -637,7 +623,6 @@ export function registerProjectPersonaRoutes(app) {
       if (!(await isGroupMember(groupId, auth.user.id))) {
         return res.status(403).json({ error: 'Geen toegang' });
       }
-      if (personaId === '__default__') return res.json({ messages: [], threadId: null });
       const { data: thread } = await supabaseAdmin
         .from('group_persona_threads').select('id, closed_at')
         .eq('group_id', groupId).eq('persona_id', personaId).is('closed_at', null).maybeSingle();

@@ -23,7 +23,7 @@
 //      server/lib/azureOpenai.js (AZURE_OPENAI_*). Spiegelt de prompt-opbouw van
 //      /api/projects/persona-chat: persona.system_prompt + leerniveau-blok +
 //      taal-instructie. De persona-prompt is instelbaar via PERSONA_PROMPT;
-//      standaard de "__default__" consultant-prompt uit server/projects/personaRoutes.js, zodat
+//      standaard een eigen consultant-prompt (hieronder), zodat
 //      het script zonder DB/echte persona draait. Relatie-/RAG-/documentblokken
 //      zitten hier bewust niet in — die zijn voor deze niveau-test niet relevant.
 //   2) Via de live HTTP-endpoint /api/projects/persona-chat. Dit loopt écht door
@@ -32,14 +32,13 @@
 //        PERSONA_EVAL_BASE_URL   (bijv. http://localhost:3001)
 //        PERSONA_EVAL_TOKEN      (een geldig Supabase-JWT van een groepslid)
 //        PERSONA_EVAL_GROUP_ID   (uuid van een project_groups-rij)
-//        PERSONA_EVAL_PERSONA_ID (uuid van een conversational project_persona,
-//                                 of "__default__")
+//        PERSONA_EVAL_PERSONA_ID (uuid van een conversational project_persona)
 
 import { buildLevelInstructionBlock, LEVEL_LABELS, clampLevel } from '../server/chat/learningLevel.js';
 import { buildLanguageInstruction } from '../server/i18n/languages.js';
 
-// Standaard-persona = de "__default__" consultant uit /api/projects/persona-chat
-// (server/projects/personaRoutes.js). Overschrijf met PERSONA_PROMPT om een eigen persona te
+// Standaard-persona: een eenvoudige consultant, alleen voor deze evaluatie (LEAP zelf
+// heeft geen standaardpersonage). Overschrijf met PERSONA_PROMPT om een eigen persona te
 // spiegelen.
 const DEFAULT_PERSONA_PROMPT = process.env.PERSONA_PROMPT
   || 'Je bent een rustige onderzoeks-consultant voor een groep VU-studenten epi/biostat. Stel scherpe Socratische vragen, vat terug, en help de groep een onderzoeksvoorstel scherper te krijgen. Spreek de student aan met "je"/"jij".';

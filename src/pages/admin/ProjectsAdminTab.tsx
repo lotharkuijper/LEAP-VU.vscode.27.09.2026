@@ -53,6 +53,8 @@ interface ProjectRow {
   group_mode?: GroupMode | null;
   submissions_enabled: boolean | null;
   preassessment_persona_id?: string | null;
+  /** Wat de docent wil met feedback en beoordeling (ProjectSetupSteps.effectiveFeedbackMode). */
+  feedback_mode?: string | null;
   status: string | null;
   created_at: string;
 }
@@ -595,7 +597,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
 
   useEffect(() => { loadPersonas(); loadProjectDocs(); loadLibPersonas(); loadSubmissions(); loadKnowledge(); }, [loadPersonas, loadProjectDocs, loadLibPersonas, loadSubmissions, loadKnowledge]);
 
-  // Korte samenvatting per personage in de lijst (stap 3, geen beoordelaars): wat kent hij?
+  // Korte samenvatting per personage in de lijst (stap 4, geen beoordelaars): wat kent hij?
   const knowledgeSummary = (p: ProjectPersona) => {
     const docs = (knowledge?.projectDocs || []).filter(d => (p.project_knowledge_doc_ids || []).includes(d.id));
     const course = !p.course_knowledge || p.course_knowledge === 'none' ? null
@@ -787,7 +789,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
     void loadKnowledge();
   };
 
-  // Stap 3 toont de gesprekspartners; beoordelaars (feedbackgever, nakijkhulp) staan bij stap 4.
+  // Stap 4 toont de gesprekspartners; beoordelaars (feedbackgever, nakijkhulp) staan bij stap 3.
   const talkers = personas.filter(p => p.persona_type !== 'evaluator');
   const evaluatorCount = personas.length - talkers.length;
   const issues = setupIssues({ project, docs: projectDocs, personas, preassessorId: pre.personaId, canvasLinked });
@@ -845,7 +847,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
         />
       )}
 
-      {/* Stap 2: projectdocumenten (opdracht, literatuur, data; rubrics staan bij stap 4) */}
+      {/* Stap 2: projectdocumenten (opdracht, literatuur, data; een rubric wordt gebruikt in stap 3) */}
       {step === 'material' && (
       <div className="chic-card p-5">
         <div className="flex items-center justify-between mb-3">
@@ -877,6 +879,12 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                 {kOpt?.isData ? <Database className="w-4 h-4 text-blue-500" /> : <FileText className="w-4 h-4 text-gray-500" />}
                 <div className={`flex-1 min-w-0 basis-40 ${!d.is_visible_to_students ? 'text-gray-500' : ''}`}>
                   <div className="truncate text-sm">{d.filename}</div>
+                  {d.material_kind === 'rubric' && (
+                    <div className="text-[11px] text-sky-800" data-testid={`project-doc-rubric-used-${d.id}`}>
+                      {t('admin.projects.docs.rubricUsedIn')}{' '}
+                      <button type="button" onClick={() => changeStep('feedback')} className="font-medium hover:underline">{t('admin.projects.steps.feedback')}</button>
+                    </div>
+                  )}
                   <div className="text-[11px] text-gray-500" data-testid={`project-doc-readers-${d.id}`}>
                     {kOpt?.isData
                       ? t('admin.projects.docs.dataNeverKnown')
@@ -1043,7 +1051,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
         />
       )}
 
-      {/* Stap 3: personages (begeleider, rolspelers). Beoordelaars staan bij stap 4. */}
+      {/* Stap 4: personages (begeleider, rolspelers), optioneel. Beoordelaars staan bij stap 3. */}
       {step === 'personas' && (
       <div className="chic-card p-5">
         <div className="flex items-center justify-between mb-3">
@@ -1095,7 +1103,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
           </div>
         )}
         {talkers.length === 0 ? (
-          <p className="text-sm text-gray-500">{t('admin.projects.personas.noPersonas')}</p>
+          <p className="text-sm text-gray-600" data-testid="text-no-talkers">{t('admin.projects.personas.noPersonas')}</p>
         ) : (
           <ul className="divide-y divide-gray-100">
             {talkers.map(p => {
@@ -1201,7 +1209,7 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
                 personaName={editingPersona.name || ''}
                 courseId={project.course_id}
                 token={token}
-                // Personages (stap 3) en beoordelaars (stap 4) blijven elk in hun eigen stap.
+                // Beoordelaars (stap 3) en personages (stap 4) blijven elk in hun eigen stap.
                 roles={editingPersona.persona_type === 'evaluator' ? ['evaluator'] : ['conversational', 'roleplayer']}
                 marking={isMarkerEdit(editingPersona, pre.personaId)}
               />

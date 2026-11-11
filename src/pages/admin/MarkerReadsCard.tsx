@@ -2,7 +2,7 @@ import { BookOpen, Check, FileText, Gavel } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 
 // "Wat leest de nakijkhulp?" (2026-11-11): alles wat de nakijkhulp bij het
-// nakijkcommentaar gebruikt, op één plek in stap 4 (ProjectFeedbackSetup).
+// nakijkcommentaar gebruikt, op één plek in stap 3 (ProjectFeedbackSetup).
 // Onder de motorkap: project_knowledge_doc_ids (rubric, opdracht, planning) en
 // course_knowledge (cursusmateriaal als maatstaf, server/projects/preassessment.js).
 

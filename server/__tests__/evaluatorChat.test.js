@@ -53,8 +53,8 @@ describe('koppeling', () => {
   it('een beoordelaar krijgt de wegwijzertekst, niet zijn eigen instructies of kennis', () => {
     expect(chat).toMatch(/isEvaluator\s*\?\s*`\$\{buildEvaluatorChatPrompt\(persona, evaluatorFacts\)\}/);
     expect(chat).toMatch(/const mode = isEvaluator \? 'none'/);
-    expect(chat).toMatch(/persona\.id === '__default__' \|\| !persona\.project_id \|\| isEvaluator/);
-    expect(chat).toMatch(/persona\.id === '__default__' \|\| isEvaluator\) return \[\]/);
+    expect(chat).toMatch(/if \(!persona\.project_id \|\| isEvaluator\) return \{ docs: \[\]/);
+    expect(chat).toMatch(/if \(isEvaluator\) return \[\];\s*const \{ data: docs \} = await supabaseAdmin\s*\.from\('project_persona_documents'\)/);
   });
   it('de nakijkhulp is in de chat alleen voor de docent', () => {
     expect(chat).toMatch(/if \(evaluatorFacts\.isPreassessor\) \{[\s\S]*?isStaffForCourse\(auth\.user, chatProfile, project\.course_id\)/);
