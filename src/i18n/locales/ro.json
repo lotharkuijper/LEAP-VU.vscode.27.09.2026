@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Alege un grup…",
   "admin.projects.students.newGroup": "+ Grup nou",
   "admin.projects.students.assignBtn": "Împarte",
-  "projects.tryoutHint": "Ca profesor, lucrezi aici în propriul tău grup de testare de unul singur. Studenții nu intră aici și nu văd ce faci."
+  "projects.tryoutHint": "Ca profesor, lucrezi aici în propriul tău grup de testare de unul singur. Studenții nu intră aici și nu văd ce faci.",
+  "room.evaluatorChatHint": "Poți apela la un evaluator pentru întrebări despre predare: ce, unde, cum și câte runde de feedback mai ai. Feedbackul pe conținut îl ceri în dreapta, la Feedback pe lucrarea voastră (fila Briefing)."
 }

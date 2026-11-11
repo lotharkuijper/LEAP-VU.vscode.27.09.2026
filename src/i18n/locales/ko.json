@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "그룹 선택…",
   "admin.projects.students.newGroup": "+ 새 그룹",
   "admin.projects.students.assignBtn": "배정",
-  "projects.tryoutHint": "교수자로서 여기서는 혼자만의 테스트 그룹에서 작업해. 학생들은 들어올 수 없고 네가 하는 작업도 볼 수 없어."
+  "projects.tryoutHint": "교수자로서 여기서는 혼자만의 테스트 그룹에서 작업해. 학생들은 들어올 수 없고 네가 하는 작업도 볼 수 없어.",
+  "room.evaluatorChatHint": "평가자에게는 제출 관련 질문을 할 수 있어: 무엇을, 어디에, 어떻게 제출하는지, 그리고 피드백 라운드가 얼마나 남았는지. 내용에 대한 피드백은 오른쪽의 작업물에 대한 피드백(Briefing 탭)에서 요청해."
 }

@@ -15,6 +15,7 @@ import {
   normalizeMaxConsultations as conNormalizeMax,
 } from './consultationLimit.js';
 import { feedbackRoundsState } from './documentReview.js';
+import { buildEvaluatorChatPrompt, loadEvaluatorChatFacts } from './evaluatorChat.js';
 import { purposeAllowsModule } from '../rag/filePurpose.js';
 import { buildLanguageInstruction, languageEnglishName, normalizeLang } from '../i18n/languages.js';
 import { authUser, isLeapAdmin, isStaffForCourse, loadProfileRoleEmail, profileCache } from '../lib/auth.js';
@@ -321,10 +322,19 @@ export function registerProjectPersonaRoutes(app) {
         }
       }
       if (!persona) return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
-      // Evaluator-persona's mogen niet door studenten worden aangesproken in
-      // de gewone chat — die worden alleen via /evaluate aangeroepen.
-      if (persona.persona_type === 'evaluator') {
-        return res.status(403).json({ error: 'Deze persona is een beoordelaar en kan niet worden aangesproken via de chat.' });
+      // Een beoordelaar is in de chat alleen een wegwijzer bij het inleveren
+      // (evaluatorChat.js); feedback geeft hij alleen in een feedbackronde. De
+      // nakijkhulp van het eindproduct is alleen voor de docent.
+      const isEvaluator = persona.persona_type === 'evaluator';
+      let evaluatorFacts = null;
+      if (isEvaluator) {
+        evaluatorFacts = await loadEvaluatorChatFacts(supabaseAdmin, { projectId: project.id, groupId, persona });
+        if (evaluatorFacts.isPreassessor) {
+          const { data: chatProfile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
+          if (!(await isStaffForCourse(auth.user, chatProfile, project.course_id))) {
+            return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
+          }
+        }
       }
 
       // Verstandhouding: alleen bij een rolspeler die er een bijhoudt. Staat het
@@ -395,7 +405,8 @@ export function registerProjectPersonaRoutes(app) {
           } catch (e) {
             console.warn('[persona-chat] extra raadplegingen laden mislukte:', e.message);
           }
-          const effLimit = conComputeEffectiveLimit(persona.max_consultations, extra);
+          // Vragen over inleveren bij een beoordelaar tellen niet als raadpleging.
+          const effLimit = isEvaluator ? null : conComputeEffectiveLimit(persona.max_consultations, extra);
           if (conIsBlocked(used, effLimit)) {
             return res.json({
               reply: conLimitMessage(lang, effLimit),
@@ -452,7 +463,8 @@ export function registerProjectPersonaRoutes(app) {
           })
           : null,
         (async () => {
-          const mode = persona.course_knowledge || 'none';
+          // Een beoordelaar zoekt in de chat niets op: hij helpt alleen bij inleveren.
+          const mode = isEvaluator ? 'none' : (persona.course_knowledge || 'none');
           if (mode === 'none') return { context: '', sources: [] };
           const [ragSettings, courseFolders] = await Promise.all([
             ragSettingsP,
@@ -470,7 +482,7 @@ export function registerProjectPersonaRoutes(app) {
           return matched && matched.length > 0 ? buildNumberedRagContext(matched, 5) : { context: '', sources: [] };
         })(),
         (async () => {
-          if (persona.id === '__default__') return [];
+          if (persona.id === '__default__' || isEvaluator) return [];
           const { data: docs } = await supabaseAdmin
             .from('project_persona_documents')
             .select('id, filename, content_text')
@@ -480,7 +492,8 @@ export function registerProjectPersonaRoutes(app) {
           return docs || [];
         })(),
         (async () => {
-          if (persona.id === '__default__' || !persona.project_id) return { docs: [], matched: [], unindexed: [] };
+          // Niet voor een beoordelaar: zijn kennis (de rubric) blijft voor de feedbackrondes.
+          if (persona.id === '__default__' || !persona.project_id || isEvaluator) return { docs: [], matched: [], unindexed: [] };
           const docs = await loadPersonaProjectDocs(supabaseAdmin, persona);
           if (!docs.length) return { docs, matched: [], unindexed: [] };
           const counts = await chunkCounts(supabaseAdmin, docs.map(d => d.document_ref_id));
@@ -546,7 +559,9 @@ export function registerProjectPersonaRoutes(app) {
         ? relBuildPromptBlock(relationship.score, persona.conduct_rules, lang, relationship.history)
         : '';
       // Task #296: leerniveau-blok vóór de taal-instructie (laatste blok blijft taal).
-      const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${sourcesRulesBlock}${langSuffix}`;
+      const systemContent = isEvaluator
+        ? `${buildEvaluatorChatPrompt(persona, evaluatorFacts)}${sourcesRulesBlock}${langSuffix}`
+        : `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${sourcesRulesBlock}${langSuffix}`;
 
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
       const personaMessages = [

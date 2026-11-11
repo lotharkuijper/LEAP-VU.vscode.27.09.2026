@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Elige un grupo…",
   "admin.projects.students.newGroup": "+ Nuevo grupo",
   "admin.projects.students.assignBtn": "Asignar",
-  "projects.tryoutHint": "Como docente, aquí trabajas en tu propio grupo de prueba de una sola persona. Los estudiantes no acceden a él ni ven lo que haces."
+  "projects.tryoutHint": "Como docente, aquí trabajas en tu propio grupo de prueba de una sola persona. Los estudiantes no acceden a él ni ven lo que haces.",
+  "room.evaluatorChatHint": "Puedes acudir a un evaluador si tienes preguntas sobre la entrega: qué, dónde, cómo y cuántas rondas de feedback te quedan. El feedback sobre el contenido pídelo a la derecha, en Feedback sobre vuestro trabajo (pestaña Briefing)."
 }

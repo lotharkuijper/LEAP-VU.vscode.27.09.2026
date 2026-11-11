@@ -3470,5 +3470,6 @@
   "admin.projects.students.target": "Choisis un groupe…",
   "admin.projects.students.newGroup": "+ Nouveau groupe",
   "admin.projects.students.assignBtn": "Répartir",
-  "projects.tryoutHint": "En tant qu’enseignant, tu travailles ici dans ton propre groupe de test d’une seule personne. Les étudiants n’y ont pas accès et ne voient pas ce que tu fais."
+  "projects.tryoutHint": "En tant qu’enseignant, tu travailles ici dans ton propre groupe de test d’une seule personne. Les étudiants n’y ont pas accès et ne voient pas ce que tu fais.",
+  "room.evaluatorChatHint": "Tu peux t’adresser à un évaluateur pour des questions sur la remise : quoi, où, comment et combien de cycles de feedback il te reste. Pour un feedback sur le contenu, pose ta question à droite dans Feedback sur votre travail (onglet Briefing)."
 }
