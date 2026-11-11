@@ -470,6 +470,7 @@
   "Project hoort niet bij deze cursus": "Le projet n’appartient pas à ce cours",
   "Project is gearchiveerd": "Le projet est archivé",
   "Project is niet meer actief": "Le projet n’est plus actif",
+  "Project kon niet worden geladen": "Impossible de charger le projet",
   "Project niet gevonden": "Projet introuvable",
   "Project zonder cursus is alleen door admin te beheren": "Un projet sans cours ne peut être géré que par un admin",
   "projectId is vereist": "projectId est requis",

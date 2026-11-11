@@ -65,3 +65,22 @@ describe('koppeling', () => {
     expect(room).toMatch(/if \(p\.persona_type === 'evaluator'\) delete rest\.system_prompt;/);
   });
 });
+
+describe('vangnetten', () => {
+  it('zonder project gaat de chat met een beoordelaar niet door (nakijkhulp niet te raden)', () => {
+    const src = fs.readFileSync(path.resolve(__dirname, '..', 'projects', 'evaluatorChat.js'), 'utf8');
+    expect(src).toMatch(/if \(projectError \|\| !project\) throw new Error/);
+  });
+  it('de projectruimte toont bij een beoordelaar geen raadpleeglimiet, net als de chat', () => {
+    const room = routeSource("app.get('/api/projects/:projectId/room'");
+    expect(room).toMatch(/const limit = p\.persona_type === 'evaluator' \? null : conComputeEffectiveLimit/);
+    expect(routeSource("app.post('/api/projects/persona-chat'")).toMatch(/const effLimit = isEvaluator \? null : conComputeEffectiveLimit/);
+  });
+  it('databaseregel: groepsleden lezen geen beoordelaars rechtstreeks; met terugdraaiscript en databasetest', () => {
+    const root = path.resolve(__dirname, '..', '..');
+    const up = fs.readFileSync(path.join(root, 'supabase', 'migrations', '20261111200000_project_personas_select_talkers.sql'), 'utf8');
+    expect(up).toMatch(/COALESCE\(project_personas\.persona_type, 'conversational'\) <> 'evaluator'\s*AND EXISTS/);
+    expect(fs.existsSync(path.join(root, 'supabase', 'rollback', '20261111200000_project_personas_select_talkers_down.sql'))).toBe(true);
+    expect(fs.existsSync(path.join(root, 'scripts', 'local-db', 'tests', 'project-personas-evaluators.sql'))).toBe(true);
+  });
+});

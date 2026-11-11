@@ -516,7 +516,8 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
         consultations = projectPersonas.map(p => {
           const used = usedByPersona.get(p.id) || 0;
           const extra = extraByPersona.get(p.id) || 0;
-          const limit = conComputeEffectiveLimit(p.max_consultations, extra);
+          // Bij een beoordelaar geldt geen limiet (vragen over inleveren; persona-chat doet hetzelfde).
+          const limit = p.persona_type === 'evaluator' ? null : conComputeEffectiveLimit(p.max_consultations, extra);
           return {
             personaId: p.id,
             used,

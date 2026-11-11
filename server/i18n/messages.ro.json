@@ -470,6 +470,7 @@
   "Project hoort niet bij deze cursus": "Proiectul nu aparține acestui curs",
   "Project is gearchiveerd": "Proiectul este arhivat",
   "Project is niet meer actief": "Proiectul nu mai este activ",
+  "Project kon niet worden geladen": "Proiectul nu a putut fi încărcat",
   "Project niet gevonden": "Proiectul nu a fost găsit",
   "Project zonder cursus is alleen door admin te beheren": "Proiectul fără curs poate fi gestionat doar de admin",
   "projectId is vereist": "projectId este obligatoriu",

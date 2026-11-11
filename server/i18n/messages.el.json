@@ -470,6 +470,7 @@
   "Project hoort niet bij deze cursus": "Το έργο δεν ανήκει σε αυτό το μάθημα",
   "Project is gearchiveerd": "Το έργο έχει αρχειοθετηθεί",
   "Project is niet meer actief": "Το έργο δεν είναι πλέον ενεργό",
+  "Project kon niet worden geladen": "Δεν ήταν δυνατή η φόρτωση του έργου",
   "Project niet gevonden": "Το έργο δεν βρέθηκε",
   "Project zonder cursus is alleen door admin te beheren": "Έργο χωρίς μάθημα μπορεί να διαχειριστεί μόνο από admin",
   "projectId is vereist": "Απαιτείται projectId",

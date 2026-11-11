@@ -470,6 +470,7 @@
   "Project hoort niet bij deze cursus": "Проєкт не належить до цього курсу",
   "Project is gearchiveerd": "Проєкт заархівовано",
   "Project is niet meer actief": "Проєкт більше не активний",
+  "Project kon niet worden geladen": "Не вдалося завантажити проєкт",
   "Project niet gevonden": "Проєкт не знайдено",
   "Project zonder cursus is alleen door admin te beheren": "Проєкт без курсу може керуватися лише адміністратором",
   "projectId is vereist": "projectId є обов’язковим",

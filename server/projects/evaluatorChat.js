@@ -18,7 +18,7 @@ export const SUBMISSION_MAX_MB = 15;
 
 /** De stand van deze groep bij deze beoordelaar. Ontbrekende gegevens = onbekend, niet verzonnen. */
 export async function loadEvaluatorChatFacts(db, { projectId, groupId, persona }) {
-  const [{ data: project }, used, { count: submitted }, { data: rubrics }] = await Promise.all([
+  const [{ data: project, error: projectError }, used, { count: submitted }, { data: rubrics }] = await Promise.all([
     db.from('projects').select('submissions_enabled, status, preassessment_persona_id').eq('id', projectId).maybeSingle(),
     countFeedbackRounds(groupId, persona.id).catch(() => null),
     db.from('project_submissions').select('id', { count: 'exact', head: true }).eq('project_id', projectId).eq('group_id', groupId),
@@ -27,6 +27,8 @@ export async function loadEvaluatorChatFacts(db, { projectId, groupId, persona }
         .in('id', persona.project_knowledge_doc_ids).eq('material_kind', 'rubric').eq('is_visible_to_students', true)
       : Promise.resolve({ data: [] }),
   ]);
+  // Zonder project weten we niet of dit de nakijkhulp is: dan niet doorgaan.
+  if (projectError || !project) throw new Error('Project kon niet worden geladen');
   const rounds = used == null ? null : feedbackRoundsState(persona.max_reviews, used);
   return {
     deliverableLabel: persona.deliverable_label || null,

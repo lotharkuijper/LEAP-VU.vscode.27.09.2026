@@ -470,6 +470,7 @@
   "Project hoort niet bij deze cursus": "项目不属于这门课程",
   "Project is gearchiveerd": "项目已归档",
   "Project is niet meer actief": "项目不再活跃",
+  "Project kon niet worden geladen": "无法加载项目",
   "Project niet gevonden": "未找到项目",
   "Project zonder cursus is alleen door admin te beheren": "没有课程的项目只能由管理员管理",
   "projectId is vereist": "必须提供 projectId",

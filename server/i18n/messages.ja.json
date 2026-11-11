@@ -470,6 +470,7 @@
   "Project hoort niet bij deze cursus": "プロジェクトはこのコースに属していません",
   "Project is gearchiveerd": "プロジェクトはアーカイブされています",
   "Project is niet meer actief": "プロジェクトはもう有効ではありません",
+  "Project kon niet worden geladen": "プロジェクトを読み込めませんでした",
   "Project niet gevonden": "プロジェクトが見つかりません",
   "Project zonder cursus is alleen door admin te beheren": "コースのないプロジェクトは管理者だけが管理できます",
   "projectId is vereist": "projectId は必須です",
