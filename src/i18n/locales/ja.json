@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ 新しいグループ",
   "admin.projects.students.assignBtn": "割り当てる",
   "projects.tryoutHint": "教員として、ここでは1人だけの自分専用のテストグループで作業します。学生はここに入れず、あなたが何をしているかも見えません。",
+  "room.markerChatHint": "これは採点サポートです。教員であるあなただけが見ることができ、学生には表示されません。フィードバックラウンドは行いません。提出後、ルーブリックに基づいて、あなたのために採点コメントを作成します。チャットで、提出の仕組みを質問できます。",
   "room.evaluatorChatHint": "提出に関する質問（何を、どこに、どのように提出するか、あと何回フィードバックラウンドが残っているか）は評価者に聞けます。内容に関するフィードバックは、右側の「自分たちの作業へのフィードバック」（ブリーフィングタブ）で質問してね。",
   "projects.preassessment.doc.courseEvidence": "コース教材に基づく根拠",
   "projects.preassessment.doc.courseSources": "使用したコース教材",

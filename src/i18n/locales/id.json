@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Kelompok baru",
   "admin.projects.students.assignBtn": "Bagi",
   "projects.tryoutHint": "Sebagai dosen, di sini kamu bekerja dalam grup uji milikmu sendiri yang beranggotakan satu orang. Mahasiswa tidak masuk ke sana dan tidak melihat apa yang kamu lakukan.",
+  "room.markerChatHint": "Ini adalah bantuan penilaian. Hanya kamu sebagai dosen yang melihatnya; mahasiswa tidak. Ini tidak memberikan putaran umpan balik: setelah pengumpulan, alat ini menulis komentar penilaian untukmu berdasarkan rubrik. Di chat, kamu bisa menanyakan cara kerja pengumpulan.",
   "room.evaluatorChatHint": "Kamu bisa bertanya kepada penilai tentang pengumpulan: apa, di mana, bagaimana, dan berapa putaran umpan balik yang masih kamu miliki. Untuk umpan balik isi, tanyakan di sebelah kanan pada Umpan balik atas pekerjaan kalian (tab Briefing).",
   "projects.preassessment.doc.courseEvidence": "Dasar pendukung dari materi kursus",
   "projects.preassessment.doc.courseSources": "Materi kursus yang digunakan",

@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Nuovo gruppo",
   "admin.projects.students.assignBtn": "Assegna",
   "projects.tryoutHint": "Come docente, qui lavori nel tuo gruppo di prova personale composto da una sola persona. Gli studenti non vi accedono e non vedono ciò che fai.",
+  "room.markerChatHint": "Questo è l’assistente alla valutazione. Solo tu, come docente, lo vedi; gli studenti no. Non fornisce cicli di feedback: dopo la consegna, scrive commenti di valutazione per te in base alla rubrica. Nella chat puoi chiedergli come funziona la consegna.",
   "room.evaluatorChatHint": "Puoi rivolgerti a un valutatore per domande sulla consegna: cosa, dove, come e quanti turni di feedback ti restano. Per il feedback sui contenuti, chiedi a destra in Feedback sul vostro lavoro (scheda Briefing).",
   "projects.preassessment.doc.courseEvidence": "Riscontri dal materiale del corso",
   "projects.preassessment.doc.courseSources": "Materiale del corso utilizzato",

@@ -1214,9 +1214,12 @@ export function ProjectRoomPage() {
                 );
               })()}
             </div>
-            {/* Beoordelaar: in de chat alleen hulp bij inleveren; feedback via de feedbackrondes. */}
+            {/* Beoordelaar: in de chat alleen hulp bij inleveren; feedback via de feedbackrondes.
+                De nakijkhulp (alleen voor de docent) geeft geen feedbackrondes. */}
             {activePersona?.persona_type === 'evaluator' && (
-              <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900" data-testid="hint-evaluator-chat">{t('room.evaluatorChatHint')}</p>
+              <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900" data-testid="hint-evaluator-chat">
+                {t(activePersona.id === project?.preassessment_persona_id ? 'room.markerChatHint' : 'room.evaluatorChatHint')}
+              </p>
             )}
             {activePersona && activePersona.persona_type !== 'evaluator' && (
               <div className="flex items-center justify-between gap-2 text-xs text-gray-600">

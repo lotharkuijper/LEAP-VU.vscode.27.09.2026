@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Grup nou",
   "admin.projects.students.assignBtn": "Împarte",
   "projects.tryoutHint": "Ca profesor, lucrezi aici în propriul tău grup de testare de unul singur. Studenții nu intră aici și nu văd ce faci.",
+  "room.markerChatHint": "Acesta este asistentul de corectare. Doar tu, ca profesor, îl vezi; studenții nu. Nu oferă runde de feedback: după predare, îți scrie comentarii de corectare pe baza rubricii. În chat îl poți întreba cum funcționează predarea.",
   "room.evaluatorChatHint": "Poți apela la un evaluator pentru întrebări despre predare: ce, unde, cum și câte runde de feedback mai ai. Feedbackul pe conținut îl ceri în dreapta, la Feedback pe lucrarea voastră (fila Briefing).",
   "projects.preassessment.doc.courseEvidence": "Argumentare din materialul cursului",
   "projects.preassessment.doc.courseSources": "Material de curs folosit",

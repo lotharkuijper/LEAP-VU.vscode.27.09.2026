@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Neue Gruppe",
   "admin.projects.students.assignBtn": "Einteilen",
   "projects.tryoutHint": "Als Lehrkraft arbeitest du hier in deiner eigenen Testgruppe mit nur einer Person. Studierende kommen dort nicht hinein und sehen nicht, was du tust.",
+  "room.markerChatHint": "Dies ist die Korrekturhilfe. Nur du als Lehrkraft siehst sie; Studierende nicht. Sie gibt keine Feedbackrunden: Nach der Abgabe schreibt sie für dich Korrekturkommentare anhand der Rubrik. Im Chat kannst du sie fragen, wie die Abgabe funktioniert.",
   "room.evaluatorChatHint": "An eine beurteilende Person kannst du dich mit Fragen zur Abgabe wenden: was, wo, wie und wie viele Feedbackrunden du noch hast. Inhaltliches Feedback fragst du rechts unter Feedback zu eurer Arbeit (Tab Briefing) an.",
   "projects.preassessment.doc.courseEvidence": "Belege aus dem Kursmaterial",
   "projects.preassessment.doc.courseSources": "Verwendetes Kursmaterial",
