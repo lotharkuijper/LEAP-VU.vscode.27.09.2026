@@ -121,6 +121,7 @@ model gebruiken, lezen `.env`: `node --env-file=.env scripts/<naam>`.
 | `check-chat-attachments.mjs`, `check-chat-attachments-ui.mjs` | Bijlagen in de chat (API en browser). |
 | `check-course-invitations.mjs` | Studenten uitnodigen, tegen de database en de API op poort 3001. |
 | `check-preassessment.mjs` | Nakijkcommentaar bij een eindproduct. |
+| `check-project-groups.mjs` | Studenten indelen in projectgroepen (tijdelijke cursus, docent en studenten; ruimt zelf op). |
 | `verify-course-features.mjs` | Onderdelen aan/uit in de database (in een transactie die wordt teruggedraaid). |
 | `eval-level-language.mjs` | Verandert het leerniveau echt de taal? |
 | `eval-leerlijn.mjs` | Volgt de tutor de leerlijn? |
@@ -145,6 +146,7 @@ model gebruiken, lezen `.env`: `node --env-file=.env scripts/<naam>`.
 | `db-snapshot.mjs`, `db-restore.mjs` | Momentopname van tabellen maken en terugzetten (naar `db-backups/`). |
 | `backfill-journal-sections.mjs`, `prepare-office-sources.mjs` | Eenmalige omzettingen van bestaande gegevens. |
 | `lti-keygen.mjs` | Maakt de sleutel voor de Canvas-koppeling (uitvoer is geheim, gaat naar Key Vault). |
+| `test-students.mjs` | `add`/`remove` teststudenten (`@example.org`, geen mail) in één testcursus, om groepen in de app te zien. Let op: lokaal en live delen één database; alleen voor een testcursus. |
 
 **Schermcontrole en handleiding**
 

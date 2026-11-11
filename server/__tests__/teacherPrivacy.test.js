@@ -97,7 +97,10 @@ describe('docenten komen niet via de server in een studentengroep', () => {
     expect(block).not.toMatch(/invite_code/);
   });
   it('indelen: alleen studenten van de cursus, nooit een docent', () => {
-    const block = routeBlock("app.put('/api/projects/:projectId/group-admin/members/:userId'");
-    expect(block).toMatch(/cm\.member_role !== 'student'/);
+    const block = routeBlock("app.put('/api/projects/:projectId/group-admin/members'");
+    expect(block).toMatch(/\.eq\('course_id', s\.project\.course_id\)\.in\('user_id', userIds\)/);
+    expect(block).toMatch(/\(cm \|\| \[\]\)\.length !== userIds\.length/);
+    expect(block).toMatch(/m\.member_role !== 'student'/);
+    expect(block).toMatch(/groupHasTeacher\(db, s\.project\.course_id, groupId\)/);
   });
 });
