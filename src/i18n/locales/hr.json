@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Nova grupa",
   "admin.projects.students.assignBtn": "Rasporedi",
   "projects.tryoutHint": "Kao nastavnik ovdje radiš u vlastitoj testnoj grupi od jednog člana. Studenti ne ulaze u nju i ne vide što radiš.",
+  "room.markerChatHint": "Ovo je pomoćnik za ocjenjivanje. Vidiš ga samo ti kao nastavnik; studenti ne. Ne daje krugove povratnih informacija: nakon predaje piše komentare za ocjenjivanje za tebe na temelju rubrike. U chatu ga možeš pitati kako funkcionira predaja.",
   "room.evaluatorChatHint": "Ocjenjivaču se možeš obratiti s pitanjima o predaji: što, gdje, kako i koliko krugova povratnih informacija još imaš. Sadržajne povratne informacije zatraži desno u odjeljku Povratne informacije o vašem radu (kartica Briefing).",
   "projects.preassessment.doc.courseEvidence": "Potkrepa iz materijala kolegija",
   "projects.preassessment.doc.courseSources": "Korišteni materijali kolegija",

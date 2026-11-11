@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Nieuwe groep",
   "admin.projects.students.assignBtn": "Indelen",
   "projects.tryoutHint": "Als docent werk je hier in je eigen testgroep van één. Studenten komen er niet in en zien niet wat je doet.",
+  "room.markerChatHint": "Dit is de nakijkhulp. Alleen jij als docent ziet hem; studenten niet. Hij geeft geen feedbackrondes: na het inleveren schrijft hij nakijkcommentaar voor jou aan de hand van de rubric. In de chat kun je hem vragen hoe inleveren werkt.",
   "room.evaluatorChatHint": "Bij een beoordelaar kun je terecht met vragen over inleveren: wat, waar, hoe en hoeveel feedbackrondes je nog hebt. Inhoudelijke feedback vraag je rechts bij Feedback op jullie werk (tabblad Briefing).",
   "projects.preassessment.doc.courseEvidence": "Onderbouwing uit het cursusmateriaal",
   "projects.preassessment.doc.courseSources": "Gebruikt cursusmateriaal",

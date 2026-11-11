@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ 新增組別",
   "admin.projects.students.assignBtn": "分組",
   "projects.tryoutHint": "作為教師，你可以喺呢度用你自己一人嘅測試小組。學生唔會入嚟，亦睇唔到你做緊乜。",
+  "room.markerChatHint": "呢個係評改助手。只有你作為老師先睇到；學生睇唔到。佢唔會提供回饋回合：提交之後，佢會根據評分準則為你撰寫評改評語。你可以喺聊天度問佢提交係點樣運作。",
   "room.evaluatorChatHint": "有關提交嘅問題，例如交乜嘢、交喺邊度、點樣交，同埋你仲有幾多輪回饋，可以搵評核員。內容方面嘅回饋，請喺右邊「你哋作品嘅回饋」（Briefing 分頁）查詢。",
   "projects.preassessment.doc.courseEvidence": "來自課程材料嘅佐證",
   "projects.preassessment.doc.courseSources": "已使用嘅課程材料",

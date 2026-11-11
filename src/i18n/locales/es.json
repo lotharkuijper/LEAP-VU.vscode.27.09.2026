@@ -3468,6 +3468,7 @@
   "admin.projects.students.newGroup": "+ Nuevo grupo",
   "admin.projects.students.assignBtn": "Asignar",
   "projects.tryoutHint": "Como docente, aquí trabajas en tu propio grupo de prueba de una sola persona. Los estudiantes no acceden a él ni ven lo que haces.",
+  "room.markerChatHint": "Esta es la ayuda para corregir. Solo tú, como docente, la ves; los estudiantes no. No proporciona rondas de feedback: después de la entrega, escribe comentarios de corrección para ti según la rúbrica. En el chat puedes preguntarle cómo funciona la entrega.",
   "room.evaluatorChatHint": "Puedes acudir a un evaluador si tienes preguntas sobre la entrega: qué, dónde, cómo y cuántas rondas de feedback te quedan. El feedback sobre el contenido pídelo a la derecha, en Feedback sobre vuestro trabajo (pestaña Briefing).",
   "projects.preassessment.doc.courseEvidence": "Fundamentación del material del curso",
   "projects.preassessment.doc.courseSources": "Material del curso utilizado",

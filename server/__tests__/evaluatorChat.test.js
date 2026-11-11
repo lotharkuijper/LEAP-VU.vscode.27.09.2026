@@ -41,6 +41,20 @@ describe('systeemtekst van de beoordelaar in de chat', () => {
     expect(buildEvaluatorChatPrompt(persona, { ...facts, rounds: null })).toContain('weet je nu niet');
     expect(buildEvaluatorChatPrompt(persona, { ...facts, visibleRubrics: [] })).toContain('geen rubric die de groep kan openen');
   });
+  it('de nakijkhulp belooft geen feedbackrondes die er niet zijn', () => {
+    const marker = { ...facts, rounds: null, isPreassessor: true, feedbackGivers: 0 };
+    const m = buildEvaluatorChatPrompt(persona, marker);
+    expect(m).toContain('Jij geeft geen feedbackrondes');
+    expect(m).toContain('geen feedback op tussentijds werk');
+    expect(m).not.toContain('Lever in voor feedback');
+    expect(m).not.toContain('Feedbackrondes bij jou');
+    expect(m).not.toContain('weet je nu niet');
+    expect(m).not.toMatch(/inhoudelijke feedback alleen geeft in een feedbackronde/);
+    // Zijn er wel andere beoordelaars, dan verwijst hij naar hen.
+    expect(buildEvaluatorChatPrompt(persona, { ...marker, feedbackGivers: 1 })).toContain('andere beoordelaars');
+    // Een gewone beoordelaar noemt zijn rondes nog steeds.
+    expect(p).toContain('Lever in voor feedback');
+  });
   it('de toegestane bestanden kloppen met de inleverroute', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '..', 'projects', 'documentRoutes.js'), 'utf8');
     for (const ext of SUBMISSION_FILE_TYPES.split(', ')) expect(src).toMatch(new RegExp(`SUBMISSION_ACCEPT_RE = /[^\\n]*\\b${ext}\\b`));
