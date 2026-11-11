@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} επιλεγμένοι →",
   "admin.projects.students.target": "Επίλεξε ομάδα…",
   "admin.projects.students.newGroup": "+ Νέα ομάδα",
-  "admin.projects.students.assignBtn": "Κατανομή"
+  "admin.projects.students.assignBtn": "Κατανομή",
+  "projects.tryoutHint": "Ως διδάσκων, εργάζεσαι εδώ στη δική σου δοκιμαστική ομάδα του ενός. Οι φοιτητές δεν έχουν πρόσβαση σε αυτήν και δεν βλέπουν τι κάνεις."
 }

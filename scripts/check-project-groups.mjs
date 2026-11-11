@@ -107,10 +107,27 @@ try {
   ok(r.status === 400, `iemand buiten de cursus wordt geweigerd, ook in een mengselectie (${r.status})`);
   r = await api('GET', base, token);
   ok(r.body.unassigned.some((p) => p.userId === students[1]), 'en dan is ook Bram niet ingedeeld (alles of niets)');
-  const tg = await api('POST', `${base}/groups`, token, { name: 'Testgroep docent' });
-  await admin.from('project_group_members').insert({ group_id: tg.body.group.id, user_id: teacher, role: 'owner' });
+  // De docent probeert het project uit in een eigen groep van één, ook nu het
+  // project open is voor studenten en de docent indeelt.
+  await admin.from('projects').update({ status: 'active' }).eq('id', project.id);
+  let ov = await api('GET', '/api/projects/student-overview', token);
+  const ovT = ov.body.courses?.find((c) => c.course.id === course.id)?.projects.find((p) => p.id === project.id);
+  ok(ovT?.tryout === true, `de docent ziet "uitproberen" bij een open project (${ovT?.tryout})`);
+  ov = await api('GET', '/api/projects/student-overview', await tokenOf('Cas'));
+  const ovS = ov.body.courses?.find((c) => c.course.id === course.id)?.projects.find((p) => p.id === project.id);
+  ok(ovS && !ovS.tryout, `een student niet (${ovS?.tryout})`);
+  const tg = await api('POST', '/api/projects/groups', token, { projectId: project.id });
+  ok(tg.status === 200 && tg.body.group?.id, `de docent start zijn eigen testgroep (${tg.status} ${tg.body.error || ''})`);
+  ok(/^Testgroep van /.test(tg.body.group?.name || ''), `naam "${tg.body.group?.name}"`);
+  r = await api('GET', `/api/projects/${project.id}/room?groupId=${tg.body.group?.id}`, token);
+  ok(r.status === 200 && r.body.members?.length === 1 && !!r.body.members[0].profiles, `projectruimte: 1 lid met naam (${r.status} ${r.body.members?.length})`);
+  r = await api('POST', '/api/projects/groups', await tokenOf('Cas'), { projectId: project.id });
+  ok(r.status === 403, `een student start zelf geen groep als de docent indeelt (${r.status})`);
+  r = await api('POST', '/api/projects/groups/join', await tokenOf('Cas'), { inviteCode: tg.body.group.invite_code });
+  ok(r.status === 403 || r.status === 400, `een student komt niet met de code in de testgroep (${r.status})`);
   r = await api('GET', base, token);
-  ok(r.body.groups.find((g) => g.id === tg.body.group.id)?.teacherGroup === true, 'testgroep van de docent is herkenbaar');
+  const tgRow = r.body.groups.find((g) => g.id === tg.body.group.id);
+  ok(tgRow?.teacherGroup === true && tgRow.members.length === 1, 'testgroep: herkenbaar en alleen de docent erin');
   r = await api('PUT', `${base}/members`, token, { userIds: [students[1]], groupId: tg.body.group.id });
   ok(r.status === 403 && r.body.code === 'teacherGroup', `student kan niet in de testgroep van een docent (${r.status})`);
   r = await api('PUT', `${base}/members`, token, { userIds: [], groupId: other.id });

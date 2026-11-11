@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} вибрано →",
   "admin.projects.students.target": "Вибери групу…",
   "admin.projects.students.newGroup": "+ Нова група",
-  "admin.projects.students.assignBtn": "Розподілити"
+  "admin.projects.students.assignBtn": "Розподілити",
+  "projects.tryoutHint": "Як викладач ти працюєш тут у власній тестовій групі з одного учасника. Студенти сюди не потрапляють і не бачать, що ти робиш."
 }

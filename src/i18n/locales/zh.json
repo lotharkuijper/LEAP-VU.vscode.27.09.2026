@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "已选择 {count} 个 →",
   "admin.projects.students.target": "选择一个小组…",
   "admin.projects.students.newGroup": "+ 新建小组",
-  "admin.projects.students.assignBtn": "分配"
+  "admin.projects.students.assignBtn": "分配",
+  "projects.tryoutHint": "作为教师，你将在这里使用你自己的单人测试小组。学生无法进入，也看不到你做了什么。"
 }

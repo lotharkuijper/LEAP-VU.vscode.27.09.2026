@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} odabrano →",
   "admin.projects.students.target": "Odaberi grupu…",
   "admin.projects.students.newGroup": "+ Nova grupa",
-  "admin.projects.students.assignBtn": "Rasporedi"
+  "admin.projects.students.assignBtn": "Rasporedi",
+  "projects.tryoutHint": "Kao nastavnik ovdje radiš u vlastitoj testnoj grupi od jednog člana. Studenti ne ulaze u nju i ne vide što radiš."
 }

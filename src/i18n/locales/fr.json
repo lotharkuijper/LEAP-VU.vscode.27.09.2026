@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "{count} sélectionné(s) →",
   "admin.projects.students.target": "Choisis un groupe…",
   "admin.projects.students.newGroup": "+ Nouveau groupe",
-  "admin.projects.students.assignBtn": "Répartir"
+  "admin.projects.students.assignBtn": "Répartir",
+  "projects.tryoutHint": "En tant qu’enseignant, tu travailles ici dans ton propre groupe de test d’une seule personne. Les étudiants n’y ont pas accès et ne voient pas ce que tu fais."
 }

@@ -3469,5 +3469,6 @@
   "admin.projects.students.selected": "已選 {count} 位 →",
   "admin.projects.students.target": "揀一個組別…",
   "admin.projects.students.newGroup": "+ 新增組別",
-  "admin.projects.students.assignBtn": "分組"
+  "admin.projects.students.assignBtn": "分組",
+  "projects.tryoutHint": "作為教師，你可以喺呢度用你自己一人嘅測試小組。學生唔會入嚟，亦睇唔到你做緊乜。"
 }
