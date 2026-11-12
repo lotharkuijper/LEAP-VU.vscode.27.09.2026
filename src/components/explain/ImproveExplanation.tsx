@@ -7,6 +7,8 @@ import type { CitationSource } from '../CitationText';
 import { openRagDocument } from '../../services/rag.service';
 import { stashStudiecafeHandoff } from '../../lib/studiecafeHandoff';
 import { FormulaButton } from '../../components/formula/FormulaButton';
+import { EarnedBadgesNotice } from '../LearningBadge';
+import type { EarnedBadge } from '../../lib/badges';
 import {
   createImproveExercise, evaluateImproveAnswer, saveImproveReflection,
   type ImproveExercise, type ImproveFeedback, type ImproveReveal,
@@ -64,7 +66,7 @@ export function ImproveExplanation({ concept, displayName, courseId }: Props) {
   const [answer, setAnswer] = useState('');
   const answerRef = useRef<HTMLTextAreaElement>(null);
   const [evaluating, setEvaluating] = useState(false);
-  const [result, setResult] = useState<{ feedback: ImproveFeedback; reveal: ImproveReveal } | null>(null);
+  const [result, setResult] = useState<{ feedback: ImproveFeedback; reveal: ImproveReveal; badges?: EarnedBadge[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reflecting, setReflecting] = useState(false);
   const [reflected, setReflected] = useState(false);
@@ -210,6 +212,7 @@ export function ImproveExplanation({ concept, displayName, courseId }: Props) {
               </span>
             )}
           </div>
+          <EarnedBadgesNotice badges={result.badges || []} />
           {fb.foundDetail && <section><MarkdownMessage content={fb.foundDetail} sources={citationSources} onSourceOpen={openSource} /></section>}
           {fb.reasoning && (
             <section>

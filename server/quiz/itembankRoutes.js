@@ -5,7 +5,6 @@ import {
   isStaffForCourse,
   requireAdminOrDocent,
   requireAuthUser,
-  userHasCourseAccess,
 } from '../lib/auth.js';
 import {
   AZURE_EMBEDDINGS_READY,
@@ -13,7 +12,6 @@ import {
   OPENAI_EMBEDDINGS_URL,
   embeddingAuthHeaders,
 } from '../lib/azureOpenai.js';
-import { rejectIfFeatureOff } from '../lib/courseFeatureGate.js';
 import { conceptsHasCourseId, quizSourcesSchemaReady } from '../lib/schemaFlags.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { promptsHasSection } from '../prompts/promptStore.js';
@@ -638,168 +636,8 @@ export function registerItembankRoutes(app) {
     }
   });
 
-  // ---- Endpoint: itembank-vragen ophalen voor quiz ----------------------------
-  // Geeft een lijst itembank-vragen terug die matchen op de mappings van de
-  // gegeven concepten binnen een cursus. De client doet de mix-coördinatie.
-  app.post('/api/quiz/itembank-questions', async (req, res) => {
-    const auth = await requireAuthUser(req, res);
-    if (!auth) return;
-    const { courseId, conceptIds = [], limit = 5, questionType = 'mcq' } = req.body || {};
-    if (!courseId || !Array.isArray(conceptIds) || conceptIds.length === 0) {
-      return res.status(400).json({ error: 'courseId en niet-lege conceptIds vereist' });
-    }
-    // ItemBank ondersteunt alleen mcq + open (geen casus). Casus → leeg resultaat.
-    const wantedItemType = questionType === 'open' ? 'open' : (questionType === 'mcq' ? 'mcq' : null);
-    if (!wantedItemType) {
-      return res.json({ questions: [], reason: 'unsupported_question_type' });
-    }
-    // Cross-course leak voorkomen: itembank-vragen mogen alleen door cursusleden
-    // (en admins/superuser) opgehaald worden.
-    const hasAccess = await userHasCourseAccess(auth.user, auth.profile, courseId);
-    if (!hasAccess) return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
-    if (await rejectIfFeatureOff(res, auth.user, auth.profile, courseId, 'quiz')) return;
-    if (!quizSourcesSchemaReady) {
-      return res.json({ questions: [], schema_ready: false });
-    }
-    try {
-      // Mappings ophalen voor de concepten.
-      const { data: mappings, error: mapErr } = await supabaseAdmin
-        .from('concept_itembank_sections')
-        .select('concept_id, exsection_path, course_id')
-        .in('concept_id', conceptIds)
-        .or(`course_id.eq.${courseId},course_id.is.null`);
-      if (mapErr) return res.status(500).json({ error: mapErr.message });
-
-      const sectionPaths = (mappings || [])
-        .map(m => Array.isArray(m.exsection_path) ? m.exsection_path : null)
-        .filter(p => p && p.length > 0);
-
-      if (sectionPaths.length === 0) {
-        return res.json({ questions: [], reason: 'no_mappings' });
-      }
-
-      // Trek kandidaten zonder exacte-string-prefilter. De ShareStats-bank kent
-      // case-varianten ("Inferential Statistics" vs "inferential statistics") en
-      // overlaps() in PostgREST is hoofdletter-gevoelig; daarom matchen we
-      // hieronder in JS met genormaliseerde (lower-case) paden. 1564 items
-      // passen ruim binnen de limit, dus we filteren in-memory.
-      // Bronscoping (ShareStats + cursus-eigen CSV) gaat via één `.or()`. Het
-      // item_type-filter wordt in-memory toegepast (zie hieronder) zodat we geen
-      // tweede `.or()` op dezelfde query stapelen — dat houdt de bronscoping
-      // ondubbelzinnig en voorkomt cross-course lekken.
-      const candidatesQuery = supabaseAdmin
-        .from('quiz_questions')
-        .select('id, question_text, answer_options, correct_answer, explanation, sharestats_id, exsection_path, topic, subtopic, item_type, metadata')
-        .or(itembankSourceOrFilter(courseId))
-        .limit(5000);
-      const { data: candidates, error: qErr } = await candidatesQuery;
-      if (qErr) return res.status(500).json({ error: qErr.message });
-
-      // item_type-kolom is pas vanaf migratie 20260507130000 aanwezig.
-      // Voor mcq: accepteer item_type='mcq' óf NULL (oude rijen zijn historisch
-      // mchoice). Voor open: vereis expliciet item_type='open'.
-      const itemTypeMatches = (it) => wantedItemType === 'mcq'
-        ? (it === 'mcq' || it === null || it === undefined)
-        : it === 'open';
-
-      const normalizePath = (p) => (Array.isArray(p) ? p : []).map(s => String(s ?? '').toLowerCase().trim());
-      const targetsLower = sectionPaths.map(normalizePath);
-      const matches = (candidates || []).filter(q => {
-        if (!itemTypeMatches(q.item_type)) return false;
-        const qPath = normalizePath(q.exsection_path);
-        return targetsLower.some(target => {
-          if (qPath.length < target.length) return false;
-          for (let i = 0; i < target.length; i++) {
-            if (qPath[i] !== target[i]) return false;
-          }
-          return true;
-        });
-      });
-
-      // Shuffle en limiteer.
-      for (let i = matches.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [matches[i], matches[j]] = [matches[j], matches[i]];
-      }
-      const picked = matches.slice(0, Math.max(1, Math.min(limit, 50)));
-
-      // Normaliseer naar het frontend-format. Voor open vragen geven we het
-      // modelantwoord terug (uit Solution + eventueel exsolution-numeric) plus
-      // het R/exams-extype + exsolution + extol, zodat de evaluator kan kiezen
-      // tussen numerieke tolerantie-check (extype=num) en tekstuele beoordeling
-      // tegen het ShareStats-modelantwoord (Task #67).
-      const parseNumberLoose = (raw) => {
-        if (raw === null || raw === undefined) return null;
-        const s = String(raw).replace(/,/g, '.').trim();
-        const m = s.match(/-?\d+(?:\.\d+)?(?:[eE]-?\d+)?/);
-        if (!m) return null;
-        const n = Number(m[0]);
-        return Number.isFinite(n) ? n : null;
-      };
-      const questions = picked.map(q => {
-        const itemType = q.item_type || 'mcq';
-        if (itemType === 'open') {
-          const meta = (q.metadata && typeof q.metadata === 'object') ? q.metadata : {};
-          const extype = String(meta.extype || '').toLowerCase().trim() || undefined;
-          const numericSolution = q.correct_answer || '';
-          const writtenSolution = q.explanation || '';
-          // Bij numerieke vragen houden we het exacte getal apart, zodat de
-          // evaluator een echte tolerantie-check kan doen i.p.v. LLM-vergelijking.
-          const numericExpected = extype === 'num' ? parseNumberLoose(numericSolution) : null;
-          // R/exams `extol` is meestal een absolute tolerantie. Wanneer de
-          // metadata een lijst/range bevat, nemen we het grootste positieve
-          // verschil als tolerantie — strikt genoeg om vals-positieven te
-          // voorkomen en ruim genoeg om afronding op te vangen.
-          let numericTolerance = null;
-          const extolRaw = meta.extol;
-          if (Array.isArray(extolRaw)) {
-            const nums = extolRaw.map(parseNumberLoose).filter(n => n !== null && n >= 0);
-            if (nums.length > 0) numericTolerance = Math.max(...nums);
-          } else if (extolRaw !== undefined && extolRaw !== null && String(extolRaw).trim() !== '') {
-            const t = parseNumberLoose(extolRaw);
-            if (t !== null && t >= 0) numericTolerance = t;
-          }
-          // Voor numerieke vragen is `modelAnswer` puur de geschreven uitleg
-          // (Solution); het verwachte getal staat al apart in numericExpected.
-          // Voor tekst/cloze vallen we terug op de oude samenvoeging zodat de
-          // LLM zoveel mogelijk context krijgt.
-          const modelAnswer = extype === 'num'
-            ? writtenSolution
-            : (numericSolution
-                ? (writtenSolution ? `${numericSolution}\n\n${writtenSolution}` : numericSolution)
-                : writtenSolution);
-          return {
-            id: `itembank-${q.id}`,
-            type: 'open',
-            source: 'itembank',
-            sharestats_id: q.sharestats_id,
-            question: q.question_text,
-            modelAnswer,
-            explanation: writtenSolution,
-            exsection_path: q.exsection_path,
-            extype,
-            numericExpected: numericExpected ?? undefined,
-            numericTolerance: numericTolerance ?? undefined,
-          };
-        }
-        return {
-          id: `itembank-${q.id}`,
-          type: 'mcq',
-          source: 'itembank',
-          sharestats_id: q.sharestats_id,
-          question: q.question_text,
-          options: q.answer_options || {},
-          correctAnswer: q.correct_answer,
-          explanation: q.explanation || '',
-          exsection_path: q.exsection_path,
-        };
-      });
-
-      return res.json({ questions, total_candidates: matches.length });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
+  // (De itembank-vragen voor een quiz kiest de server sinds 2026-11-12 zelf:
+  // server/quiz/itembankPick.js, aangeroepen door de quizsessie.)
 
   app.post('/api/admin/itembank-mapping-suggestions', async (req, res) => {
     const auth = await requireAdminOrDocent(req, res);

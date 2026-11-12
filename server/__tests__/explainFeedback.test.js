@@ -80,7 +80,7 @@ describe('instructie en context', () => {
       concept: { name: 'Cohort', definition: 'Def' }, keyPoints: cleanKeyPoints(['course_id:abc']), explanation: 'Mijn uitleg',
     });
     expect(msg).not.toMatch(/course_id|RAG-geëxtraheerd|Kernpunten/);
-    expect(msg).toContain('Uitleg van de student:\nMijn uitleg');
+    expect(msg).toContain('Uitleg van de student:\n<antwoord>\nMijn uitleg\n</antwoord>');
   });
 
   it('verwante begrippen: gedeelde fragmenten wegen zwaarder dan gedeelde documenten', () => {

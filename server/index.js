@@ -54,6 +54,7 @@ import { registerStudiecafe } from './studiecafe/routes.js';
 import { registerJournalRoutes } from './journal/routes.js';
 import { registerExplainRoutes } from './explain/routes.js';
 import { registerQuizRoutes } from './quiz/routes.js';
+import { registerQuizSessionRoutes } from './quiz/quizSessionRoutes.js';
 import { registerProjectRoomRoutes } from './projects/roomRoutes.js';
 import { registerPromptRoutes } from './prompts/routes.js';
 import { registerSystemRoutes } from './system/routes.js';
@@ -143,6 +144,7 @@ registerJournalRoutes(app);
 registerExplainRoutes(app);
 
 registerQuizRoutes(app);
+registerQuizSessionRoutes(app);
 
 registerProjectRoomRoutes(app);
 

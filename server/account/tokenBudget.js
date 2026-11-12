@@ -45,6 +45,8 @@ const AI_PATHS = [
   /^\/api\/projects\/[^/]+\/groups\/[^/]+\/personas\/[^/]+\/feedback$/,
   /^\/api\/projects\/(save-summary)$/,
   /^\/api\/quiz\/save-summary$/,
+  /^\/api\/quiz\/sessions$/,
+  /^\/api\/quiz\/sessions\/[^/]+\/answer$/,
   /^\/api\/rag\/documents\/[^/]+\/translate$/,
 ];
 

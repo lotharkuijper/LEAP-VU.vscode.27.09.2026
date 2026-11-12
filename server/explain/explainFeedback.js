@@ -13,6 +13,8 @@
 // Dit blok voegt de server ALTIJD toe; de (eventueel door de docent aangepaste)
 // uitleg-prompt bepaalt alleen de toon.
 
+import { STUDENT_TEXT_RULE, wrapStudentText } from '../lib/studentText.js';
+
 export const EXPLAIN_HEADINGS = Object.freeze({
   feedback: 'FEEDBACK',
   score: 'SCORE',
@@ -199,7 +201,7 @@ export function buildExplainUserMessage({ concept, keyPoints = [], context = '',
   } else if (ragStrictMode) {
     parts.push('', RAG_STRICT_NL, 'Er zijn geen relevante cursusteksten gevonden voor dit begrip. Geef dit duidelijk aan in je feedback.');
   }
-  parts.push('', `Uitleg van de student:\n${explanation}`);
+  parts.push('', `Uitleg van de student:\n${wrapStudentText(explanation)}`, '', STUDENT_TEXT_RULE);
   const titles = sources.map(s => (s && typeof s.title === 'string' ? s.title : '')).filter(Boolean);
   if (titles.length) {
     parts.push('', `Bronnen uit het cursusmateriaal die je tot je beschikking hebt:\n${titles.map((t, i) => `[${i + 1}] ${t}`).join('\n')}`,

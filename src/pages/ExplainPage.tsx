@@ -7,7 +7,9 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { supabase } from '../lib/supabase';
 import { evaluateExplanation, llmErrorToDutch, type ExplainFeedbackSections } from '../services/llm.service';
-import { searchRelevantChunksWithStats, buildContextWithCap, dedupeSourcesByDocument, chunkToDisplaySource, ragDocumentDownloadUrl, openRagDocument, fetchConceptEvidence } from '../services/rag.service';
+import { EarnedBadgesNotice } from '../components/LearningBadge';
+import type { EarnedBadge } from '../lib/badges';
+import { searchRelevantChunksWithStats, dedupeSourcesByDocument, chunkToDisplaySource, ragDocumentDownloadUrl, openRagDocument, fetchConceptEvidence } from '../services/rag.service';
 import { BookOpen, Search, Send, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Trash2, BookText, X, Loader2, History, Coffee } from 'lucide-react';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { buildExplainFeedbackExcerpt } from '../lib/explainFeedbackExcerpt';
@@ -309,6 +311,8 @@ export function ExplainPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackSections, setFeedbackSections] = useState<ExplainFeedbackSections | null>(null);
   const [feedbackScore, setFeedbackScore] = useState<{ total: number; reason: string } | null>(null);
+  // Badges die de server bij deze beoordeling toekende (Helder uitgelegd, Gegroeid).
+  const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -586,6 +590,7 @@ export function ExplainPage() {
 
     setLoading(true);
     setFeedback(null); setFeedbackSections(null); setFeedbackScore(null);
+    setEarnedBadges([]);
     setFeedbackError(null);
     setRetrievedSources([]);
     setRetrievedStats(null);
@@ -674,13 +679,6 @@ export function ExplainPage() {
       const displaySources = dedupeSourcesByDocument(allSources, 3);
       setRetrievedSources(displaySources);
 
-      const built = chunks.length > 0
-        ? buildContextWithCap(chunks)
-        : { context: '', usedChunks: 0, totalChunks: 0, truncated: false, charTrimmed: false };
-      const context = built.context.length > 0 ? built.context : undefined;
-      if (built.truncated) {
-        console.log(`[EXPLAIN] Context capped: using ${built.usedChunks}/${built.totalChunks} chunks (${built.context.length} chars)`);
-      }
       console.log(`[EXPLAIN] Found ${chunks.length} relevant chunks from RAG (showing top ${displaySources.length} unieke documenten)`);
 
       console.log('[EXPLAIN] Evaluating explanation for concept:', selectedConcept.name);
@@ -690,9 +688,9 @@ export function ExplainPage() {
           conceptId: selectedConcept.id,
           explanation,
           courseId: activeCourse,
-          context,
+          // De server leest de tekst van deze fragmenten zelf (alleen uit deze cursus).
+          chunkIds: chunks.map(c => c.id).filter(Boolean),
           sources: displaySources,
-          ragStrictMode: ragSettings.explain.rag_strict_mode,
         });
       } catch (llmErr) {
         console.error('[EXPLAIN] LLM evaluation failed:', llmErr);
@@ -704,6 +702,7 @@ export function ExplainPage() {
       setFeedback(response.content);
       setFeedbackSections(response.sections);
       setFeedbackScore(response.score);
+      setEarnedBadges(response.badges || []);
       setActiveExplanationId(response.id);
       await loadHistory();
     } catch (error) {
@@ -1249,6 +1248,8 @@ export function ExplainPage() {
                   )}
                 </div>
               )}
+
+              {feedback && <EarnedBadgesNotice badges={earnedBadges} />}
 
               {feedback && (
                 <FeedbackBlock

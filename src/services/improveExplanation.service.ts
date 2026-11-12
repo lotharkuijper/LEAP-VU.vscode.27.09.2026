@@ -3,6 +3,7 @@
 // reflectie voor het dagboek. De browser houdt alleen het versleutelde pakketje vast.
 import { supabase } from '../lib/supabase';
 import { getActiveLang } from '../i18n/activeLang';
+import type { EarnedBadge } from '../lib/badges';
 
 export interface ImproveExercise {
   text: string;
@@ -44,7 +45,7 @@ export function createImproveExercise(conceptId: string, courseId: string | null
   return post('/api/explain/improve/create', { conceptId, courseId });
 }
 
-export function evaluateImproveAnswer(token: string, answer: string): Promise<{ feedback: ImproveFeedback; reveal: ImproveReveal }> {
+export function evaluateImproveAnswer(token: string, answer: string): Promise<{ feedback: ImproveFeedback; reveal: ImproveReveal; badges?: EarnedBadge[] }> {
   return post('/api/explain/improve/evaluate', { token, answer });
 }
 

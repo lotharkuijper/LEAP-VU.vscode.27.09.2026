@@ -74,6 +74,21 @@ describe('export', () => {
     expect(JSON.stringify(out)).not.toContain('van een ander');
     expect(out.exportedAt).toBe('2026-10-09T10:00:00.000Z');
   });
+  it('een quiz die nog loopt: de vragen zonder antwoordsleutel; een afgeronde quiz volledig; met de gegeven antwoorden', async () => {
+    const q = { type: 'mcq', question: 'Vraag', options: ['a', 'b', 'c', 'd'], correctAnswer: 2, explanation: 'GEHEIM' };
+    const db = fakeDb({
+      quiz_sessions: [
+        { id: 's1', user_id: 'me', status: 'active', questions: [q] },
+        { id: 's2', user_id: 'me', status: 'finished', questions: [q] },
+      ],
+      quiz_session_answers: [{ session_id: 's1', question_index: 0, answer: { type: 'mcq', selectedIndex: 1 } }],
+    });
+    const out = await buildExport(db, { id: 'me' });
+    const [active, finished] = out.sources.quiz_sessions;
+    expect(JSON.stringify(active)).not.toMatch(/GEHEIM|correctAnswer/);
+    expect(finished.questions[0].correctAnswer).toBe(2);
+    expect(out.sources.quiz_session_answers).toHaveLength(1);
+  });
 });
 
 describe('eigen account verwijderen', () => {

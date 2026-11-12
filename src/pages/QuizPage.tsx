@@ -6,8 +6,6 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { supabase } from '../lib/supabase';
 import {
-  evaluateOpenAnswer,
-  evaluateCasusAnswer,
   llmErrorToDutch,
   type QuizQuestion,
   type QuestionType,
@@ -17,8 +15,11 @@ import {
   type CasusQuestion,
   type QuizSource,
 } from '../services/llm.service';
-import { generateMixedQuiz, fetchSourceMix, distributeMix, SOURCE_LABELS, SOURCE_COLORS, type SourceMix, type MixCounts, type VerificationSummary } from '../services/quiz-mix.service';
-import { buildContextWithCap, chunkToDisplaySource, type DocumentChunk } from '../services/rag.service';
+import { fetchSourceMix, distributeMix, SOURCE_LABELS, SOURCE_COLORS, type SourceMix, type MixCounts, type VerificationSummary } from '../services/quiz-mix.service';
+import { chunkToDisplaySource, type DocumentChunk } from '../services/rag.service';
+import { startQuizSession, answerQuizQuestion, finishQuizSession, presentEvaluation } from '../services/quiz-session.service';
+import { EarnedBadgesNotice } from '../components/LearningBadge';
+import type { EarnedBadge } from '../lib/badges';
 import { retrieveQuizContext } from '../services/quiz-context.service';
 import { getQuizTopics, type QuizTopic } from '../services/quiz-topic.service';
 import { SourceList, type SourceItem } from '../components/SourceList';
@@ -189,6 +190,9 @@ export function QuizPage() {
   const draftRef = useRef<HTMLTextAreaElement>(null);
   const [evaluating, setEvaluating] = useState(false);
   const [evalError, setEvalError] = useState<{ title: string; detail?: string } | null>(null);
+  // De server stelt de quiz samen en kijkt na (services/quiz-session.service.ts).
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
 
   // Generation + RAG
   const [loading, setLoading] = useState(false);
@@ -410,13 +414,10 @@ export function QuizPage() {
       expected: estimateQuizSeconds(questionType, numQuestions).expected,
     });
 
-    const topicNames = selectedTopics.map(t => t.name);
-
     try {
-      let ragContext: string | undefined;
       let bestScore = 0;
+      let chunks: DocumentChunk[] = [];
       if (activeCourse !== null) {
-        let chunks: DocumentChunk[] = [];
         try {
           // Per onderwerp zoeken + vastgelegde bewijsfragmenten (zie quiz-context.service).
           const ragResult = await retrieveQuizContext({
@@ -439,36 +440,30 @@ export function QuizPage() {
           console.warn('[QUIZ] RAG search failed, generating without context:', ragErr);
         }
 
-        if (chunks.length > 0) {
-          const built = buildContextWithCap(chunks);
-          if (built.context.length > 0) {
-            ragContext = built.context;
-          }
-          setRagSources(chunks.map(c => chunkToDisplaySource(c)));
-          setContextStats({ used: built.usedChunks, total: built.totalChunks, charTrimmed: built.charTrimmed });
-        }
+        if (chunks.length > 0) setRagSources(chunks.map(c => chunkToDisplaySource(c)));
       }
 
+      // De server leest de fragmenten zelf (alleen materiaal van deze cursus),
+      // stelt de quiz samen en bewaart de antwoordsleutel.
       let generated: QuizQuestion[];
       let mixCounts: MixCounts = { rag: 0, itembank: 0, llm: 0 };
       try {
-        const result = await generateMixedQuiz({
+        if (!activeCourse) throw new Error(t('quiz.noCourseMaterial'));
+        const result = await startQuizSession({
           courseId: activeCourse,
           conceptIds: selectedTopics.map(t => t.id),
-          topicNames,
           difficulty,
           questionType,
           numQuestions,
-          ragContext,
-          ragStrictMode: ragSettings.quiz.rag_strict_mode,
-          mix: sourceMix,
-          onProgress: (e) => setGenProgress(p => p && { ...p, phase: e.phase, approved: e.approved }),
-        });
+          chunkIds: chunks.map(c => c.id).filter(Boolean),
+        }, (e) => setGenProgress(p => p && { ...p, phase: e.phase, approved: e.approved }));
         generated = result.questions;
         mixCounts = result.counts;
+        if (result.contextStats.total > 0) setContextStats(result.contextStats);
         // Kalibreer de tijdschatting alleen met geslaagde quizzen.
         if (result.status === 'ok') recordQuizDuration(questionType, numQuestions, (Date.now() - startedAt) / 1000);
         setVerification(result.verification);
+        setSessionId(result.sessionId || null);
         // Geen passend cursusmateriaal → geen enkele vraag is bij de cursus te
         // toetsen, dus ook geen quiz (en geen ongetoetste vrije generatie).
         if (result.status === 'no_course_material') {
@@ -551,23 +546,37 @@ export function QuizPage() {
     setEvalError(null);
   };
 
-  const handleSelectMCQ = (answerIndex: number) => {
-    const q = questions[currentQuestion] as MCQQuestion;
-    setAnswers(prev => {
-      const next = [...prev];
-      next[currentQuestion] = {
-        type: 'mcq',
-        selectedIndex: answerIndex,
-        isCorrect: answerIndex === q.correctAnswer,
-      };
-      return next;
-    });
-    setShowExplanation(true);
+  // Elk antwoord kijkt de server na; pas daarna komen het juiste antwoord en de uitleg mee.
+  const applyReveal = (index: number, reveal: object) => {
+    setQuestions(prev => prev.map((q, i) => (i === index ? ({ ...q, ...reveal } as QuizQuestion) : q)));
+  };
+
+  const handleSelectMCQ = async (answerIndex: number) => {
+    if (!sessionId || evaluating) return;
+    const index = currentQuestion;
+    setEvaluating(true);
+    setEvalError(null);
+    try {
+      const { answer, reveal } = await answerQuizQuestion(sessionId, index, { selectedIndex: answerIndex });
+      applyReveal(index, reveal);
+      setAnswers(prev => {
+        const next = [...prev];
+        next[index] = answer as MCQAnswer;
+        return next;
+      });
+      setShowExplanation(true);
+    } catch (err) {
+      console.error('[QUIZ] nakijken mislukt:', err);
+      setEvalError(llmErrorToDutch(err, lang));
+    } finally {
+      setEvaluating(false);
+    }
   };
 
   const handleSubmitFreeText = async () => {
     const q = questions[currentQuestion];
-    if (q.type === 'mcq') return;
+    if (q.type === 'mcq' || !sessionId) return;
+    const index = currentQuestion;
     const text = draftText.trim();
     if (!text) {
       setEvalError({ title: t('quiz.writeAnswerFirst') });
@@ -577,15 +586,14 @@ export function QuizPage() {
     setEvaluating(true);
     setEvalError(null);
     try {
-      // Task #412: de beoordelings-prompt (quiz_evaluate_open) wordt server-side
-      // bepaald; de client stuurt geen vrije prompt-tekst meer mee.
-      const evaluation: AnswerEvaluation = q.type === 'open'
-        ? await evaluateOpenAnswer(q as OpenQuestion, text)
-        : await evaluateCasusAnswer(q as CasusQuestion, text);
-
+      const { answer, reveal } = await answerQuizQuestion(sessionId, index, { text });
+      applyReveal(index, reveal);
+      const raw = (answer as FreeTextAnswer).evaluation;
+      const modelAnswer = 'modelAnswer' in reveal ? reveal.modelAnswer : '';
+      const evaluation: AnswerEvaluation | null = raw ? presentEvaluation(raw, q, modelAnswer, lang) : null;
       setAnswers(prev => {
         const next = [...prev];
-        next[currentQuestion] = { type: q.type, text, evaluation };
+        next[index] = { type: q.type, text: (answer as FreeTextAnswer).text, evaluation };
         return next;
       });
       setShowExplanation(true);
@@ -624,35 +632,16 @@ export function QuizPage() {
   };
 
   const handleFinishQuiz = async () => {
-    const scorePct = computeScorePercentage(questions, answers);
-    const correctCount = answers.filter(a => a && a.type === 'mcq' && a.isCorrect).length;
-
-    if (profile) {
-      const { error } = await supabase.from('quiz_attempts').insert({
-        student_id: profile.id,
-        course_id: activeCourse,
-        topics: selectedTopics.map(t => t.name),
-        difficulty,
-        question_type: questionType,
-        questions_data: questions,
-        answers,
-        score: questionType === 'mcq' ? correctCount : scorePct,
-        total_questions: questions.length,
-        score_percentage: scorePct,
-      });
-      if (error) {
-        console.error('[QUIZ] insert quiz_attempt failed:', error);
-        const isSchemaError = (error as any)?.code === '42703'
-          || /column .* does not exist/i.test(error.message || '');
-        // Niet blokkerend voor de UI — toon summary alsnog, maar geef hint.
-        setFeedbackError({
-          title: isSchemaError
-            ? t('quiz.historyNotSavedMigration')
-            : t('quiz.historyNotSaved'),
-          detail: isSchemaError
-            ? t('quiz.migrationError')
-            : error.message,
-        });
+    // De server bewaart de poging (quiz_attempts) en kent de badges toe.
+    if (sessionId) {
+      try {
+        const result = await finishQuizSession(sessionId);
+        setEarnedBadges(result.badges || []);
+        if (!result.attemptId) setFeedbackError({ title: t('quiz.historyNotSaved') });
+      } catch (err) {
+        console.error('[QUIZ] afronden mislukt:', err);
+        // Niet blokkerend: de samenvatting verschijnt toch, met een melding.
+        setFeedbackError({ title: t('quiz.historyNotSaved'), detail: err instanceof Error ? err.message : undefined });
       }
     }
 
@@ -662,6 +651,8 @@ export function QuizPage() {
 
   const handleRestart = () => {
     setState('setup');
+    setSessionId(null);
+    setEarnedBadges([]);
     setQuestions([]);
     setAnswers([]);
     setCurrentQuestion(0);
@@ -1178,6 +1169,7 @@ export function QuizPage() {
                 <li>{t('quiz.howItWorksBefore')} <strong>{t('quiz.howItWorksOpenBold')}</strong> {t('quiz.howItWorksOpenAfter')}</li>
                 <li>{t('quiz.howItWorksBefore')} <strong>{t('quiz.howItWorksCasusBold')}</strong> {t('quiz.howItWorksCasusAfter')}</li>
                 <li>{t('quiz.howItWorksHistory')}</li>
+                <li>{t('quiz.howItWorksBadges')}</li>
               </ul>
             </div>
           </div>
@@ -1372,8 +1364,8 @@ export function QuizPage() {
                 return (
                   <button
                     key={index}
-                    onClick={() => !isAnsweredMCQ && handleSelectMCQ(index)}
-                    disabled={isAnsweredMCQ}
+                    onClick={() => !isAnsweredMCQ && void handleSelectMCQ(index)}
+                    disabled={isAnsweredMCQ || evaluating}
                     data-testid={`button-mcq-option-${index}`}
                     className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                       showCorrect ? 'border-green-500 bg-green-50'
@@ -1401,6 +1393,12 @@ export function QuizPage() {
                 );
               })}
             </div>
+          )}
+
+          {isMCQ && !isAnsweredMCQ && evalError && (
+            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2" data-testid="text-mcq-check-error">
+              {evalError.title}
+            </p>
           )}
 
           {/* MCQ uitleg */}
@@ -1561,6 +1559,8 @@ export function QuizPage() {
               {passed ? t('quiz.wellDone') : t('quiz.keepPractising')}
             </p>
           </div>
+
+          <EarnedBadgesNotice badges={earnedBadges} />
 
           {feedbackError && (
             <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 text-left">

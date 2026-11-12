@@ -57,8 +57,9 @@ en daarnaast de modules met de eigenlijke regels. Die modules zijn zoveel mogeli
 | `server/lti/` | Canvas-koppeling (LTI 1.3) | `lti.js`, `routes.js` |
 | `server/projects/` | Projecten, groepen, persona's (begeleider, beoordelaar, rolspeler), inleveren en nakijkcommentaar | `groupRoutes.js`, `roomRoutes.js`, `personaRoutes.js`, `documentRoutes.js`, `access.js`, `personaRoles.js`, `personaKnowledge.js`, `personaRelationship.js`, `threadClose.js`, `preassessment.js`, `projectJournalSave.js`, `evaluatorReview.js`, `reputationBadge.js` |
 | `server/prompts/` | Tutor-instructies per cursus en de sjablonen | `routes.js`, `promptStore.js`, `promptTemplates.js` |
-| `server/quiz/` | Quiz, bronnenmix en vraagbanken (ShareStats, CSV) | `routes.js`, `itembankRoutes.js`, `itembankScope.js`, `itembankCsv.js`, `quizSourcesMix.js` |
-| `server/rag/` | Zoeken in het cursusmateriaal (RAG) | `routes.js` (o.a. `/api/embeddings`, zoekinstellingen), `search.js`, `chunking.js`, `crossLingual.js`, `queryExpansion.js`, `filePurpose.js`, `documentScope.js`, `ragFolder.js` |
+| `server/quiz/` | Quiz (de server maakt, controleert en kijkt na), bronnenmix en vraagbanken (ShareStats, CSV) | `quizSessionRoutes.js` (`/api/quiz/sessions`), `quizSession.js`, `quizQuestions.js`, `quizVerify.js`, `quizEvaluate.js`, `itembankPick.js`, `routes.js`, `itembankRoutes.js`, `itembankScope.js`, `itembankCsv.js`, `quizSourcesMix.js` |
+| `server/achievements/` | Badges bij Ik leg uit en de Quiz | `learningBadges.js` |
+| `server/rag/` | Zoeken in het cursusmateriaal (RAG) | `routes.js` (o.a. `/api/embeddings`, zoekinstellingen), `search.js`, `chunking.js`, `crossLingual.js`, `queryExpansion.js`, `filePurpose.js`, `documentScope.js`, `ragFolder.js`, `contextCap.js` (gedeeld met de frontend), `courseContext.js` (context uit fragment-id's, alleen deze cursus) |
 | `server/studiecafe/` | Studiecafé (forum per cursus) en de e-mailmeldingen | `studiecafe.js`, `routes.js` |
 | `server/system/` | Gezondheidscheck, systeemberichten, Ontwerphulp | `routes.js` (`/api/health`), `systemMessages.js`, `designAssistant.js` |
 | `server/__tests__/` | Alle servertests (Vitest) | |
@@ -96,8 +97,8 @@ en daarnaast de modules met de eigenlijke regels. Die modules zijn zoveel mogeli
 | `src/components/help/` | `HelpTip`, `Tooltip`, `AdminHint`, `HelpToggle`: uitleg en "?"-knoppen. |
 | `src/components/ui/` | Bouwstenen zoals `ListRow`, `RowActions`, `alert-dialog`. |
 | `src/components/chat/`, `explain/`, `quiz/`, `concepts/`, `projects/`, `formula/`, `admin/` | Onderdelen voor dat ene gebied (bv. `chat/ChatGoal.tsx`, `formula/FormulaDialog.tsx`, `admin/DesignAssistant.tsx`). |
-| `src/services/` | Praten met de server en Supabase: `llm.service.ts`, `rag.service.ts`, quiz-, upload-, ShareStats- en web-import-services. |
-| `src/lib/` | Gedeelde hulpfuncties zonder schermen: `supabase.ts` (de client), `courseFeatures.ts`, `liveUpdates.ts`, `backgroundTasks.ts`, `conceptProgress.ts`, `mathText.ts`, `database.types.ts`, … |
+| `src/services/` | Praten met de server en Supabase: `llm.service.ts`, `rag.service.ts`, `quiz-session.service.ts` (de quiz via de server), quiz-, upload-, ShareStats- en web-import-services. |
+| `src/lib/` | Gedeelde hulpfuncties zonder schermen: `supabase.ts` (de client), `courseFeatures.ts`, `liveUpdates.ts`, `backgroundTasks.ts`, `conceptProgress.ts`, `mathText.ts`, `badges.ts` (badges tonen; met `components/LearningBadge.tsx`), `database.types.ts`, … |
 | `src/hooks/` | React-hooks: `useCourseFeatures`, `useChatAttachments`, `useLearningLevel`, `useLeerlijn`, … |
 | `src/contexts/` | Gedeelde toestand: `AuthContext` (wie is ingelogd), `ActiveCourseContext` (actieve cursus), `CourseAccessContext`. |
 | `src/features/analytics/` | Frontend van de losse analytics-module. |

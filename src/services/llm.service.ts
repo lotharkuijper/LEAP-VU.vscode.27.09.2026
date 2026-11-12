@@ -1,6 +1,7 @@
 import type { ReadinessResult } from '../lib/readiness';
 import type { AttachmentPayload } from '../lib/chatAttachments';
-import { getLanguageMeta, type Lang } from '../i18n/languages';
+import type { EarnedBadge } from '../lib/badges';
+import type { Lang } from '../i18n/languages';
 import { getActiveLang } from '../i18n/activeLang';
 import { tStatic } from '../i18n/translations';
 
@@ -205,8 +206,6 @@ export async function sendChatMessage(
   }
 }
 
-const RAG_STRICT_INSTRUCTION_LLM = `\n\nSTRIKTE BRONBEPERKING: Gebruik UITSLUITEND de context die hierboven is meegegeven. Ga NIET buiten deze bronnen. Als iets niet in de meegeleverde context staat, zeg dan eerlijk: "Dit onderwerp staat niet in het beschikbare cursusmateriaal."`;
-
 /** Feedback bij "Ik leg uit" in vier blokken (server/explain/explainFeedback.js). */
 export interface ExplainFeedbackSections {
   feedback: string;
@@ -215,6 +214,8 @@ export interface ExplainFeedbackSections {
 }
 
 export interface ExplainEvaluation {
+  /** Badges die de server bij deze beoordeling toekende (server/achievements/learningBadges.js). */
+  badges?: EarnedBadge[];
   id: string;
   version: number;
   /** Leesbare tekst van alle blokken (ook voor oudere weergaven en het dagboek). */
@@ -227,15 +228,15 @@ export interface ExplainEvaluation {
  * "Ik leg uit": de server bepaalt de instructie (toon van de docent + vaste
  * blokken en meetlat), kiest verwante begrippen uit de cursus, beoordeelt en
  * slaat de uitleg op (POST /api/explain/evaluate). De browser stuurt alleen de
- * uitleg en de gevonden cursusfragmenten mee.
+ * uitleg en WELKE cursusfragmenten hij vond; de tekst leest de server zelf.
  */
 export async function evaluateExplanation(opts: {
   conceptId: string;
   explanation: string;
   courseId?: string | null;
-  context?: string;
+  /** Id's van de gevonden cursusfragmenten (beste eerst). */
+  chunkIds?: string[];
   sources?: Array<{ title: string }>;
-  ragStrictMode?: boolean;
 }): Promise<ExplainEvaluation> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   try {
@@ -251,9 +252,8 @@ export async function evaluateExplanation(opts: {
       conceptId: opts.conceptId,
       explanation: opts.explanation,
       ...(opts.courseId ? { courseId: opts.courseId } : {}),
-      ...(opts.context ? { context: opts.context } : {}),
+      chunkIds: opts.chunkIds || [],
       sources: (opts.sources || []).map(s => ({ title: s.title })),
-      ragStrictMode: !!opts.ragStrictMode,
     }),
   });
   const data = await response.json().catch(() => ({}));
@@ -311,535 +311,12 @@ export interface AnswerEvaluation {
   feedback: string;
   feedforward: string;
   score: number; // 0–100
+  /** Numerieke ItemBank-vraag: de server vergelijkt het getal; de tekst maakt de browser. */
+  numeric?: { expected: number; tolerance: number; student: number | null; outcome: 'correct' | 'wrong' | 'noNumber'; diff?: number };
 }
 
-const difficultyLabel = (d: 'easy' | 'medium' | 'hard', lang: string = 'nl') =>
-  lang !== 'nl'
-    ? (d === 'easy' ? 'easy' : d === 'medium' ? 'medium' : 'hard')
-    : (d === 'easy' ? 'makkelijke' : d === 'medium' ? 'gemiddelde' : 'moeilijke');
-
-// Quiz-vragen moeten een vaste, strikte toon houden. Een lage temperatuur
-// reduceert hallucinaties en "vreemde" vragen die niet meer uit het gekozen
-// concept of cursusmateriaal volgen.
-const QUIZ_GENERATION_TEMPERATURE = 0.2;
-
-const SECOND_PERSON_RULE_NL = `Aanspraakvorm (volg STRIKT): spreek de student direct aan met "je" / "jij" / "jouw". Gebruik NOOIT "de student", "deze student" of "de student heeft" — schrijf alsof je het één-op-één tegen de student zegt.`;
-const SECOND_PERSON_RULE_EN = `Addressing rule (follow STRICTLY): address the student directly using "you" / "your". NEVER use "the student", "this student" or "the student has" — write as if giving feedback one-on-one.`;
-const getSecondPersonRule = () => _getLang() !== 'nl' ? SECOND_PERSON_RULE_EN : SECOND_PERSON_RULE_NL;
-
-// Voor talen anders dan NL/EN: instrueer het model expliciet in welke taal het
-// de (AI-gegenereerde) uitvoer moet schrijven. NL en EN hebben al een eigen
-// volledige prompt, dus daar is geen extra instructie nodig. Wordt o.a. gebruikt
-// bij quizgeneratie, die de systeemprompt overslaat (skipSystemPrompt) en dus
-// niet automatisch de server-taalinstructie meekrijgt.
-function outputLanguageDirective(lang: Lang): string {
-  if (lang === 'nl' || lang === 'en') return '';
-  const name = getLanguageMeta(lang)?.english;
-  if (!name) return '';
-  return `\n\nLANGUAGE REQUIREMENT (follow strictly): Write all human-readable text — every question, every answer option, every explanation, model answer and rubric — in ${name}. Do not write in English or Dutch. Keep the JSON structure intact: do NOT translate or rename any JSON property names/keys (they must stay exactly as specified, in English), and keep fixed/structural values exactly as generated — in particular the \`type\` field (e.g. "mcq", "open", "casus") and any numeric fields or indices. Translate ONLY the human-readable text values.`;
-}
-
-function buildContextSection(ragContext?: string, ragStrictMode?: boolean): string {
-  if (ragContext) {
-    const strictNote = ragStrictMode ? RAG_STRICT_INSTRUCTION_LLM : '';
-    return `\n\nGebruik de volgende informatie uit het cursusmateriaal als basis voor de vragen:\n${ragContext}${strictNote}\n`;
-  }
-  if (ragStrictMode) {
-    // Geef geen dubbelzinnige opdracht — returneer een lege sectie zodat de
-    // aanroeper de RAG-generatie al vóór de LLM-call kan overslaan wanneer er
-    // geen context is. Dit voorkomt dat het model een weigering als quiz-vraag
-    // opmaakt.
-    return '';
-  }
-  return '';
-}
-
-/**
- * Detecteert of een vraag eigenlijk een LLM-weigering is die als quiz-vraag is
- * opgemaakt. Dit is een veiligheidsvangnet naast de fix in generateMixedQuiz.
- */
-function isRefusalQuestion(q: QuizQuestion): boolean {
-  const text = ('question' in q ? q.question : '') || '';
-  const lower = text.toLowerCase();
-  return (
-    lower.includes('staat niet in het beschikbare') ||
-    lower.includes('kan ik geen vraag') ||
-    lower.includes('niet in het cursusmateriaal') ||
-    lower.includes('geen relevante') ||
-    lower.includes('not in the available') ||
-    lower.includes('cannot generate') ||
-    lower.includes('unable to generate') ||
-    lower.includes('i cannot create')
-  );
-}
-
-export function extractJSON<T>(content: string, kind: 'array' | 'object'): T {
-  const re = kind === 'array' ? /\[[\s\S]*\]/ : /\{[\s\S]*\}/;
-  const match = content.match(re);
-  if (!match) {
-    throw new LLMError(
-      tStatic(getActiveLang(), 'llm.err.invalidJson'),
-      502,
-      'invalid_response_format',
-      content.slice(0, 400),
-    );
-  }
-  try {
-    return JSON.parse(match[0]) as T;
-  } catch (parseErr: any) {
-    throw new LLMError(
-      tStatic(getActiveLang(), 'llm.err.invalidJson'),
-      502,
-      'invalid_response_format',
-      parseErr?.message || 'JSON parse error',
-    );
-  }
-}
-
-// Cache voor quiz-prompts uit chatbot_prompts (Task #57). Wordt geladen bij
-// het eerste gebruik en behouden voor de duur van de pagina; admins moeten de
-// pagina vernieuwen na een prompt-wijziging.
-export type QuizPromptName =
-  | 'quiz_generate_strict'
-  | 'quiz_generate_blended'
-  | 'quiz_generate_creative'
-  | 'quiz_verify'
-  | 'quiz_evaluate_open';
-
-// Cache met TTL: succesvolle ophaal blijft 5 min geldig zodat we niet bij elke
-// vraag opnieuw naar de DB gaan, terwijl een transiënte fout (HTTP 5xx, offline
-// even) niet voor de hele sessie de fallback vastpint. Bij een fout cachen we
-// ALLEEN kortstondig (10s) zodat een storm aan calls geen request-storm geeft,
-// maar de volgende generatie het opnieuw probeert.
-let quizPromptCache: Record<QuizPromptName, string> | null = null;
-let quizPromptCacheExpiry = 0;
-let quizPromptCacheIsFallback = false;
-let quizPromptInflight: Promise<Record<QuizPromptName, string>> | null = null;
-const QUIZ_PROMPT_TTL_OK_MS = 5 * 60 * 1000;
-const QUIZ_PROMPT_TTL_ERR_MS = 10 * 1000;
-
-export async function fetchQuizPrompts(): Promise<Record<QuizPromptName, string>> {
-  const now = Date.now();
-  if (quizPromptCache && now < quizPromptCacheExpiry) return quizPromptCache;
-  if (quizPromptInflight) return quizPromptInflight;
-  quizPromptInflight = (async () => {
-    try {
-      const { supabase } = await import('../lib/supabase');
-      const { data: { session } } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {};
-      if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-      const res = await fetch('/api/quiz/prompts', { headers });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const prompts = (data?.prompts || {}) as Record<QuizPromptName, string>;
-      quizPromptCache = prompts;
-      quizPromptCacheExpiry = Date.now() + QUIZ_PROMPT_TTL_OK_MS;
-      quizPromptCacheIsFallback = false;
-      return prompts;
-    } catch (err) {
-      console.warn('[llm] fetchQuizPrompts mislukt — fallback op hardcoded persona:', err);
-      // Fallback: lege strings → caller gebruikt zijn eigen hardcoded persona.
-      const fallback = {
-        quiz_generate_strict: '',
-        quiz_generate_blended: '',
-        quiz_generate_creative: '',
-        quiz_verify: '',
-        quiz_evaluate_open: '',
-      } as Record<QuizPromptName, string>;
-      quizPromptCache = fallback;
-      // Korte TTL bij fallback zodat de volgende generatie opnieuw probeert.
-      quizPromptCacheExpiry = Date.now() + QUIZ_PROMPT_TTL_ERR_MS;
-      quizPromptCacheIsFallback = true;
-      return fallback;
-    } finally {
-      quizPromptInflight = null;
-    }
-  })();
-  return quizPromptInflight;
-}
-
-export function clearQuizPromptCache() {
-  quizPromptCache = null;
-  quizPromptCacheExpiry = 0;
-  quizPromptCacheIsFallback = false;
-}
-
-export function isQuizPromptCacheFallback(): boolean {
-  return quizPromptCacheIsFallback;
-}
-
-export async function generateQuiz(
-  topics: string[],
-  difficulty: 'easy' | 'medium' | 'hard',
-  questionType: QuestionType,
-  numQuestions: number = 5,
-  ragContext?: string,
-  ragStrictMode?: boolean,
-  promptName?: string,
-): Promise<QuizQuestion[]> {
-  const lang = _getLang();
-  const en = lang !== 'nl';
-  const contextSection = buildContextSection(ragContext, ragStrictMode);
-  const topicsLabel = en
-    ? (topics.length === 1 ? `the topic "${topics[0]}"` : `the topics ${topics.map(t => `"${t}"`).join(', ')}`)
-    : (topics.length === 1 ? `het onderwerp "${topics[0]}"` : `de onderwerpen ${topics.map(t => `"${t}"`).join(', ')}`);
-  const diff = difficultyLabel(difficulty, lang);
-
-  let promptCore: string;
-  let exampleJson: string;
-  let maxTokens = 2048;
-
-  if (questionType === 'mcq') {
-    promptCore = en
-      ? `Generate ${numQuestions} ${diff} multiple-choice questions about ${topicsLabel}.${contextSection}
-
-For each question:
-- Write a clear, specific question.
-- Provide exactly 4 answer options (A, B, C, D).
-- Indicate which answer is correct (0, 1, 2 or 3).
-- Provide a brief explanation of why this answer is correct. Write the explanation in second person ("you"/"your") addressing the student.`
-      : `Genereer ${numQuestions} ${diff} meerkeuzevragen over ${topicsLabel}.${contextSection}
-
-Voor elke vraag:
-- Maak een duidelijke, specifieke vraag.
-- Geef exact 4 antwoordopties (A, B, C, D).
-- Geef aan welk antwoord correct is (0, 1, 2 of 3).
-- Geef een korte uitleg waarom dit antwoord correct is. Schrijf de uitleg in tweede persoon ("je"/"jij") gericht aan de student.`;
-    exampleJson = en
-      ? `[
-  {
-    "type": "mcq",
-    "question": "The question here",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": 0,
-    "explanation": "Explanation of why this is correct, directed at you"
-  }
-]`
-      : `[
-  {
-    "type": "mcq",
-    "question": "De vraag hier",
-    "options": ["Optie A", "Optie B", "Optie C", "Optie D"],
-    "correctAnswer": 0,
-    "explanation": "Uitleg waarom dit correct is, gericht aan jou"
-  }
-]`;
-  } else if (questionType === 'open') {
-    promptCore = en
-      ? `Generate ${numQuestions} ${diff} open questions about ${topicsLabel}.${contextSection}
-
-For each question:
-- Ask an open question (not multiple choice) that the student can answer in 3–8 sentences.
-- Provide a "modelAnswer": an ideal answer of approximately 4–8 sentences containing the key points.
-- Provide a "rubric": brief assessment criteria (3–5 bullets, in one string with newlines) with which an evaluator can later score the student answer.`
-      : `Genereer ${numQuestions} ${diff} open vragen over ${topicsLabel}.${contextSection}
-
-Voor elke vraag:
-- Stel een open vraag (geen meerkeuze) waarop de student in 3–8 zinnen een inhoudelijk antwoord kan geven.
-- Geef een "modelAnswer": een ideaal antwoord van ongeveer 4–8 zinnen dat de kernpunten bevat.
-- Geef een "rubric": korte beoordelingscriteria (3–5 bullets, in één string met newlines) waarmee een beoordelaar later het studentantwoord kan scoren.`;
-    exampleJson = en
-      ? `[
-  {
-    "type": "open",
-    "question": "The open question here",
-    "modelAnswer": "A worked-out example answer of a few sentences.",
-    "rubric": "- Mentions definition X\\n- References mechanism Y\\n- Provides an example"
-  }
-]`
-      : `[
-  {
-    "type": "open",
-    "question": "De open vraag hier",
-    "modelAnswer": "Een uitgewerkt voorbeeldantwoord van enkele zinnen.",
-    "rubric": "- Noemt definitie X\\n- Verwijst naar mechanisme Y\\n- Geeft een voorbeeld"
-  }
-]`;
-  } else {
-    promptCore = en
-      ? `Generate ${numQuestions} ${diff} case study questions about ${topicsLabel}.${contextSection}
-
-For each case:
-- Write a short, realistic problem sketch ("context") of 3–6 sentences describing a research or practical situation relevant to ${topicsLabel}.
-- Then ask one clear question ("question") that forces the student to approach the problem analytically.
-- Provide a "modelAnswer": an ideal answer of approximately 5–8 sentences.
-- Provide a "rubric": brief assessment criteria (3–5 bullets, in one string with newlines).`
-      : `Genereer ${numQuestions} ${diff} casusvragen over ${topicsLabel}.${contextSection}
-
-Voor elke casus:
-- Schrijf eerst een korte, realistische probleemschets ("context") van 3–6 zinnen waarin een onderzoeks- of praktijksituatie wordt geschetst die past bij ${topicsLabel}.
-- Stel daarna één duidelijke vraag ("question") die de student dwingt het probleem analytisch te benaderen.
-- Geef een "modelAnswer": een ideaal antwoord van ongeveer 5–8 zinnen.
-- Geef een "rubric": korte beoordelingscriteria (3–5 bullets, in één string met newlines).`;
-    exampleJson = en
-      ? `[
-  {
-    "type": "casus",
-    "context": "Short case description of a few sentences.",
-    "question": "The question for this case",
-    "modelAnswer": "A worked-out example answer of a few sentences.",
-    "rubric": "- Names the core of the case\\n- Applies the right course concept\\n- Gives a well-founded conclusion"
-  }
-]`
-      : `[
-  {
-    "type": "casus",
-    "context": "Korte casusbeschrijving van enkele zinnen.",
-    "question": "De vraag bij deze casus",
-    "modelAnswer": "Een uitgewerkt voorbeeldantwoord van enkele zinnen.",
-    "rubric": "- Benoemt de kern van de casus\\n- Past het juiste begrip uit de cursus toe\\n- Geeft een onderbouwde conclusie"
-  }
-]`;
-    maxTokens = 3000;
-  }
-
-  const quizPrompt = `${promptCore}
-
-${getSecondPersonRule()}
-
-${en
-    ? `Format your answer as a JSON array with this structure:\n${exampleJson}\n\nIMPORTANT: Return ONLY the JSON array, no extra text, no markdown code block.`
-    : `Formatteer je antwoord als een JSON array met deze structuur:\n${exampleJson}\n\nBELANGRIJK: Geef ALLEEN de JSON array terug, geen extra tekst, geen markdown-codeblok.`}`;
-
-  try {
-    const data = await callChatAPI({
-      model: undefined,
-      messages: [{ role: 'user', content: quizPrompt + outputLanguageDirective(lang) }],
-      temperature: QUIZ_GENERATION_TEMPERATURE,
-      max_tokens: maxTokens,
-      skipSystemPrompt: true,
-      ...(promptName && promptName.trim().length > 0
-        ? { promptMode: promptName }
-        : {}),
-    });
-
-    const content = data.choices[0]?.message?.content || '';
-    const parsed = extractJSON<QuizQuestion[]>(content, 'array');
-    // Defensief: zorg dat elk vraag-object een geldig type heeft. Sommige
-    // modellen vergeten het veld (oude MCQ-default), en bij meertalige output
-    // kan het model de enum-waarde vertalen ("mcq" -> "keuzevraag"); val in
-    // beide gevallen terug op het gevraagde questionType i.p.v. een ongeldige
-    // (vertaalde) waarde te accepteren.
-    const VALID_QUESTION_TYPES = new Set<QuestionType>(['mcq', 'open', 'casus']);
-    const typed = parsed.map((q: any) => ({
-      ...q,
-      type: VALID_QUESTION_TYPES.has(q?.type) ? q.type : questionType,
-    })) as QuizQuestion[];
-    // Veiligheidsfilter: gooi weigeringsvragen eruit die het model per ongeluk
-    // als echte quiz-vraag heeft opgemaakt.
-    // De inhoudelijke kwaliteitscontrole (blind oplossen + vergelijken) zit
-    // NIET hier maar in quiz-verification.service: die geldt voor élke
-    // gegenereerde vraag, ongeacht bron of strict-mode.
-    return typed.filter(q => !isRefusalQuestion(q));
-  } catch (error: any) {
-    console.error('Error generating quiz:', error);
-    if (error instanceof LLMError) {
-      throw error;
-    }
-    const msg = error?.message || String(error);
-    throw new LLMError(msg, 0, undefined, msg);
-  }
-}
-
-async function evaluateFreeTextAnswer(args: {
-  systemPersona: string;
-  questionBlock: string;
-  modelAnswer: string;
-  rubric: string;
-  studentAnswer: string;
-  promptMode?: string;
-}): Promise<AnswerEvaluation> {
-  const { systemPersona, questionBlock, modelAnswer, rubric, studentAnswer, promptMode } = args;
-  const prompt = `${systemPersona}
-
-${questionBlock}
-
-Modelantwoord (referentie, niet zichtbaar voor de student):
-${modelAnswer}
-
-Beoordelingscriteria (rubric):
-${rubric}
-
-Antwoord van jou (de student):
-${studentAnswer}
-
-${getSecondPersonRule()}
-
-Schrijf een formatieve beoordeling met EXACT drie velden:
-1. "feedback": 3–6 zinnen die concreet benoemen wat goed gaat en wat ontbreekt of onjuist is in jouw antwoord.
-2. "feedforward": 2–4 zinnen die concreet beschrijven hoe jij je antwoord een volgende keer kan verbeteren (één concrete vervolgstap, niet vaag).
-3. "score": een geheel getal tussen 0 en 100 dat aangeeft hoe volledig en correct jouw antwoord is, gewogen tegen het modelantwoord en de rubric. 0 = compleet onjuist of leeg, 100 = inhoudelijk volledig en correct.
-
-Geef je antwoord UITSLUITEND als één JSON-object met deze structuur, zonder extra tekst en zonder markdown-codeblok:
-{
-  "feedback": "...",
-  "feedforward": "...",
-  "score": 75
-}`;
-
-  const data = await callChatAPI({
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.3,
-    max_tokens: 1200,
-    skipSystemPrompt: true,
-    ...(promptMode ? { promptMode } : {}),
-  });
-
-  const content = data.choices[0]?.message?.content || '';
-  const parsed = extractJSON<{ feedback?: string; feedforward?: string; score?: number | string }>(content, 'object');
-
-  const scoreNum = Math.max(0, Math.min(100, Math.round(Number(parsed.score) || 0)));
-  return {
-    feedback: String(parsed.feedback || '').trim(),
-    feedforward: String(parsed.feedforward || '').trim(),
-    score: scoreNum,
-  };
-}
-
-/**
- * Probeert een numeriek antwoord uit een vrij tekstantwoord te halen. Accepteert
- * komma als decimaalteken, optioneel teken, en negeert eenheden of toelichting.
- * Geeft `null` terug als er geen bruikbaar getal is.
- */
-function parseNumericAnswer(text: string): number | null {
-  if (!text) return null;
-  const normalized = text.replace(/,/g, '.');
-  const match = normalized.match(/-?\d+(?:\.\d+)?(?:[eE]-?\d+)?/);
-  if (!match) return null;
-  const n = Number(match[0]);
-  return Number.isFinite(n) ? n : null;
-}
-
-/**
- * Numerieke beoordeling à la R/exams `extol`: het studentantwoord is correct
- * als |student − verwacht| ≤ tolerantie. Bij ontbrekende of nul-tolerantie
- * wordt strikt vergeleken (met een kleine epsilon voor afrondingsruis).
- */
-function evaluateNumericAnswer(
-  expected: number,
-  toleranceRaw: number | undefined,
-  studentAnswer: string,
-  modelAnswer: string,
-): AnswerEvaluation {
-  const lang = _getLang();
-  const tolerance = Number.isFinite(toleranceRaw as number) && (toleranceRaw as number) > 0
-    ? (toleranceRaw as number)
-    : 0;
-  const student = parseNumericAnswer(studentAnswer);
-  const formatExpected = () => {
-    const t = tolerance > 0
-      ? tStatic(lang, 'quiz.numericEval.toleranceSuffix', { tol: tolerance })
-      : '';
-    return `${expected}${t}`;
-  };
-  const methodNote = tolerance > 0
-    ? tStatic(lang, 'quiz.numericEval.methodTolerance', { tol: tolerance })
-    : tStatic(lang, 'quiz.numericEval.methodStrict');
-  const modelNote = modelAnswer && modelAnswer.trim().length > 0
-    ? tStatic(lang, 'quiz.numericEval.modelExplanation', { model: modelAnswer.trim() })
-    : '';
-
-  if (student === null) {
-    return {
-      feedback: tStatic(lang, 'quiz.numericEval.noNumberFeedback', {
-        expected: formatExpected(),
-        method: methodNote,
-        model: modelNote,
-      }),
-      feedforward: tStatic(lang, 'quiz.numericEval.noNumberFeedforward', { expected }),
-      score: 0,
-    };
-  }
-
-  const diff = Math.abs(student - expected);
-  const epsilon = tolerance > 0 ? tolerance : 1e-9;
-  const correct = diff <= epsilon;
-
-  if (correct) {
-    return {
-      feedback: tStatic(lang, 'quiz.numericEval.correctFeedback', {
-        student,
-        expected: formatExpected(),
-        method: methodNote,
-        model: modelNote,
-      }),
-      feedforward: tStatic(lang, 'quiz.numericEval.correctFeedforward'),
-      score: 100,
-    };
-  }
-
-  return {
-    feedback: tStatic(lang, 'quiz.numericEval.wrongFeedback', {
-      student,
-      expected: formatExpected(),
-      diff: Number(diff.toPrecision(4)),
-      method: methodNote,
-      model: modelNote,
-    }),
-    feedforward: tStatic(lang, 'quiz.numericEval.wrongFeedforward'),
-    score: 0,
-  };
-}
-
-export async function evaluateOpenAnswer(
-  question: OpenQuestion,
-  studentAnswer: string,
-): Promise<AnswerEvaluation> {
-  // Numerieke ItemBank-vragen (extype: num): lokale tolerantie-check is
-  // eerlijker dan een LLM-vergelijking en vermeldt expliciet dat extol is
-  // toegepast. Vereist een geldig verwacht getal; valt anders terug op LLM.
-  if (
-    question.extype === 'num'
-    && typeof question.numericExpected === 'number'
-    && Number.isFinite(question.numericExpected)
-  ) {
-    return evaluateNumericAnswer(
-      question.numericExpected,
-      question.numericTolerance,
-      studentAnswer,
-      question.modelAnswer,
-    );
-  }
-
-  const evaluation = await evaluateFreeTextAnswer({
-    systemPersona: `Je bent een ervaren docent aan de VU Amsterdam en beoordeelt jouw antwoord op een open vraag.`,
-    questionBlock: `Open vraag:\n${question.question}`,
-    modelAnswer: question.modelAnswer,
-    rubric: question.rubric,
-    studentAnswer,
-    promptMode: 'quiz_evaluate_open',
-  });
-
-  // Vermeld in de feedback welke beoordelingsmethode is gebruikt zodat
-  // studenten begrijpen waarom hun tekst- of cloze-antwoord is gescoord
-  // tegen het ShareStats-modelantwoord (Task #67).
-  if (question.source === 'itembank') {
-    const lang = _getLang();
-    const methodNote = question.extype === 'cloze'
-      ? tStatic(lang, 'quiz.itembankEval.methodCloze')
-      : tStatic(lang, 'quiz.itembankEval.methodOpen');
-    return {
-      ...evaluation,
-      feedback: evaluation.feedback ? `${evaluation.feedback}\n\n${methodNote}` : methodNote,
-    };
-  }
-  return evaluation;
-}
-
-export async function evaluateCasusAnswer(
-  question: CasusQuestion,
-  studentAnswer: string,
-): Promise<AnswerEvaluation> {
-  return evaluateFreeTextAnswer({
-    systemPersona: `Je bent een ervaren docent aan de VU Amsterdam en beoordeelt jouw antwoord op een casusvraag. Houd zowel de inhoudelijke juistheid als het correct toepassen op de geschetste casus mee in je oordeel.`,
-    questionBlock: `Casusbeschrijving:\n${question.context}\n\nVraag bij de casus:\n${question.question}`,
-    modelAnswer: question.modelAnswer,
-    rubric: question.rubric,
-    studentAnswer,
-    promptMode: 'quiz_evaluate_open',
-  });
-}
+// Quizvragen maken, controleren en nakijken doet sinds 2026-11-12 de server
+// (server/quiz/); de browser praat daarmee via services/quiz-session.service.ts.
 
 export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   let response: Response;
