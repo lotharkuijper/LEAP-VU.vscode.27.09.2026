@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { allServerSource, routeSource } from './helpers/serverSource.js';
+import { STUDENT_PERSONA_FIELDS } from '../projects/studentPersonaView.js';
 import {
   isDataDocument, canBeKnowledge, knowledgeFieldsFrom, copyKnowledgeFields, filterKnowledgeIds,
   buildEvaluatorMaterial, buildProjectKnowledgeContext, knownByMap, EVALUATOR_TOTAL_MAX_CHARS,
@@ -131,7 +132,11 @@ describe('koppeling in de server', () => {
     expect(pre).toMatch(/buildEvaluatorMaterial\(rubricDocs\)/);
   });
   it('studenten krijgen de kennisinstellingen niet mee in de projectkamer', () => {
-    expect(routeSource("app.get('/api/projects/:projectId/room'")).toMatch(/const \{ course_knowledge: _ck, course_knowledge_doc_ids: _cd, project_knowledge_doc_ids: _pd, rag_folder_ids: _rf, \.\.\.rest \} = p;/);
+    // Studenten krijgen een vaste lijst velden (studentPersonaView); kennis zit daar niet in.
+    expect(routeSource("app.get('/api/projects/:projectId/room'")).toMatch(/: \{ \.\.\.studentPersonaView\(p\), _source: 'project' \}/);
+    for (const k of ['course_knowledge', 'course_knowledge_doc_ids', 'project_knowledge_doc_ids', 'rag_folder_ids']) {
+      expect(STUDENT_PERSONA_FIELDS).not.toContain(k);
+    }
   });
   it('verwijderen of omzetten naar data haalt het document weg uit wat persona\'s kennen', () => {
     expect(routeSource("app.patch('/api/projects/:projectId/documents/:docId'")).toMatch(/update\.material_kind === 'data' \? await forgetProjectDocKnowledge\(projectId, docId\)/);

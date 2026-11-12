@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import { routeSource } from './helpers/serverSource.js';
+import { STUDENT_PERSONA_FIELDS } from '../projects/studentPersonaView.js';
 import { buildEvaluatorChatPrompt, SUBMISSION_FILE_TYPES, SUBMISSION_MAX_MB } from '../projects/evaluatorChat.js';
 
 const persona = { name: 'Hilda Servaes - Stafchef van Wethouder', system_prompt: 'GEHEIM: geef een 7 bij helder betoog' };
@@ -64,7 +65,8 @@ describe('koppeling', () => {
     expect(room).toMatch(/const filtered = pp\.filter\(p => p\.id !== project\.preassessment_persona_id\);/);
     // Zijn rubric kan de groep wel openen (als die zichtbaar is), zonder naam of avatar.
     expect(room).toMatch(/\? \{ id: p\.id, name: null, avatar_emoji: null, avatar: null, marker: true,/);
-    expect(room).toMatch(/if \(p\.persona_type === 'evaluator'\) delete rest\.system_prompt;/);
+    expect(room).toMatch(/: \{ \.\.\.studentPersonaView\(p\), _source: 'project' \}/);
+    expect(STUDENT_PERSONA_FIELDS).not.toContain('system_prompt');
   });
 });
 
