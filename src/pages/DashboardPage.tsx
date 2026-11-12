@@ -274,11 +274,12 @@ export function DashboardPage() {
                 .maybeSingle(),
           supabase
             .from('group_persona_messages')
-            .select('id, created_at, group_persona_threads!inner(persona_id, project_personas!inner(name, project_id, projects!inner(title, course_id)))')
+            // Persona's zelf lezen studenten niet uit de database; naam en project
+            // komen hieronder uit pr_persona_label.
+            .select('id, created_at, group_persona_threads!inner(persona_id)')
             .eq('user_id', profile.id)
             .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle(),
+            .limit(5),
           activeCourseId
             ? supabase
                 .from('student_project_sessions')
@@ -343,18 +344,24 @@ export function DashboardPage() {
         };
 
         let projectLabel: string | null = null;
-        if (personaRes.data) {
-          const thread = pickOne((personaRes.data as Record<string, unknown>).group_persona_threads);
-          const persona = pickOne(thread?.project_personas);
-          const project = pickOne(persona?.projects);
-          const courseMatches =
-            !activeCourseId || (project?.course_id as string | undefined) === activeCourseId;
-          if (courseMatches) {
-            const title = (project?.title as string | undefined)?.trim();
-            const titleLabel = title || t('dashboard.tile.project.unknown');
-            const personaName = (persona?.name as string | undefined)?.trim();
-            projectLabel = personaName ? `${titleLabel} · ${personaName}` : titleLabel;
-          }
+        // De laatste paar gesprekken: het eerste waarvan de student het label mag
+        // zien (niet in een concept) en dat bij de actieve cursus hoort.
+        // pr_persona_label staat nog niet in de gegenereerde databasetypes.
+        const personaLabel = (personaId: string) =>
+          (supabase.rpc as unknown as (this: typeof supabase, fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }>)
+            .call(supabase, 'pr_persona_label', { p_persona_id: personaId });
+        const seen = new Set<string>();
+        for (const row of (personaRes.data as Array<Record<string, unknown>> | null) || []) {
+          const personaId = pickOne(row.group_persona_threads)?.persona_id as string | undefined;
+          if (!personaId || seen.has(personaId)) continue;
+          seen.add(personaId);
+          const label = pickOne((await personaLabel(personaId)).data);
+          if (!label || (activeCourseId && (label.course_id as string | undefined) !== activeCourseId)) continue;
+          const title = (label.project_title as string | undefined)?.trim();
+          const titleLabel = title || t('dashboard.tile.project.unknown');
+          const personaName = (label.persona_name as string | undefined)?.trim();
+          projectLabel = personaName ? `${titleLabel} · ${personaName}` : titleLabel;
+          break;
         }
         if (!projectLabel && projRes.data) {
           const project = pickOne((projRes.data as Record<string, unknown>).projects);

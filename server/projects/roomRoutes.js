@@ -58,6 +58,7 @@ import {
   threadCloseJobs,
   threadClosePrep,
 } from './threadCloseService.js';
+import { studentPersonaView } from './studentPersonaView.js';
 
 async function courseIdForProject(projectId) {
   if (!projectId || !supabaseAdmin) return null;
@@ -394,14 +395,10 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
         // eindproduct is geen gesprekspartner, ook niet voor de docent: hij schrijft
         // alleen nakijkcommentaar na het inleveren (beheer, ProjectPreassessment).
         const filtered = pp.filter(p => p.id !== project.preassessment_persona_id);
-        // Wat een persona kent, is voor de docent; studenten krijgen het niet mee,
-        // en van een beoordelaar ook niet hoe hij beoordeelt.
-        personas = filtered.map(p => {
-          if (isStaff) return { ...p, _source: 'project' };
-          const { course_knowledge: _ck, course_knowledge_doc_ids: _cd, project_knowledge_doc_ids: _pd, rag_folder_ids: _rf, ...rest } = p;
-          if (p.persona_type === 'evaluator') delete rest.system_prompt;
-          return { ...rest, _source: 'project' };
-        });
+        // Hoe een persona is ingericht (instructies, kennis, gedragsregels van een
+        // rolspeler) is voor de docent; studenten krijgen alleen wat de
+        // projectruimte toont (studentPersonaView).
+        personas = filtered.map(p => (isStaff ? { ...p, _source: 'project' } : { ...studentPersonaView(p), _source: 'project' }));
       } else if (project.course_id) {
         const { data: cp } = await supabaseAdmin
           .from('course_personas').select('*').eq('course_id', project.course_id).order('is_default', { ascending: false });
@@ -409,11 +406,7 @@ Schrijf het verslag direct, zonder aanhef en zonder afsluitende groet. Wees conc
         // evaluatorCount blijft 0: course-fallback-personas worden niet door
         // /evaluate gebruikt — geen UI-knop tonen.
         const filtered = isStaff ? list : list.filter(p => p.persona_type !== 'evaluator');
-        personas = filtered.map(p => {
-          if (isStaff) return { ...p, _source: 'course' };
-          const { course_knowledge: _ck, course_knowledge_doc_ids: _cd, rag_folder_ids: _rf, ...rest } = p;
-          return { ...rest, _source: 'course' };
-        });
+        personas = filtered.map(p => (isStaff ? { ...p, _source: 'course' } : { ...studentPersonaView(p), _source: 'course' }));
       }
       // Geen personages: dan werken studenten zonder gesprekspartner (besluit
       // 2026-11-11); er komt geen standaardpersonage voor in de plaats.
