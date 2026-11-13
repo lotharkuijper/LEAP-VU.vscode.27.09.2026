@@ -16,9 +16,14 @@ describe('Ik leg uit', () => {
   it('Gegroeid: na feedback minstens 20 punten hoger en minstens 70', () => {
     expect(explainBadges({ score: 70, previousScore: 50 })).toEqual([BADGE.explainGrowth]);
     expect(explainBadges({ score: 90, previousScore: 60 })).toEqual([BADGE.explainClear, BADGE.explainGrowth]);
-    expect(explainBadges({ score: 65, previousScore: 30 })).toEqual([]); // nog niet "redelijk goed"
+    expect(explainBadges({ score: 65, previousScore: 40 })).toEqual([]); // nog niet "redelijk goed"
     expect(explainBadges({ score: 75, previousScore: 60 })).toEqual([]); // te weinig groei
     expect(explainBadges({ score: 75 })).toEqual([]); // eerste uitleg: geen groei
+  });
+  it('Gegroeid telt niet vanaf een expres slechte eerste poging (vorige score onder 30)', () => {
+    expect(explainBadges({ score: 75, previousScore: 29 })).toEqual([]);
+    expect(explainBadges({ score: 75, previousScore: 0 })).toEqual([]);
+    expect(explainBadges({ score: 75, previousScore: 30 })).toEqual([BADGE.explainGrowth]);
   });
   it('Foutenjager: alle fouten gevonden en niets ten onrechte aangewezen', () => {
     expect(flawHunterEarned({ found: 3, total: 3, wronglyFlagged: '' })).toBe(true);

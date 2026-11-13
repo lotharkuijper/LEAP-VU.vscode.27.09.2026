@@ -32,6 +32,9 @@ export const BADGE = Object.freeze({
 export const EXPLAIN_CLEAR_MIN = 80;
 export const EXPLAIN_GROWTH_STEP = 20;
 export const EXPLAIN_GROWTH_MIN = 70;
+// De vorige uitleg moet al ergens op lijken: een expres lege of onzinnige eerste
+// poging telt niet als vertrekpunt voor groei.
+export const EXPLAIN_GROWTH_FROM = 30;
 export const QUIZ_MEDAL_MIN_PCT = 80;
 export const QUIZ_MEDAL_MIN_QUESTIONS = Object.freeze({ mcq: 5, open: 3, casus: 3 });
 export const MEDAL_LEVEL = Object.freeze({ easy: 1, medium: 2, hard: 3 });
@@ -48,7 +51,7 @@ export function explainBadges({ score, previousScore = null }) {
   const out = [];
   if (s >= EXPLAIN_CLEAR_MIN) out.push(BADGE.explainClear);
   const prev = num(previousScore);
-  if (prev != null && s >= EXPLAIN_GROWTH_MIN && s - prev >= EXPLAIN_GROWTH_STEP) out.push(BADGE.explainGrowth);
+  if (prev != null && prev >= EXPLAIN_GROWTH_FROM && s >= EXPLAIN_GROWTH_MIN && s - prev >= EXPLAIN_GROWTH_STEP) out.push(BADGE.explainGrowth);
   return out;
 }
 
