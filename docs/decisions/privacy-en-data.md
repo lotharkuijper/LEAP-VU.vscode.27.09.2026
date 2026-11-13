@@ -27,7 +27,7 @@ Why: students who know the teacher reads along ask different questions. Privacy 
 - Analytics are aggregates only (k ≥ 5); see `docs/decisions/privacy-en-data.md`.
 
 ### Learning data integrity (2026-10-09)
-- The browser writes quiz attempts, journal entries and learning levels directly, so the database guards them (migration `20261009120000_learning_data_integrity`, with rollback):
+- The browser writes journal entries and learning levels directly, so the database guards them (migration `20261009120000_learning_data_integrity`, with rollback). Quiz attempts are written by the server since 2026-11-12 (`20261112200000_quiz_sessions` removed the students' insert rule; see `docs/decisions/leren-met-ai.md`); the guards below stay:
   - The course must be usable by the user (`leap_can_use_course`).
   - Quiz scores are recomputed by the trigger `quiz_attempt_rescore`: multiple choice against the answer key, open answers clamped to 0–100.
   - Attempts cannot be updated afterwards; students may delete their own.

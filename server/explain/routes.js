@@ -8,6 +8,7 @@ import {
   rankRelatedConcepts,
 } from './explainFeedback.js';
 import { registerFlawedExplanationRoutes } from './flawedExplanations.js';
+import { BADGE, awardBadges, explainBadges } from '../achievements/learningBadges.js';
 import { resolveJournalCourseId } from '../journal/journalCourse.js';
 import { journalFieldsFromModel, journalFormatInstruction } from '../journal/journalSections.js';
 import { buildLanguageInstruction } from '../i18n/languages.js';
@@ -25,7 +26,8 @@ import { conceptsHasCourseId } from '../lib/schemaFlags.js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, supabaseAdmin } from '../lib/supabase.js';
 import { TURN_SECRET } from '../lib/turnSigning.js';
 import { resolveChatPromptMode } from '../prompts/promptStore.js';
-import { searchChunksServerSide } from '../rag/search.js';
+import { loadCourseContext } from '../rag/courseContext.js';
+import { loadRagSettings, searchChunksServerSide } from '../rag/search.js';
 
 // "Verbeter deze uitleg" (server/explain/flawedExplanations.js): oefening ter plekke
 // gemaakt en blind gecontroleerd; niets bewaard behalve een dagboekreflectie op verzoek.
@@ -203,14 +205,15 @@ export function registerExplainRoutes(app) {
   // één stap (server/explain/explainFeedback.js). De server bepaalt de instructie (toon
   // van de docent + vaste blokken en meetlat), de verwante begrippen (alleen
   // goedgekeurde cursusbegrippen uit hetzelfde materiaal) en de score; de browser
-  // stuurt alleen de uitleg en de gevonden cursusfragmenten mee.
+  // stuurt alleen de uitleg en WELKE cursusfragmenten hij vond (chunkIds). De
+  // tekst daarvan leest de server zelf, alleen uit materiaal van deze cursus
+  // (server/rag/courseContext.js): de score telt mee voor badges.
   app.post('/api/explain/evaluate', async (req, res) => {
     const auth = await requireAuthUser(req, res);
     if (!auth) return;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
     const {
-      conceptId, explanation, courseId = null, lang = 'nl',
-      context = '', sources = [], ragStrictMode = false,
+      conceptId, explanation, courseId = null, lang = 'nl', chunkIds = [], sources = [],
     } = req.body || {};
     if (!conceptId || typeof explanation !== 'string' || !explanation.trim()) {
       return res.status(400).json({ error: 'conceptId en explanation zijn vereist' });
@@ -251,12 +254,17 @@ export function registerExplainRoutes(app) {
       const teacherPrompt = await resolveChatPromptMode('explain', { user: auth.user, profile: auth.profile, courseId: scopeCourseId });
       // Geen leerniveau: bij Ik leg uit beheers je een begrip of niet.
       const system = `${teacherPrompt}${explainFormatInstruction(lang, related.map(r => r.name))}${buildLanguageInstruction(lang)}`;
+      const [ctx, ragSettings] = await Promise.all([
+        loadCourseContext(supabaseAdmin, { courseId: scopeCourseId, chunkIds: Array.isArray(chunkIds) ? chunkIds : [], courseFolderIds: courseRagFolderIds, module: 'explain' }),
+        loadRagSettings(scopeCourseId),
+      ]);
       const user = buildExplainUserMessage({
         concept,
         keyPoints: cleanKeyPoints(concept.key_points),
-        context: typeof context === 'string' ? context.slice(0, 24000) : '',
-        sources: Array.isArray(sources) ? sources.slice(0, 12) : [],
-        ragStrictMode: ragStrictMode === true,
+        context: ctx.context,
+        // Alleen de titels, voor de verwijzingen [1], [2] …
+        sources: Array.isArray(sources) ? sources.slice(0, 12).map(x => ({ title: String(x?.title || '').slice(0, 200) })) : [],
+        ragStrictMode: ragSettings?.explain?.rag_strict_mode !== false,
         explanation: explanation.trim(),
       });
 
@@ -282,9 +290,12 @@ export function registerExplainRoutes(app) {
 
       // Opslaan: nieuwe versie, oudere uitleg voor dit begrip verdwijnt (zoals voorheen).
       const { data: existing } = await supabaseAdmin
-        .from('student_explanations').select('id, version')
+        .from('student_explanations').select('id, version, score')
         .eq('concept_id', concept.id).eq('student_id', auth.user.id);
       const version = existing && existing.length ? Math.max(...existing.map(x => x.version || 1)) + 1 : 1;
+      // Score van de vorige uitleg (na feedback): voor de badge "Gegroeid".
+      const previous = (existing || []).reduce((best, x) => (!best || (x.version || 1) > (best.version || 1) ? x : best), null);
+      const previousScore = typeof previous?.score?.total === 'number' ? previous.score.total : null;
       if (existing && existing.length) {
         const { error: delErr } = await supabaseAdmin
           .from('student_explanations').delete().eq('concept_id', concept.id).eq('student_id', auth.user.id);
@@ -303,7 +314,17 @@ export function registerExplainRoutes(app) {
         .select('id').single();
       if (insErr) return res.status(500).json({ error: insErr.message });
 
-      return res.json({ id: inserted.id, version, content, sections, score });
+      // Badges (server/achievements/learningBadges.js): Helder uitgelegd, Gegroeid.
+      const badges = await awardBadges(supabaseAdmin, {
+        userId: auth.user.id,
+        courseId: scopeCourseId,
+        badges: explainBadges({ score: score?.total, previousScore }).map(kind => ({
+          kind, conceptId: concept.id, label: concept.name,
+          details: { score: score?.total ?? null, previous_score: kind === BADGE.explainGrowth ? previousScore : undefined },
+        })),
+      }).catch((err) => { console.warn('[explain/evaluate] badges mislukt:', err?.message || err); return []; });
+
+      return res.json({ id: inserted.id, version, content, sections, score, badges });
     } catch (err) {
       console.error('[explain/evaluate] Onverwachte fout:', err);
       return res.status(500).json({ error: 'Interne fout' });
@@ -516,6 +537,9 @@ Schrijf het verslag direct zonder aanhef. Wees concreet, eerlijk en motiverend.`
     llmText: (system, user, opts) => flawedLlm(system, user, opts),
     secret: TURN_SECRET,
     resolveJournalCourseId,
+    awardFlawBadge: ({ userId, courseId, concept }) => awardBadges(supabaseAdmin, {
+      userId, courseId, badges: [{ kind: BADGE.explainFlaws, conceptId: concept.id, label: concept.name }],
+    }),
     get llmReady() { return AZURE_CHAT_READY; },
   });
 }

@@ -34,7 +34,7 @@ The tutor chat always gets a short course overview (`server/courses/courseOvervi
 - Learning levels play no role in "Ik leg uit": you master a concept or you do not. There is no selector, no level in the assessment, and no `learning_level` on explanation reflections. The level is chosen only in the chat.
 
 ### "Ik leg uit" feedback (2026-10-15)
-- `POST /api/explain/evaluate` (`server/explain/routes.js`) assesses, scores and saves in one step; the browser only sends the explanation plus the course fragments it found. There is no browser-side save of feedback or score.
+- `POST /api/explain/evaluate` (`server/explain/routes.js`) assesses, scores and saves in one step; the browser only sends the explanation plus WHICH course fragments it found (`chunkIds`, plus source titles for the [1] citations); since 2026-11-12 the server reads their text itself, only from this course's RAG folders and documents allowed for Ik leg uit (`server/rag/courseContext.js`), and takes strict mode from the course settings, so the score (and the badges on it) cannot be steered with made-up course text. There is no browser-side save of feedback or score.
 - The server always appends `explainFormatInstruction` (`server/explain/explainFeedback.js`) to the teacher's explain prompt. The prompt sets the tone; the block fixes the structure:
   - `### FEEDBACK`: only about THIS concept and its definition. A related concept is never a shortcoming.
   - `### SCORE`: 0–100 on a fixed scale. Start at 100. A reasonably good explanation is 70–90, a good one is 100.
@@ -66,8 +66,17 @@ Concept order and grouping per unit in Ik leg uit: see `docs/decisions/cursusmat
   - `/quiz?concept=<id>&name=<name>` preselects a concept; Explain links to it.
 - The quiz topic list shows concepts in course order (see `docs/decisions/cursusmateriaal-en-rag.md`).
 
+### The server makes and checks the quiz (2026-11-12)
+- The server composes the quiz, keeps the answer key and checks every answer, so quiz badges rest on results the student cannot change (`server/quiz/quizSessionRoutes.js`). Before, the browser generated the questions and so knew the key.
+  - `POST /api/quiz/sessions` (progress as NDJSON): the browser still searches the course material, but only sends WHICH fragments; the server reads their text itself, only from RAG folders of this course and documents allowed for the quiz (`loadCourseContext`, `server/rag/courseContext.js`). It follows the teacher's source mix (`quiz_sources_mix`, now readable for everyone in the course; before, students silently got the default 50/0/50), generates with the managed quiz prompts and runs every question through the same check as before (`server/quiz/quizVerify.js`, ported from the browser with the same rules; its tests moved to `server/__tests__/quizServer.test.js`). The browser gets the questions without answer, explanation, model answer or rubric (`publicQuestion`).
+  - `POST /api/quiz/sessions/:id/answer`: the first answer per question counts (primary key in `quiz_session_answers`); only then do the answer and explanation, or the model answer, come along. Open answers and cases are assessed by the server (`server/quiz/quizEvaluate.js`); a numeric ItemBank question is compared with its tolerance, and the browser writes the text.
+  - `POST /api/quiz/sessions/:id/finish`: the server writes the attempt to `quiz_attempts` (the browser no longer may), stores the result per concept in the session and awards badges.
+  - With several topics, each generated question names its topic, so it counts for the right concept. ItemBank questions carry the concept of the mapped section.
+  - "Klaar voor studenten?" lets a teacher try one question through the same route (`tryout`, staff only, nothing stored).
+  - Migration `20261112200000_quiz_sessions` (+ rollback): `quiz_sessions` and `quiz_session_answers` without read rules (server only; teachers never see them), cascading with the account and with the attempt; unfinished sessions are cleaned up after a day.
+
 ### Data integrity
-- Quiz attempts are written by the browser and guarded by the database (rescoring trigger, no updates afterwards): see `docs/decisions/privacy-en-data.md`. Never add a browser-side `.update()` on `quiz_attempts`.
+- Quiz attempts are written by the server (since 2026-11-12) and still guarded by the database (rescoring trigger for anything not from the server, no updates afterwards): see `docs/decisions/privacy-en-data.md`. Never add a browser-side `.update()` or `.insert()` on `quiz_attempts`.
 - Teacher analytics on quiz attempts are aggregates with k ≥ 5: see `docs/decisions/privacy-en-data.md`.
 
 ## Formulas (2026-10-22)
@@ -88,7 +97,14 @@ Concept order and grouping per unit in Ik leg uit: see `docs/decisions/cursusmat
 
 ### Achievements
 - Earned, never clicked: choosing a higher level in `LearningLevelSelector` has no celebration. The celebration (`LevelUpCelebration`) plus an achievement only follow a positive, server-validated verdict on "Ready for a higher level?" in the chat (`readinessCheck: true` → `server/chat/readiness.js`). The tutor appends an invisible `[[LEAP_READINESS …]]` label that the server always strips. The server decides eligibility itself: level from the DB, a minimum amount of student input (only server-signed turns count, see `docs/decisions/privacy-en-data.md`), and the topic must be an approved course concept.
-- Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Kind `reputation` (since 2026-11-10) is the project badge for the best relationship with a role player (`server/projects/reputationBadge.js`; level NULL, so the server checks for an existing row first). Feedback from an evaluator never gives a badge. Future kinds (quiz, learning goals) reuse this table.
+- Achievements live in `student_achievements` (written only by the server; students read their own rows via RLS), are unique per (user, course, kind, topic_key, level), and point to a journal entry as evidence. Kind `reputation` (since 2026-11-10) is the project badge for the best relationship with a role player (`server/projects/reputationBadge.js`; level NULL, so the server checks for an existing row first). Feedback from an evaluator never gives a badge. Future kinds (learning goals) reuse this table.
+
+### Badges for Ik leg uit and the quiz (2026-11-12)
+- They reward learning, per course concept, once each, and only on evidence the server established itself (`server/achievements/learningBadges.js`, shown with `src/components/LearningBadge.tsx`; a notice right after earning one, and in the trophy cabinet). Teachers never see them.
+- Ik leg uit: `explain_clear` (score ≥ 80), `explain_growth` (explained again after feedback: at least 20 points higher and at least 70, "reasonably good" on the scale; the previous score comes from the database and must be at least 30, so a deliberately poor first attempt is no starting point. Badges are for motivation only, never for a summative decision, so we do not try to close every loophole), `explain_flaws` (Verbeter deze uitleg: all intended errors found and explained, nothing wrongly flagged; only the first assessment of an exercise counts, because afterwards the student knows the errors).
+- Quiz: `quiz_medal` (level 1 bronze / 2 silver / 3 gold = easy / medium / hard; the quiz ≥ 80% with at least 5 multiple-choice or 3 open/case questions, and the concept itself ≥ 80%), `quiz_mastered` (a concept good, ≥ 80% over at least 2 questions, in quizzes on two different days, Amsterdam time), `quiz_comeback` (a concept below 50% in an earlier quiz, good now). History comes only from the server-checked `quiz_sessions`, never from `quiz_attempts`.
+- No badge for a perfect score as such: an easy quiz would earn it without learning.
+- What the student wrote is put between `<antwoord>` tags with the rule that instructions inside it do not count (`server/lib/studentText.js`; quiz assessment and Ik leg uit; Verbeter deze uitleg uses `"""`). Answering and finishing check course access and the quiz switch again. The data export (`server/account/myData.js`) shows a running quiz without its answer key.
 
 ## Subject-neutral texts and tutor instructions (2026-10-15)
 

@@ -4,7 +4,6 @@ import { journalFieldsFromModel, journalFormatInstruction } from '../journal/jou
 import { buildLanguageInstruction } from '../i18n/languages.js';
 import {
   isCourseTeacher,
-  isStaffForCourse,
   requireAdminOrDocent,
   requireAuthUser,
   userCache,
@@ -522,20 +521,14 @@ export function registerQuizRoutes(app) {
   // server (persist) dezelfde regels delen en het los unit-testbaar is.
 
   app.get('/api/quiz-sources-mix/:courseId', async (req, res) => {
-    // Lezen mag iedereen die toegang tot de cursus heeft (student of docent in
-    // course_members, of admin/superuser).
+    // Lezen mag iedereen in de cursus (student, docent, beheerder): de quiz
+    // toont vooraf hoe de vragen over de bronnen verdeeld worden, en de server
+    // stelt de quiz volgens deze mix samen (quizSessionRoutes.js).
     const auth = await requireAuthUser(req, res);
     if (!auth) return;
     const { courseId } = req.params;
-    // Per-cursus staff-check: admin/superuser overal, anders alleen docenten
-    // van déze cursus (course_members.member_role='teacher'). Voorkomt dat een
-    // teacher-anywhere docent instellingen van een andere cursus wijzigt.
-    // NB: requireAuthUser levert {user, profile} zonder `role`-veld, dus gebruik
-    // isStaffForCourse (kijkt naar profile.role/email) i.p.v. een auth.role-check —
-    // anders zou een admin/superuser die geen course_members-teacher is hier 403
-    // krijgen en zou de mix in de UI terugvallen op de standaard 50:0:50.
-    if (!(await isStaffForCourse(auth.user, auth.profile, courseId))) {
-      return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
+    if (!(await userHasCourseAccess(auth.user, auth.profile, courseId))) {
+      return res.status(403).json({ error: 'Geen toegang tot deze cursus' });
     }
     if (!quizSourcesSchemaReady) {
       return res.json({ mix: { pct_rag: 50, pct_itembank: 0, pct_llm: 50 }, schema_ready: false });
@@ -590,40 +583,6 @@ export function registerQuizRoutes(app) {
         if (error) return res.status(500).json({ error: error.message });
       }
       return res.json({ success: true, mix: normalized });
-    } catch (err) {
-      return res.status(500).json({ error: err.message });
-    }
-  });
-
-  // ---- Endpoint: quiz-prompts ophalen voor de generator/evaluator -------------
-  // Iedere ingelogde gebruiker mag de actieve quiz-prompts inzien — de UI heeft
-  // ze nodig zodat generateQuiz/evaluateOpen de juiste persona meesturen.
-  app.get('/api/quiz/prompts', async (req, res) => {
-    if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
-    const authHeader = req.headers['authorization'];
-    if (!authHeader) return res.status(401).json({ error: 'Authorization header vereist' });
-    try {
-      const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-      const { data: { user }, error: uErr } = await userCache.getUser(authHeader, () => callerClient.auth.getUser());
-      if (uErr || !user) return res.status(401).json({ error: 'Niet geauthenticeerd' });
-
-      const names = Object.keys(QUIZ_PROMPT_DEFAULTS);
-      const result = { ...QUIZ_PROMPT_DEFAULTS };
-      if (promptsHasSection) {
-        const { data } = await supabaseAdmin
-          .from('chatbot_prompts')
-          .select('name, content, is_active')
-          .in('name', names);
-        for (const row of data || []) {
-          if (row.is_active !== false && typeof row.content === 'string' && row.content.trim().length > 0) {
-            result[row.name] = row.content;
-          }
-        }
-      }
-      return res.json({ prompts: result });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

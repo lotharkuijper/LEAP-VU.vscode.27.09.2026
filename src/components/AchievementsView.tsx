@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { useLearningLevel, LEVEL_MAX } from '../hooks/useLearningLevel';
 import { useLanguage } from '../i18n';
+import { isLearningBadge } from '../lib/badges';
+import { LearningBadgeIcon, useBadgeText } from './LearningBadge';
 
 export interface AchievementRow {
   id: string;
@@ -58,6 +60,7 @@ export function AchievementsView({ onOpenEvidence }: { onOpenEvidence: (journalE
   const { activeCourseId } = useActiveCourse();
   const { level: currentLevel } = useLearningLevel(activeCourseId);
   const { t, lang } = useLanguage();
+  const badgeText = useBadgeText();
   const [rows, setRows] = useState<AchievementRow[] | null>(null);
   const [courseNames, setCourseNames] = useState<Record<string, string>>({});
 
@@ -116,7 +119,15 @@ export function AchievementsView({ onOpenEvidence }: { onOpenEvidence: (journalE
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map(r => (
             <li key={r.id} className="chic-card flex flex-col items-center p-5 text-center" data-testid={`achievement-${r.id}`}>
-              {r.kind === 'reputation' ? (
+              {isLearningBadge(r.kind) ? (
+                // Ik leg uit en Quiz (server/achievements/learningBadges.js).
+                <>
+                  <div className="mb-3"><LearningBadgeIcon kind={r.kind} level={r.level} /></div>
+                  <h3 className="font-bold text-slate-900">{badgeText.title(r.kind, r.level)}</h3>
+                  <p className="mt-0.5 text-sm font-semibold text-accent-700">{r.topic_label}</p>
+                  <p className="mt-1 text-xs text-slate-600">{badgeText.hint(r.kind)}</p>
+                </>
+              ) : r.kind === 'reputation' ? (
                 // Beste verstandhouding met een rolspeler in een project (server/projects/reputationBadge.js).
                 <>
                   <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-rose-300 to-orange-500 shadow-md ring-4 ring-white">

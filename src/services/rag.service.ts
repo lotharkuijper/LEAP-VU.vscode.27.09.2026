@@ -4,6 +4,7 @@ import { generateEmbeddings } from './llm.service';
 import { STORAGE_CONFIG } from '../config/storage.config';
 import { expandQuery, type QueryExpansionOptions } from './queryExpansion';
 import { purposeAllowsModule } from '../../server/rag/filePurpose.js';
+import { buildContextWithCap } from '../../server/rag/contextCap.js';
 import { tStatic } from '../i18n/translations';
 import { getActiveLang } from '../i18n/activeLang';
 
@@ -464,25 +465,11 @@ export async function checkRAGAvailability(): Promise<{
   }
 }
 
-// Veiligheidsgrenzen voor de prompt naar het taalmodel. De char-cap blijft de
-// echte rem tegen token-blow-up; het chunk-plafond stond op 10 vanwege het oude
-// gpt-4o-mini-venster, maar de chat draait nu op Azure gpt-5.5 (ruime context).
-// Een te laag chunk-plafond knipte een door de docent ingestelde, ruimere
-// match_count alsnog terug op 10 — waardoor een laag-rangschikkende maar
-// relevante chunk (bv. een figuuronderschrift) buiten beeld viel (Task #394).
-// De char-cap (18000) begrenst de werkelijke contextgrootte.
-export const RAG_CONTEXT_MAX_CHUNKS = 15;
-export const RAG_CONTEXT_MAX_CHARS = 18000;
-
-export interface FormattedContext {
-  context: string;
-  usedChunks: number;
-  totalChunks: number;
-  /** True wanneer er chunks zijn weggelaten of wanneer chunk-inhoud is ingekort. */
-  truncated: boolean;
-  /** True wanneer minstens één chunk-inhoud is afgekapt door de char-cap. */
-  charTrimmed: boolean;
-}
+// Veiligheidsgrenzen voor de prompt naar het taalmodel (Task #394: de char-cap
+// begrenst de werkelijke contextgrootte) en het samenvoegen zelf staan in
+// server/rag/contextCap.js, gedeeld met de server (quizvragen).
+export { RAG_CONTEXT_MAX_CHUNKS, RAG_CONTEXT_MAX_CHARS, buildContextWithCap } from '../../server/rag/contextCap.js';
+export type { FormattedContext } from '../../server/rag/contextCap.js';
 
 export function formatContextFromChunks(chunks: DocumentChunk[]): string {
   return buildContextWithCap(chunks).context;
@@ -628,50 +615,3 @@ export async function openRagDocument(documentId: string, targetPage?: number): 
   if (!win) throw new Error(tStatic(getActiveLang(), 'services.rag.popupBlocked'));
 }
 
-export function buildContextWithCap(
-  chunks: DocumentChunk[],
-  maxChunks: number = RAG_CONTEXT_MAX_CHUNKS,
-  maxChars: number = RAG_CONTEXT_MAX_CHARS
-): FormattedContext {
-  const total = chunks.length;
-  if (total === 0) {
-    return { context: '', usedChunks: 0, totalChunks: 0, truncated: false, charTrimmed: false };
-  }
-
-  // Aannemen dat searchRelevantChunks al op similarity gesorteerd is (hoogst eerst).
-  const limitN = Math.min(maxChunks, total);
-  const SEP = '\n\n---\n\n';
-  const parts: string[] = [];
-  let runningChars = 0;
-  let used = 0;
-  let charTrimmed = false;
-  for (let i = 0; i < limitN; i++) {
-    const chunk = chunks[i];
-    const header = `[Bron ${i + 1}: ${chunk.documentTitle}]\n`;
-    const sepLen = parts.length === 0 ? 0 : SEP.length;
-    const headroom = maxChars - runningChars - sepLen - header.length;
-    if (headroom <= 0) {
-      // Geen ruimte meer voor de header van deze chunk — stoppen.
-      break;
-    }
-    // Trim chunk-inhoud zo nodig zodat we ook de eerste (mogelijk grote) chunk
-    // strikt onder maxChars houden.
-    let content = chunk.content;
-    if (chunk.content.length > headroom) {
-      content = chunk.content.slice(0, Math.max(0, headroom - 20)) + '…[ingekort]';
-      charTrimmed = true;
-    }
-    const part = header + content;
-    parts.push(part);
-    runningChars += part.length + sepLen;
-    used += 1;
-  }
-
-  return {
-    context: parts.join(SEP),
-    usedChunks: used,
-    totalChunks: total,
-    truncated: used < total || charTrimmed,
-    charTrimmed,
-  };
-}

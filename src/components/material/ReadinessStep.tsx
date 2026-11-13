@@ -4,8 +4,7 @@ import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import type { Readiness, ReadinessWarning } from '../../services/course-files.service';
 import { retrieveQuizContext } from '../../services/quiz-context.service';
-import { buildContextWithCap } from '../../services/rag.service';
-import { generateMixedQuiz } from '../../services/quiz-mix.service';
+import { startQuizSession } from '../../services/quiz-session.service';
 import type { MCQQuestion } from '../../services/llm.service';
 import { PURPOSE_ORDER, PurposeChip } from './purposeUi';
 import { AdminHint } from '../help/AdminHint';
@@ -75,7 +74,8 @@ export function ReadinessStep({
   }, [readiness.concepts, filter, onlyProblems]);
 
   // "Probeer als student": exact dezelfde keten als de quiz (materiaal ophalen,
-  // genereren, kwaliteitscontrole) voor één meerkeuzevraag over dit begrip.
+  // genereren en controleren op de server) voor één meerkeuzevraag over dit
+  // begrip, alleen uit het cursusmateriaal; er wordt niets bewaard.
   const tryAsStudent = async (id: string, name: string) => {
     setTrying(id);
     setTryResult(null);
@@ -96,11 +96,9 @@ export function ReadinessStep({
         matchCount: quiz.match_count,
         expansionEnabled: !!quiz.query_expansion_enabled,
       });
-      const ragContext = ctx.chunks.length ? buildContextWithCap(ctx.chunks).context : undefined;
-      const result = await generateMixedQuiz({
-        courseId, conceptIds: [id], topicNames: [name], difficulty: 'medium', questionType: 'mcq',
-        numQuestions: 1, ragContext, ragStrictMode: quiz.rag_strict_mode !== false,
-        mix: { pct_rag: 100, pct_itembank: 0, pct_llm: 0 },
+      const result = await startQuizSession({
+        courseId, conceptIds: [id], difficulty: 'medium', questionType: 'mcq', numQuestions: 1,
+        chunkIds: ctx.chunks.map(c => c.id).filter(Boolean), tryout: true,
       });
       if (result.status === 'no_course_material') setTryResult({ name, error: t('material.ready.tryNoMaterial') });
       else if (!result.questions.length) setTryResult({ name, error: result.verification.lastError || t('quiz.verificationShortfall', { kept: '0', requested: '1' }) });

@@ -23,3 +23,41 @@ export function normalizeMix(mix) {
   }
   return { pct_rag: r, pct_itembank: i, pct_llm: l };
 }
+
+/**
+ * Verdeelt `total` vragen naar verhouding over de drie bronnen; de vragen die
+ * na afronden overblijven gaan naar de bronnen met het grootste restdeel, zodat
+ * de som precies `total` is. Bij casus gaat het itembank-deel naar de vrij
+ * gegenereerde vragen (de itembank heeft geen casusvragen).
+ */
+export function distributeMix(total, mix, questionType) {
+  let { pct_rag, pct_itembank, pct_llm } = mix;
+  if (questionType === 'casus') {
+    pct_llm += pct_itembank;
+    pct_itembank = 0;
+  }
+  const sum = pct_rag + pct_itembank + pct_llm;
+  if (sum <= 0) return { rag: 0, itembank: 0, llm: total };
+  const ragF = (pct_rag / sum) * total;
+  const ibF = (pct_itembank / sum) * total;
+  const llmF = (pct_llm / sum) * total;
+  let rag = Math.floor(ragF);
+  let ib = Math.floor(ibF);
+  let llm = Math.floor(llmF);
+  let used = rag + ib + llm;
+  const fracs = [
+    { key: 'rag', frac: ragF - rag },
+    { key: 'itembank', frac: ibF - ib },
+    { key: 'llm', frac: llmF - llm },
+  ].sort((a, b) => b.frac - a.frac);
+  let i = 0;
+  while (used < total) {
+    const k = fracs[i % fracs.length].key;
+    if (k === 'rag') rag++;
+    else if (k === 'itembank') ib++;
+    else llm++;
+    used++;
+    i++;
+  }
+  return { rag, itembank: ib, llm };
+}

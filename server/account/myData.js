@@ -12,6 +12,8 @@
 // (auth.admin.deleteUser): wat er in de database aan het account hangt,
 // verdwijnt of wordt losgekoppeld volgens de bestaande regels (ON DELETE).
 
+import { publicQuestion } from '../quiz/quizQuestions.js';
+
 export const EXPORT_SOURCES = [
   { table: 'profiles', column: 'id', label: 'profiel' },
   { table: 'course_members', column: 'user_id', label: 'cursussen' },
@@ -27,6 +29,7 @@ export const EXPORT_SOURCES = [
   { table: 'learning_journal_entries', column: 'user_id', label: 'leerdagboek' },
   { table: 'student_explanations', column: 'student_id', label: 'ik leg uit' },
   { table: 'quiz_attempts', column: 'student_id', label: 'quizpogingen' },
+  { table: 'quiz_sessions', column: 'user_id', label: 'quizzen (door de server nagekeken)' },
   { table: 'conversations', column: 'user_id', label: 'chatgesprekken' },
   { table: 'project_group_members', column: 'user_id', label: 'projectgroepen' },
   { table: 'group_chat_messages', column: 'user_id', label: 'eigen berichten in groepschats' },
@@ -82,6 +85,12 @@ async function rowsOf(db, { table, column }, userId) {
   return out;
 }
 
+/** Een quizsessie voor de export: zolang de quiz loopt zonder antwoordsleutel. */
+export function exportableQuizSession(row) {
+  if (row?.status === 'finished' || !Array.isArray(row?.questions)) return row;
+  return { ...row, questions: row.questions.map((q, i) => publicQuestion(q, i)) };
+}
+
 /** Bouwt het exportbestand: { exportedAt, user, sources: { tabel: rijen } }. */
 export async function buildExport(db, user, now = new Date()) {
   const results = await Promise.all(EXPORT_SOURCES.map(async (s) => [s, await rowsOf(db, s, user.id)]));
@@ -90,6 +99,19 @@ export async function buildExport(db, user, now = new Date()) {
   for (const [s, rows] of results) {
     if (rows === null) skipped.push(s.table);
     else sources[s.table] = rows;
+  }
+  // Quiz: van een quiz die nog loopt alleen de vragen zoals de student ze ziet
+  // (de antwoordsleutel blijft op de server tot er is geantwoord), plus de
+  // antwoorden die al zijn gegeven.
+  if (sources.quiz_sessions) {
+    sources.quiz_sessions = sources.quiz_sessions.map(exportableQuizSession);
+    const ids = sources.quiz_sessions.map(q => q.id).filter(Boolean);
+    const answers = [];
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data, error } = await db.from('quiz_session_answers').select('*').in('session_id', ids.slice(i, i + 200));
+      if (!error) answers.push(...(data || []));
+    }
+    sources.quiz_session_answers = answers;
   }
   // Chatberichten horen bij de eigen gesprekken.
   const convIds = (sources.conversations || []).map(c => c.id).filter(Boolean);
@@ -106,7 +128,7 @@ export async function buildExport(db, user, now = new Date()) {
     app: 'LEAP-VU',
     user: { id: user.id, email: user.email || null },
     explanation: 'Alle gegevens die LEAP van jou bewaart, per onderdeel. Berichten van anderen staan er niet in.',
-    labels: Object.fromEntries(EXPORT_SOURCES.map(s => [s.table, s.label]).concat([['messages', 'chatberichten']])),
+    labels: Object.fromEntries(EXPORT_SOURCES.map(s => [s.table, s.label]).concat([['messages', 'chatberichten'], ['quiz_session_answers', 'antwoorden in quizzen']])),
     skipped,
     sources,
   };
