@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { ArrowLeft, Check, ChevronRight, GraduationCap, Loader2, Plus } from "lucide-react";
 import { useLanguage } from "../i18n";
 import { useAuth } from "../contexts/AuthContext";
 import { useActiveCourse } from "../contexts/ActiveCourseContext";
@@ -17,7 +18,7 @@ export default function ChooseCoursePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const { setActiveCourse, loading: activeLoading } = useActiveCourse();
+  const { activeCourseId, setActiveCourse, loading: activeLoading } = useActiveCourse();
   const { refreshCourses } = useCourseAccess();
 
   // Task #270: gezet door de ActiveCourseRedirectGuard wanneer de actieve cursus
@@ -90,93 +91,135 @@ export default function ChooseCoursePage() {
   };
 
   if (authLoading || loading || activeLoading) {
-    return <div style={{ padding: "2rem" }}>{t('common.loading')}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500">
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
+        {t('common.loading')}
+      </div>
+    );
   }
 
-  const cardStyle: React.CSSProperties = {
-    padding: "1rem", borderRadius: "8px", border: "1px solid #ccc", background: "#f9f9f9", textAlign: "left", cursor: "pointer", transition: "0.2s", width: "100%",
-  };
-
   return (
-    <div style={{ padding: "2rem", maxWidth: "600px", margin: "0 auto" }}>
-      {redirectedUnavailable && (
-        <div
-          data-testid="text-course-unavailable-notice"
-          style={{ marginBottom: "1rem", padding: "0.75rem 1rem", borderRadius: "8px", background: "#fff7ed", border: "1px solid #fed7aa", color: "#9a3412" }}
-        >
-          {t('chooseCourse.unavailableRedirect')}
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50/60 px-4 py-10 md:py-16">
+      <div className="mx-auto w-full max-w-2xl">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <img src="/leap-vu-logo.png" alt="LEAP-VU" className="h-12 w-auto" />
+          {activeCourseId && (
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard")}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 hover:text-brand-900 hover:underline"
+              data-testid="link-back-dashboard"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              {t('nav.dashboard')}
+            </button>
+          )}
         </div>
-      )}
-      {error && (
-        <div data-testid="text-choose-course-error" style={{ marginBottom: "1rem", padding: "0.75rem 1rem", borderRadius: "8px", background: "#fef2f2", border: "1px solid #fecaca", color: "#991b1b" }}>
-          {error}
-        </div>
-      )}
 
-      <h1 style={{ marginBottom: "1rem" }}>{t('chooseCourse.title')}</h1>
-      {courses.length === 0 ? (
-        <p style={{ marginBottom: "2rem" }} data-testid="text-no-courses">{t('chooseCourse.noCourses')}</p>
-      ) : (
-        <>
-          <p style={{ marginBottom: "2rem", opacity: 0.8 }}>{t('chooseCourse.subtitle')}</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {courses.map((course) => (
-              <div key={course.id} style={{ display: "flex", gap: "0.5rem", alignItems: "stretch" }}>
-                <button
-                  data-testid={`btn-course-${course.id}`}
-                  onClick={() => handleSelect(course.id)}
-                  style={{ ...cardStyle, flex: 1, minWidth: 0 }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#eee")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "#f9f9f9")}
-                >
-                  <strong style={{ fontSize: "1.1rem" }}>{course.name}</strong>
-                  {course.description && <div style={{ opacity: 0.7 }}>{course.description}</div>}
-                  {course.memberRole === 'alumni' && (
-                    <div style={{ marginTop: "0.25rem", fontSize: "0.8rem", color: "#6b7280" }} data-testid={`text-course-alumni-${course.id}`}>{t('editions.alumniBadge')}</div>
-                  )}
-                </button>
-                {course.memberRole === 'student' && allowsOpenRegistration(course.enrollment_mode) && (
+        {redirectedUnavailable && (
+          <div
+            data-testid="text-course-unavailable-notice"
+            className="mb-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800"
+          >
+            {t('chooseCourse.unavailableRedirect')}
+          </div>
+        )}
+        {error && (
+          <div data-testid="text-choose-course-error" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </div>
+        )}
+
+        <section className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(56,189,248,0.25)] ring-1 ring-sky-100/60 backdrop-blur-md md:p-8">
+          <h1 className="text-3xl font-bold tracking-tight text-brand-800">{t('chooseCourse.title')}</h1>
+          {courses.length === 0 ? (
+            <p className="mt-2 text-slate-600" data-testid="text-no-courses">{t('chooseCourse.noCourses')}</p>
+          ) : (
+            <>
+              <p className="mb-6 mt-1 text-slate-600">{t('chooseCourse.subtitle')}</p>
+              <ul className="flex flex-col gap-3">
+                {courses.map((course) => {
+                  const isActive = course.id === activeCourseId;
+                  return (
+                    <li key={course.id} className="flex items-stretch gap-2">
+                      <button
+                        type="button"
+                        data-testid={`btn-course-${course.id}`}
+                        onClick={() => handleSelect(course.id)}
+                        aria-current={isActive ? "true" : undefined}
+                        className={`group flex min-w-0 flex-1 items-center gap-4 rounded-2xl border p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
+                          isActive ? "border-brand-300 bg-brand-50/80 ring-1 ring-brand-200" : "border-slate-200 bg-white hover:border-brand-200"
+                        }`}
+                      >
+                        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 group-hover:bg-brand-100"}`}>
+                          <GraduationCap className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="break-words text-lg font-semibold text-slate-900">{course.name}</span>
+                            {isActive && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-800" data-testid={`text-course-active-${course.id}`}>
+                                <Check className="h-3 w-3" aria-hidden="true" />
+                                {t('chooseCourse.active')}
+                              </span>
+                            )}
+                          </span>
+                          {course.description && <span className="mt-0.5 block text-sm text-slate-600">{course.description}</span>}
+                          {course.memberRole === 'alumni' && (
+                            <span className="mt-1 block text-xs text-slate-500" data-testid={`text-course-alumni-${course.id}`}>{t('editions.alumniBadge')}</span>
+                          )}
+                        </span>
+                        <ChevronRight className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700" aria-hidden="true" />
+                      </button>
+                      {course.memberRole === 'student' && allowsOpenRegistration(course.enrollment_mode) && (
+                        <button
+                          type="button"
+                          onClick={() => handleLeave(course)}
+                          disabled={busyId === course.id}
+                          data-testid={`btn-leave-course-${course.id}`}
+                          className="whitespace-nowrap rounded-2xl border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                        >
+                          {t('chooseCourse.leave')}
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+        </section>
+
+        {openCourses.length > 0 && (
+          <section className="mt-8" data-testid="section-add-course">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+              <Plus className="h-5 w-5 text-brand-700" aria-hidden="true" />
+              {t('chooseCourse.addTitle')}
+            </h2>
+            <p className="mb-4 mt-0.5 text-sm text-slate-600">{t('chooseCourse.addSubtitle')}</p>
+            <ul className="flex flex-col gap-3">
+              {openCourses.map((c) => (
+                <li key={c.id} className="flex items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white/80 p-4">
+                  <div className="min-w-0 flex-1">
+                    <div className="break-words font-semibold text-slate-900">{c.name}</div>
+                    {c.description && <div className="text-sm text-slate-600">{c.description}</div>}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => handleLeave(course)}
-                    disabled={busyId === course.id}
-                    data-testid={`btn-leave-course-${course.id}`}
-                    style={{ padding: "0 0.75rem", borderRadius: "8px", border: "1px solid #e5e7eb", background: "#fff", color: "#6b7280", fontSize: "0.8rem", whiteSpace: "nowrap", cursor: "pointer" }}
+                    onClick={() => handleJoin(c.id)}
+                    disabled={busyId === c.id}
+                    data-testid={`btn-join-course-${c.id}`}
+                    className="whitespace-nowrap rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-800 disabled:opacity-60"
                   >
-                    {t('chooseCourse.leave')}
+                    {busyId === c.id ? t('common.busy') : t('chooseCourse.join')}
                   </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {openCourses.length > 0 && (
-        <section style={{ marginTop: "2.5rem" }} data-testid="section-add-course">
-          <h2 style={{ fontSize: "1.1rem", marginBottom: "0.25rem" }}>{t('chooseCourse.addTitle')}</h2>
-          <p style={{ marginBottom: "1rem", opacity: 0.8, fontSize: "0.9rem" }}>{t('chooseCourse.addSubtitle')}</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {openCourses.map((c) => (
-              <div key={c.id} style={{ ...cardStyle, cursor: "default", display: "flex", gap: "0.75rem", alignItems: "center", background: "#fff" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <strong>{c.name}</strong>
-                  {c.description && <div style={{ opacity: 0.7, fontSize: "0.9rem" }}>{c.description}</div>}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleJoin(c.id)}
-                  disabled={busyId === c.id}
-                  data-testid={`btn-join-course-${c.id}`}
-                  style={{ padding: "0.5rem 0.9rem", borderRadius: "8px", border: "none", background: "rgb(var(--leap-brand-700))", color: "#fff", fontWeight: 600, whiteSpace: "nowrap", cursor: "pointer", opacity: busyId === c.id ? 0.6 : 1 }}
-                >
-                  {busyId === c.id ? t('common.busy') : t('chooseCourse.join')}
-                </button>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
     </div>
   );
 }
