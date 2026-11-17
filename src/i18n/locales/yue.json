@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "你喺兩個唔同日子正確回答咗關於呢個概念嘅問題。",
   "badges.quiz_comeback.title": "補考成功",
   "badges.quiz_comeback.hint": "呢個概念之前喺小測入面未答啱，而家答啱咗。",
-  "quiz.howItWorksBadges": "喺至少有 5 條多項選擇題（或 3 條開放題或案例題）嘅小測入面攞到 80% 或以上，你就可以為每個概念贏得一個獎章：銅、銀或金，視乎難度而定。"
+  "quiz.howItWorksBadges": "喺至少有 5 條多項選擇題（或 3 條開放題或案例題）嘅小測入面攞到 80% 或以上，你就可以為每個概念贏得一個獎章：銅、銀或金，視乎難度而定。",
+  "room.testReset.button": "重設測試小組",
+  "room.testReset.buttonTitle": "清空你嘅測試小組再重新開始",
+  "room.testReset.title": "要重設測試小組嗎？",
+  "room.testReset.body": "呢個測試小組入面嘅所有嘢都會刪除：同角色嘅對話、小組傾偈、檔案、提交同檢查點。之後你會喺一個新嘅空測試小組。呢個操作冇得還原。",
+  "room.testReset.studentsSafe": "只會清空你自己嘅測試小組，學生小組唔受影響。",
+  "room.testReset.confirm": "係，重設",
+  "room.testReset.failed": "重設失敗"
 }

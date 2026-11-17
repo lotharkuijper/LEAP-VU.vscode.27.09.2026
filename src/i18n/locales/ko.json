@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "서로 다른 두 날에 이 개념에 대한 문제를 잘 맞혔어.",
   "badges.quiz_comeback.title": "재도전 성공",
   "badges.quiz_comeback.hint": "이 개념은 이전 퀴즈에서는 잘 맞히지 못했지만, 이제는 잘 맞혔어.",
-  "quiz.howItWorksBadges": "최소 5개의 객관식 문제(또는 3개의 서술형 문제나 사례)로 이루어진 퀴즈에서 80% 이상을 받으면, 난이도에 따라 각 개념마다 동메달, 은메달 또는 금메달을 획득해."
+  "quiz.howItWorksBadges": "최소 5개의 객관식 문제(또는 3개의 서술형 문제나 사례)로 이루어진 퀴즈에서 80% 이상을 받으면, 난이도에 따라 각 개념마다 동메달, 은메달 또는 금메달을 획득해.",
+  "room.testReset.button": "테스트 그룹 초기화",
+  "room.testReset.buttonTitle": "테스트 그룹을 비우고 다시 시작",
+  "room.testReset.title": "테스트 그룹을 초기화할까요?",
+  "room.testReset.body": "이 테스트 그룹의 모든 내용이 삭제됩니다: 페르소나와의 대화, 그룹 채팅, 파일, 제출물, 체크포인트. 이후 새로운 빈 테스트 그룹으로 이동합니다. 되돌릴 수 없습니다.",
+  "room.testReset.studentsSafe": "본인의 테스트 그룹만 비워집니다. 학생 그룹은 그대로 유지됩니다.",
+  "room.testReset.confirm": "예, 초기화",
+  "room.testReset.failed": "초기화하지 못했습니다"
 }

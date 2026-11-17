@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Je beantwoordde vragen over dit begrip goed op twee verschillende dagen.",
   "badges.quiz_comeback.title": "Herkansing gelukt",
   "badges.quiz_comeback.hint": "Dit begrip ging eerder nog niet goed in een quiz, en nu wel.",
-  "quiz.howItWorksBadges": "Haal je 80% of meer in een quiz van minstens 5 meerkeuzevragen (of 3 open vragen of casussen), dan verdien je per begrip een medaille: brons, zilver of goud, naar moeilijkheid."
+  "quiz.howItWorksBadges": "Haal je 80% of meer in een quiz van minstens 5 meerkeuzevragen (of 3 open vragen of casussen), dan verdien je per begrip een medaille: brons, zilver of goud, naar moeilijkheid.",
+  "room.testReset.button": "Testgroep resetten",
+  "room.testReset.buttonTitle": "Maak je testgroep leeg en begin opnieuw",
+  "room.testReset.title": "Testgroep resetten?",
+  "room.testReset.body": "Alles in deze testgroep wordt verwijderd: gesprekken met persona's, groepschat, bestanden, inleveringen en checkpoints. Daarna kom je in een nieuwe, lege testgroep. Dit kun je niet ongedaan maken.",
+  "room.testReset.studentsSafe": "Alleen jouw eigen testgroep wordt leeggemaakt. Groepen van studenten blijven onaangeroerd.",
+  "room.testReset.confirm": "Ja, resetten",
+  "room.testReset.failed": "Resetten mislukt"
 }

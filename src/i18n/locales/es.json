@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Respondiste correctamente preguntas sobre este concepto en dos días diferentes.",
   "badges.quiz_comeback.title": "Reintento superado",
   "badges.quiz_comeback.hint": "Este concepto antes no te salió bien en un quiz, y ahora sí.",
-  "quiz.howItWorksBadges": "Si obtienes un 80 % o más en un quiz de al menos 5 preguntas de opción múltiple (o 3 preguntas abiertas o casos), ganas una medalla por concepto: bronce, plata u oro, según la dificultad."
+  "quiz.howItWorksBadges": "Si obtienes un 80 % o más en un quiz de al menos 5 preguntas de opción múltiple (o 3 preguntas abiertas o casos), ganas una medalla por concepto: bronce, plata u oro, según la dificultad.",
+  "room.testReset.button": "Restablecer grupo de prueba",
+  "room.testReset.buttonTitle": "Vacía tu grupo de prueba y empieza de nuevo",
+  "room.testReset.title": "¿Restablecer el grupo de prueba?",
+  "room.testReset.body": "Se eliminará todo lo de este grupo de prueba: conversaciones con personas, chat de grupo, archivos, entregas y puntos de control. Después estarás en un grupo de prueba nuevo y vacío. Esto no se puede deshacer.",
+  "room.testReset.studentsSafe": "Solo se vacía tu propio grupo de prueba. Los grupos de estudiantes no se tocan.",
+  "room.testReset.confirm": "Sí, restablecer",
+  "room.testReset.failed": "No se pudo restablecer"
 }

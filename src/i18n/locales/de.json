@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Du hast Fragen zu diesem Begriff an zwei verschiedenen Tagen richtig beantwortet.",
   "badges.quiz_comeback.title": "Wiederholung geschafft",
   "badges.quiz_comeback.hint": "Dieser Begriff war in einem Quiz zuvor noch nicht richtig, jetzt aber schon.",
-  "quiz.howItWorksBadges": "Erreichst du in einem Quiz mit mindestens 5 Multiple-Choice-Fragen (oder 3 offenen Fragen oder Fällen) 80 % oder mehr, verdienst du pro Begriff eine Medaille: Bronze, Silber oder Gold, je nach Schwierigkeit."
+  "quiz.howItWorksBadges": "Erreichst du in einem Quiz mit mindestens 5 Multiple-Choice-Fragen (oder 3 offenen Fragen oder Fällen) 80 % oder mehr, verdienst du pro Begriff eine Medaille: Bronze, Silber oder Gold, je nach Schwierigkeit.",
+  "room.testReset.button": "Testgruppe zurücksetzen",
+  "room.testReset.buttonTitle": "Testgruppe leeren und neu beginnen",
+  "room.testReset.title": "Testgruppe zurücksetzen?",
+  "room.testReset.body": "Alles in dieser Testgruppe wird gelöscht: Gespräche mit Personas, Gruppenchat, Dateien, Abgaben und Checkpoints. Danach bist du in einer neuen, leeren Testgruppe. Das lässt sich nicht rückgängig machen.",
+  "room.testReset.studentsSafe": "Nur deine eigene Testgruppe wird geleert. Gruppen von Studierenden bleiben unberührt.",
+  "room.testReset.confirm": "Ja, zurücksetzen",
+  "room.testReset.failed": "Zurücksetzen fehlgeschlagen"
 }

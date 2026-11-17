@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Poprawnie odpowiedziałeś na pytania o tym pojęciu w dwa różne dni.",
   "badges.quiz_comeback.title": "Poprawka udana",
   "badges.quiz_comeback.hint": "To pojęcie wcześniej nie poszło ci dobrze w quizie, a teraz już tak.",
-  "quiz.howItWorksBadges": "Jeśli zdobędziesz 80% lub więcej w quizie z co najmniej 5 pytaniami wielokrotnego wyboru (albo 3 pytaniami otwartymi lub przypadkami), za każde pojęcie otrzymasz medal: brązowy, srebrny lub złoty, w zależności od trudności."
+  "quiz.howItWorksBadges": "Jeśli zdobędziesz 80% lub więcej w quizie z co najmniej 5 pytaniami wielokrotnego wyboru (albo 3 pytaniami otwartymi lub przypadkami), za każde pojęcie otrzymasz medal: brązowy, srebrny lub złoty, w zależności od trudności.",
+  "room.testReset.button": "Zresetuj grupę testową",
+  "room.testReset.buttonTitle": "Opróżnij swoją grupę testową i zacznij od nowa",
+  "room.testReset.title": "Zresetować grupę testową?",
+  "room.testReset.body": "Wszystko w tej grupie testowej zostanie usunięte: rozmowy z personami, czat grupowy, pliki, oddane prace i punkty kontrolne. Potem znajdziesz się w nowej, pustej grupie testowej. Tej operacji nie można cofnąć.",
+  "room.testReset.studentsSafe": "Opróżniana jest tylko Twoja własna grupa testowa. Grupy studentów pozostają nietknięte.",
+  "room.testReset.confirm": "Tak, zresetuj",
+  "room.testReset.failed": "Reset nie powiódł się"
 }

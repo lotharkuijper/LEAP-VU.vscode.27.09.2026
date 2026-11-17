@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Ai răspuns corect la întrebări despre acest concept în două zile diferite.",
   "badges.quiz_comeback.title": "Reluare reușită",
   "badges.quiz_comeback.hint": "Acest concept nu ți-a reușit mai devreme într-un quiz, dar acum da.",
-  "quiz.howItWorksBadges": "Dacă obții 80% sau mai mult la un quiz cu cel puțin 5 întrebări cu răspuns multiplu (sau 3 întrebări deschise ori studii de caz), câștigi pentru fiecare concept o medalie: bronz, argint sau aur, în funcție de dificultate."
+  "quiz.howItWorksBadges": "Dacă obții 80% sau mai mult la un quiz cu cel puțin 5 întrebări cu răspuns multiplu (sau 3 întrebări deschise ori studii de caz), câștigi pentru fiecare concept o medalie: bronz, argint sau aur, în funcție de dificultate.",
+  "room.testReset.button": "Resetează grupul de test",
+  "room.testReset.buttonTitle": "Golește grupul de test și începe din nou",
+  "room.testReset.title": "Resetezi grupul de test?",
+  "room.testReset.body": "Tot ce este în acest grup de test va fi șters: conversațiile cu personas, chatul de grup, fișierele, predările și punctele de control. Apoi vei fi într-un grup de test nou și gol. Acțiunea nu poate fi anulată.",
+  "room.testReset.studentsSafe": "Se golește doar propriul tău grup de test. Grupurile studenților rămân neatinse.",
+  "room.testReset.confirm": "Da, resetează",
+  "room.testReset.failed": "Resetarea a eșuat"
 }

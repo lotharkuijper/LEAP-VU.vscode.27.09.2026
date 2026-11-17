@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Hai risposto correttamente a domande su questo concetto in due giorni diversi.",
   "badges.quiz_comeback.title": "Nuovo tentativo riuscito",
   "badges.quiz_comeback.hint": "Questo concetto in un quiz precedente non era andato bene, ma ora sì.",
-  "quiz.howItWorksBadges": "Se ottieni l’80% o più in un quiz di almeno 5 domande a scelta multipla (o 3 domande aperte o casi), guadagni una medaglia per ogni concetto: bronzo, argento o oro, in base alla difficoltà."
+  "quiz.howItWorksBadges": "Se ottieni l’80% o più in un quiz di almeno 5 domande a scelta multipla (o 3 domande aperte o casi), guadagni una medaglia per ogni concetto: bronzo, argento o oro, in base alla difficoltà.",
+  "room.testReset.button": "Reimposta gruppo di prova",
+  "room.testReset.buttonTitle": "Svuota il tuo gruppo di prova e ricomincia",
+  "room.testReset.title": "Reimpostare il gruppo di prova?",
+  "room.testReset.body": "Tutto ciò che è in questo gruppo di prova verrà eliminato: conversazioni con le persona, chat di gruppo, file, consegne e checkpoint. Poi sarai in un nuovo gruppo di prova vuoto. L'operazione non può essere annullata.",
+  "room.testReset.studentsSafe": "Viene svuotato solo il tuo gruppo di prova. I gruppi degli studenti restano intatti.",
+  "room.testReset.confirm": "Sì, reimposta",
+  "room.testReset.failed": "Reimpostazione non riuscita"
 }

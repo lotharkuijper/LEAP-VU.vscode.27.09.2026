@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "この概念に関する質問に、2つの異なる日に正しく答えました。",
   "badges.quiz_comeback.title": "再挑戦成功",
   "badges.quiz_comeback.hint": "この概念は以前のクイズではうまく答えられなかったけど、今回はできた。",
-  "quiz.howItWorksBadges": "5問以上の選択問題（または3問の記述問題やケース問題）のクイズで80%以上を取ると、概念ごとに難易度に応じて銅・銀・金のメダルを獲得できる。"
+  "quiz.howItWorksBadges": "5問以上の選択問題（または3問の記述問題やケース問題）のクイズで80%以上を取ると、概念ごとに難易度に応じて銅・銀・金のメダルを獲得できる。",
+  "room.testReset.button": "テストグループをリセット",
+  "room.testReset.buttonTitle": "テストグループを空にして最初からやり直す",
+  "room.testReset.title": "テストグループをリセットしますか？",
+  "room.testReset.body": "このテストグループ内のすべてが削除されます：ペルソナとの会話、グループチャット、ファイル、提出物、チェックポイント。その後、新しい空のテストグループに移ります。元に戻すことはできません。",
+  "room.testReset.studentsSafe": "空になるのはあなた自身のテストグループだけです。学生のグループには影響しません。",
+  "room.testReset.confirm": "はい、リセットする",
+  "room.testReset.failed": "リセットに失敗しました"
 }

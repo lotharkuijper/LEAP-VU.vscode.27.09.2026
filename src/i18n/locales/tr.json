@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Bu kavramla ilgili soruları iki farklı günde doğru yanıtladın.",
   "badges.quiz_comeback.title": "Tekrar denemesi başarılı",
   "badges.quiz_comeback.hint": "Bu kavram daha önce bir quizde iyi gitmemişti, ama şimdi iyi gitti.",
-  "quiz.howItWorksBadges": "En az 5 çoktan seçmeli sorudan (veya 3 açık soru ya da vaka sorusundan) oluşan bir quizde %80 veya üzeri alırsan, her kavram için zorluk düzeyine göre bronz, gümüş ya da altın madalya kazanırsın."
+  "quiz.howItWorksBadges": "En az 5 çoktan seçmeli sorudan (veya 3 açık soru ya da vaka sorusundan) oluşan bir quizde %80 veya üzeri alırsan, her kavram için zorluk düzeyine göre bronz, gümüş ya da altın madalya kazanırsın.",
+  "room.testReset.button": "Test grubunu sıfırla",
+  "room.testReset.buttonTitle": "Test grubunu boşalt ve yeniden başla",
+  "room.testReset.title": "Test grubu sıfırlansın mı?",
+  "room.testReset.body": "Bu test grubundaki her şey silinecek: personalarla sohbetler, grup sohbeti, dosyalar, teslimler ve kontrol noktaları. Ardından yeni, boş bir test grubunda olacaksın. Bu işlem geri alınamaz.",
+  "room.testReset.studentsSafe": "Yalnızca kendi test grubun boşaltılır. Öğrenci gruplarına dokunulmaz.",
+  "room.testReset.confirm": "Evet, sıfırla",
+  "room.testReset.failed": "Sıfırlama başarısız"
 }

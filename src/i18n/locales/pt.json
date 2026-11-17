@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Respondeste corretamente a perguntas sobre este conceito em dois dias diferentes.",
   "badges.quiz_comeback.title": "Repetição conseguida",
   "badges.quiz_comeback.hint": "Este conceito não tinha corrido bem antes num questionário, e agora sim.",
-  "quiz.howItWorksBadges": "Se obtiveres 80% ou mais num questionário com pelo menos 5 perguntas de escolha múltipla (ou 3 perguntas abertas ou casos), ganhas uma medalha por conceito: bronze, prata ou ouro, consoante a dificuldade."
+  "quiz.howItWorksBadges": "Se obtiveres 80% ou mais num questionário com pelo menos 5 perguntas de escolha múltipla (ou 3 perguntas abertas ou casos), ganhas uma medalha por conceito: bronze, prata ou ouro, consoante a dificuldade.",
+  "room.testReset.button": "Repor grupo de teste",
+  "room.testReset.buttonTitle": "Esvazie o seu grupo de teste e recomece",
+  "room.testReset.title": "Repor o grupo de teste?",
+  "room.testReset.body": "Tudo neste grupo de teste será eliminado: conversas com personas, chat de grupo, ficheiros, entregas e pontos de controlo. Depois ficará num novo grupo de teste vazio. Isto não pode ser desfeito.",
+  "room.testReset.studentsSafe": "Só o seu próprio grupo de teste é esvaziado. Os grupos de estudantes ficam intactos.",
+  "room.testReset.confirm": "Sim, repor",
+  "room.testReset.failed": "Falha ao repor"
 }
