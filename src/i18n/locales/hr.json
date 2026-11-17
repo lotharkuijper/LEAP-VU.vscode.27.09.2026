@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Točno si odgovorio/la na pitanja o ovom pojmu tijekom dva različita dana.",
   "badges.quiz_comeback.title": "Popravni pokušaj uspio",
   "badges.quiz_comeback.hint": "Ovaj pojam ti ranije u kvizu još nije išao dobro, a sada ide.",
-  "quiz.howItWorksBadges": "Ako postigneš 80% ili više u kvizu s najmanje 5 pitanja višestrukog izbora (ili 3 otvorena pitanja ili slučaja), za svaki pojam osvajaš medalju: brončanu, srebrnu ili zlatnu, ovisno o težini."
+  "quiz.howItWorksBadges": "Ako postigneš 80% ili više u kvizu s najmanje 5 pitanja višestrukog izbora (ili 3 otvorena pitanja ili slučaja), za svaki pojam osvajaš medalju: brončanu, srebrnu ili zlatnu, ovisno o težini.",
+  "room.testReset.button": "Poništi testnu grupu",
+  "room.testReset.buttonTitle": "Isprazni svoju testnu grupu i počni ispočetka",
+  "room.testReset.title": "Poništiti testnu grupu?",
+  "room.testReset.body": "Sve u ovoj testnoj grupi bit će izbrisano: razgovori s personama, grupni chat, datoteke, predaje i kontrolne točke. Nakon toga bit ćeš u novoj, praznoj testnoj grupi. Ovo se ne može poništiti.",
+  "room.testReset.studentsSafe": "Prazni se samo tvoja vlastita testna grupa. Grupe studenata ostaju netaknute.",
+  "room.testReset.confirm": "Da, poništi",
+  "room.testReset.failed": "Poništavanje nije uspjelo"
 }

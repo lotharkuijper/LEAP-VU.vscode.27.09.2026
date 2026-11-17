@@ -21,7 +21,7 @@ const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m 
 import {
   ArrowLeft, Send, Users, MessageCircle, Bot, CheckCircle2,
   Flag, Clipboard, Copy, Loader2, BookOpen, Paperclip, Trash2, FileText, ShieldAlert, Download, Database, EyeOff,
-  LogOut, ScrollText, ChevronDown, ChevronRight, UploadCloud,
+  LogOut, ScrollText, ChevronDown, ChevronRight, UploadCloud, RotateCcw,
 } from 'lucide-react';
 
 interface Persona {
@@ -287,6 +287,9 @@ export function ProjectRoomPage() {
   const [pendingPersonaText, setPendingPersonaText] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitFileRef = useRef<HTMLInputElement>(null);
@@ -889,6 +892,29 @@ export function ProjectRoomPage() {
     navigator.clipboard.writeText(group.invite_code);
   };
 
+  // Testgroep opnieuw beginnen: alleen docent/admin, alleen als je er alleen in zit.
+  // De server controleert hetzelfde (server/projects/testGroupReset.js).
+  const isOwnTestGroup = isStaff && members.length === 1 && members[0].user_id === profile?.id;
+  const resetTestGroup = async () => {
+    if (!groupId || !token || !projectId) return;
+    setResetBusy(true);
+    setResetError(null);
+    try {
+      const r = await fetch(`/api/projects/groups/${groupId}/reset-test-group`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.group?.id) throw new Error(d.error || t('room.testReset.failed'));
+      setShowResetModal(false);
+      navigate(`/projects/${projectId}/group/${d.group.id}`, { replace: true });
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setResetBusy(false);
+    }
+  };
+
   const requestEvaluation = async () => {
     if (!groupId || !token) return;
     if (!confirm(t('room.assessmentConfirm'))) return;
@@ -1092,6 +1118,16 @@ export function ProjectRoomPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
+          {isOwnTestGroup && (
+            <button
+              onClick={() => { setResetError(null); setShowResetModal(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 text-white hover:bg-rose-700 rounded-lg text-xs font-semibold shadow-sm"
+              title={t('room.testReset.buttonTitle')}
+              data-testid="button-reset-test-group"
+            >
+              <RotateCcw className="w-4 h-4" /> {t('room.testReset.button')}
+            </button>
+          )}
           {(project.group_mode || (project.allow_self_signup === false ? 'teacher' : 'self')) === 'self' && (
           <button onClick={copyInvite} className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-lg text-xs font-mono" title={t('room.copyInviteTitle')} data-testid="button-copy-invite">
             <Copy className="w-3.5 h-3.5" />
@@ -2395,6 +2431,27 @@ export function ProjectRoomPage() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showResetModal && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6" role="dialog" aria-modal="true" data-testid="dialog-reset-test-group">
+            <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+              <RotateCcw className="w-5 h-5 text-rose-600" /> {t('room.testReset.title')}
+            </h3>
+            <p className="text-sm text-gray-600 mb-3">{t('room.testReset.body')}</p>
+            <p className="text-xs text-gray-500 mb-4">{t('room.testReset.studentsSafe')}</p>
+            {resetError && (
+              <p className="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-800" data-testid="text-reset-error">{resetError}</p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowResetModal(false)} disabled={resetBusy} className="btn-secondary text-sm" data-testid="button-reset-cancel">{t('common.cancel')}</button>
+              <button onClick={resetTestGroup} disabled={resetBusy} className="btn-danger text-sm" data-testid="button-reset-confirm">
+                {resetBusy ? t('common.busy') : t('room.testReset.confirm')}
+              </button>
+            </div>
           </div>
         </div>
       )}

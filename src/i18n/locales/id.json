@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Kamu menjawab pertanyaan tentang konsep ini dengan benar pada dua hari yang berbeda.",
   "badges.quiz_comeback.title": "Percobaan ulang berhasil",
   "badges.quiz_comeback.hint": "Konsep ini sebelumnya belum berhasil kamu jawab dengan baik dalam kuis, tetapi sekarang sudah.",
-  "quiz.howItWorksBadges": "Jika kamu meraih 80% atau lebih dalam kuis yang berisi setidaknya 5 soal pilihan ganda (atau 3 pertanyaan terbuka atau kasus), kamu akan mendapatkan medali untuk setiap konsep: perunggu, perak, atau emas, sesuai tingkat kesulitannya."
+  "quiz.howItWorksBadges": "Jika kamu meraih 80% atau lebih dalam kuis yang berisi setidaknya 5 soal pilihan ganda (atau 3 pertanyaan terbuka atau kasus), kamu akan mendapatkan medali untuk setiap konsep: perunggu, perak, atau emas, sesuai tingkat kesulitannya.",
+  "room.testReset.button": "Atur ulang grup uji",
+  "room.testReset.buttonTitle": "Kosongkan grup uji Anda dan mulai lagi",
+  "room.testReset.title": "Atur ulang grup uji?",
+  "room.testReset.body": "Semua isi grup uji ini akan dihapus: percakapan dengan persona, obrolan grup, berkas, pengumpulan, dan checkpoint. Setelah itu Anda berada di grup uji baru yang kosong. Tindakan ini tidak dapat dibatalkan.",
+  "room.testReset.studentsSafe": "Hanya grup uji milik Anda yang dikosongkan. Grup mahasiswa tidak tersentuh.",
+  "room.testReset.confirm": "Ya, atur ulang",
+  "room.testReset.failed": "Gagal mengatur ulang"
 }

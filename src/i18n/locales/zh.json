@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "你在两个不同的日子里正确回答了关于这个概念的问题。",
   "badges.quiz_comeback.title": "补考成功",
   "badges.quiz_comeback.hint": "这个概念之前在测验中还没答好，现在答对了。",
-  "quiz.howItWorksBadges": "如果你在至少包含 5 道选择题（或 3 道开放题或案例题）的测验中获得 80% 或以上的成绩，就会为每个概念获得一枚奖章：铜、银或金，按难度区分。"
+  "quiz.howItWorksBadges": "如果你在至少包含 5 道选择题（或 3 道开放题或案例题）的测验中获得 80% 或以上的成绩，就会为每个概念获得一枚奖章：铜、银或金，按难度区分。",
+  "room.testReset.button": "重置测试小组",
+  "room.testReset.buttonTitle": "清空你的测试小组并重新开始",
+  "room.testReset.title": "要重置测试小组吗？",
+  "room.testReset.body": "此测试小组中的所有内容都将被删除：与角色的对话、小组聊天、文件、提交内容和检查点。之后你将进入一个新的空测试小组。此操作无法撤销。",
+  "room.testReset.studentsSafe": "只会清空你自己的测试小组，学生小组不受影响。",
+  "room.testReset.confirm": "是，重置",
+  "room.testReset.failed": "重置失败"
 }

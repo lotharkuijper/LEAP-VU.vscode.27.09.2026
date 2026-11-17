@@ -14,6 +14,7 @@ import { coursesHasStudentVisible } from '../lib/schemaFlags.js';
 import { SUPERUSER_EMAIL, supabaseAdmin } from '../lib/supabase.js';
 import { normalizeGroupMode, registerProjectGroupRoutes, studentMayFormGroups } from './projectGroups.js';
 import { requireProjectStaff } from './access.js';
+import { resetTestGroup } from './testGroupReset.js';
 
 // Six characters from 0-9A-Z, as before, but from a cryptographic source:
 // a guessable code would let anyone in the course join a group.
@@ -462,6 +463,27 @@ export function registerProjectRoutes(app) {
       return res.json({ ok: true });
     } catch (err) {
       return res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/projects/groups/:groupId/reset-test-group — docent/admin maakt
+  // zijn eigen testgroep leeg en krijgt een nieuwe (testGroupReset.js).
+  app.post('/api/projects/groups/:groupId/reset-test-group', async (req, res) => {
+    if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
+    const auth = await authUser(req);
+    if (auth.error) return res.status(auth.error.status).json(auth.error.body);
+    try {
+      const { data: profile } = await profileCache.get(auth.user.id, loadProfileRoleEmail);
+      const { status, body } = await resetTestGroup(supabaseAdmin, {
+        groupId: req.params.groupId,
+        userId: auth.user.id,
+        isStaffFor: (courseId) => isStaffForCourse(auth.user, profile, courseId),
+        genInviteCode,
+      });
+      return res.status(status).json(body);
+    } catch (err) {
+      console.error('[projects/reset-test-group]', err);
+      return res.status(500).json({ error: 'Resetten mislukt' });
     }
   });
 

@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "You answered questions about this concept correctly on two different days.",
   "badges.quiz_comeback.title": "Retake successful",
   "badges.quiz_comeback.hint": "You didn’t get this concept right in an earlier quiz, but now you did.",
-  "quiz.howItWorksBadges": "Score 80% or higher on a quiz with at least 5 multiple-choice questions (or 3 open questions or cases), and you’ll earn a medal for each concept: bronze, silver, or gold, depending on difficulty."
+  "quiz.howItWorksBadges": "Score 80% or higher on a quiz with at least 5 multiple-choice questions (or 3 open questions or cases), and you’ll earn a medal for each concept: bronze, silver, or gold, depending on difficulty.",
+  "room.testReset.button": "Reset test group",
+  "room.testReset.buttonTitle": "Empty your test group and start over",
+  "room.testReset.title": "Reset test group?",
+  "room.testReset.body": "Everything in this test group will be deleted: conversations with personas, group chat, files, submissions and checkpoints. You will then be in a new, empty test group. This cannot be undone.",
+  "room.testReset.studentsSafe": "Only your own test group is emptied. Student groups are left untouched.",
+  "room.testReset.confirm": "Yes, reset",
+  "room.testReset.failed": "Reset failed"
 }

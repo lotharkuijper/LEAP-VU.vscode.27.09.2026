@@ -3526,5 +3526,12 @@
   "badges.quiz_mastered.hint": "Tu as répondu correctement à des questions sur cette notion lors de deux jours différents.",
   "badges.quiz_comeback.title": "Reprise réussie",
   "badges.quiz_comeback.hint": "Cette notion n’avait pas encore été réussie dans un quiz auparavant, mais maintenant oui.",
-  "quiz.howItWorksBadges": "Si tu obtiens 80 % ou plus à un quiz d’au moins 5 questions à choix multiple (ou 3 questions ouvertes ou cas), tu gagnes une médaille par notion : bronze, argent ou or, selon la difficulté."
+  "quiz.howItWorksBadges": "Si tu obtiens 80 % ou plus à un quiz d’au moins 5 questions à choix multiple (ou 3 questions ouvertes ou cas), tu gagnes une médaille par notion : bronze, argent ou or, selon la difficulté.",
+  "room.testReset.button": "Réinitialiser le groupe test",
+  "room.testReset.buttonTitle": "Videz votre groupe test et recommencez",
+  "room.testReset.title": "Réinitialiser le groupe test ?",
+  "room.testReset.body": "Tout le contenu de ce groupe test sera supprimé : conversations avec les personas, chat de groupe, fichiers, remises et points d'étape. Vous serez ensuite dans un nouveau groupe test vide. Cette action est irréversible.",
+  "room.testReset.studentsSafe": "Seul votre propre groupe test est vidé. Les groupes d'étudiants restent intacts.",
+  "room.testReset.confirm": "Oui, réinitialiser",
+  "room.testReset.failed": "Échec de la réinitialisation"
 }
