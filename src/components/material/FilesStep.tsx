@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { Upload, Loader2, Download, Trash2, ArrowRightLeft, X, Globe, AlertTriangle, EyeOff, RotateCcw } from 'lucide-react';
+import { Upload, Loader2, Download, Trash2, ArrowRightLeft, X, Globe, AlertTriangle, EyeOff, RotateCcw, Video } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import {
   uploadCourseFile,
@@ -20,6 +20,8 @@ import { PurposePicker, type PurposeValue } from './PurposePicker';
 import { WebSourceRow } from './WebSourceRow';
 import { BulkDeleteDialog } from './BulkDeleteDialog';
 import { WebImportPanel } from '../WebImportPanel';
+import { YouTubeImportPanel } from './YouTubeImportPanel';
+import { isYouTubeUrl } from '../../../server/ingestion/youtubeImport.js';
 import { HelpTip } from '../help/HelpTip';
 import { Tooltip } from '../help/Tooltip';
 import { AdminHint } from '../help/AdminHint';
@@ -72,6 +74,7 @@ export function FilesStep({
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [addingWebsite, setAddingWebsite] = useState(false);
+  const [addingVideo, setAddingVideo] = useState(false);
 
   // Pagina's van een bekende websitebron staan onder die bron, niet als losse rij.
   const sourceIds = useMemo(() => new Set(webSources.map(s => s.id)), [webSources]);
@@ -286,6 +289,15 @@ export function FilesStep({
               {t('material.web.add')}
             </button>
             <HelpTip id="material.addWebsite" />
+            <button
+              type="button"
+              onClick={() => setAddingVideo(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm font-medium border border-sky-300 text-sky-800 bg-white hover:bg-sky-50"
+              data-testid="button-add-youtube"
+            >
+              <Video className="w-4 h-4" />
+              {t('material.youtube.add')}
+            </button>
           </span>
         </div>
         <div
@@ -467,12 +479,12 @@ export function FilesStep({
                     )}
                     <div className="flex-1 min-w-[12rem]">
                       <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                        {f.isWeb && <Globe className="w-3.5 h-3.5 text-gray-400" />}
+                        {f.isWeb && (isYouTubeUrl(f.url) ? <Video className="w-3.5 h-3.5 text-gray-400" /> : <Globe className="w-3.5 h-3.5 text-gray-400" />)}
                         {f.title}
                         {!f.purposeConfirmed && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-fuchsia-100 text-fuchsia-700">{t('material.files.unconfirmed')}</span>}
                       </div>
                       <div className="text-xs text-gray-500 flex flex-wrap gap-2">
-                        {f.isWeb ? t('material.files.web') : (f.file_type || '').toUpperCase()}
+                        {f.isWeb ? t(isYouTubeUrl(f.url) ? 'material.files.video' : 'material.files.web') : (f.file_type || '').toUpperCase()}
                         {f.file_size ? <span>{formatBytes(f.file_size)}</span> : null}
                         {statusBadge(f)}
                       </div>
@@ -527,6 +539,25 @@ export function FilesStep({
               </Tooltip>
             </div>
             <WebImportPanel courseId={courseId} embedded onImported={() => onChanged()} />
+          </div>
+        </div>
+      )}
+
+      {/* YouTube-video toevoegen */}
+      {addingVideo && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-start sm:items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="title-add-youtube" data-testid="dialog-add-youtube">
+          <div className="chic-card max-w-3xl w-full p-6 space-y-4 my-8">
+            <div className="flex items-start justify-between gap-3">
+              <h3 id="title-add-youtube" className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Video className="w-5 h-5 text-sky-600" />{t('material.youtube.addTitle')}
+              </h3>
+              <Tooltip label={t('material.files.cancel')} side="bottom">
+                <button type="button" onClick={() => setAddingVideo(false)} className="p-1 rounded-lg hover:bg-gray-100" data-testid="button-close-add-youtube">
+                  <X className="w-5 h-5" />
+                </button>
+              </Tooltip>
+            </div>
+            <YouTubeImportPanel courseId={courseId} onImported={() => onChanged()} />
           </div>
         </div>
       )}

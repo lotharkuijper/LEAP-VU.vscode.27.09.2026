@@ -51,7 +51,7 @@ en daarnaast de modules met de eigenlijke regels. Die modules zijn zoveel mogeli
 | `server/documents/` | Cursusmateriaal bekijken, downloaden en vertalen; bestandsdoelen | `routes.js`, `courseFiles.js` (Cursusmateriaal-werkruimte), `documentRender.js` (Word/PowerPoint naar pdf met LibreOffice), `documentTranslation.js`, `viewableDocument.js` |
 | `server/explain/` | "Ik leg uit" en "Verbeter deze uitleg" | `routes.js`, `explainFeedback.js`, `flawedExplanations.js` |
 | `server/i18n/` | Vertaling van servermeldingen en de talenlijst | `serverI18n.js` (middleware), `languages.js`, `notificationI18n.js`, `messages.source.json` + `messages.<taal>.json` |
-| `server/ingestion/` | Documenten inlezen: tekst eruit, in stukken (chunks), embeddings, opslaan | `routes.js`, `pipeline.js`, `ragProcessing.js`, `processingQueue.js` (wachtrij, 2 tegelijk), `pptxExtract.js`, `pdfPages.js`, `pdfPageText.js`, `webImport.js`, `pageBackfill.js` |
+| `server/ingestion/` | Documenten inlezen: tekst eruit, in stukken (chunks), embeddings, opslaan | `routes.js`, `pipeline.js`, `ragProcessing.js`, `processingQueue.js` (wachtrij, 2 tegelijk), `pptxExtract.js`, `pdfPages.js`, `pdfPageText.js`, `webImport.js`, `youtubeImport.js` + `youtubeRoutes.js` (YouTube-video met geplakt transcript), `pageBackfill.js` |
 | `server/journal/` | Leerdagboek | `routes.js`, `journalSections.js` (de drie blokken), `journalCourse.js` |
 | `server/lib/` | Gedeelde basis voor alle onderwerpen (zie hieronder) | |
 | `server/lti/` | Canvas-koppeling (LTI 1.3) | `lti.js`, `routes.js` |

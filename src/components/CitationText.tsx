@@ -6,6 +6,8 @@ export interface CitationSource {
   title: string;
   href?: string;
   documentId?: string;
+  /** YouTube-fragment: link naar het moment in de video. */
+  videoHref?: string;
 }
 
 interface CitationTextProps {

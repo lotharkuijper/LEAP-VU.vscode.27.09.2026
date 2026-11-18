@@ -108,6 +108,7 @@ export function AssistantMessageBody({
     title: s.title,
     href: s.href,
     documentId: s.documentId,
+    videoHref: s.videoHref,
   }));
   const handleCitationClick = (idx: number) => {
     setSourcesOpen(true);
@@ -116,7 +117,9 @@ export function AssistantMessageBody({
       if (el && 'scrollIntoView' in el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   };
-  const handleOpenSource = (s: { documentId?: string; title: string; pageStart?: number; slideStart?: number }) => {
+  const handleOpenSource = (s: { documentId?: string; title: string; pageStart?: number; slideStart?: number; videoHref?: string }) => {
+    // Een fragment uit een YouTube-video opent de video op dat moment.
+    if (s.videoHref) { window.open(s.videoHref, '_blank', 'noopener,noreferrer'); return; }
     if (!s.documentId) return;
     // Dia's worden in de viewer als PDF-pagina's gerenderd (pptx→PDF), dus een
     // slidenummer mapt 1-op-1 op een viewer-pagina; val daarop terug voor pptx.

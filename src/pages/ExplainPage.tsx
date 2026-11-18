@@ -112,7 +112,9 @@ function FeedbackBlock({
     });
   };
   const [openSourceError, setOpenSourceError] = useState<string | null>(null);
-  const handleOpenSource = (s: { documentId?: string; pageStart?: number; slideStart?: number }) => {
+  const handleOpenSource = (s: { documentId?: string; pageStart?: number; slideStart?: number; videoHref?: string }) => {
+    // Een fragment uit een YouTube-video opent de video op dat moment.
+    if (s.videoHref) { window.open(s.videoHref, '_blank', 'noopener,noreferrer'); return; }
     if (!s.documentId) return;
     setOpenSourceError(null);
     // Dia's worden bij het openen als PDF-pagina's geteld (pptx→PDF), dus een
