@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "確認所有已配對項目（{n}）",
   "imageEx.link.none": "仲未有描述",
   "imageEx.link.choose": "揀一個描述…",
-  "imageEx.link.suggestion": "LEAP 嘅建議：{heading}",
   "imageEx.link.suggest": "畀 LEAP 提出建議",
-  "imageEx.link.suggestDone": "LEAP 提出咗 {n} 個建議；佢哋喺選單入面以 ★ 標示。",
+  "imageEx.link.suggestDone": "LEAP 提出咗 {n} 個建議。建議喺相片旁邊：如果建議啱，請撳「正確，確認」。",
   "imageEx.link.type": "自行輸入或修改描述",
   "imageEx.link.typeLabel": "相片描述",
   "imageEx.link.loose": "你文件入面有 {n} 段文字未能連結到相片",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "取消連結：將呢段描述同相片分開",
   "imageEx.link.unlinkConfirmed": "呢個連結已經確認咗。要取消連結嗎？呢張相片嘅特徵會消失；文字會返去未連結嘅描述度，咁你就可以將佢放喺另一張相片度。",
   "imageEx.link.chooseOther": "揀另一段描述…（目前呢段會變成未連結項目）",
-  "imageEx.link.looseNotSaved": "未連結項目唔會被儲存：離開呢個頁面之前，請先將佢哋連結到相片，或者之後重新上載文件。"
+  "imageEx.link.looseNotSaved": "未連結項目唔會被儲存：離開呢個頁面之前，請先將佢哋連結到相片，或者之後重新上載文件。",
+  "imageEx.link.suggestionTitle": "LEAP 嘅建議",
+  "imageEx.link.suggestionReplace": "LEAP 嘅建議（取代目前描述）",
+  "imageEx.link.takeConfirm": "正確，確認",
+  "imageEx.link.take": "採用，但未確認",
+  "imageEx.link.rejectSuggestion": "唔正確",
+  "imageEx.link.takeAll": "採用並確認所有建議（{n}）"
 }

@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Confirmer toutes les associations ({n})",
   "imageEx.link.none": "pas encore de description",
   "imageEx.link.choose": "Choisis une description…",
-  "imageEx.link.suggestion": "Proposition de LEAP : {heading}",
   "imageEx.link.suggest": "Demander une proposition à LEAP",
-  "imageEx.link.suggestDone": "LEAP a fait {n} proposition(s) ; elles apparaissent avec ★ dans la liste de choix.",
+  "imageEx.link.suggestDone": "LEAP a fait {n} proposition(s). Elles se trouvent près des photos : si une proposition est correcte, clique sur « Correct, confirmer ».",
   "imageEx.link.type": "Saisir ou modifier soi-même la description",
   "imageEx.link.typeLabel": "Description de la photo",
   "imageEx.link.loose": "{n} élément(s) de texte de ton document n’ont pas pu être associé(s) à une photo",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "Dissocier : détacher cette description de la photo",
   "imageEx.link.unlinkConfirmed": "Cette association a déjà été confirmée. La dissocier ? Les caractéristiques de cette photo disparaîtront ; le texte retournera parmi les descriptions non associées, afin que tu puisses le placer avec une autre photo.",
   "imageEx.link.chooseOther": "Choisir une autre description… (l’actuelle deviendra un élément non associé)",
-  "imageEx.link.looseNotSaved": "Les éléments non associés ne sont pas enregistrés : associe-les à une photo avant de quitter cette page, ou téléverse à nouveau le document plus tard."
+  "imageEx.link.looseNotSaved": "Les éléments non associés ne sont pas enregistrés : associe-les à une photo avant de quitter cette page, ou téléverse à nouveau le document plus tard.",
+  "imageEx.link.suggestionTitle": "Proposition de LEAP",
+  "imageEx.link.suggestionReplace": "Proposition de LEAP (remplace la description actuelle)",
+  "imageEx.link.takeConfirm": "Correct, confirmer",
+  "imageEx.link.take": "Reprendre, sans confirmer pour l’instant",
+  "imageEx.link.rejectSuggestion": "Incorrect",
+  "imageEx.link.takeAll": "Reprendre et confirmer toutes les propositions ({n})"
 }

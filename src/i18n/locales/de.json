@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Alle verknüpften bestätigen ({n})",
   "imageEx.link.none": "noch keine Beschreibung",
   "imageEx.link.choose": "Wähle eine Beschreibung …",
-  "imageEx.link.suggestion": "Vorschlag von LEAP: {heading}",
   "imageEx.link.suggest": "LEAP einen Vorschlag machen lassen",
-  "imageEx.link.suggestDone": "LEAP hat {n} Vorschlag/Vorschläge gemacht; sie stehen mit ★ in der Auswahlliste.",
+  "imageEx.link.suggestDone": "LEAP hat {n} Vorschlag/Vorschläge gemacht. Sie stehen bei den Fotos: Wenn ein Vorschlag stimmt, klicke auf „Stimmt, bestätigen“.",
   "imageEx.link.type": "Beschreibung selbst eingeben oder anpassen",
   "imageEx.link.typeLabel": "Beschreibung des Fotos",
   "imageEx.link.loose": "{n} Textstelle(n) aus deinem Dokument konnte(n) keinem Foto zugeordnet werden",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "Trennen: Diese Beschreibung vom Foto lösen",
   "imageEx.link.unlinkConfirmed": "Diese Verknüpfung wurde bereits bestätigt. Trennen? Die Merkmale dieses Fotos gehen verloren; der Text erscheint wieder bei den losen Beschreibungen, sodass du ihn einem anderen Foto zuordnen kannst.",
   "imageEx.link.chooseOther": "Andere Beschreibung wählen … (die aktuelle wird zu einem losen Teil)",
-  "imageEx.link.looseNotSaved": "Lose Teile werden nicht gespeichert: Verknüpfe sie mit einem Foto, bevor du diese Seite verlässt, oder lade das Dokument später erneut hoch."
+  "imageEx.link.looseNotSaved": "Lose Teile werden nicht gespeichert: Verknüpfe sie mit einem Foto, bevor du diese Seite verlässt, oder lade das Dokument später erneut hoch.",
+  "imageEx.link.suggestionTitle": "Vorschlag von LEAP",
+  "imageEx.link.suggestionReplace": "Vorschlag von LEAP (ersetzt die aktuelle Beschreibung)",
+  "imageEx.link.takeConfirm": "Stimmt, bestätigen",
+  "imageEx.link.take": "Übernehmen, noch nicht bestätigen",
+  "imageEx.link.rejectSuggestion": "Nicht richtig",
+  "imageEx.link.takeAll": "Alle Vorschläge übernehmen und bestätigen ({n})"
 }

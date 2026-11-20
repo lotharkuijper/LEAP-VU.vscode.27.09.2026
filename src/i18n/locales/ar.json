@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "تأكيد كل العناصر المرتبطة ({n})",
   "imageEx.link.none": "لا يوجد وصف بعد",
   "imageEx.link.choose": "اختر وصفًا…",
-  "imageEx.link.suggestion": "اقتراح من LEAP: {heading}",
   "imageEx.link.suggest": "دع LEAP يقدّم اقتراحًا",
-  "imageEx.link.suggestDone": "قدّم LEAP {n} اقتراح/اقتراحات؛ تظهر بعلامة ★ في قائمة الاختيار.",
+  "imageEx.link.suggestDone": "قدّم LEAP ‏{n} اقتراحًا/اقتراحات. ستجدها عند الصور: إذا كان الاقتراح صحيحًا، فانقر على «صحيح، أكّد».",
   "imageEx.link.type": "اكتب الوصف بنفسك أو عدّله",
   "imageEx.link.typeLabel": "وصف الصورة",
   "imageEx.link.loose": "تعذّر ربط {n} جزء/أجزاء من النص في مستندك بصورة",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "إلغاء الربط: فصل هذا الوصف عن الصورة",
   "imageEx.link.unlinkConfirmed": "تم تأكيد هذا الربط بالفعل. هل تريد إلغاء الربط؟ ستختفي ميزات هذه الصورة؛ وسيعود النص إلى الأوصاف المنفصلة، حتى تتمكن من وضعه مع صورة أخرى.",
   "imageEx.link.chooseOther": "اختيار وصف آخر… (سيصبح الحالي قطعة منفصلة)",
-  "imageEx.link.looseNotSaved": "لا يتم حفظ القطع المنفصلة: اربطها بصورة قبل مغادرة هذه الصفحة، أو ارفع المستند مرة أخرى لاحقًا."
+  "imageEx.link.looseNotSaved": "لا يتم حفظ القطع المنفصلة: اربطها بصورة قبل مغادرة هذه الصفحة، أو ارفع المستند مرة أخرى لاحقًا.",
+  "imageEx.link.suggestionTitle": "اقتراح من LEAP",
+  "imageEx.link.suggestionReplace": "اقتراح من LEAP (يستبدل الوصف الحالي)",
+  "imageEx.link.takeConfirm": "صحيح، أكّد",
+  "imageEx.link.take": "اعتماد، دون تأكيد بعد",
+  "imageEx.link.rejectSuggestion": "غير صحيح",
+  "imageEx.link.takeAll": "اعتماد جميع الاقتراحات وتأكيدها ({n})"
 }

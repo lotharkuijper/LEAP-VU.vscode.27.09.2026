@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Potvrdi sve povezane ({n})",
   "imageEx.link.none": "još nema opisa",
   "imageEx.link.choose": "Odaberi opis…",
-  "imageEx.link.suggestion": "LEAP-ov prijedlog: {heading}",
   "imageEx.link.suggest": "Neka LEAP predloži",
-  "imageEx.link.suggestDone": "LEAP je dao {n} prijedlog(a); označeni su sa ★ u popisu za odabir.",
+  "imageEx.link.suggestDone": "LEAP je dao {n} prijedlog(a). Nalaze se uz fotografije: ako je prijedlog točan, klikni na „Točno, potvrdi”.",
   "imageEx.link.type": "Sam/a upiši ili prilagodi opis",
   "imageEx.link.typeLabel": "Opis fotografije",
   "imageEx.link.loose": "{n} dijelova teksta iz tvog dokumenta nije se moglo povezati s fotografijom",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "Prekini vezu: odvoji ovaj opis od fotografije",
   "imageEx.link.unlinkConfirmed": "Ova je veza već potvrđena. Prekinuti vezu? Značajke ove fotografije nestat će; tekst se vraća među odvojene opise kako bi ga mogao/mogla povezati s drugom fotografijom.",
   "imageEx.link.chooseOther": "Odaberi drugi opis… (trenutačni postaje odvojeni dio)",
-  "imageEx.link.looseNotSaved": "Odvojeni dijelovi neće se spremiti: poveži ih s fotografijom prije nego što napustiš ovu stranicu ili dokument kasnije ponovno prenesi."
+  "imageEx.link.looseNotSaved": "Odvojeni dijelovi neće se spremiti: poveži ih s fotografijom prije nego što napustiš ovu stranicu ili dokument kasnije ponovno prenesi.",
+  "imageEx.link.suggestionTitle": "Prijedlog LEAP-a",
+  "imageEx.link.suggestionReplace": "Prijedlog LEAP-a (zamjenjuje trenutačni opis)",
+  "imageEx.link.takeConfirm": "Točno, potvrdi",
+  "imageEx.link.take": "Preuzmi, još ne potvrđuj",
+  "imageEx.link.rejectSuggestion": "Nije točno",
+  "imageEx.link.takeAll": "Preuzmi i potvrdi sve prijedloge ({n})"
 }

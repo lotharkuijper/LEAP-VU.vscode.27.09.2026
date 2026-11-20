@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Tüm eşleştirilenleri onayla ({n})",
   "imageEx.link.none": "henüz açıklama yok",
   "imageEx.link.choose": "Bir açıklama seç…",
-  "imageEx.link.suggestion": "LEAP’in önerisi: {heading}",
   "imageEx.link.suggest": "LEAP bir öneri sunsun",
-  "imageEx.link.suggestDone": "LEAP {n} öneri sundu; bunlar seçim listesinde ★ ile gösterilir.",
+  "imageEx.link.suggestDone": "LEAP {n} öneri yaptı. Bunlar fotoğrafların yanında: bir öneri doğruysa “Doğru, onayla”ya tıkla.",
   "imageEx.link.type": "Açıklamayı kendin yaz veya düzenle",
   "imageEx.link.typeLabel": "Fotoğraf açıklaması",
   "imageEx.link.loose": "Belgendeki {n} metin parçası bir fotoğrafla eşleştirilemedi",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "Bağlantıyı kaldır: bu açıklamayı fotoğraftan ayır",
   "imageEx.link.unlinkConfirmed": "Bu eşleştirme zaten onaylandı. Bağlantı kaldırılsın mı? Bu fotoğrafın özellikleri kaybolur; metin bağımsız açıklamalara geri döner, böylece onu başka bir fotoğrafa ekleyebilirsin.",
   "imageEx.link.chooseOther": "Başka bir açıklama seç… (mevcut olan bağımsız bir parça olur)",
-  "imageEx.link.looseNotSaved": "Bağımsız parçalar kaydedilmez: bu sayfadan ayrılmadan önce onları bir fotoğrafa bağla veya belgeyi daha sonra yeniden yükle."
+  "imageEx.link.looseNotSaved": "Bağımsız parçalar kaydedilmez: bu sayfadan ayrılmadan önce onları bir fotoğrafa bağla veya belgeyi daha sonra yeniden yükle.",
+  "imageEx.link.suggestionTitle": "LEAP önerisi",
+  "imageEx.link.suggestionReplace": "LEAP önerisi (mevcut açıklamanın yerini alır)",
+  "imageEx.link.takeConfirm": "Doğru, onayla",
+  "imageEx.link.take": "Devral, henüz onaylama",
+  "imageEx.link.rejectSuggestion": "Doğru değil",
+  "imageEx.link.takeAll": "Tüm önerileri devral ve onayla ({n})"
 }

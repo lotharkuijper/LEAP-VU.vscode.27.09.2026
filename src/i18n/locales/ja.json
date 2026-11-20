@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "関連付け済みをすべて確認（{n}件）",
   "imageEx.link.none": "まだ説明がありません",
   "imageEx.link.choose": "説明を選択…",
-  "imageEx.link.suggestion": "LEAPの提案：{heading}",
   "imageEx.link.suggest": "LEAPに提案してもらう",
-  "imageEx.link.suggestDone": "LEAPが{n}件の提案をしました。選択リストで★付きで表示されています。",
+  "imageEx.link.suggestDone": "LEAP が{n}件の候補を提案しました。写真のところに表示されています。候補が正しければ、「正しいので確定」をクリックしてください。",
   "imageEx.link.type": "説明を自分で入力または修正",
   "imageEx.link.typeLabel": "写真の説明",
   "imageEx.link.loose": "ドキュメント内のテキスト {n} 件を写真に関連付けできませんでした",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "リンク解除：この説明を写真から切り離す",
   "imageEx.link.unlinkConfirmed": "このリンクはすでに確定されています。リンクを解除する？この写真の特徴は消え、テキストは未リンクの説明に戻るので、別の写真に付けられます。",
   "imageEx.link.chooseOther": "別の説明を選ぶ…（現在のものは未リンクの項目になります）",
-  "imageEx.link.looseNotSaved": "未リンクの項目は保存されません：このページを離れる前に写真にリンクするか、後でドキュメントを再アップロードしてください。"
+  "imageEx.link.looseNotSaved": "未リンクの項目は保存されません：このページを離れる前に写真にリンクするか、後でドキュメントを再アップロードしてください。",
+  "imageEx.link.suggestionTitle": "LEAP からの提案",
+  "imageEx.link.suggestionReplace": "LEAP からの提案（現在の説明を置き換えます）",
+  "imageEx.link.takeConfirm": "正しいので確定",
+  "imageEx.link.take": "取り込む（まだ確定しない）",
+  "imageEx.link.rejectSuggestion": "正しくない",
+  "imageEx.link.takeAll": "すべての候補を取り込んで確定（{n}）"
 }

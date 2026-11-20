@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "确认所有已关联项（{n}）",
   "imageEx.link.none": "还没有描述",
   "imageEx.link.choose": "选择一条描述…",
-  "imageEx.link.suggestion": "LEAP 的建议：{heading}",
   "imageEx.link.suggest": "让 LEAP 提出建议",
-  "imageEx.link.suggestDone": "LEAP 提出了 {n} 条建议；它们在选择列表中以 ★ 标出。",
+  "imageEx.link.suggestDone": "LEAP 提出了 {n} 条建议。它们显示在照片旁：如果某条建议正确，请点击“正确，确认”。",
   "imageEx.link.type": "自己输入或调整描述",
   "imageEx.link.typeLabel": "照片描述",
   "imageEx.link.loose": "你的文档中有 {n} 段文本无法关联到照片",
@@ -3651,5 +3650,11 @@
   "imageEx.link.unlink": "取消关联：将此描述与照片解除关联",
   "imageEx.link.unlinkConfirmed": "此关联已确认。要取消关联吗？这张照片的特征将消失；文本会回到未关联的描述中，这样你就可以把它放到另一张照片上。",
   "imageEx.link.chooseOther": "选择其他描述…（当前描述将变为未关联片段）",
-  "imageEx.link.looseNotSaved": "未关联片段不会被保存：请在离开此页面前将它们关联到照片，或稍后重新上传文档。"
+  "imageEx.link.looseNotSaved": "未关联片段不会被保存：请在离开此页面前将它们关联到照片，或稍后重新上传文档。",
+  "imageEx.link.suggestionTitle": "LEAP 的建议",
+  "imageEx.link.suggestionReplace": "LEAP 的建议（替换当前描述）",
+  "imageEx.link.takeConfirm": "正确，确认",
+  "imageEx.link.take": "采用，暂不确认",
+  "imageEx.link.rejectSuggestion": "不正确",
+  "imageEx.link.takeAll": "采用并确认所有建议（{n}）"
 }

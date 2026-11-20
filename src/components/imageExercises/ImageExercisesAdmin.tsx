@@ -13,6 +13,7 @@ import {
 } from '../../services/image-exercises.service';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
+type Loose = DescriptionResult['unmatchedSections'][number];
 const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
 /** Vanaf zoveel kenmerken vragen we de docent te kijken wat echt kern is. */
 const LARGE_BOARD = 25;
@@ -31,7 +32,9 @@ export function ImageExercisesAdmin() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [loose, setLoose] = useState<DescriptionResult['unmatchedSections']>([]);
-  const [suggested, setSuggested] = useState<Record<string, number>>({});
+  // Voorstel van LEAP per foto: verwijst naar een los stuk tekst (niet naar een index,
+  // want de lijst losse stukken verandert als je er een koppelt).
+  const [suggested, setSuggested] = useState<Record<string, Loose>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<ImageExercise | null>(null);
   const [onlyDoubt, setOnlyDoubt] = useState(false);
@@ -118,9 +121,10 @@ export function ImageExercisesAdmin() {
   });
 
   const suggest = () => run('suggest', async () => {
-    const r = await suggestImageMatches(courseId, loose.map((s) => `${s.heading}\n${s.text}`));
-    const map: Record<string, number> = {};
-    for (const s of r.suggestions) map[s.id] = s.section;
+    const snapshot = [...loose];
+    const r = await suggestImageMatches(courseId, snapshot.map((s) => `${s.heading}\n${s.text}`));
+    const map: Record<string, Loose> = {};
+    for (const s of r.suggestions) if (snapshot[s.section]) map[s.id] = snapshot[s.section];
     setSuggested(map);
     setNotice(t('imageEx.link.suggestDone', { n: String(r.suggestions.length) }));
   });
@@ -139,11 +143,28 @@ export function ImageExercisesAdmin() {
     const sec = loose[idx];
     if (!sec) return;
     const previous = e.description.trim() ? asLoose(e) : null;
-    void assignText(e, sec.text, suggested[e.id] === idx ? 'suggested' : 'manual').then(() => {
-      setLoose((l) => [...l.filter((_, i) => i !== idx), ...(previous ? [previous] : [])]);
-      setSuggested({});
+    void assignText(e, sec.text, suggested[e.id] === sec ? 'suggested' : 'manual').then(() => {
+      setLoose((l) => [...l.filter((x) => x !== sec), ...(previous ? [previous] : [])]);
+      setSuggested((m) => Object.fromEntries(Object.entries(m).filter(([id, v]) => id !== e.id && v !== sec)));
     });
   };
+
+  // Een voorstel van LEAP in één klik overnemen, en desgewenst meteen bevestigen.
+  const takeSuggestions = (ids: string[], confirmToo: boolean) => run(`take-${ids.join(',')}`, async () => {
+    const taken: Loose[] = [];
+    const done: string[] = [];
+    for (const id of ids) {
+      const sec = suggested[id];
+      if (!sec) continue;
+      await updateImageExercise(courseId, id, { description: sec.text, matchSource: 'suggested' });
+      taken.push(sec);
+      done.push(id);
+    }
+    if (confirmToo && done.length) await confirmImageExercises(courseId, done);
+    setLoose((l) => l.filter((x) => !taken.includes(x)));
+    setSuggested((m) => Object.fromEntries(Object.entries(m).filter(([id]) => !ids.includes(id))));
+    await load();
+  });
 
   // Koppeling ongedaan maken: de foto heeft weer geen beschrijving, de tekst wordt een los stuk.
   const unlink = (e: ImageExercise) => {
@@ -215,6 +236,11 @@ export function ImageExercisesAdmin() {
                   {busy === 'suggest' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{t('imageEx.link.suggest')}
                 </button>
               )}
+              {Object.keys(suggested).length > 0 && (
+                <button type="button" onClick={() => void takeSuggestions(Object.keys(suggested), true)} disabled={!!busy} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50" data-testid="button-take-all-suggestions">
+                  <Sparkles className="h-4 w-4" />{t('imageEx.link.takeAll', { n: String(Object.keys(suggested).length) })}
+                </button>
+              )}
               {linked.length > 0 && (
                 <button type="button" onClick={() => void confirm(linked.map((e) => e.id))} disabled={!!busy} className="btn-primary inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold disabled:opacity-50" data-testid="button-confirm-all">
                   <Check className="h-4 w-4" />{t('imageEx.link.confirmAll', { n: String(linked.length) })}
@@ -247,10 +273,21 @@ export function ImageExercisesAdmin() {
                     ) : (
                       <>
                         {e.description.trim() && <p className="line-clamp-4 whitespace-pre-wrap text-sm text-gray-700">{e.description}</p>}
+                        {sug && (
+                          <div className="space-y-1.5 rounded-lg border border-violet-200 bg-violet-50 p-2.5 text-sm" data-testid={`suggestion-${e.id}`}>
+                            <p className="flex items-center gap-1.5 text-xs font-semibold text-violet-800"><Sparkles className="h-3.5 w-3.5" />{e.description.trim() ? t('imageEx.link.suggestionReplace') : t('imageEx.link.suggestionTitle')}</p>
+                            <p className="line-clamp-3 whitespace-pre-wrap text-gray-700">{sug.heading ? `${sug.heading}: ` : ''}{sug.text}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button type="button" onClick={() => void takeSuggestions([e.id], true)} disabled={!!busy} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-50" data-testid={`button-take-confirm-${e.id}`}><Check className="h-3.5 w-3.5" />{t('imageEx.link.takeConfirm')}</button>
+                              <button type="button" onClick={() => void takeSuggestions([e.id], false)} disabled={!!busy} className="rounded-lg border border-violet-300 bg-white px-2.5 py-1 text-xs text-violet-800 disabled:opacity-50" data-testid={`button-take-${e.id}`}>{t('imageEx.link.take')}</button>
+                              <button type="button" onClick={() => setSuggested((m) => without(m, e.id))} className="px-1 text-xs text-gray-600 underline" data-testid={`button-reject-suggestion-${e.id}`}>{t('imageEx.link.rejectSuggestion')}</button>
+                            </div>
+                          </div>
+                        )}
                         {loose.length > 0 && (
                           <select className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm" value="" onChange={(ev) => assignLoose(e, Number(ev.target.value))} aria-label={t('imageEx.link.choose')} data-testid={`select-description-${e.id}`}>
-                            <option value="" disabled>{sug !== undefined ? t('imageEx.link.suggestion', { heading: loose[sug]?.heading || '' }) : e.description.trim() ? t('imageEx.link.chooseOther') : t('imageEx.link.choose')}</option>
-                            {loose.map((s, i) => <option key={i} value={i}>{i === sug ? '★ ' : ''}{s.heading}: {s.text.slice(0, 80)}</option>)}
+                            <option value="" disabled>{e.description.trim() ? t('imageEx.link.chooseOther') : t('imageEx.link.choose')}</option>
+                            {loose.map((s, i) => <option key={i} value={i}>{s === sug ? '★ ' : ''}{s.heading}: {s.text.slice(0, 80)}</option>)}
                           </select>
                         )}
                       </>
