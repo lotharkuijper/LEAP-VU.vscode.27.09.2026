@@ -3680,7 +3680,6 @@
   "imagePlay.core": "要点",
   "imagePlay.bonus": "额外内容",
   "imagePlay.coreDone": "所有要点都找到了！你还能找到额外内容吗？或者结束来查看全部内容。",
-  "imagePlay.allDone": "全部都找到了，做得很好！结束后查看完整描述。",
   "imagePlay.legend.full": "已找到",
   "imagePlay.legend.half": "一半：完成它",
   "imagePlay.legend.hint": "借助提示",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "你自己找到了 {self} 个，共 {total} 个。",
   "imagePlay.teacherDescription": "你的老师提供的完整描述",
   "imagePlay.restart": "重新尝试",
-  "imagePlay.next": "下一张照片"
+  "imagePlay.next": "下一张照片",
+  "imagePlay.youSaid": "你：",
+  "imagePlay.autoFinished": "所有内容都已找到或查看：练习已完成。下面你可以看到所有可查看的内容。",
+  "imagePlay.toJournal": "添加到我的学习日志",
+  "imagePlay.journalSaved": "已在你的学习日志中：查看"
 }

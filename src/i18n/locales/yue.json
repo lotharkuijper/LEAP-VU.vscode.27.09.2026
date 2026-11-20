@@ -3680,7 +3680,6 @@
   "imagePlay.core": "主要內容",
   "imagePlay.bonus": "額外",
   "imagePlay.coreDone": "已搵到所有主要內容！你仲睇唔睇到額外嘢？或者完成，睇返全部內容。",
-  "imagePlay.allDone": "全部搵晒，做得好！完成後就可以睇到完整描述。",
   "imagePlay.legend.full": "已搵到",
   "imagePlay.legend.half": "一半：完成佢",
   "imagePlay.legend.hint": "用提示搵到",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "你自己搵到 {self} 個，總共有 {total} 個。",
   "imagePlay.teacherDescription": "你老師嘅完整描述",
   "imagePlay.restart": "再試一次",
-  "imagePlay.next": "下一張相"
+  "imagePlay.next": "下一張相",
+  "imagePlay.youSaid": "你講：",
+  "imagePlay.autoFinished": "所有嘢都搵到或睇過：練習已完成。以下係全部可睇到嘅內容。",
+  "imagePlay.toJournal": "放入我嘅學習日誌",
+  "imagePlay.journalSaved": "已儲存到你嘅學習日誌：查看"
 }

@@ -3680,7 +3680,6 @@
   "imagePlay.core": "मुख्य बातें",
   "imagePlay.bonus": "अतिरिक्त",
   "imagePlay.coreDone": "सभी मुख्य बातें मिल गईं! क्या तुम्हें कुछ अतिरिक्त भी दिख रहा है? या सब कुछ देखने के लिए पूरा करो।",
-  "imagePlay.allDone": "सब कुछ मिल गया, बहुत अच्छा! पूरा विवरण देखने के लिए समाप्त करो।",
   "imagePlay.legend.full": "मिल गया",
   "imagePlay.legend.half": "आधा: इसे पूरा करो",
   "imagePlay.legend.hint": "एक संकेत के साथ",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "तुमने {total} में से {self} खुद ढूँढ़े।",
   "imagePlay.teacherDescription": "तुम्हारे शिक्षक का पूरा वर्णन",
   "imagePlay.restart": "फिर से कोशिश करो",
-  "imagePlay.next": "अगली फोटो"
+  "imagePlay.next": "अगली फोटो",
+  "imagePlay.youSaid": "तुम:",
+  "imagePlay.autoFinished": "सब कुछ मिल गया या देख लिया गया है: अभ्यास पूरा हो गया है। नीचे तुम देख सकते हो कि क्या-क्या देखने को था।",
+  "imagePlay.toJournal": "मेरी सीखने की डायरी में डालो",
+  "imagePlay.journalSaved": "तुम्हारी सीखने की डायरी में है: देखें"
 }

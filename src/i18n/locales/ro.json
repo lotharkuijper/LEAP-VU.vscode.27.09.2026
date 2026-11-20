@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Aspecte principale",
   "imagePlay.bonus": "Extra",
   "imagePlay.coreDone": "Ai găsit toate aspectele principale! Vezi și ceva în plus? Sau finalizează ca să vezi tot.",
-  "imagePlay.allDone": "Ai găsit totul, bravo! Finalizează ca să vezi descrierea completă.",
   "imagePlay.legend.full": "găsit",
   "imagePlay.legend.half": "pe jumătate: termină",
   "imagePlay.legend.hint": "cu un indiciu",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Ai găsit {self} singur, din {total}.",
   "imagePlay.teacherDescription": "Descrierea completă a profesorului tău",
   "imagePlay.restart": "Încearcă din nou",
-  "imagePlay.next": "Fotografia următoare"
+  "imagePlay.next": "Fotografia următoare",
+  "imagePlay.youSaid": "Tu:",
+  "imagePlay.autoFinished": "Totul a fost găsit sau vizualizat: exercițiul este finalizat. Mai jos vezi tot ce se putea vedea.",
+  "imagePlay.toJournal": "Adaugă în jurnalul meu de învățare",
+  "imagePlay.journalSaved": "Este în jurnalul tău de învățare: vezi"
 }

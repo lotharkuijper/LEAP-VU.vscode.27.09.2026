@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Pontos principais",
   "imagePlay.bonus": "Extra",
   "imagePlay.coreDone": "Encontraste todos os pontos principais! Também vês extras? Ou termina para veres tudo.",
-  "imagePlay.allDone": "Encontraste tudo, muito bem! Termina para veres a descrição completa.",
   "imagePlay.legend.full": "encontrado",
   "imagePlay.legend.half": "metade: completa",
   "imagePlay.legend.hint": "com uma dica",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Encontraste {self} sozinho, de {total}.",
   "imagePlay.teacherDescription": "A descrição completa do teu professor",
   "imagePlay.restart": "Tentar novamente",
-  "imagePlay.next": "Fotografia seguinte"
+  "imagePlay.next": "Fotografia seguinte",
+  "imagePlay.youSaid": "Tu:",
+  "imagePlay.autoFinished": "Tudo foi encontrado ou visto: o exercício está concluído. Abaixo podes ver tudo o que havia para ver.",
+  "imagePlay.toJournal": "Adicionar ao meu diário de aprendizagem",
+  "imagePlay.journalSaved": "Está no teu diário de aprendizagem: ver"
 }

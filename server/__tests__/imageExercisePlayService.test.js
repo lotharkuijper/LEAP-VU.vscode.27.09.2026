@@ -2,7 +2,7 @@
 // Belangrijkste eis: de student krijgt nooit de beschrijving of de labels van
 // kenmerken die nog niet gevonden zijn, tot hij of zij afrondt.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { listForStudent, startAttempt, answer, hint, finish, restartAttempt } from '../imageExercises/playService.js';
+import { listForStudent, startAttempt, answer, hint, finish, restartAttempt, saveToJournal } from '../imageExercises/playService.js';
 
 let tables;
 let seq = 0;
@@ -145,5 +145,46 @@ describe('speelbord voor de student', () => {
     await answer(db(), async () => ({ results: [{ key: 'k1', state: 'full', quote: 'humus' }], feedback: 'Goed.' }), { ...base, text: 'humus' });
     const other = await startAttempt(db(), { ...base, userId: 'stud2' });
     expect(other.board.tiles).toEqual([]);
+  });
+});
+
+describe('vanzelf afronden en het leerdagboek', () => {
+  it('is alles gevonden, dan rondt de oefening vanzelf af en is alles zichtbaar', async () => {
+    const llm = async (m) => (m[0].content.includes('terugblik')
+      ? { closing: 'Knap gedaan.' }
+      : { results: [{ key: 'k1', state: 'full', quote: 'gelige laag' }, { key: 'k2', state: 'full', quote: 'witte draden' }], feedback: 'Mooi.' });
+    const s = await answer(db(), llm, { ...base, text: 'Een gelige laag en witte draden.' });
+    expect(s.finished).toBe(true);
+    expect(s.autoFinished).toBe(true);
+    expect(s.description).toBe('GEHEIME BESCHRIJVING');
+    expect(s.turns.at(-1)).toMatchObject({ kind: 'closing', text: 'Knap gedaan.' });
+  });
+
+  it('na de laatste onthulling met een hint rondt de oefening ook vanzelf af', async () => {
+    const llm = async (m) => (m[0].content.includes('terugblik') ? { closing: 'Klaar.' } : { hint: 'Kijk onderin.' });
+    let s;
+    for (let i = 0; i < 6; i++) s = await hint(db(), llm, base);
+    expect(s.finished).toBe(true);
+    expect(s.board.tiles.every((t) => t.how === 'hint')).toBe(true);
+  });
+
+  it('zet de bevindingen één keer in het leerdagboek (Ik leg uit), pas na afronden', async () => {
+    const toFields = (raw) => ({ content: raw, sections: null });
+    const llmText = async () => '### SUMMARY\nJe bekeek een bodem.';
+    await expect(saveToJournal(db(), llmText, { ...base, toFields })).rejects.toMatchObject({ code: 'notFinished' });
+    await finish(db(), async () => ({ closing: 'Goed.' }), base);
+    const r = await saveToJournal(db(), llmText, { ...base, toFields });
+    expect(r.journalEntryId).toBeTruthy();
+    expect(tables.learning_journal_entries[0]).toMatchObject({ user_id: 'stud1', title: 'Wat zie ik? Foto 1', activity_type: 'explanation_reflection', course_id: C });
+    await expect(saveToJournal(db(), llmText, { ...base, toFields })).rejects.toMatchObject({ code: 'alreadySaved' });
+    expect((await startAttempt(db(), base)).journalSaved).toBe(true);
+  });
+});
+
+describe('leerdagboek uit in de cursus', () => {
+  it('schrijft niets in het leerdagboek', async () => {
+    await finish(db(), async () => ({ closing: 'Goed.' }), base);
+    await expect(saveToJournal(db(), async () => 'x', { ...base, toFields: (r) => ({ content: r }), journalOn: false })).rejects.toMatchObject({ code: 'feature_disabled' });
+    expect(tables.learning_journal_entries || []).toEqual([]);
   });
 });

@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Ana noktalar",
   "imagePlay.bonus": "Ekstra",
   "imagePlay.coreDone": "Tüm ana noktaları buldun! Ekstraları da görüyor musun? Ya da bitirip her şeyi görüntüle.",
-  "imagePlay.allDone": "Her şeyi buldun, harika! Tüm açıklamayı görmek için bitir.",
   "imagePlay.legend.full": "bulundu",
   "imagePlay.legend.half": "yarım: tamamla",
   "imagePlay.legend.hint": "ipucuyla",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "{total} öğeden {self} tanesini kendin buldun.",
   "imagePlay.teacherDescription": "Öğretmeninin tam açıklaması",
   "imagePlay.restart": "Tekrar dene",
-  "imagePlay.next": "Sonraki fotoğraf"
+  "imagePlay.next": "Sonraki fotoğraf",
+  "imagePlay.youSaid": "Sen:",
+  "imagePlay.autoFinished": "Her şey bulundu veya incelendi: alıştırma tamamlandı. Aşağıda görülebilecek her şeyi görüyorsun.",
+  "imagePlay.toJournal": "Öğrenme günlüğüme ekle",
+  "imagePlay.journalSaved": "Öğrenme günlüğünde: görüntüle"
 }

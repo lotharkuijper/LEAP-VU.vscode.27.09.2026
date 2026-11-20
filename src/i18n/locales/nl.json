@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Hoofdzaken",
   "imagePlay.bonus": "Extra",
   "imagePlay.coreDone": "Alle hoofdzaken gevonden! Zie je ook nog extra’s? Of rond af om alles te bekijken.",
-  "imagePlay.allDone": "Alles gevonden, knap gedaan! Rond af om de hele beschrijving te zien.",
   "imagePlay.legend.full": "gevonden",
   "imagePlay.legend.half": "half: maak het af",
   "imagePlay.legend.hint": "met een hint",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Je vond er {self} zelf, van de {total}.",
   "imagePlay.teacherDescription": "De volledige beschrijving van je docent",
   "imagePlay.restart": "Opnieuw proberen",
-  "imagePlay.next": "Volgende foto"
+  "imagePlay.next": "Volgende foto",
+  "imagePlay.youSaid": "Jij:",
+  "imagePlay.autoFinished": "Alles is gevonden of bekeken: de oefening is afgerond. Hieronder zie je wat er allemaal te zien was.",
+  "imagePlay.toJournal": "Zet in mijn leerdagboek",
+  "imagePlay.journalSaved": "Staat in je leerdagboek: bekijken"
 }

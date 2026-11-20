@@ -3680,7 +3680,6 @@
   "imagePlay.core": "主要項目",
   "imagePlay.bonus": "追加",
   "imagePlay.coreDone": "すべての主要項目を見つけたよ！追加項目も見つけられる？それとも終了して全部見てみる？",
-  "imagePlay.allDone": "全部見つけたね、よくできました！終了して説明全体を見よう。",
   "imagePlay.legend.full": "見つけた",
   "imagePlay.legend.half": "半分：完成させて",
   "imagePlay.legend.hint": "ヒントあり",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "自分で見つけたのは {total} 個中 {self} 個だったよ。",
   "imagePlay.teacherDescription": "先生による完全な説明",
   "imagePlay.restart": "もう一度試す",
-  "imagePlay.next": "次の写真"
+  "imagePlay.next": "次の写真",
+  "imagePlay.youSaid": "あなた:",
+  "imagePlay.autoFinished": "すべて見つけた、または確認したため、演習は完了です。以下で何が見られたかを確認できます。",
+  "imagePlay.toJournal": "学習日誌に追加",
+  "imagePlay.journalSaved": "学習日誌に保存済み: 表示"
 }

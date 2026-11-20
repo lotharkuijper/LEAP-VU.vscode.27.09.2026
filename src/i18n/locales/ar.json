@@ -3680,7 +3680,6 @@
   "imagePlay.core": "النقاط الرئيسية",
   "imagePlay.bonus": "إضافي",
   "imagePlay.coreDone": "لقد وجدتَ كل النقاط الرئيسية! هل ترى أيضًا أشياء إضافية؟ أو أنهِ لتعرض كل شيء.",
-  "imagePlay.allDone": "لقد وجدتَ كل شيء، أحسنت! أنهِ لترى الوصف الكامل.",
   "imagePlay.legend.full": "تم العثور عليه",
   "imagePlay.legend.half": "نصف: أكمله",
   "imagePlay.legend.hint": "بمساعدة تلميح",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "وجدتَ {self} بنفسك، من أصل {total}.",
   "imagePlay.teacherDescription": "الوصف الكامل من مدرسك",
   "imagePlay.restart": "حاول مرة أخرى",
-  "imagePlay.next": "الصورة التالية"
+  "imagePlay.next": "الصورة التالية",
+  "imagePlay.youSaid": "أنت:",
+  "imagePlay.autoFinished": "تم العثور على كل شيء أو مشاهدته: اكتمل التمرين. في الأسفل ترى كل ما كان يمكن رؤيته.",
+  "imagePlay.toJournal": "أضف إلى يوميات التعلم الخاصة بي",
+  "imagePlay.journalSaved": "موجود في يوميات التعلم الخاصة بك: عرض"
 }
