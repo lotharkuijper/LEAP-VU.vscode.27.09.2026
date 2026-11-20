@@ -32,6 +32,7 @@ export const EXPORT_SOURCES = [
   { table: 'quiz_sessions', column: 'user_id', label: 'quizzen (door de server nagekeken)' },
   // Alleen eigen antwoorden, feedback en voortgang; kenmerken staan erin als id, niet als tekst.
   { table: 'image_exercise_attempts', column: 'user_id', label: 'beeldoefeningen (wat je zag en de feedback)' },
+  { table: 'access_requests', column: 'user_id', label: 'vragen om toegang tot cursussen' },
   { table: 'conversations', column: 'user_id', label: 'chatgesprekken' },
   { table: 'project_group_members', column: 'user_id', label: 'projectgroepen' },
   { table: 'group_chat_messages', column: 'user_id', label: 'eigen berichten in groepschats' },

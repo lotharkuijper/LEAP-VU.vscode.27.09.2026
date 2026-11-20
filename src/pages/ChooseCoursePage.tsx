@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useActiveCourse } from "../contexts/ActiveCourseContext";
 import { useCourseAccess } from "../contexts/CourseAccessContext";
 import { supabase } from "../lib/supabase";
+import { NoCourseWelcome } from "../components/access/NoCourseWelcome";
 import { activateEnrollments, allowsOpenRegistration, fetchOpenCourses, joinCourse, leaveCourse, type OpenCourse } from "../services/enrollment.service";
 
 // Cursuskeuze. Toegang = lidmaatschap (server/courses/enrollment.js): de lijst toont de
@@ -134,7 +135,9 @@ export default function ChooseCoursePage() {
         <section className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(56,189,248,0.25)] ring-1 ring-sky-100/60 backdrop-blur-md md:p-8">
           <h1 className="text-3xl font-bold tracking-tight text-brand-800">{t('chooseCourse.title')}</h1>
           {courses.length === 0 ? (
-            <p className="mt-2 text-slate-600" data-testid="text-no-courses">{t('chooseCourse.noCourses')}</p>
+            <div className="mt-4">
+              <NoCourseWelcome fallback={<p className="text-slate-600" data-testid="text-no-courses">{t('chooseCourse.noCourses')}</p>} />
+            </div>
           ) : (
             <>
               <p className="mb-6 mt-1 text-slate-600">{t('chooseCourse.subtitle')}</p>

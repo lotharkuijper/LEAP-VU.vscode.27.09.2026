@@ -68,6 +68,8 @@ export const ADMIN_SECTIONS = [
     what: 'Alle cursussen van LEAP: cursus aanmaken (met automatisch een cursusmap met submappen RAG en Projectdata), naam en beschrijving wijzigen, per cursus de toegangsroute kiezen, activeren of deactiveren en verwijderen. Per cursus brengen de knoppen Leden en Cursus je naar die tabbladen, met die cursus als actieve cursus.' },
   { tab: 'users', labelKey: 'admin.tabs.users', audience: 'admin', helpGroups: [],
     what: 'Alle gebruikers van LEAP en hun rol.' },
+  { tab: 'access_requests', labelKey: 'admin.tabs.accessRequests', audience: 'admin', helpGroups: [],
+    what: 'Aanvragen: medewerkers van de VU en Amsterdam UMC (@vu.nl, @amsterdamumc.nl) kunnen een account aanmaken zonder cursus en de beheerder vragen om toegang, eventueel met de cursussen waarin ze willen meekijken. De beheerder koppelt ze hier aan een cursus als docent of student (de medewerker krijgt een e-mail) en sluit de aanvraag af. De beheerder krijgt bij elke nieuwe aanvraag een e-mail.' },
   { tab: 'messages', labelKey: 'admin.tabs.messages', audience: 'admin', helpGroups: ['systemMessages'],
     what: 'Systeemberichten aan alle gebruikers, alle studenten, alle docenten of de leden van één cursus. Ze staan op het Dashboard tot iemand ze wegklikt of tot de einddatum; bij "Dashboard" in het menu staat zolang een rood uitroepteken. Eenrichtingsverkeer; de beheerder ziet alleen totalen (ontvangers, weggeklikt).' },
   { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: ['chatAttachments', 'tokenBudget', 'canvasPlatforms'],

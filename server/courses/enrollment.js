@@ -18,6 +18,12 @@
 // student.vu.nl) kunnen niet via open registratie: VU-studenten komen straks
 // via Canvas. Wie als VU-student toch een open cursus wil volgen, gebruikt een
 // privé-adres. Dezelfde regel geldt voor zelf aansluiten bij een open cursus.
+//
+// Medewerkers (2026-11-22): een adres van precies een medewerkersdomein (vu.nl,
+// amsterdamumc.nl; niet student.vu.nl) mag zich registreren ZONDER cursus. Zo'n
+// medewerker vraagt daarna de beheerder om toegang (server/access/accessRequests.js).
+// Medewerkers krijgen geen tokenbudget voor open accounts: ze bevestigen hun
+// mailbox van de instelling.
 
 export const ENROLLMENT_MODES = ['closed', 'canvas', 'open', 'canvas_open'];
 export const DEFAULT_ENROLLMENT_MODE = 'open';
@@ -27,6 +33,17 @@ export const MIN_PASSWORD_LENGTH = 6;
 /** Domeinen die niet via open registratie mogen (env OPEN_REG_BLOCKED_DOMAINS, kommagescheiden). */
 export function blockedDomains(env = process.env) {
   return String(env.OPEN_REG_BLOCKED_DOMAINS || 'vu.nl').split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
+}
+
+/** Medewerkersdomeinen (env STAFF_EMAIL_DOMAINS, kommagescheiden). Precies het domein, geen subdomeinen. */
+export function staffDomains(env = process.env) {
+  return String(env.STAFF_EMAIL_DOMAINS || 'vu.nl,amsterdamumc.nl').split(',').map((d) => d.trim().toLowerCase()).filter(Boolean);
+}
+
+/** Pure: is dit het adres van een medewerker (vu.nl, amsterdamumc.nl; niet student.vu.nl)? */
+export function isStaffEmail(email, domains = staffDomains()) {
+  const at = String(email || '').trim().toLowerCase().split('@');
+  return at.length === 2 && !!at[1] && domains.includes(at[1]);
 }
 
 /** Pure: is dit een geldige toegangsroute? */
@@ -65,20 +82,21 @@ export function isDisposableEmail(mail) {
   return DISPOSABLE_DOMAINS.some((d) => domain === d || domain.endsWith('.' + d));
 }
 
-export function validateRegistration({ fullName, email, password, courseIds }, openCourseIds, domains = blockedDomains()) {
+export function validateRegistration({ fullName, email, password, courseIds }, openCourseIds, domains = blockedDomains(), staff = staffDomains()) {
   const name = String(fullName || '').trim();
   const mail = String(email || '').trim().toLowerCase();
   if (!name) return { ok: false, code: 'nameRequired' };
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return { ok: false, code: 'invalidEmail' };
-  if (isBlockedEmail(mail, domains)) return { ok: false, code: 'vuEmail' };
+  const isStaff = isStaffEmail(mail, staff);
+  if (!isStaff && isBlockedEmail(mail, domains)) return { ok: false, code: 'vuEmail' };
   if (isDisposableEmail(mail)) return { ok: false, code: 'disposableEmail' };
   if (String(password || '').length < MIN_PASSWORD_LENGTH) return { ok: false, code: 'passwordTooShort' };
   const wanted = [...new Set((Array.isArray(courseIds) ? courseIds : []).map(String))];
-  if (wanted.length === 0) return { ok: false, code: 'courseRequired' };
+  if (wanted.length === 0 && !isStaff) return { ok: false, code: 'courseRequired' };
   if (wanted.length > MAX_COURSES_AT_SIGNUP) return { ok: false, code: 'tooManyCourses' };
   const open = new Set(openCourseIds);
   if (wanted.some((id) => !open.has(id))) return { ok: false, code: 'courseNotOpen' };
-  return { ok: true, name, email: mail, courseIds: wanted };
+  return { ok: true, name, email: mail, courseIds: wanted, staff: isStaff };
 }
 
 /** Eenvoudige teller per sleutel (IP) en venster; geheugen van dit ene proces (één replica). */
@@ -98,7 +116,7 @@ export function createRateLimiter({ limit = 5, windowMs = 60 * 60 * 1000 } = {})
 const MESSAGES = {
   nameRequired: 'Vul je naam in',
   invalidEmail: 'Vul een geldig e-mailadres in',
-  vuEmail: 'Met een VU-adres kun je je hier niet aanmelden. VU-studenten komen via Canvas in hun cursus. Wil je een open cursus volgen, gebruik dan een privé-e-mailadres.',
+  vuEmail: 'Met een studentadres van de VU kun je je hier niet aanmelden. VU-studenten komen via Canvas in hun cursus. Wil je een open cursus volgen, gebruik dan een privé-e-mailadres.',
   passwordTooShort: 'Je wachtwoord moet minstens 6 tekens hebben',
   courseRequired: 'Kies minstens één cursus',
   tooManyCourses: 'Kies hoogstens 10 cursussen',
@@ -161,11 +179,13 @@ export function registerEnrollmentRoutes(app, deps) {
       if (!user || (Array.isArray(user.identities) && user.identities.length === 0)) {
         return res.status(409).json({ error: 'Er bestaat al een account met dit e-mailadres. Log in en kies daarna "Cursus toevoegen".', code: 'alreadyRegistered' });
       }
-      const rows = v.courseIds.map((courseId) => ({ user_id: user.id, course_id: courseId }));
-      const { error: pErr } = await db.from('pending_course_enrollments').upsert(rows, { onConflict: 'user_id,course_id', ignoreDuplicates: true });
-      if (pErr) console.error('[open registratie] aanmelding in afwachting niet bewaard:', pErr.message);
-      // Tokenbudget: dit account kwam via open registratie binnen.
-      await deps.onOpenRegistration?.(user.id);
+      if (v.courseIds.length) {
+        const rows = v.courseIds.map((courseId) => ({ user_id: user.id, course_id: courseId }));
+        const { error: pErr } = await db.from('pending_course_enrollments').upsert(rows, { onConflict: 'user_id,course_id', ignoreDuplicates: true });
+        if (pErr) console.error('[open registratie] aanmelding in afwachting niet bewaard:', pErr.message);
+      }
+      // Tokenbudget: dit account kwam via open registratie binnen (medewerkers niet).
+      if (!v.staff) await deps.onOpenRegistration?.(user.id);
       return res.json({ ok: true, needsConfirmation: !data.session });
     } catch (err) {
       return res.status(500).json({ error: err?.message || String(err) });
@@ -209,7 +229,7 @@ export function registerEnrollmentRoutes(app, deps) {
     try {
       const { data: course } = await db.from('courses').select('id, is_active, student_visible, enrollment_mode').eq('id', req.params.courseId).maybeSingle();
       if (!isSelfJoinable(course)) return res.status(403).json({ error: 'Deze cursus is niet open voor aanmelding', code: 'courseNotOpen' });
-      if (!isAdminProfile(auth.profile) && isBlockedEmail(auth.user.email)) {
+      if (!isAdminProfile(auth.profile) && !isStaffEmail(auth.user.email) && isBlockedEmail(auth.user.email)) {
         return res.status(403).json({ error: MESSAGES.vuEmail, code: 'vuEmail' });
       }
       const { error } = await db.from('course_members').upsert(
