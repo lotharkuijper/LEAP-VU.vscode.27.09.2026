@@ -111,6 +111,74 @@ export function splitDescriptions(text, imageNames = []) {
 }
 
 /**
+ * Bepaalt hoe een geüpload document aan de foto's gekoppeld wordt. LEAP probeert,
+ * in deze volgorde, en weigert nooit een document:
+ *  1. 'headings'  kopjes per foto (nummer of bestandsnaam);
+ *  2. 'mentions'  alinea's waarin de bestandsnaam van een foto staat;
+ *  3. 'filename'  de naam van het document zelf hoort bij een foto (art-nouveau.docx ↔ art-nouveau.png);
+ *  4. 'single'    er wacht maar één foto op een beschrijving: de hele tekst is een voorstel daarvoor;
+ *  5. 'ask'       anders: de hele tekst als één los stuk; de docent kiest de foto.
+ * De docent bevestigt altijd zelf.
+ * @param {string} text
+ * @param {{ filename?: string, images: Array<{id: string, filename: string}>, open: Array<{id: string, filename: string, description?: string|null}> }} p
+ */
+export function planDocument(text, { filename = '', images, open }) {
+  const names = images.map((i) => i.filename);
+  let method = 'headings';
+  let { sections } = splitDescriptions(text, names);
+  if (!sections.length) { method = 'mentions'; ({ sections } = splitByMentions(text, names)); }
+  if (sections.length) return { method, sections, ...matchDescriptions(open, sections) };
+
+  const whole = String(text || '').trim();
+  if (!whole) return { method: 'empty', sections: [], matches: [], unmatchedSections: [], unmatchedImages: open.map((o) => o.id) };
+  const docName = String(filename || '');
+  const section = { heading: docName, number: docName ? numberInName(docName) : null, stem: docName ? normalizeStem(docName) : null, text: whole };
+  if (docName) {
+    const byName = matchDescriptions(open, [section]);
+    if (byName.matches.length && byName.matches[0].source !== 'order') return { method: 'filename', sections: [section], ...byName };
+  }
+  const waiting = open.filter((o) => !(o.description || '').trim());
+  const only = waiting.length === 1 ? waiting[0] : open.length === 1 ? open[0] : null;
+  if (only) {
+    return { method: 'single', sections: [section], matches: [{ imageId: only.id, section: 0, source: 'suggested' }], unmatchedSections: [], unmatchedImages: open.filter((o) => o.id !== only.id).map((o) => o.id) };
+  }
+  return { method: 'ask', sections: [section], matches: [], unmatchedSections: [0], unmatchedImages: open.map((o) => o.id) };
+}
+
+/**
+ * Geen kopjes? Dan zoekt LEAP naar alinea's waarin de volledige bestandsnaam van een
+ * foto staat (met extensie, bv. "… zie alzheimer-03.jpg …"). Zo'n alinea begint de
+ * beschrijving van die foto; alinea's zonder naam erna horen er nog bij. Een
+ * bestandsnaam mét extensie is een duidelijke verwijzing, anders dan een los woord.
+ * @returns {{ sections: Array<{heading: string, number: number|null, stem: string|null, text: string}>, preamble: string }}
+ */
+export function splitByMentions(text, imageNames = []) {
+  const names = [...new Set(imageNames.filter((n) => /\.[a-z0-9]{2,5}$/i.test(n || '')))]
+    .sort((a, b) => b.length - a.length);
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const res = names.map((n) => ({ name: n, re: new RegExp(`(^|[^\\p{L}\\p{N}])${esc(n)}(?![\\p{L}\\p{N}])`, 'iu') }));
+  const paragraphs = String(text || '').replace(/\r\n?/g, '\n').split(/\n\s*\n/);
+  const sections = [];
+  const preamble = [];
+  let cur = null;
+  for (const p of paragraphs) {
+    const hit = res.find((r) => r.re.test(p));
+    if (hit && (!cur || cur.name !== hit.name)) {
+      cur = { name: hit.name, parts: [p] };
+      sections.push(cur);
+    } else if (cur) {
+      cur.parts.push(p);
+    } else {
+      preamble.push(p);
+    }
+  }
+  return {
+    sections: sections.map((s) => ({ heading: s.name, number: numberInName(s.name), stem: normalizeStem(s.name), text: s.parts.join('\n\n').trim() })).filter((s) => s.text),
+    preamble: preamble.join('\n\n').trim(),
+  };
+}
+
+/**
  * Koppelt beschrijvingen aan foto's: eerst op naam, dan op nummer, dan (alleen als
  * geen enkel overgebleven stuk een naam of nummer heeft en de aantallen gelijk zijn)
  * op volgorde. De docent bevestigt altijd zelf.

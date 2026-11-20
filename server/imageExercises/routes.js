@@ -112,7 +112,8 @@ export function registerImageExerciseRoutes(app) {
   // Beschrijvingen: een document (base64) of geplakte tekst.
   app.post(`${base}/descriptions`, async (req, res) => {
     if (!(await staff(req, res))) return;
-    const { filename, data, text } = req.body || {};
+    const { filename, data, text, exerciseId } = req.body || {};
+    if (exerciseId !== undefined && exerciseId !== null && !UUID_RE.test(String(exerciseId))) return res.status(400).json({ error: 'Ongeldige aanvraag' });
     try {
       let content = typeof text === 'string' ? text : '';
       if (!content && typeof data === 'string') {
@@ -122,8 +123,9 @@ export function registerImageExerciseRoutes(app) {
         if (buf.length > MAX_DESCRIPTION_DOC_BYTES) return res.status(400).json({ error: 'Het document is te groot (hooguit 10 MB).', code: 'docTooLarge' });
         content = await extractDescriptionText(buf, ext);
       }
-      if (!content.trim()) return res.status(400).json({ error: 'In dit document vond LEAP geen kopjes per foto.', code: 'noSections' });
-      return res.json(await applyDescriptionText(supabaseAdmin, { courseId: req.params.courseId, text: content }));
+      return res.json(await applyDescriptionText(supabaseAdmin, {
+        courseId: req.params.courseId, text: content, filename: typeof filename === 'string' ? filename : '', exerciseId: exerciseId || null,
+      }));
     } catch (err) { return send(res, err, 'beschrijvingen'); }
   });
 

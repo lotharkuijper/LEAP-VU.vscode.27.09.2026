@@ -1,7 +1,36 @@
 // Beeldoefeningen: beschrijvingsdocument opknippen, aan foto's koppelen, en van
 // een vrije beschrijving een kenmerkenlijst maken (zonder iets toe te voegen).
 import { describe, it, expect } from 'vitest';
-import { normalizeStem, numberInName, readHeading, splitDescriptions, matchDescriptions } from '../imageExercises/descriptions.js';
+import { normalizeStem, numberInName, readHeading, splitDescriptions, matchDescriptions, splitByMentions, planDocument } from '../imageExercises/descriptions.js';
+
+describe('koppelen zonder kopjes', () => {
+  const images = [{ id: 'a', filename: 'alzheimer-01.jpg' }, { id: 'b', filename: 'alzheimer-02.jpg' }];
+
+  it('alinea’s waarin de bestandsnaam staat, horen bij die foto; alinea’s erna ook', () => {
+    const text = 'Inleiding.\n\nOp alzheimer-02.jpg zie je plaques.\n\nDaarnaast neuronverlies.\n\nDe coupe (alzheimer-01.jpg) is gezond.';
+    const { sections, preamble } = splitByMentions(text, images.map((i) => i.filename));
+    expect(preamble).toBe('Inleiding.');
+    expect(sections.map((s) => [s.heading, s.text])).toEqual([
+      ['alzheimer-02.jpg', 'Op alzheimer-02.jpg zie je plaques.\n\nDaarnaast neuronverlies.'],
+      ['alzheimer-01.jpg', 'De coupe (alzheimer-01.jpg) is gezond.'],
+    ]);
+    const plan = planDocument(text, { images, open: images });
+    expect(plan.method).toBe('mentions');
+    expect(plan.matches.map((m) => [m.imageId, m.source])).toEqual([['b', 'name'], ['a', 'name']]);
+  });
+
+  it('een losse naam zonder extensie telt niet als verwijzing', () => {
+    expect(splitByMentions('Een typische art-nouveaucompositie.', ['art-nouveau.png']).sections).toEqual([]);
+  });
+
+  it('volgorde: kopjes, verwijzingen, documentnaam, één wachtende foto, anders vragen', () => {
+    expect(planDocument('Foto 2\nIets.', { images, open: images }).method).toBe('headings');
+    expect(planDocument('Tekst.', { filename: 'alzheimer-02.docx', images, open: images })).toMatchObject({ method: 'filename', matches: [{ imageId: 'b', source: 'name' }] });
+    expect(planDocument('Tekst.', { filename: 'x.docx', images, open: [images[0], { ...images[1], description: 'al iets' }] })).toMatchObject({ method: 'single', matches: [{ imageId: 'a', source: 'suggested' }] });
+    expect(planDocument('Tekst.', { filename: 'x.docx', images, open: images })).toMatchObject({ method: 'ask', unmatchedSections: [0] });
+    expect(planDocument('  ', { images, open: images }).method).toBe('empty');
+  });
+});
 import { explicitSections, buildFeatureMessages, parseFeatureResponse, cleanTeacherFeatures } from '../imageExercises/features.js';
 import fs from 'node:fs';
 import path from 'node:path';
