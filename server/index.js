@@ -9,6 +9,7 @@ import { installAnalytics } from './analytics/index.js';
 import { registerAuthEmailHook } from './account/authEmailHook.js';
 import { resolveSofficeBin } from './documents/documentRender.js';
 import { registerEnrollmentRoutes } from './courses/enrollment.js';
+import { registerAccessRequestRoutes } from './access/accessRequests.js';
 import { normalizeLang } from './i18n/languages.js';
 import { applyHttpSecurity } from './lib/httpSecurity.js';
 import { authUser, isLeapAdmin, isStaffForCourse, requireAuthUser } from './lib/auth.js';
@@ -172,6 +173,16 @@ registerEnrollmentRoutes(app, {
   isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
   appOrigin: (req) => process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || req.get('origin') || `${req.protocol}://${req.get('host')}`,
   onOpenRegistration: (userId) => tokenBudget.markOpenAccount(userId),
+});
+
+registerAccessRequestRoutes(app, {
+  supabaseAdmin,
+  requireAuthUser,
+  isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
+  superuserEmail: SUPERUSER_EMAIL,
+  getEmailConfig,
+  sendEmail,
+  appUrl: () => process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || '',
 });
 
 registerCanvasRoutes(app);

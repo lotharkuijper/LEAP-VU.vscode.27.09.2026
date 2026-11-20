@@ -188,3 +188,17 @@ describe('leerdagboek uit in de cursus', () => {
     expect(tables.learning_journal_entries || []).toEqual([]);
   });
 });
+
+describe('tweede, veilige reactie', () => {
+  it('verraadt de eerste reactie iets, dan schrijft LEAP een nieuwe die alleen het gevondene kent', async () => {
+    let call = 0;
+    const llm = async (m) => {
+      call++;
+      if (call === 1) return { results: [{ key: 'k1', state: 'full', quote: 'gelige laag' }], feedback: 'Zie je ook de schimmeldraden?' };
+      expect(m[1].content).not.toContain('Schimmeldraden');
+      return { feedback: 'Mooi, die gelige laag onderin! Kijk eens naar een ander deel.' };
+    };
+    const s = await answer(db(), llm, { ...base, text: 'Een gelige laag onderin.' });
+    expect(s.turns.at(-1)).toMatchObject({ role: 'leap', text: 'Mooi, die gelige laag onderin! Kijk eens naar een ander deel.', code: null });
+  });
+});

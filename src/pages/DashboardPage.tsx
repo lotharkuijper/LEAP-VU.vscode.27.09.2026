@@ -28,6 +28,7 @@ import { useCourseFeatures } from '../hooks/useCourseFeatures';
 import { featureForPath } from '../lib/courseFeatures';
 import { FeatureOffBadge } from '../components/CourseFeatureGate';
 import { TokenBudgetBadge } from '../components/TokenBudgetBadge';
+import { NoCourseWelcome } from '../components/access/NoCourseWelcome';
 
 type TileKey = 'chat' | 'explain' | 'quiz' | 'project';
 
@@ -458,6 +459,7 @@ export function DashboardPage() {
                 {t('dashboard.chooseCourse')}
               </Link>
             </p>
+            <div className="mt-4"><NoCourseWelcome /></div>
           </>
         )}
       </section>
