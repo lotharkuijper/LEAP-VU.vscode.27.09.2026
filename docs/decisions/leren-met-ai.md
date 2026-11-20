@@ -52,6 +52,14 @@ The tutor chat always gets a short course overview (`server/courses/courseOvervi
 
 Concept order and grouping per unit in Ik leg uit: see `docs/decisions/cursusmateriaal-en-rag.md`.
 
+### Image exercises ("Wat zie ik?"), step 1: teacher side (2026-11-20)
+- Goal: students look at a photo and describe what they see and what it means; LEAP gives feedback against the teacher's own description. Subject-neutral: histology, geology, anthropology, maps, archaeology. LEAP never judges an image itself: the teacher's description is the only source.
+- Admin tab "Beeldoefeningen" (`src/components/imageExercises/`, `server/imageExercises/`). The teacher uploads photos (jpg/png/webp, up to 20 MB, type checked on the bytes) and one description document (docx/pdf/txt/md) with a heading per photo (file name or number). `descriptions.js` splits the document and matches by name, then number, then order (only when no section has a name or number and the counts are equal); a vision suggestion is available for the rest. The teacher always confirms; nothing counts until confirmed.
+- Teachers get a prominent guide before uploading (`ImageDescriptionGuide.tsx`): the description is the answer key; describe what you see and what it means, be concrete about where and how, one observation per sentence, most important first (or "Kern:"/"Extra:"), only what is on this photo, check correctness; plus two examples and a downloadable template. The template is translated, so the photo words and the core/extra headings of all 20 languages are recognised; a test parses the template of every locale.
+- On confirmation `features.js` turns the free description into features (label, observation, interpretation, core/extra, open interpretation), ONLY from the teacher's text. Headings "Kern:"/"Extra:" in the description are taken literally. Reviewing is optional; LEAP flags descriptions where it doubts. Per photo: depth (name / describe (default) / interpret) and count shown to the student (approx (default) / exact / none).
+- Answer key: `image_exercises`, `image_exercise_features` and the private bucket `image_exercises` are server-only (no policies, REVOKE from anon/authenticated); every route checks `isStaffForCourse`. Students get nothing in this step. Migration `20261120100000_image_exercises.sql`, rollback in `supabase/rollback/`, RLS checks in `scripts/local-db/tests/image-exercises.sql`.
+- Later steps: the student side (board with empty tiles, half tiles for a named-but-unexplained or described-but-unnamed feature, graded hints only from features not yet found, motivating tone, full description only at the end), concept links, totals for the teacher. Comparing two photos and pointing/outlining are deferred.
+
 ## Quiz
 
 ### Grounding and the teacher's source mix

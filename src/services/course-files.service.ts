@@ -1,5 +1,5 @@
 // Client voor het cursusmateriaal-beheer met bestandsdoelen (server/documents/courseFiles.js).
-import { supabase } from '../lib/supabase';
+import { authHeaders, fileToBase64 } from '../lib/authFetch';
 import type { Purpose, MaterialKind, PurposeSuggestion } from '../../server/rag/filePurpose.js';
 
 export type { Purpose, MaterialKind, PurposeSuggestion };
@@ -110,14 +110,6 @@ export class CourseFilesError extends Error {
   }
 }
 
-async function authHeaders(json = true): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const h: Record<string, string> = {};
-  if (json) h['Content-Type'] = 'application/json';
-  if (session?.access_token) h.Authorization = `Bearer ${session.access_token}`;
-  return h;
-}
-
 async function request<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, { ...init, headers: { ...(await authHeaders()), ...(init.headers || {}) } });
   const body = await res.json().catch(() => ({}));
@@ -180,15 +172,6 @@ export const setConceptVisibility = (courseId: string, conceptId: string, visibl
     body: JSON.stringify({ visible }),
   });
 
-function toBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
 export async function uploadCourseFile(
   courseId: string,
   file: File,
@@ -198,7 +181,7 @@ export async function uploadCourseFile(
     `/api/admin/course-files/${courseId}/upload`,
     {
       method: 'POST',
-      body: JSON.stringify({ filename: file.name, mimeType: file.type || undefined, data: await toBase64(file), ...d }),
+      body: JSON.stringify({ filename: file.name, mimeType: file.type || undefined, data: await fileToBase64(file), ...d }),
     },
   );
 }
