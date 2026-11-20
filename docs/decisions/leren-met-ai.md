@@ -66,6 +66,7 @@ Concept order and grouping per unit in Ik leg uit: see `docs/decisions/cursusmat
 - The answer key stays on the server: the browser only gets labels of features already found (half or full), and the description and all features only after "finish". Feedback or hints that name an unfound feature (`leaksUnfound`: full label, or a 7+ letter word from it the student did not use) are replaced by a generic encouragement (codes `generic`, `hintGeneric`).
 - Hints: core first, half features first (to finish them), then unfound; per feature level 1 where to look, 2 a guiding question, 3 the feature itself (counts as found "with hint"). Count shown per the teacher's setting: exact (empty tiles), approx (rounded, no tiles), none.
 - Attempts (`image_exercise_attempts`, migration `20261121100000`) are server-only; teachers never see them; they are part of the student's own data export. Next: concept links, totals for the teacher, badges. Comparing two photos and pointing/outlining are deferred.
+- Decisions (2026-11-21, product owner): a photo is playable for students as soon as its description is confirmed and its features are ready; there is no separate "visible to students" switch. Photo metadata (EXIF) is not stripped on upload; teachers are responsible for the photos they use.
 
 ## Quiz
 
