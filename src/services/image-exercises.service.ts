@@ -32,7 +32,11 @@ export interface ImageExercise {
   features: ImageFeature[];
 }
 
+/** Hoe LEAP het document koppelde (server/imageExercises/descriptions.js, planDocument). */
+export type LinkMethod = 'headings' | 'mentions' | 'filename' | 'single' | 'ask' | 'photo' | 'empty';
+
 export interface DescriptionResult {
+  method: LinkMethod;
   sections: number;
   matched: Array<{ id: string; source: MatchSource }>;
   unmatchedSections: Array<{ heading: string; text: string }>;
@@ -66,11 +70,15 @@ export async function uploadImageExercisePhoto(courseId: string, file: File) {
   });
 }
 
-export async function uploadDescriptions(courseId: string, input: { file: File } | { text: string }) {
+/** Beschrijvingsbestand of tekst; met `exerciseId` hoort alles bij die ene foto. */
+export async function uploadDescriptions(courseId: string, input: { file: File } | { text: string }, exerciseId?: string) {
   const body = 'file' in input
     ? { filename: input.file.name, data: await fileToBase64(input.file) }
     : { text: input.text };
-  return request<DescriptionResult>(`${base(courseId)}/descriptions`, { method: 'POST', body: JSON.stringify(body) });
+  return request<DescriptionResult>(`${base(courseId)}/descriptions`, {
+    method: 'POST',
+    body: JSON.stringify({ ...body, ...(exerciseId ? { exerciseId } : {}) }),
+  });
 }
 
 export const suggestImageMatches = (courseId: string, sections: string[]) =>

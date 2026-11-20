@@ -101,9 +101,36 @@ describe('beschrijvingen koppelen en bevestigen', () => {
     expect(tables.image_exercises.find((x) => x.id === a)).toMatchObject({ description: 'Hersenweefsel.', match_source: 'number', description_confirmed_at: null });
   });
 
-  it('meldt een document zonder kopjes', async () => {
+  it('één foto en een document zonder kopjes: de hele tekst is een voorstel voor die foto', async () => {
+    const a = await photo('Art-nouveau.png', 'c1', PNG);
+    const text = 'Dit is een typische art-nouveaucompositie.\nHet haar\n•\tGolvend haar.';
+    const r = await applyDescriptionText(db(), { courseId: 'c1', text, filename: 'beschrijving.docx' });
+    expect(r).toMatchObject({ method: 'single', matched: [{ id: a, source: 'suggested' }], unmatchedSections: [] });
+    expect(tables.image_exercises[0]).toMatchObject({ description: text, description_confirmed_at: null });
+  });
+
+  it('meerdere foto’s en een document zonder kopjes: de docent kiest de foto', async () => {
     await photo('a.jpg');
-    await expect(applyDescriptionText(db(), { courseId: 'c1', text: 'Zomaar wat tekst zonder kopjes.' })).rejects.toMatchObject({ code: 'noSections' });
+    await photo('b.jpg');
+    const r = await applyDescriptionText(db(), { courseId: 'c1', text: 'Zomaar wat tekst.', filename: 'notities.docx' });
+    expect(r).toMatchObject({ method: 'ask', matched: [], unmatchedSections: [{ heading: 'notities.docx', text: 'Zomaar wat tekst.' }] });
+  });
+
+  it('een document met dezelfde naam als een foto hoort bij die foto', async () => {
+    await photo('a.jpg');
+    const b = await photo('kaart-02.jpg');
+    const r = await applyDescriptionText(db(), { courseId: 'c1', text: 'Een kaart.', filename: 'kaart-02.docx' });
+    expect(r).toMatchObject({ method: 'filename', matched: [{ id: b, source: 'name' }] });
+  });
+
+  it('bij de foto zelf geüpload: de hele tekst hoort bij die foto, alleen in de eigen cursus', async () => {
+    await photo('a.jpg');
+    const b = await photo('b.jpg');
+    const r = await applyDescriptionText(db(), { courseId: 'c1', text: 'Foto 1\nDit is b.', exerciseId: b });
+    expect(r).toMatchObject({ method: 'photo', matched: [{ id: b, source: 'manual' }] });
+    expect(tables.image_exercises.find((x) => x.id === b).description).toBe('Foto 1\nDit is b.');
+    await expect(applyDescriptionText(db(), { courseId: 'c2', text: 'x', exerciseId: b })).rejects.toMatchObject({ status: 404 });
+    await expect(applyDescriptionText(db(), { courseId: 'c1', text: '   ' })).rejects.toMatchObject({ code: 'emptyDocument' });
   });
 
   it('bevestigt alleen foto’s van de eigen cursus met een beschrijving', async () => {

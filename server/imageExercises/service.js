@@ -6,7 +6,7 @@
 // Geheim: beschrijvingen en kenmerken zijn de antwoordsleutel. Ze gaan alleen naar
 // de docent van de cursus; studenten krijgen ze in deze stap nergens.
 
-import { matchDescriptions, splitDescriptions } from './descriptions.js';
+import { planDocument } from './descriptions.js';
 import { buildFeatureMessages, cleanTeacherFeatures, parseFeatureResponse } from './features.js';
 
 export const BUCKET = 'image_exercises';
@@ -96,32 +96,41 @@ export async function addPhoto(db, { courseId, userId, filename, buffer, newId }
   return { id: data.id };
 }
 
+// Een (nieuwe) beschrijving opslaan als voorstel: onbevestigd, oude kenmerken weg.
+async function storeDescription(db, id, text, source) {
+  const { error } = await db.from('image_exercises').update({
+    description: text.slice(0, MAX_DESCRIPTION_CHARS), match_source: source, description_confirmed_at: null,
+    features_status: 'none', features_uncertain: false, features_note: null, features_reviewed_at: null,
+    updated_at: new Date().toISOString(),
+  }).eq('id', id);
+  if (error) throw new Error(error.message);
+  await db.from('image_exercise_features').delete().eq('exercise_id', id);
+}
+
 /**
- * Een beschrijvingsdocument verwerken: opknippen, koppelen aan foto's die nog geen
- * bevestigde beschrijving hebben, en het voorstel opslaan (nog niet bevestigd).
+ * Een beschrijvingsdocument verwerken en koppelen aan foto's die nog geen bevestigde
+ * beschrijving hebben (zie planDocument voor de volgorde van de manieren). Met
+ * `exerciseId` hoort de hele tekst bij die ene foto: de docent koos hem zelf.
+ * Alles wordt opgeslagen als voorstel; de docent bevestigt.
  */
-export async function applyDescriptionText(db, { courseId, text }) {
+export async function applyDescriptionText(db, { courseId, text, filename = '', exerciseId = null }) {
+  if (!String(text || '').trim()) throw fail({ status: 400, error: 'In dit document staat geen tekst.', code: 'emptyDocument' });
+  if (exerciseId) {
+    await loadExercise(db, courseId, exerciseId);
+    await storeDescription(db, exerciseId, String(text).trim(), 'manual');
+    return { method: 'photo', sections: 1, matched: [{ id: exerciseId, source: 'manual' }], unmatchedSections: [], alreadyConfirmed: 0 };
+  }
   const { data: rows, error } = await db.from('image_exercises')
-    .select('id, filename, position, description_confirmed_at').eq('course_id', courseId).order('position').order('created_at');
+    .select('id, filename, position, description, description_confirmed_at').eq('course_id', courseId).order('position').order('created_at');
   if (error) throw new Error(error.message);
   const open = (rows || []).filter((r) => !r.description_confirmed_at);
-  const { sections } = splitDescriptions(text, (rows || []).map((r) => r.filename));
-  if (sections.length === 0) throw fail({ status: 400, error: 'In dit document vond LEAP geen kopjes per foto.', code: 'noSections' });
-  const { matches, unmatchedSections } = matchDescriptions(open, sections);
-  for (const m of matches) {
-    const description = sections[m.section].text.slice(0, MAX_DESCRIPTION_CHARS);
-    const { error: uErr } = await db.from('image_exercises').update({
-      description, match_source: m.source, description_confirmed_at: null,
-      features_status: 'none', features_uncertain: false, features_note: null, features_reviewed_at: null,
-      updated_at: new Date().toISOString(),
-    }).eq('id', m.imageId);
-    if (uErr) throw new Error(uErr.message);
-    await db.from('image_exercise_features').delete().eq('exercise_id', m.imageId);
-  }
+  const plan = planDocument(text, { filename, images: rows || [], open });
+  for (const m of plan.matches) await storeDescription(db, m.imageId, plan.sections[m.section].text, m.source);
   return {
-    sections: sections.length,
-    matched: matches.map((m) => ({ id: m.imageId, source: m.source })),
-    unmatchedSections: unmatchedSections.map((i) => ({ heading: sections[i].heading, text: sections[i].text.slice(0, MAX_DESCRIPTION_CHARS) })),
+    method: plan.method,
+    sections: plan.sections.length,
+    matched: plan.matches.map((m) => ({ id: m.imageId, source: m.source })),
+    unmatchedSections: plan.unmatchedSections.map((i) => ({ heading: plan.sections[i].heading, text: plan.sections[i].text.slice(0, MAX_DESCRIPTION_CHARS) })),
     alreadyConfirmed: (rows || []).length - open.length,
   };
 }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, BookOpenCheck, Check, FileText, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookOpenCheck, Check, FileText, FileUp, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { AdminHint } from '../help/AdminHint';
 import { ImageFeatureEditor } from './ImageFeatureEditor';
 import { ImageDescriptionGuide } from './ImageDescriptionGuide';
+import { LinkingTips } from './LinkingTips';
 import {
   confirmImageExercises, deleteImageExercise, fetchImageExercises, regenerateFeatures, setImageFeatureCore,
   suggestImageMatches, updateImageExercise, uploadDescriptions, uploadImageExercisePhoto,
@@ -37,6 +38,9 @@ export function ImageExercisesAdmin() {
   const [guideOpen, setGuideOpen] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
   const docInput = useRef<HTMLInputElement>(null);
+  // Beschrijvingsbestand bij één bepaalde foto: welke foto, en het verborgen bestandsveld.
+  const photoDocInput = useRef<HTMLInputElement>(null);
+  const [docFor, setDocFor] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!courseId) return;
@@ -84,12 +88,32 @@ export function ImageExercisesAdmin() {
     await load();
   });
 
-  const addDescriptions = (file: File) => run('doc', async () => {
-    const r = await uploadDescriptions(courseId, { file });
-    setLoose(r.unmatchedSections);
+  // Eén of meer beschrijvingsbestanden. Per bestand zoekt LEAP zelf de handigste
+  // manier van koppelen (kopjes, bestandsnamen in de tekst, de naam van het bestand,
+  // of de enige foto die nog wacht); wat niet lukt, komt bij "kies de foto".
+  const addDescriptions = (files: FileList) => run('doc', async () => {
+    const messages: string[] = [];
+    const newLoose: DescriptionResult['unmatchedSections'] = [];
+    let skipped = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const r = await uploadDescriptions(courseId, { file });
+        newLoose.push(...r.unmatchedSections);
+        skipped = Math.max(skipped, r.alreadyConfirmed);
+        messages.push(`${file.name}: ${tk(`imageEx.desc.method.${r.method}`, { n: String(r.matched.length) })}`);
+      } catch (err) {
+        messages.push(`${file.name}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    setLoose((l) => [...l, ...newLoose]);
     setSuggested({});
-    setNotice(t('imageEx.desc.result', { sections: String(r.sections), matched: String(r.matched.length) })
-      + (r.alreadyConfirmed ? ` ${t('imageEx.desc.skipped', { n: String(r.alreadyConfirmed) })}` : ''));
+    setNotice(messages.join(' · ') + (skipped ? ` ${t('imageEx.desc.skipped', { n: String(skipped) })}` : ''));
+    await load();
+  });
+
+  const addDescriptionForPhoto = (file: File, id: string) => run(`photodoc-${id}`, async () => {
+    await uploadDescriptions(courseId, { file }, id);
+    setNotice(t('imageEx.desc.method.photo', { n: '1' }));
     await load();
   });
 
@@ -148,6 +172,7 @@ export function ImageExercisesAdmin() {
           </button>
         </div>
         <p className="text-sm text-gray-600">{t('imageEx.upload.howTo')}</p>
+        <LinkingTips waiting={items.filter((e) => !e.confirmed && !e.description.trim()).length} />
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => photoInput.current?.click()} disabled={!!busy} className="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" data-testid="button-add-photos">
             {busy === 'photos' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}{t('imageEx.upload.photos')}
@@ -156,7 +181,8 @@ export function ImageExercisesAdmin() {
             {busy === 'doc' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}{t('imageEx.upload.descriptions')}
           </button>
           <input ref={photoInput} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { if (e.target.files?.length) void addPhotos(e.target.files); e.target.value = ''; }} data-testid="input-photos" />
-          <input ref={docInput} type="file" accept=".docx,.pdf,.txt,.md" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void addDescriptions(f); e.target.value = ''; }} data-testid="input-descriptions" />
+          <input ref={docInput} type="file" multiple accept=".docx,.pdf,.txt,.md" className="hidden" onChange={(e) => { if (e.target.files?.length) void addDescriptions(e.target.files); e.target.value = ''; }} data-testid="input-descriptions" />
+          <input ref={photoDocInput} type="file" accept=".docx,.pdf,.txt,.md" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f && docFor) void addDescriptionForPhoto(f, docFor); e.target.value = ''; setDocFor(null); }} data-testid="input-photo-description" />
         </div>
         {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800" data-testid="text-image-notice">{notice}</p>}
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" data-testid="text-image-error">{error}</p>}
@@ -220,6 +246,11 @@ export function ImageExercisesAdmin() {
                     )}
                     {draft === undefined && (
                       <button type="button" onClick={() => setDrafts((d) => ({ ...d, [e.id]: e.description }))} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label={t('imageEx.link.type')} title={t('imageEx.link.type')} data-testid={`button-type-${e.id}`}><Pencil className="h-4 w-4 text-gray-600" /></button>
+                    )}
+                    {draft === undefined && (
+                      <button type="button" onClick={() => { setDocFor(e.id); photoDocInput.current?.click(); }} disabled={!!busy} className="rounded-lg p-1.5 hover:bg-gray-100 disabled:opacity-50" aria-label={t('imageEx.link.uploadForPhoto')} title={t('imageEx.link.uploadForPhoto')} data-testid={`button-upload-description-${e.id}`}>
+                        {busy === `photodoc-${e.id}` ? <Loader2 className="h-4 w-4 animate-spin text-gray-600" /> : <FileUp className="h-4 w-4 text-gray-600" />}
+                      </button>
                     )}
                     <button type="button" onClick={() => remove(e)} className="rounded-lg p-1.5 hover:bg-red-50" aria-label={t('imageEx.delete')} data-testid={`button-delete-photo-${e.id}`}><Trash2 className="h-4 w-4 text-red-600" /></button>
                   </div>
