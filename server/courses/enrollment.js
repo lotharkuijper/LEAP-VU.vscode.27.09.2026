@@ -24,6 +24,10 @@
 // medewerker vraagt daarna de beheerder om toegang (server/access/accessRequests.js).
 // Medewerkers krijgen geen tokenbudget voor open accounts: ze bevestigen hun
 // mailbox van de instelling.
+//
+// Testcursus (2026-11-23): alleen voor beheerders; nooit te kiezen of aan te sluiten.
+
+import { isTestCol } from '../lib/schemaFlags.js';
 
 export const ENROLLMENT_MODES = ['closed', 'canvas', 'open', 'canvas_open'];
 export const DEFAULT_ENROLLMENT_MODE = 'open';
@@ -62,7 +66,8 @@ export function isBlockedEmail(email, domains = blockedDomains()) {
 
 /** Pure: kan een cursus via open registratie of "Cursus toevoegen" gekozen worden? */
 export function isSelfJoinable(course) {
-  return !!course && course.is_active !== false && course.student_visible !== false && allowsOpenRegistration(course.enrollment_mode);
+  return !!course && course.is_active !== false && course.student_visible !== false && course.is_test !== true
+    && allowsOpenRegistration(course.enrollment_mode);
 }
 
 /**
@@ -137,7 +142,7 @@ export function registerEnrollmentRoutes(app, deps) {
 
   async function openCourses() {
     const { data, error } = await db.from('courses')
-      .select('id, name, description, is_active, student_visible, enrollment_mode')
+      .select(`id, name, description, is_active, student_visible, enrollment_mode${isTestCol()}`)
       .eq('is_active', true).eq('student_visible', true)
       .in('enrollment_mode', ['open', 'canvas_open'])
       .order('name');
@@ -202,7 +207,7 @@ export function registerEnrollmentRoutes(app, deps) {
       if (!pending || pending.length === 0) return res.json({ activated: [] });
       if (!auth.user.email_confirmed_at) return res.json({ activated: [], waiting: pending.length });
       const ids = pending.map((p) => p.course_id);
-      const { data: courses } = await db.from('courses').select('id, is_active, student_visible, enrollment_mode').in('id', ids);
+      const { data: courses } = await db.from('courses').select(`id, is_active, student_visible, enrollment_mode${isTestCol()}`).in('id', ids);
       const ok = (courses || []).filter(isSelfJoinable).map((c) => c.id);
       if (ok.length) {
         const { error } = await db.from('course_members').upsert(
@@ -227,7 +232,7 @@ export function registerEnrollmentRoutes(app, deps) {
     const auth = await requireAuthUser(req, res);
     if (!auth) return;
     try {
-      const { data: course } = await db.from('courses').select('id, is_active, student_visible, enrollment_mode').eq('id', req.params.courseId).maybeSingle();
+      const { data: course } = await db.from('courses').select(`id, is_active, student_visible, enrollment_mode${isTestCol()}`).eq('id', req.params.courseId).maybeSingle();
       if (!isSelfJoinable(course)) return res.status(403).json({ error: 'Deze cursus is niet open voor aanmelding', code: 'courseNotOpen' });
       if (!isAdminProfile(auth.profile) && !isStaffEmail(auth.user.email) && isBlockedEmail(auth.user.email)) {
         return res.status(403).json({ error: MESSAGES.vuEmail, code: 'vuEmail' });

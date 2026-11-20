@@ -6,6 +6,8 @@ import { registerAccessRequestRoutes, validateRequest, buildAdminMail, buildGran
 
 const C1 = '11111111-1111-4111-8111-111111111111';
 const C2 = '22222222-2222-4222-8222-222222222222';
+const HIDDEN = '44444444-4444-4444-8444-444444444444';
+const TEST = '55555555-5555-4555-8555-555555555555';
 let tables;
 let sent;
 let me;
@@ -82,6 +84,8 @@ beforeEach(() => {
       { id: C2, name: 'Statistiek', description: 'x', is_active: true },
       { id: C1, name: 'Embryologie', description: 'y', is_active: true },
       { id: '33333333-3333-4333-8333-333333333333', name: 'Oud', is_active: false },
+      { id: HIDDEN, name: 'Anatomie (verborgen)', is_active: true, student_visible: false },
+      { id: TEST, name: 'Demo', is_active: true, is_test: true },
     ],
     profiles: [
       { id: 'peter', full_name: 'Peter', email: 'peter.van.grevelingen@vu.nl', role: 'student', last_active_course_id: null },
@@ -149,6 +153,31 @@ describe('medewerker zonder cursus', () => {
     me = peter;
     for (let i = 0; i < 3; i++) expect((await call('post', '/api/access/requests', { body: { message: `v${i}` } })).status).toBe(200);
     expect((await call('post', '/api/access/requests', { body: { message: 'v4' } })).body.code).toBe('tooMany');
+  });
+});
+
+describe('cursussen die medewerkers niet zien', () => {
+  it('geen cursus op "niet beschikbaar" en geen testcursus in de lijst, en ook niet aan te vragen', async () => {
+    me = peter;
+    expect((await call('get', '/api/access/catalog')).body.courses.map((c) => c.id)).toEqual([C1, C2]);
+    const r = await call('post', '/api/access/requests', { body: { message: '', courseIds: [HIDDEN, TEST] } });
+    expect(r.body.code).toBe('emptyRequest');
+  });
+
+  it('de beheerder kiest wel uit verborgen cursussen, nooit uit testcursussen', async () => {
+    me = lothar;
+    const ids = (await call('get', '/api/admin/access-requests')).body.courses.map((c) => c.id);
+    expect(ids).toContain(HIDDEN);
+    expect(ids).not.toContain(TEST);
+  });
+
+  it('niemand wordt via een aanvraag lid van een testcursus', async () => {
+    const id = '66666666-6666-4666-8666-666666666666';
+    tables.access_requests.push({ id, user_id: 'peter', status: 'open', granted_course_ids: [] });
+    me = lothar;
+    const r = await call('post', '/api/admin/access-requests/:id/grant', { params: { id }, body: { courseId: TEST, role: 'teacher' } });
+    expect([r.status, r.body.code]).toEqual([409, 'testCourse']);
+    expect(tables.course_members).toEqual([]);
   });
 });
 

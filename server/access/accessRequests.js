@@ -10,6 +10,7 @@
 
 import { isStaffEmail } from '../courses/enrollment.js';
 import { escapeHtml } from '../lib/notifications.js';
+import { isTestCol } from '../lib/schemaFlags.js';
 
 export const ACCESS_LIMITS = { MAX_MESSAGE: 2000, MAX_COURSES: 20, MAX_OPEN: 3, PER_HOUR: 5 };
 export const ROLE_WISHES = ['teacher', 'student', 'unsure'];
@@ -34,6 +35,17 @@ export function validateRequest(body, activeCourseIds) {
   const role = ROLE_WISHES.includes(body?.role) ? body.role : 'unsure';
   if (!message && courseIds.length === 0) return { ok: false, code: 'emptyRequest' };
   return { ok: true, message, courseIds, role };
+}
+
+/**
+ * Pure: de cursuslijst (alfabetisch, korte omschrijving). Nooit een testcursus;
+ * voor medewerkers ook geen cursus die op "niet beschikbaar" staat.
+ */
+export function catalogCourses(rows, { forStaff = false } = {}) {
+  return (rows || [])
+    .filter((c) => c.is_test !== true && (!forStaff || c.student_visible !== false))
+    .map((c) => ({ id: c.id, name: c.name || '', description: String(c.description || '').slice(0, 200) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'nl', { sensitivity: 'base' }));
 }
 
 /** Eenvoudige teller per gebruiker en uur (geheugen van dit ene proces). */
@@ -89,12 +101,12 @@ export function registerAccessRequestRoutes(app, deps) {
   const { supabaseAdmin: db, requireAuthUser, isAdminProfile, superuserEmail, getEmailConfig, sendEmail, appUrl } = deps;
   const perHour = hourlyLimiter(ACCESS_LIMITS.PER_HOUR);
 
-  async function activeCourses() {
-    const { data, error } = await db.from('courses').select('id, name, description').eq('is_active', true);
+  // Actieve cursussen zonder testcursussen. forStaff: ook zonder de cursussen die op
+  // "niet beschikbaar" staan (de beheerder kan iemand daar wel aan koppelen).
+  async function activeCourses({ forStaff = false } = {}) {
+    const { data, error } = await db.from('courses').select(`id, name, description, student_visible${isTestCol()}`).eq('is_active', true);
     if (error) throw new Error(error.message);
-    return (data || [])
-      .map((c) => ({ id: c.id, name: c.name || '', description: String(c.description || '').slice(0, 200) }))
-      .sort((a, b) => a.name.localeCompare(b.name, 'nl', { sensitivity: 'base' }));
+    return catalogCourses(data, { forStaff });
   }
 
   const namesOf = (courses, ids) => {
@@ -150,7 +162,7 @@ export function registerAccessRequestRoutes(app, deps) {
     if (!isConfirmedStaff(auth.user) && !isAdminProfile(auth.profile)) {
       return res.status(403).json({ error: 'Alleen voor medewerkers', code: 'notStaff' });
     }
-    try { return res.json({ courses: await activeCourses() }); } catch (err) {
+    try { return res.json({ courses: await activeCourses({ forStaff: true }) }); } catch (err) {
       console.error('[toegang] cursussen:', err?.message || err);
       return res.status(500).json({ error: 'Er ging iets mis.' });
     }
@@ -162,7 +174,7 @@ export function registerAccessRequestRoutes(app, deps) {
     if (!auth) return;
     if (!isConfirmedStaff(auth.user)) return res.status(403).json({ error: 'Alleen voor medewerkers', code: 'notStaff' });
     try {
-      const courses = await activeCourses();
+      const courses = await activeCourses({ forStaff: true });
       const v = validateRequest(req.body, courses.map((c) => c.id));
       if (!v.ok) return res.status(400).json({ error: 'Schrijf een vraag of kies minstens één cursus.', code: v.code });
       const { count } = await db.from('access_requests').select('id', { count: 'exact', head: true }).eq('user_id', auth.user.id).eq('status', 'open');
@@ -229,8 +241,9 @@ export function registerAccessRequestRoutes(app, deps) {
     try {
       const { data: r } = await db.from('access_requests').select('*').eq('id', req.params.id).maybeSingle();
       if (!r) return res.status(404).json({ error: 'Aanvraag niet gevonden' });
-      const { data: course } = await db.from('courses').select('id, name, is_active').eq('id', courseId).maybeSingle();
+      const { data: course } = await db.from('courses').select(`id, name, is_active${isTestCol()}`).eq('id', courseId).maybeSingle();
       if (!course || course.is_active === false) return res.status(404).json({ error: 'Cursus niet gevonden' });
+      if (course.is_test === true) return res.status(409).json({ error: 'Alleen beheerders kunnen lid zijn van een testcursus', code: 'testCourse' });
       // Was de aanvrager al lid? Dan melden we de vorige rol (zo maakt een beheerder niet per ongeluk een docent student).
       const { data: existing } = await db.from('course_members').select('member_role').eq('course_id', course.id).eq('user_id', r.user_id).maybeSingle();
       const { error: mErr } = await db.from('course_members').upsert(

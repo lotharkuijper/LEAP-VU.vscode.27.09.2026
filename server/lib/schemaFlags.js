@@ -33,6 +33,28 @@ export async function detectCoursesStudentVisibleColumn() {
   }
 }
 
+// Testcursus (migratie 20261123100000_course_is_test): courses.is_test. Zonder de
+// migratie bestaan er geen testcursussen en vragen de lijsten de kolom niet op.
+export let coursesHasIsTest = false;
+
+/** ', is_test' als de kolom bestaat, anders '' (om achter een select-lijst te plakken). */
+export const isTestCol = () => (coursesHasIsTest ? ', is_test' : '');
+
+export async function detectCoursesIsTestColumn() {
+  if (!supabaseAdmin) return;
+  try {
+    const { error } = await supabaseAdmin.from('courses').select('is_test').limit(1);
+    coursesHasIsTest = !error;
+    console.log(`[API Server] courses.is_test: ${coursesHasIsTest ? 'beschikbaar' : 'niet gemigreerd — geen testcursussen'}`);
+  } catch (e) {
+    coursesHasIsTest = false;
+    console.warn('[API Server] courses.is_test detectie mislukt:', e.message);
+  }
+  // Nog niet gevonden (migratie loopt nog, of de controle mislukte): blijf kijken,
+  // zodat testcursussen niet tot de volgende herstart in lijsten verschijnen.
+  if (!coursesHasIsTest && process.env.NODE_ENV !== 'test') setTimeout(detectCoursesIsTestColumn, 60_000).unref?.();
+}
+
 // Task #52 (Quiz-omgeving herontwerp fase 1) breidt quiz_attempts uit met
 // nieuwe kolommen (topics text[], difficulty, question_type, questions_data,
 // answers, score_percentage, created_at). Detecteer of de migratie

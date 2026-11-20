@@ -34,6 +34,7 @@ import { translate } from '../i18n/notificationI18n.js';
 import { escapeHtml } from '../lib/notifications.js';
 import { normalizeEmailList, validateBatchSize } from './bulkAccounts.js';
 import { normalizeLang } from '../i18n/languages.js';
+import { isTestCol } from '../lib/schemaFlags.js';
 
 export const INVITE_VALID_DAYS = 30;
 export const DAILY_INVITE_LIMIT = 300;
@@ -207,8 +208,10 @@ export function registerCourseInvitationRoutes(app, deps) {
     if (!r) return;
     const role = req.body?.role === 'teacher' ? 'teacher' : 'student';
 
-    const { data: course } = await db.from('courses').select('id, name').eq('id', courseId).maybeSingle();
+    const { data: course } = await db.from('courses').select(`id, name${isTestCol()}`).eq('id', courseId).maybeSingle();
     if (!course) return res.status(404).json({ error: 'Cursus niet gevonden' });
+    // Testcursus: alleen beheerders; geen accounts aanmaken die er toch niet in kunnen.
+    if (course.is_test === true) return res.status(409).json({ error: 'Alleen beheerders kunnen lid zijn van een testcursus', code: 'testCourse' });
 
     const { valid, invalid, duplicates } = normalizeEmailList(Array.isArray(req.body?.emails) ? req.body.emails : []);
     const size = validateBatchSize(valid);

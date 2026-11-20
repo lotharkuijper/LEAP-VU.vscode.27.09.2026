@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, DoorOpen, School, UserPlus } from 'lucide-react';
+import { Plus, Loader2, CheckCircle2, AlertTriangle, BookOpen, Pencil, X, Check, Power, Trash2, Users, FolderTree, FolderOpen, UserX, Flame, DoorOpen, School, UserPlus, FlaskConical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -35,6 +35,8 @@ interface CourseRow {
   student_visible: boolean;
   // Toegangsroute (server/courses/enrollment.js); alleen de beheerder wijzigt hem.
   enrollment_mode: EnrollmentMode;
+  // Testcursus: alleen voor beheerders (server/courses/testCourse.js).
+  is_test: boolean;
 }
 
 interface DeleteCounts {
@@ -157,7 +159,7 @@ export function CoursesAdminTab() {
         .order('name', { ascending: true });
       if (fallback.error) console.error('[CoursesAdmin] load error:', fallback.error);
       rows = ((fallback.data as Array<Omit<CourseRow, 'cue_delta_max' | 'student_visible' | 'enrollment_mode'>>) ?? []).map((c) => ({
-        ...c, cue_delta_max: 2, student_visible: true, enrollment_mode: 'open' as EnrollmentMode,
+        ...c, cue_delta_max: 2, student_visible: true, enrollment_mode: 'open' as EnrollmentMode, is_test: false,
       }));
     } else if (primary.error) {
       console.error('[CoursesAdmin] load error:', primary.error);
@@ -172,7 +174,14 @@ export function CoursesAdminTab() {
         // Ontbrekende/onbekende waarde → behandel als zichtbaar (default true).
         student_visible: c.student_visible !== false,
         enrollment_mode: (c.enrollment_mode as EnrollmentMode) || 'open',
+        is_test: false,
       }));
+    }
+    // Testcursussen apart opvragen: zonder de migratie (kolom ontbreekt) blijft de lijst gewoon werken.
+    const tests = await supabase.from('courses').select('id, is_test').eq('is_test', true);
+    if (!tests.error) {
+      const ids = new Set(((tests.data as Array<{ id: string }>) ?? []).map((x) => x.id));
+      rows = rows.map((c) => ({ ...c, is_test: ids.has(c.id) }));
     }
     setCourses(rows);
     setLoadingList(false);
@@ -265,6 +274,36 @@ export function CoursesAdminTab() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t('common.unknownError');
       setRowError(c.id, msg);
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  async function toggleTest(c: CourseRow) {
+    setRowError(c.id, null);
+    const token = session?.access_token;
+    if (!token) {
+      setRowError(c.id, t('admin.users.notLoggedIn'));
+      return;
+    }
+    setRowBusyId(c.id);
+    try {
+      const res = await fetch(`/api/admin/courses/${c.id}/test`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ is_test: !c.is_test }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setRowError(c.id, json.code === 'hasMembers'
+          ? t('coursesAdmin.test.hasMembers', { count: String(json.count ?? '') })
+          : json.code === 'notMigrated' ? t('coursesAdmin.test.notMigrated')
+          : json.error || t('coursesAdmin.errors.changeFailed', { status: String(res.status) }));
+        return;
+      }
+      await Promise.all([loadCourses(), refreshCourses()]);
+    } catch (err: unknown) {
+      setRowError(c.id, err instanceof Error ? err.message : t('common.unknownError'));
     } finally {
       setRowBusyId(null);
     }
@@ -647,6 +686,11 @@ export function CoursesAdminTab() {
                         title={<span data-testid={`text-course-name-${c.id}`}>{c.name}</span>}
                         badges={
                           <>
+                            {c.is_test && (
+                              <StatusBadge tone="danger" title={t('coursesAdmin.test.badgeTitle')} testId={`status-course-test-${c.id}`}>
+                                {t('coursesAdmin.test.badge')}
+                              </StatusBadge>
+                            )}
                             <StatusBadge tone={c.is_active ? 'success' : 'neutral'} testId={`status-course-active-${c.id}`}>
                               {c.is_active ? t('chooseCourse.active') : t('coursesAdmin.row.inactive')}
                             </StatusBadge>
@@ -690,6 +734,11 @@ export function CoursesAdminTab() {
                             key: 'course', label: t('admin.tabs.course'), icon: School, tone: 'primary' as const,
                             title: t('coursesAdmin.row.openCourseTitle'), onClick: () => void goToAdminTab(c.id, 'course'),
                             disabled: rowBusyId === c.id, testId: `button-open-course-${c.id}`,
+                          }, {
+                            key: 'test', label: c.is_test ? t('coursesAdmin.test.off') : t('coursesAdmin.test.on'),
+                            icon: FlaskConical, tone: 'warning' as const,
+                            title: c.is_test ? t('coursesAdmin.test.offTitle') : t('coursesAdmin.test.onTitle'),
+                            onClick: () => void toggleTest(c), busy: rowBusyId === c.id, testId: `button-toggle-test-${c.id}`,
                           }, {
                             key: 'active', label: c.is_active ? t('coursesAdmin.row.deactivate') : t('coursesAdmin.row.activate'),
                             icon: Power, tone: (c.is_active ? 'warning' : 'success') as 'warning' | 'success',
