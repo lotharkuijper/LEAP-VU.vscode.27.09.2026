@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP {n} öneri sundu; bunlar seçim listesinde ★ ile gösterilir.",
   "imageEx.link.type": "Açıklamayı kendin yaz veya düzenle",
   "imageEx.link.typeLabel": "Fotoğraf açıklaması",
-  "imageEx.link.loose": "{n} açıklama henüz eşleştirilmedi",
+  "imageEx.link.loose": "Belgendeki {n} metin parçası bir fotoğrafla eşleştirilemedi",
   "imageEx.features.title": "3. Özellikler ({n} fotoğraf)",
   "imageEx.features.howTo": "LEAP, yalnızca senin metninden, her açıklama için bir özellik listesi oluşturdu. Kalın düğmeler temel, noktalı olanlar ek özelliklerdir; değiştirmek için bir düğmeye tıkla. Gözden geçirmen gerekmez: yalnızca LEAP’in emin olmadığı yerlerde senden kısaca bakmanı isteriz.",
   "imageEx.features.onlyDoubt": "Yalnızca LEAP’in emin olmadığı yerler ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Fotoğraf 2\nTemel:\nIlıman iklimdeki bir ormana ait bir toprak profili.\nAltta kalın, sarımsı bir humus tabakası; bu, serin ve nemli bir iklimde yavaş ayrışmaya işaret eder.\nÜstünde, alttan üste doğru giderek daha kaba hâle gelen birkaç döküntü tabakası: üstte taze yapraklar, altta ayrışmış olanlar.\nEkstra:\nTüm döküntü tabakası boyunca beyaz iplikler: yaprakları ayrıştıran mantar iplikleri (miselyum).",
   "imageEx.guide.template": "Şablonu indir",
   "imageEx.guide.templateName": "aciklamalar-sablonu",
-  "imageEx.guide.templateText": "Fotoğraf 1\nTemel:\n[Ne görüyorsun, nerede ve nasıl görünüyor? Bu ne anlama geliyor?]\nEkstra:\n[Bir öğrencinin fark etmesi etkileyici olan ayrıntılar.]\n\nFotoğraf 2\n[Fotoğraf 2’nin açıklaması. Temel ve Ekstra başlıkları yoksa LEAP neyin temel olduğunu sıralama ve vurguya göre kendisi belirler.]"
+  "imageEx.guide.templateText": "Fotoğraf 1\nTemel:\n[Ne görüyorsun, nerede ve nasıl görünüyor? Bu ne anlama geliyor?]\nEkstra:\n[Bir öğrencinin fark etmesi etkileyici olan ayrıntılar.]\n\nFotoğraf 2\n[Fotoğraf 2’nin açıklaması. Temel ve Ekstra başlıkları yoksa LEAP neyin temel olduğunu sıralama ve vurguya göre kendisi belirler.]",
+  "imageEx.link.looseHelp": "LEAP, yeni bir fotoğrafı fotoğrafın numarasını veya dosya adını içeren bir başlıktan tanır. Bu metin bir fotoğrafa aitse, üstüne böyle bir başlık ekleyip belgeyi yeniden yükle veya metni “Açıklamayı düzenle” üzerinden o fotoğrafa yapıştır.",
+  "imageEx.link.looseDismiss": "Bildirimi kapat",
+  "imageEx.features.largeBoard": "Bu büyük bir oyun tahtası olacak: {n} özellik, bunların {core} tanesi temel. Temel olan her şeyin gerçekten görülmesi gerekip gerekmediğini kontrol et; geri kalanları ekstra yapabilirsin."
 }

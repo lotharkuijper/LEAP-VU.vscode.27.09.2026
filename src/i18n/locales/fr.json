@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP a fait {n} proposition(s) ; elles apparaissent avec ★ dans la liste de choix.",
   "imageEx.link.type": "Saisir ou modifier soi-même la description",
   "imageEx.link.typeLabel": "Description de la photo",
-  "imageEx.link.loose": "{n} description(s) pas encore associée(s)",
+  "imageEx.link.loose": "{n} élément(s) de texte de ton document n’ont pas pu être associé(s) à une photo",
   "imageEx.features.title": "3. Caractéristiques ({n} photos)",
   "imageEx.features.howTo": "LEAP a créé une petite liste de caractéristiques à partir de chaque description, uniquement à partir de ton texte. Les boutons en gras sont essentiels, les pointillés sont supplémentaires ; clique sur un bouton pour le changer. Pas besoin de tout vérifier : seulement là où LEAP a un doute, nous te demandons de jeter un œil.",
   "imageEx.features.onlyDoubt": "Seulement là où LEAP a un doute ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Photo 2\nEssentiel :\nUn profil de sol d’une forêt en climat tempéré.\nEn bas, une épaisse couche d’humus jaunâtre ; elle indique une décomposition lente dans un climat frais et humide.\nAu-dessus, plusieurs couches de litière, de plus en plus grossières de bas en haut : en haut les feuilles fraîches, en bas les feuilles décomposées.\nCompléments :\nDes filaments blancs dans toute la litière : des filaments fongiques (mycélium) qui décomposent les feuilles.",
   "imageEx.guide.template": "Télécharger le modèle",
   "imageEx.guide.templateName": "modele-descriptions",
-  "imageEx.guide.templateText": "Photo 1\nEssentiel :\n[Que vois-tu, où, et à quoi cela ressemble-t-il ? Qu’est-ce que cela signifie ?]\nCompléments :\n[Détails remarquables si un étudiant les repère.]\n\nPhoto 2\n[Description de la photo 2. Sans les titres Essentiel et Compléments, LEAP détermine lui-même ce qui est essentiel, selon l’ordre et l’accent mis.]"
+  "imageEx.guide.templateText": "Photo 1\nEssentiel :\n[Que vois-tu, où, et à quoi cela ressemble-t-il ? Qu’est-ce que cela signifie ?]\nCompléments :\n[Détails remarquables si un étudiant les repère.]\n\nPhoto 2\n[Description de la photo 2. Sans les titres Essentiel et Compléments, LEAP détermine lui-même ce qui est essentiel, selon l’ordre et l’accent mis.]",
+  "imageEx.link.looseHelp": "LEAP reconnaît une nouvelle photo grâce à un titre contenant le numéro ou le nom de fichier de la photo. Si ce texte appartient à une photo, ajoute un tel titre au-dessus et téléverse à nouveau le document, ou colle le texte auprès de cette photo via « Modifier la description ».",
+  "imageEx.link.looseDismiss": "Fermer la notification",
+  "imageEx.features.largeBoard": "Cela va devenir un grand plateau de jeu : {n} caractéristiques, dont {core} essentielles. Vérifie rapidement si tout ce qui est essentiel doit vraiment être vu ; le reste peut être ajouté en extra."
 }

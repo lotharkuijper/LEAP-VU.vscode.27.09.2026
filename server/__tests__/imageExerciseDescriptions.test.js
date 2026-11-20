@@ -58,6 +58,38 @@ describe('splitDescriptions', () => {
   it('laat kopjes zonder tekst weg', () => {
     expect(splitDescriptions('Foto 1\n\nFoto 2\nIets.').sections.map((s) => s.heading)).toEqual(['Foto 2']);
   });
+
+  // Bug 2026-11-20: bij een foto "Art-nouveau.png" werd elke korte zin met "art nouveau"
+  // een kopje, en viel het grootste deel van de beschrijving weg.
+  it('een zin waarin de bestandsnaam voorkomt, is geen kopje', () => {
+    const doc = [
+      'Art-nouveau.png',
+      'Dit is een typische art-nouveaucompositie, als potloodtekening.',
+      'Het haar',
+      'Het haar stroomt in golven naar beneden.',
+      'Deze omlijsting bestaat uit gebogen lijnen die typerend zijn voor de art nouveau.',
+      'Typische art-nouveaukenmerken die zichtbaar zijn',
+      'S-vormige en zweepachtige lijnen.',
+    ].join('\n');
+    const { sections, preamble } = splitDescriptions(doc, ['Art-nouveau.png']);
+    expect(preamble).toBe('');
+    expect(sections).toHaveLength(1);
+    expect(sections[0]).toMatchObject({ heading: 'Art-nouveau.png', stem: 'artnouveau' });
+    expect(sections[0].text).toContain('Het haar stroomt');
+    expect(sections[0].text).toContain('S-vormige en zweepachtige lijnen.');
+  });
+
+  it('de bestandsnaam met "Foto" ervoor of vóór een dubbele punt is wél een kopje', () => {
+    expect(readHeading('Foto: art-nouveau', ['artnouveau'])).toMatchObject({ stem: 'artnouveau', rest: '' });
+    expect(readHeading('art-nouveau.png: een tekening', ['artnouveau'])).toMatchObject({ stem: 'artnouveau', rest: 'een tekening' });
+    expect(readHeading('Art nouveau is een stroming', ['artnouveau'])).toBeNull();
+  });
+
+  it('een Markdown-tussenkopje ín een beschrijving knipt die niet op', () => {
+    const { sections } = splitDescriptions('# Foto 1\nEen tekening.\n## Het haar\nGolvend haar.\n# Foto 2\nEen kaart.');
+    expect(sections.map((s) => s.heading)).toEqual(['Foto 1', 'Foto 2']);
+    expect(sections[0].text).toContain('## Het haar\nGolvend haar.');
+  });
 });
 
 describe('matchDescriptions', () => {
@@ -125,6 +157,19 @@ describe('kenmerken', () => {
   it('zonder indeling beslist "core", standaard kern', () => {
     const r = parseFeatureResponse({ features: [{ label: 'A' }, { label: 'B', core: false }] });
     expect(r.features.map((f) => f.is_core)).toEqual([true, false]);
+  });
+
+  it('zonder kopjes van de docent hooguit 8 kern; met kopjes beslist de docent', () => {
+    const many = { features: Array.from({ length: 12 }, (_, i) => ({ label: `K${i}`, core: true, from: 'kern' })) };
+    expect(parseFeatureResponse(many).features.filter((f) => f.is_core).map((f) => f.label)).toEqual(['K0', 'K1', 'K2', 'K3', 'K4', 'K5', 'K6', 'K7']);
+    expect(parseFeatureResponse(many, { explicit: true }).features.every((f) => f.is_core)).toBe(true);
+  });
+
+  it('vraagt het taalmodel om algemene opsommingen als duiding te gebruiken en tussenkopjes over te slaan', () => {
+    const sys = buildFeatureMessages('Een tekening.').messages[0].content;
+    expect(sys).toContain('interpretation bij de waarneming');
+    expect(sys).toContain('tussenkopje');
+    expect(sys).toContain('hooguit 8');
   });
 
   it('maakt een lijst van de docent schoon', () => {

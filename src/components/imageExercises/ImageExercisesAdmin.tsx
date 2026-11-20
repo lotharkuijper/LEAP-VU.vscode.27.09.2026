@@ -13,6 +13,8 @@ import {
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+/** Vanaf zoveel kenmerken vragen we de docent te kijken wat echt kern is. */
+const LARGE_BOARD = 25;
 
 /**
  * Beeldoefeningen, docentkant (stap 1): foto's en beschrijvingen uploaden,
@@ -67,7 +69,7 @@ export function ImageExercisesAdmin() {
   const toLink = items.filter((e) => !e.confirmed);
   const linked = toLink.filter((e) => e.description.trim());
   const done = items.filter((e) => e.confirmed);
-  const doubts = done.filter((e) => e.featuresUncertain || e.featuresStatus === 'failed');
+  const doubts = done.filter((e) => e.featuresUncertain || e.featuresStatus === 'failed' || e.features.length > LARGE_BOARD);
   const shown = onlyDoubt ? doubts : done;
 
   const addPhotos = (files: FileList) => run('photos', async () => {
@@ -225,13 +227,17 @@ export function ImageExercisesAdmin() {
               );
             })}
           </ul>
-          {loose.length > 0 && (
-            <details className="text-sm text-gray-700" data-testid="details-loose-sections">
-              <summary className="cursor-pointer text-amber-800">{t('imageEx.link.loose', { n: String(loose.length) })}</summary>
-              <ul className="mt-2 space-y-1">{loose.map((s, i) => <li key={i}><span className="font-medium">{s.heading}</span>: {s.text.slice(0, 120)}</li>)}</ul>
-            </details>
-          )}
         </section>
+      )}
+
+      {/* Tekst uit het document die bij geen enkele foto terechtkwam: altijd melden. */}
+      {loose.length > 0 && (
+        <div className="space-y-2 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="alert" data-testid="warning-loose-sections">
+          <p className="flex items-start gap-2 font-semibold"><AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />{t('imageEx.link.loose', { n: String(loose.length) })}</p>
+          <p>{t('imageEx.link.looseHelp')}</p>
+          <ul className="space-y-1">{loose.map((s, i) => <li key={i}><span className="font-medium">{s.heading}</span>: {s.text.slice(0, 160)}{s.text.length > 160 ? '…' : ''}</li>)}</ul>
+          <button type="button" onClick={() => setLoose([])} className="text-xs underline" data-testid="button-dismiss-loose">{t('imageEx.link.looseDismiss')}</button>
+        </div>
       )}
 
       {/* 3. Kenmerken */}
@@ -271,6 +277,11 @@ export function ImageExercisesAdmin() {
                   {e.featuresUncertain && e.featuresStatus === 'ready' && (
                     <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-900" data-testid={`text-doubt-${e.id}`}>
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />{t('imageEx.features.doubt')}{e.featuresNote ? ` ${e.featuresNote}` : ''}
+                    </p>
+                  )}
+                  {e.featuresStatus === 'ready' && e.features.length > LARGE_BOARD && (
+                    <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-900" data-testid={`text-large-board-${e.id}`}>
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />{t('imageEx.features.largeBoard', { n: String(e.features.length), core: String(e.features.filter((f) => f.is_core).length) })}
                     </p>
                   )}
                   {e.featuresStatus === 'ready' && (

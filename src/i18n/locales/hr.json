@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP je dao {n} prijedlog(a); označeni su sa ★ u popisu za odabir.",
   "imageEx.link.type": "Sam/a upiši ili prilagodi opis",
   "imageEx.link.typeLabel": "Opis fotografije",
-  "imageEx.link.loose": "{n} opis(a) još nije povezano",
+  "imageEx.link.loose": "{n} dijelova teksta iz tvog dokumenta nije se moglo povezati s fotografijom",
   "imageEx.features.title": "3. Značajke ({n} fotografija)",
   "imageEx.features.howTo": "LEAP je iz svakog opisa napravio popis značajki, samo iz tvog teksta. Podebljani gumbići su ključni, iscrtani dodatni; klikni na gumbić da to promijeniš. Ne moraš sve pregledavati: samo gdje LEAP nije siguran, zamolit ćemo te da pogledaš.",
   "imageEx.features.onlyDoubt": "Samo gdje LEAP nije siguran ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Fotografija 2\nJezgra:\nProfil tla u šumi u umjerenoj klimi.\nPri dnu je debeli, žućkasti humusni sloj; to upućuje na sporu razgradnju u hladnoj, vlažnoj klimi.\nIznad je više slojeva stelje, koji od dna prema vrhu postaju sve grublji: na vrhu svježe lišće, pri dnu razgrađeno.\nDodatno:\nBijele niti kroz cijelu stelju: gljivične niti (micelij) koje razgrađuju lišće.",
   "imageEx.guide.template": "Preuzmi predložak",
   "imageEx.guide.templateName": "predlozak-opisa",
-  "imageEx.guide.templateText": "Fotografija 1\nJezgra:\n[Što vidiš, gdje je i kako izgleda? Što to znači?]\nDodatno:\n[Detalji koji su impresivni ako ih student primijeti.]\n\nFotografija 2\n[Opis fotografije 2. Bez naslova Jezgra i Dodatno LEAP sam određuje što je jezgra, prema redoslijedu i naglasku.]"
+  "imageEx.guide.templateText": "Fotografija 1\nJezgra:\n[Što vidiš, gdje je i kako izgleda? Što to znači?]\nDodatno:\n[Detalji koji su impresivni ako ih student primijeti.]\n\nFotografija 2\n[Opis fotografije 2. Bez naslova Jezgra i Dodatno LEAP sam određuje što je jezgra, prema redoslijedu i naglasku.]",
+  "imageEx.link.looseHelp": "LEAP prepoznaje novu fotografiju po naslovu s brojem ili nazivom datoteke fotografije. Ako ovaj tekst pripada fotografiji, stavi takav naslov iznad njega i ponovno prenesi dokument ili zalijepi tekst uz tu fotografiju putem „Prilagodi opis”.",
+  "imageEx.link.looseDismiss": "Zatvori obavijest",
+  "imageEx.features.largeBoard": "Ovo će biti velika igraća ploča: {n} značajki, od kojih je {core} ključnih. Provjeri treba li se doista vidjeti sve što je ključno; ostalo možeš označiti kao dodatno."
 }

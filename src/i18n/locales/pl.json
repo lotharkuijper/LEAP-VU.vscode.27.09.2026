@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP przygotował {n} propozycję/propozycji; są oznaczone ★ na liście wyboru.",
   "imageEx.link.type": "Wpisz lub dostosuj opis samodzielnie",
   "imageEx.link.typeLabel": "Opis zdjęcia",
-  "imageEx.link.loose": "{n} opis(y/ów) jeszcze nie połączono",
+  "imageEx.link.loose": "Nie udało się powiązać {n} fragmentu/fragmentów tekstu z Twojego dokumentu ze zdjęciem",
   "imageEx.features.title": "3. Cechy ({n} zdjęć)",
   "imageEx.features.howTo": "LEAP utworzył listę cech z każdego opisu, wyłącznie na podstawie Twojego tekstu. Pogrubione przyciski to cechy główne, przerywane — dodatkowe; kliknij przycisk, aby to zmienić. Nie musisz wszystkiego sprawdzać: prosimy Cię o sprawdzenie tylko tam, gdzie LEAP ma wątpliwości.",
   "imageEx.features.onlyDoubt": "Tylko tam, gdzie LEAP ma wątpliwości ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Zdjęcie 2\nCzęść główna:\nProfil glebowy lasu w klimacie umiarkowanym.\nNa dole gruba, żółtawa warstwa próchnicy; wskazuje ona na powolny rozkład w chłodnym, wilgotnym klimacie.\nPowyżej kilka warstw ściółki, które od dołu do góry stają się coraz grubsze: u góry świeże liście, u dołu rozłożone.\nDodatkowe informacje:\nBiałe nitki w całej ściółce: strzępki grzybów (grzybnia), które rozkładają liście.",
   "imageEx.guide.template": "Pobierz szablon",
   "imageEx.guide.templateName": "szablon-opisów",
-  "imageEx.guide.templateText": "Zdjęcie 1\nCzęść główna:\n[Co widzisz, gdzie i jak to wygląda? Co to oznacza?]\nDodatkowe informacje:\n[Szczegóły, których zauważenie przez studenta świadczy o wysokim poziomie.]\n\nZdjęcie 2\n[Opis zdjęcia 2. Bez nagłówków Część główna i Dodatkowe informacje LEAP sam określa, co jest najważniejsze, na podstawie kolejności i akcentu.]"
+  "imageEx.guide.templateText": "Zdjęcie 1\nCzęść główna:\n[Co widzisz, gdzie i jak to wygląda? Co to oznacza?]\nDodatkowe informacje:\n[Szczegóły, których zauważenie przez studenta świadczy o wysokim poziomie.]\n\nZdjęcie 2\n[Opis zdjęcia 2. Bez nagłówków Część główna i Dodatkowe informacje LEAP sam określa, co jest najważniejsze, na podstawie kolejności i akcentu.]",
+  "imageEx.link.looseHelp": "LEAP rozpoznaje nowe zdjęcie po nagłówku z numerem lub nazwą pliku zdjęcia. Jeśli ten tekst należy do zdjęcia, dodaj taki nagłówek nad nim i prześlij dokument ponownie albo wklej tekst przy tym zdjęciu za pomocą „Dostosuj opis”.",
+  "imageEx.link.looseDismiss": "Zamknij komunikat",
+  "imageEx.features.largeBoard": "To będzie duża plansza: {n} cech, z czego {core} kluczowych. Sprawdź, czy wszystko, co jest kluczowe, naprawdę musi być widoczne; resztę możesz dodać jako dodatkowe."
 }

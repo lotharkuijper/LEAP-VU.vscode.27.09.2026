@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP이 제안 {n}개를 만들었어. 선택 목록에 ★로 표시되어 있어.",
   "imageEx.link.type": "설명을 직접 입력하거나 수정",
   "imageEx.link.typeLabel": "사진 설명",
-  "imageEx.link.loose": "아직 연결되지 않은 설명 {n}개",
+  "imageEx.link.loose": "문서의 텍스트 {n}개를 사진에 연결할 수 없었어",
   "imageEx.features.title": "3. 특징(사진 {n}장)",
   "imageEx.features.howTo": "LEAP이 각 설명에서 네 텍스트만 사용해 특징 목록을 만들었어. 굵은 버튼은 핵심, 점선은 추가 항목이야. 버튼을 클릭하면 전환할 수 있어. 모두 검토할 필요는 없어. LEAP이 확신하지 못하는 부분만 잠깐 확인해 줘.",
   "imageEx.features.onlyDoubt": "LEAP이 확신하지 못하는 부분만({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "사진 2\n핵심:\n온대 기후의 숲 토양 단면.\n아래쪽의 두껍고 노란빛을 띠는 부식층은 서늘하고 습한 기후에서 분해가 느리게 일어난다는 것을 보여 줘.\n그 위에는 여러 낙엽층이 있으며, 아래에서 위로 갈수록 점점 더 거칠어져. 위쪽에는 신선한 잎, 아래쪽에는 분해된 잎이 있어.\n추가:\n낙엽층 전체에 퍼진 흰 실: 잎을 분해하는 곰팡이 균사(균사체).",
   "imageEx.guide.template": "템플릿 다운로드",
   "imageEx.guide.templateName": "설명-템플릿",
-  "imageEx.guide.templateText": "사진 1\n핵심:\n[무엇이 보이고, 어디에 있으며, 어떻게 생겼어? 그것은 무엇을 의미해?]\n추가:\n[학생이 알아보면 훌륭한 세부 사항.]\n\n사진 2\n[사진 2에 대한 설명. 핵심과 추가 제목이 없으면 LEAP가 순서와 강조를 바탕으로 무엇이 핵심인지 스스로 판단해.]"
+  "imageEx.guide.templateText": "사진 1\n핵심:\n[무엇이 보이고, 어디에 있으며, 어떻게 생겼어? 그것은 무엇을 의미해?]\n추가:\n[학생이 알아보면 훌륭한 세부 사항.]\n\n사진 2\n[사진 2에 대한 설명. 핵심과 추가 제목이 없으면 LEAP가 순서와 강조를 바탕으로 무엇이 핵심인지 스스로 판단해.]",
+  "imageEx.link.looseHelp": "LEAP은 사진 번호나 파일명이 있는 제목으로 새 사진을 인식해. 이 텍스트가 사진에 속한다면 그 위에 그런 제목을 넣고 문서를 다시 업로드하거나, “설명 수정”을 통해 해당 사진에 텍스트를 붙여 넣어.",
+  "imageEx.link.looseDismiss": "알림 닫기",
+  "imageEx.features.largeBoard": "큰 게임판이 될 거야: 특징 {n}개, 그중 핵심 {core}개. 핵심인 항목이 정말 꼭 보여야 하는지 확인해 봐. 나머지는 추가 항목으로 만들 수 있어."
 }

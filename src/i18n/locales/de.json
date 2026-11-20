@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP hat {n} Vorschlag/Vorschläge gemacht; sie stehen mit ★ in der Auswahlliste.",
   "imageEx.link.type": "Beschreibung selbst eingeben oder anpassen",
   "imageEx.link.typeLabel": "Beschreibung des Fotos",
-  "imageEx.link.loose": "{n} Beschreibung(en) noch nicht verknüpft",
+  "imageEx.link.loose": "{n} Textstelle(n) aus deinem Dokument konnte(n) keinem Foto zugeordnet werden",
   "imageEx.features.title": "3. Merkmale ({n} Fotos)",
   "imageEx.features.howTo": "LEAP hat aus jeder Beschreibung eine Liste mit Merkmalen erstellt, nur aus deinem Text. Fette Buttons sind Kernmerkmale, gestrichelte zusätzliche; klicke auf einen Button, um ihn zu wechseln. Durchsehen musst du nicht: Nur wenn LEAP unsicher ist, bitten wir dich kurz hinzuschauen.",
   "imageEx.features.onlyDoubt": "Nur wenn LEAP unsicher ist ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Foto 2\nKern:\nEin Bodenprofil eines Waldes in einem gemäßigten Klima.\nUnten eine dicke, gelbliche Humusschicht; sie weist auf langsame Zersetzung in einem kühlen, feuchten Klima hin.\nDarüber mehrere Streuschichten, die von unten nach oben immer gröber werden: oben das frische Laub, unten das zersetzte.\nZusatz:\nWeiße Fäden durch die gesamte Streu: Pilzfäden (Myzel), die das Laub zersetzen.",
   "imageEx.guide.template": "Vorlage herunterladen",
   "imageEx.guide.templateName": "beschreibungen-vorlage",
-  "imageEx.guide.templateText": "Foto 1\nKern:\n[Was siehst du, wo ist es und wie sieht es aus? Was bedeutet es?]\nZusatz:\n[Details, die beeindruckend sind, wenn ein Student sie erkennt.]\n\nFoto 2\n[Beschreibung von Foto 2. Ohne die Überschriften Kern und Zusatz bestimmt LEAP selbst, was Kern ist, nach Reihenfolge und Betonung.]"
+  "imageEx.guide.templateText": "Foto 1\nKern:\n[Was siehst du, wo ist es und wie sieht es aus? Was bedeutet es?]\nZusatz:\n[Details, die beeindruckend sind, wenn ein Student sie erkennt.]\n\nFoto 2\n[Beschreibung von Foto 2. Ohne die Überschriften Kern und Zusatz bestimmt LEAP selbst, was Kern ist, nach Reihenfolge und Betonung.]",
+  "imageEx.link.looseHelp": "LEAP erkennt ein neues Foto an einer Überschrift mit der Nummer oder dem Dateinamen des Fotos. Gehört dieser Text zu einem Foto, setze eine solche Überschrift darüber und lade das Dokument erneut hoch oder füge den Text bei diesem Foto über „Beschreibung anpassen“ ein.",
+  "imageEx.link.looseDismiss": "Meldung schließen",
+  "imageEx.features.largeBoard": "Das wird ein großes Spielbrett: {n} Merkmale, davon {core} zentral. Prüfe kurz, ob alles, was zentral ist, wirklich gesehen werden muss; den Rest kannst du als Zusatz markieren."
 }

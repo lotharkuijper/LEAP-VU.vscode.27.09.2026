@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP deed {n} voorstel(len); ze staan met ★ in de keuzelijst.",
   "imageEx.link.type": "Beschrijving zelf typen of aanpassen",
   "imageEx.link.typeLabel": "Beschrijving van de foto",
-  "imageEx.link.loose": "{n} beschrijving(en) nog niet gekoppeld",
+  "imageEx.link.loose": "{n} stuk(ken) tekst uit je document kon(den) niet aan een foto worden gekoppeld",
   "imageEx.features.title": "3. Kenmerken ({n} foto’s)",
   "imageEx.features.howTo": "LEAP heeft van elke beschrijving een lijstje kenmerken gemaakt, alleen uit jouw tekst. Dikke knopjes zijn kern, gestippelde extra; klik op een knopje om het te wisselen. Nalopen hoeft niet: alleen waar LEAP twijfelt, vragen we je even te kijken.",
   "imageEx.features.onlyDoubt": "Alleen waar LEAP twijfelt ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Foto 2\nKern:\nEen bodemprofiel van een bos in een gematigd klimaat.\nOnderin een dikke, gelige humuslaag; die wijst op langzame afbraak in een koel, vochtig klimaat.\nDaarboven meerdere strooisellagen, die van onder naar boven steeds grover worden: bovenin het verse blad, onderin het verteerde.\nExtra:\nWitte draden door het hele strooisel: schimmeldraden (mycelium) die het blad afbreken.",
   "imageEx.guide.template": "Sjabloon downloaden",
   "imageEx.guide.templateName": "beschrijvingen-sjabloon",
-  "imageEx.guide.templateText": "Foto 1\nKern:\n[Wat zie je, waar en hoe ziet het eruit? Wat betekent het?]\nExtra:\n[Details die knap zijn als een student ze ziet.]\n\nFoto 2\n[Beschrijving van foto 2. Zonder de kopjes Kern en Extra bepaalt LEAP zelf wat kern is, op volgorde en nadruk.]"
+  "imageEx.guide.templateText": "Foto 1\nKern:\n[Wat zie je, waar en hoe ziet het eruit? Wat betekent het?]\nExtra:\n[Details die knap zijn als een student ze ziet.]\n\nFoto 2\n[Beschrijving van foto 2. Zonder de kopjes Kern en Extra bepaalt LEAP zelf wat kern is, op volgorde en nadruk.]",
+  "imageEx.link.looseHelp": "LEAP herkent een nieuwe foto aan een kopje met het nummer of de bestandsnaam van de foto. Hoort deze tekst bij een foto, zet dan zo’n kopje erboven en upload het document opnieuw, of plak de tekst bij die foto via “Beschrijving aanpassen”.",
+  "imageEx.link.looseDismiss": "Melding sluiten",
+  "imageEx.features.largeBoard": "Dit wordt een groot speelbord: {n} kenmerken, waarvan {core} kern. Kijk even of alles wat kern is echt gezien moet worden; de rest kun je extra maken."
 }
