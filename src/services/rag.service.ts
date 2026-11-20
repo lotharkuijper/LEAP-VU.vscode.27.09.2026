@@ -5,6 +5,7 @@ import { STORAGE_CONFIG } from '../config/storage.config';
 import { expandQuery, type QueryExpansionOptions } from './queryExpansion';
 import { purposeAllowsModule } from '../../server/rag/filePurpose.js';
 import { buildContextWithCap } from '../../server/rag/contextCap.js';
+import { youTubeTimeUrl } from '../../server/ingestion/youtubeImport.js';
 import { tStatic } from '../i18n/translations';
 import { getActiveLang } from '../i18n/activeLang';
 
@@ -507,8 +508,22 @@ export function pageRangeFromMetadata(metadata: unknown): SlideRange | null {
   return { start, end: Math.max(start, end) };
 }
 
+// Tijdvak uit chunk-metadata van een YouTube-video (source:'youtube', zie
+// server/ingestion/youtubeImport.js), met een link naar dat moment in de video.
+export function videoSpanFromMetadata(metadata: unknown): { timeStart: number; timeEnd: number; videoHref: string } | null {
+  if (!metadata || typeof metadata !== 'object') return null;
+  const m = metadata as Record<string, unknown>;
+  if (m.source !== 'youtube' || typeof m.videoId !== 'string' || !/^[A-Za-z0-9_-]{11}$/.test(m.videoId)) return null;
+  const start = Number(m.timeStart);
+  if (!Number.isFinite(start) || start < 0) return null;
+  const endRaw = Number(m.timeEnd);
+  const end = Number.isFinite(endRaw) ? Math.max(start, endRaw) : start;
+  return { timeStart: start, timeEnd: end, videoHref: youTubeTimeUrl(m.videoId, start) };
+}
+
 // Bouwt een bron-item uit een chunk en neemt de vindplaats mee: de dia-reeks bij
-// een PowerPoint-chunk ("dia 4–6") of de pagina-reeks bij een PDF ("p. 12–13").
+// een PowerPoint-chunk ("dia 4–6"), de pagina-reeks bij een PDF ("p. 12–13") of
+// het tijdvak bij een YouTube-video ("3:10").
 export function chunkToDisplaySource(chunk: {
   documentTitle: string;
   similarity: number;
@@ -522,12 +537,17 @@ export function chunkToDisplaySource(chunk: {
   slideEnd?: number;
   pageStart?: number;
   pageEnd?: number;
+  timeStart?: number;
+  timeEnd?: number;
+  videoHref?: string;
 } {
   const base = {
     title: chunk.documentTitle,
     similarity: chunk.similarity,
     documentId: chunk.documentId,
   };
+  const video = videoSpanFromMetadata(chunk.metadata);
+  if (video) return { ...base, ...video };
   const slide = slideRangeFromMetadata(chunk.metadata);
   if (slide) return { ...base, slideStart: slide.start, slideEnd: slide.end };
   const page = pageRangeFromMetadata(chunk.metadata);
@@ -544,6 +564,7 @@ export function dedupeSourcesByDocument<
     slideEnd?: number;
     pageStart?: number;
     pageEnd?: number;
+    timeStart?: number;
   }
 >(
   sources: T[],
@@ -558,7 +579,8 @@ export function dedupeSourcesByDocument<
     // hetzelfde document als aparte bronnen zichtbaar blijven.
     const slidePart = src.slideStart != null ? `:s${src.slideStart}-${src.slideEnd ?? src.slideStart}` : '';
     const pagePart = src.pageStart != null ? `:p${src.pageStart}-${src.pageEnd ?? src.pageStart}` : '';
-    const key = (src.documentId ? `id:${src.documentId}` : `t:${src.title}`) + slidePart + pagePart;
+    const timePart = src.timeStart != null ? `:t${src.timeStart}` : '';
+    const key = (src.documentId ? `id:${src.documentId}` : `t:${src.title}`) + slidePart + pagePart + timePart;
     const existing = bestPerDoc.get(key);
     if (!existing || src.similarity > existing.similarity) {
       bestPerDoc.set(key, src);

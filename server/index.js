@@ -52,6 +52,7 @@ import { registerItembankRoutes } from './quiz/itembankRoutes.js';
 import { registerDocumentRoutes } from './documents/routes.js';
 import { registerCourseRoutes } from './courses/routes.js';
 import { registerIngestionRoutes } from './ingestion/routes.js';
+import { registerYouTubeRoutes } from './ingestion/youtubeRoutes.js';
 import { registerImageExerciseRoutes } from './imageExercises/routes.js';
 import { registerImageExercisePlayRoutes } from './imageExercises/playRoutes.js';
 import { registerConceptRoutes } from './concepts/routes.js';
@@ -140,6 +141,7 @@ registerCourseRoutes(app);
 
 registerIngestionRoutes(app);
 
+registerYouTubeRoutes(app);
 registerImageExerciseRoutes(app);
 
 registerImageExercisePlayRoutes(app);

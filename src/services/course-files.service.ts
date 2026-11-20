@@ -160,6 +160,24 @@ export const changeWebSourcePurpose = (courseId: string, sourceId: string, purpo
 export const deleteWebSource = (courseId: string, sourceId: string) =>
   request<{ deleted: number }>(`/api/admin/course-files/${courseId}/web-sources/${sourceId}`, { method: 'DELETE' });
 
+export interface YouTubeImportResult {
+  title: string;
+  author: string | null;
+  documentId: string;
+  chunks: number;
+  /** Fragmenten waarin de spreker naar het beeld verwijst. */
+  visualRefs: number;
+  /** De video stond al in de cursus en is bijgewerkt. */
+  updated: boolean;
+}
+
+/** Een YouTube-video als bron: link + geplakt transcript (server/ingestion/youtubeRoutes.js). */
+export const importYouTubeVideo = (courseId: string, url: string, transcript: string, title?: string) =>
+  request<YouTubeImportResult>('/api/admin/import-youtube', {
+    method: 'POST',
+    body: JSON.stringify({ courseId, url, transcript, ...(title ? { title } : {}) }),
+  });
+
 export const applyReview = (courseId: string, decisions: PurposeDecision[]) =>
   request<{ ok: boolean; results: Array<{ docId: string; ok: boolean; error?: string }> }>(`/api/admin/course-files/${courseId}/review`, {
     method: 'POST',

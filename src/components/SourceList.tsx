@@ -1,5 +1,6 @@
 import { useState, useId } from 'react';
 import { FileText, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
+import { formatVideoTime } from '../../server/ingestion/youtubeImport.js';
 
 export interface SourceItem {
   title: string;
@@ -14,6 +15,11 @@ export interface SourceItem {
   pageStart?: number;
   /** Laatste PDF-pagina van de chunk; gelijk aan pageStart bij één pagina. */
   pageEnd?: number;
+  /** Begin van het fragment in een YouTube-video (seconden); afwezig bij andere bronnen. */
+  timeStart?: number;
+  timeEnd?: number;
+  /** Link naar dat moment in de video; openen gaat dan naar YouTube. */
+  videoHref?: string;
   /** Onderdeel in de leerlijn van de cursus (server/courses/courseUnits.js), als die is ingesteld. */
   unitTitle?: string;
   /** True wanneer deze bron bij de begripsextractie als bewijs is vastgelegd (concept_evidence). */
@@ -36,13 +42,18 @@ export function pageLabel(item: Pick<SourceItem, 'pageStart' | 'pageEnd'>, word 
   return end !== item.pageStart ? `${word} ${item.pageStart}–${end}` : `${word} ${item.pageStart}`;
 }
 
-// Eén vindplaats-label per bron: dia bij PowerPoint, anders pagina bij PDF.
+// "3:10" voor een fragment uit een YouTube-video; lege string bij andere bronnen.
+export function timeLabel(item: Pick<SourceItem, 'timeStart'>): string {
+  return item.timeStart != null ? `▶ ${formatVideoTime(item.timeStart)}` : '';
+}
+
+// Eén vindplaats-label per bron: dia bij PowerPoint, tijdstip bij een video, anders pagina bij PDF.
 export function locationLabel(
-  item: Pick<SourceItem, 'slideStart' | 'slideEnd' | 'pageStart' | 'pageEnd'>,
+  item: Pick<SourceItem, 'slideStart' | 'slideEnd' | 'pageStart' | 'pageEnd' | 'timeStart'>,
   slideWord = 'dia',
   pageWord = 'p.'
 ): string {
-  return slideLabel(item, slideWord) || pageLabel(item, pageWord);
+  return slideLabel(item, slideWord) || timeLabel(item) || pageLabel(item, pageWord);
 }
 
 interface SourceListProps {
@@ -82,7 +93,8 @@ function dedupeByDocument(items: SourceItem[]): SourceItem[] {
     // uit hetzelfde document als aparte bronnen blijven staan.
     const slidePart = s.slideStart != null ? `:s${s.slideStart}-${s.slideEnd ?? s.slideStart}` : '';
     const pagePart = s.pageStart != null ? `:p${s.pageStart}-${s.pageEnd ?? s.pageStart}` : '';
-    const key = (s.documentId ? `id:${s.documentId}` : `t:${s.title}`) + slidePart + pagePart;
+    const timePart = s.timeStart != null ? `:t${s.timeStart}` : '';
+    const key = (s.documentId ? `id:${s.documentId}` : `t:${s.title}`) + slidePart + pagePart + timePart;
     const cur = best.get(key);
     if (!cur || s.similarity > cur.similarity) best.set(key, s);
   }

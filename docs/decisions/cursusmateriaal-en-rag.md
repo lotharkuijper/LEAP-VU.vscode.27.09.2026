@@ -33,6 +33,14 @@ LEAP is built around course document ingestion, RAG chunking, concept extraction
 - Office files should be converted to readable plain text; never write `[object Object]` into stored chunks.
 - For ingestion and chunking fixes, add a reproduction/regression test.
 
+### YouTube video as a source (2026-11-18, test phase)
+- A teacher adds a video with its link plus the transcript pasted from YouTube's "Show transcript" panel (SRT/WebVTT also work). `POST /api/admin/import-youtube` in `server/ingestion/youtubeRoutes.js`; pure helpers in `server/ingestion/youtubeImport.js`. Only a teacher of the course or an admin, only purpose course_material or course_info.
+- LEAP fetches nothing from YouTube except the title via oEmbed: downloading captions or frames breaks YouTube's terms and is blocked from Azure. Use only videos whose maker gave permission or that carry an open licence.
+- Stored as an ordinary web document (`file_type 'web'`, `file_path` = canonical video URL, no `web_source_id`), so opening, purpose change, deletion and concept extraction work exactly as for documents. Concepts from a video are treated like concepts from any document.
+- Chunks are cut per time window (~1 minute, at a sentence end) and carry `metadata.source 'youtube'`, `videoId`, `timeStart`, `timeEnd`. The chunk text starts with `[Video m:ss–m:ss]`. Chat and Ik leg uit show "▶ m:ss" in the source list and open YouTube at that moment.
+- Grounding: a transcript says nothing about what is shown on screen. Chunks where the speaker refers to the image ("hier zie je", "as you can see") get `visualRef` and a note telling the model not to describe or guess what is shown, but to send the student to that moment in the video.
+- Not yet: reading on-screen text or describing images (needs the video file from the maker), a place in the leerlijn (web documents are excluded there).
+
 ### Search
 - Searching across languages (`server/rag/crossLingual.js`, `POST /api/rag/query-variants`): when the question's language differs from the course material's majority language, the server translates the question and `searchRelevantChunksWithStats` (`src/services/rag.service.ts`) searches with both, keeping the best score per passage. Never blocking: on any failure it searches with the original question only.
 - The tutor chat always gets a short course overview (`server/courses/courseOverview.js`: name, description, leerlijn units or material titles, approved concepts) for orientation questions; it is explicitly not a source for content explanations.
