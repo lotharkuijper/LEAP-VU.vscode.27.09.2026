@@ -2,10 +2,13 @@
 // Pure functies, zonder database of netwerk, zodat ze los te testen zijn.
 //
 // De docent levert één document met per foto een kopje. Een regel is een kopje als:
-//  - hij begint met '#' (Markdown), of
-//  - hij kort is en de bestandsnaam van een geüploade foto bevat ("alzheimer-03.jpg"), of
+//  - hij (vrijwel) alleen de bestandsnaam van een geüploade foto is ("alzheimer-03.jpg",
+//    "Foto: alzheimer-03"), of die naam vóór een dubbele punt staat, of
 //  - hij kort is en begint met een woord als Foto/Afbeelding/Figuur/Image + nummer, of
 //  - hij alleen uit een nummer bestaat ("3." of "3)").
+// Een gewone zin waarin de bestandsnaam voorkomt ("… typerend voor de art nouveau.")
+// is géén kopje, en een Markdown-kopje ('#') telt alleen als het ook zo'n kenmerk heeft:
+// anders zou een tussenkopje ín een beschrijving ("## Het haar") die beschrijving opknippen.
 // Tekst na een dubbele punt op de kopregel ("Foto 3: hersenweefsel …") hoort bij de beschrijving.
 
 const MAX_HEADING_CHARS = 100;
@@ -18,6 +21,7 @@ const IMAGE_WORDS = `(?:${[
 ].join('|')})`;
 const WORD_NUMBER_RE = new RegExp(`^${IMAGE_WORDS}\\s*(?:nr\\.?|nummer|no\\.?|#)?\\s*(\\d{1,4})(?!\\d)`, 'iu');
 const NUMBER_ONLY_RE = /^(\d{1,4})\s*[.):-]?\s*$/;
+const IMAGE_PREFIX_RE = new RegExp(`^${IMAGE_WORDS}\\s*(?:nr\\.?|nummer|no\\.?|#)?\\s*[:：.-]?\\s*`, 'iu');
 
 /** "Alzheimer-03.JPG" → "alzheimer03": voor vergelijken van namen. */
 export function normalizeStem(name) {
@@ -51,19 +55,29 @@ function splitHeadingLine(raw) {
 export function readHeading(rawLine, stems = []) {
   const line = String(rawLine || '').trim();
   if (!line) return null;
-  const markdown = line.startsWith('#');
+  // De hele regel is de bestandsnaam (eventueel met "Foto:" ervoor).
+  const whole = cleanHeading(line);
+  const wholeStem = whole.length <= MAX_HEADING_CHARS ? stemOfLine(whole, stems) : null;
+  if (wholeStem) return { heading: whole, rest: '', number: numberInName(whole), stem: wholeStem };
+
   const { heading, rest } = splitHeadingLine(line);
   if (!heading || heading.length > MAX_HEADING_CHARS) return null;
-  const norm = normalizeStem(heading);
-  const stem = stems.find((s) => s.length >= 3 && norm.includes(s)) || null;
+  const stem = rest ? stemOfLine(heading, stems) : null;
   const wordNum = heading.match(WORD_NUMBER_RE);
   const onlyNum = heading.match(NUMBER_ONLY_RE);
-  if (!markdown && !stem && !wordNum && !onlyNum) return null;
+  if (!stem && !wordNum && !onlyNum) return null;
   // Een gewone zin die toevallig met "Foto 3 laat zien …" begint, is geen kopje
   // als er geen dubbele punt is en hij lang doorloopt.
-  if (!markdown && !stem && !onlyNum && !rest && heading.length > 40) return null;
-  const number = wordNum ? Number(wordNum[1]) : onlyNum ? Number(onlyNum[1]) : (markdown ? numberInName(heading) : null);
+  if (!stem && !onlyNum && !rest && heading.length > 40) return null;
+  const number = wordNum ? Number(wordNum[1]) : onlyNum ? Number(onlyNum[1]) : null;
   return { heading, rest, number, stem };
+}
+
+// Is deze tekst (vrijwel) alleen de bestandsnaam van een foto? Een woord als "Foto"
+// ervoor mag; een zin waarin de naam toevallig voorkomt telt niet.
+function stemOfLine(text, stems) {
+  const n = normalizeStem(String(text).replace(IMAGE_PREFIX_RE, ''));
+  return stems.find((s) => s.length >= 3 && n === s) || null;
 }
 
 /**

@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP 提出了 {n} 条建议；它们在选择列表中以 ★ 标出。",
   "imageEx.link.type": "自己输入或调整描述",
   "imageEx.link.typeLabel": "照片描述",
-  "imageEx.link.loose": "还有 {n} 条描述未关联",
+  "imageEx.link.loose": "你的文档中有 {n} 段文本无法关联到照片",
   "imageEx.features.title": "3. 特征（{n} 张照片）",
   "imageEx.features.howTo": "LEAP 根据每条描述整理了一份特征列表，只使用你的文本。加粗按钮是核心特征，虚线按钮是额外特征；点击按钮即可切换。不需要全部检查：只有在 LEAP 不确定的地方，我们才会请你看一下。",
   "imageEx.features.onlyDoubt": "仅显示 LEAP 不确定的项（{n}）",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "照片 2\n核心：\n温带气候森林中的一个土壤剖面。\n底部有一层厚厚的淡黄色腐殖质层；这表明在凉爽、潮湿的气候中分解速度较慢。\n其上方有多层枯落物层，从下到上越来越粗：上层是新鲜叶片，下层是已分解的叶片。\n额外：\n白色丝状物贯穿整个枯落物层：真菌菌丝（mycelium），它们分解叶片。",
   "imageEx.guide.template": "下载模板",
   "imageEx.guide.templateName": "描述-模板",
-  "imageEx.guide.templateText": "照片 1\n核心：\n[你看到了什么，在哪里，它看起来怎样？这意味着什么？]\n额外：\n[如果学生能看出来会很不错的细节。]\n\n照片 2\n[照片 2 的描述。不使用“核心”和“额外”标题时，LEAP 会自行按顺序和重点判断哪些是核心内容。]"
+  "imageEx.guide.templateText": "照片 1\n核心：\n[你看到了什么，在哪里，它看起来怎样？这意味着什么？]\n额外：\n[如果学生能看出来会很不错的细节。]\n\n照片 2\n[照片 2 的描述。不使用“核心”和“额外”标题时，LEAP 会自行按顺序和重点判断哪些是核心内容。]",
+  "imageEx.link.looseHelp": "LEAP 通过带有照片编号或文件名的标题来识别新照片。如果这段文字属于某张照片，请在其上方添加这样的标题并重新上传文档，或通过“调整描述”将文字粘贴到该照片中。",
+  "imageEx.link.looseDismiss": "关闭通知",
+  "imageEx.features.largeBoard": "这将成为一个大型游戏板：{n} 个特征，其中 {core} 个为核心特征。请检查一下所有核心特征是否真的都需要被看到；其余的可以设为附加特征。"
 }

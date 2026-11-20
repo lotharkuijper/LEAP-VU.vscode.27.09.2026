@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP 提出咗 {n} 個建議；佢哋喺選單入面以 ★ 標示。",
   "imageEx.link.type": "自行輸入或修改描述",
   "imageEx.link.typeLabel": "相片描述",
-  "imageEx.link.loose": "仲有 {n} 個描述未配對",
+  "imageEx.link.loose": "你文件入面有 {n} 段文字未能連結到相片",
   "imageEx.features.title": "3. 特徵（{n} 張相片）",
   "imageEx.features.howTo": "LEAP 已根據你嘅文字，為每個描述整咗一個特徵清單。粗體按鈕係核心，虛線係額外；撳一下按鈕就可以切換。唔一定要逐項檢查：只有 LEAP 唔肯定嘅地方，我哋先會叫你睇一睇。",
   "imageEx.features.onlyDoubt": "只顯示 LEAP 唔肯定嘅地方（{n}）",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "相片 2\n核心：\n溫帶氣候森林嘅土壤剖面。\n底部有一層厚厚、偏黃色嘅腐殖質層；顯示喺涼爽、潮濕氣候下分解速度較慢。\n上面有多層枯落物層，由下至上越嚟越粗：上面係新鮮葉，下面係已分解嘅葉。\n額外：\n白色絲狀物貫穿成個枯落物層：真菌菌絲（mycelium），會分解葉片。",
   "imageEx.guide.template": "下載範本",
   "imageEx.guide.templateName": "描述範本",
-  "imageEx.guide.templateText": "相片 1\n核心：\n[你見到啲咩、喺邊度、外觀係點？代表咩意思？]\n額外：\n[如果學生留意到會好叻嘅細節。]\n\n相片 2\n[相片 2 嘅描述。冇「核心」同「額外」標題時，LEAP 會按次序同重點自行判斷咩係核心。]"
+  "imageEx.guide.templateText": "相片 1\n核心：\n[你見到啲咩、喺邊度、外觀係點？代表咩意思？]\n額外：\n[如果學生留意到會好叻嘅細節。]\n\n相片 2\n[相片 2 嘅描述。冇「核心」同「額外」標題時，LEAP 會按次序同重點自行判斷咩係核心。]",
+  "imageEx.link.looseHelp": "LEAP 會透過包含相片編號或檔案名稱嘅標題，識別新相片。如果呢段文字屬於某張相片，請喺上面加返呢類標題，然後重新上載文件；或者透過「調整描述」將文字貼到嗰張相片度。",
+  "imageEx.link.looseDismiss": "關閉提示",
+  "imageEx.features.largeBoard": "呢個會變成大型遊戲板：{n} 個特徵，其中 {core} 個係核心。請檢查一下所有標為核心嘅內容係咪真係必須睇到；其他可以設為額外內容。"
 }

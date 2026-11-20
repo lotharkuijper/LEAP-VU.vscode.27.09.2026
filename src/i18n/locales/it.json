@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP ha fatto {n} proposta/e; sono indicate con ★ nell’elenco di scelta.",
   "imageEx.link.type": "Digitare o modificare tu la descrizione",
   "imageEx.link.typeLabel": "Descrizione della foto",
-  "imageEx.link.loose": "{n} descrizione/i non ancora collegate",
+  "imageEx.link.loose": "{n} testo/i del tuo documento non è/sono stato/i collegato/i a una foto",
   "imageEx.features.title": "3. Caratteristiche ({n} foto)",
   "imageEx.features.howTo": "LEAP ha creato per ogni descrizione un elenco di caratteristiche, usando solo il tuo testo. I pulsanti in grassetto sono principali, quelli tratteggiati extra; clicca su un pulsante per cambiarlo. Non serve controllare tutto: ti chiediamo di dare un’occhiata solo dove LEAP ha dei dubbi.",
   "imageEx.features.onlyDoubt": "Solo dove LEAP ha dubbi ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Foto 2\nContenuto essenziale:\nUn profilo del suolo di un bosco in un clima temperato.\nIn basso uno spesso strato di humus giallastro; indica una decomposizione lenta in un clima fresco e umido.\nSopra, diversi strati di lettiera, che dal basso verso l’alto diventano sempre più grossolani: in alto le foglie fresche, in basso quelle decomposte.\nExtra:\nFilamenti bianchi in tutta la lettiera: ife fungine (micelio) che decompongono le foglie.",
   "imageEx.guide.template": "Scarica il modello",
   "imageEx.guide.templateName": "modello-descrizioni",
-  "imageEx.guide.templateText": "Foto 1\nContenuto essenziale:\n[Cosa vedi, dove si trova e che aspetto ha? Cosa significa?]\nExtra:\n[Dettagli notevoli se uno studente li nota.]\n\nFoto 2\n[Descrizione della foto 2. Senza i titoli Contenuto essenziale ed Extra, LEAP decide da sé cosa è essenziale, in base all’ordine e all’enfasi.]"
+  "imageEx.guide.templateText": "Foto 1\nContenuto essenziale:\n[Cosa vedi, dove si trova e che aspetto ha? Cosa significa?]\nExtra:\n[Dettagli notevoli se uno studente li nota.]\n\nFoto 2\n[Descrizione della foto 2. Senza i titoli Contenuto essenziale ed Extra, LEAP decide da sé cosa è essenziale, in base all’ordine e all’enfasi.]",
+  "imageEx.link.looseHelp": "LEAP riconosce una nuova foto da un'intestazione con il numero o il nome del file della foto. Se questo testo appartiene a una foto, inserisci un'intestazione di questo tipo sopra e carica di nuovo il documento, oppure incolla il testo in quella foto tramite “Modifica descrizione”.",
+  "imageEx.link.looseDismiss": "Chiudi notifica",
+  "imageEx.features.largeBoard": "Questo diventerà un grande tabellone di gioco: {n} caratteristiche, di cui {core} essenziali. Controlla se tutto ciò che è essenziale deve davvero essere visto; il resto puoi renderlo extra."
 }

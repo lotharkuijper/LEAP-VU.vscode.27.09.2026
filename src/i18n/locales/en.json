@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP made {n} suggestion(s); they are marked with ★ in the dropdown list.",
   "imageEx.link.type": "Type or edit the description yourself",
   "imageEx.link.typeLabel": "Photo description",
-  "imageEx.link.loose": "{n} description(s) not linked yet",
+  "imageEx.link.loose": "{n} piece(s) of text from your document could not be linked to a photo",
   "imageEx.features.title": "3. Features ({n} photos)",
   "imageEx.features.howTo": "LEAP has made a list of features from each description, using only your text. Bold buttons are core features, dotted ones are extra; click a button to switch it. You don’t need to review everything: we only ask you to take a look where LEAP is unsure.",
   "imageEx.features.onlyDoubt": "Only where LEAP is unsure ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Photo 2\nCore:\nA soil profile of a forest in a temperate climate.\nAt the bottom, a thick, yellowish humus layer; this indicates slow decomposition in a cool, humid climate.\nAbove it, several litter layers that become increasingly coarse from bottom to top: fresh leaves at the top, decomposed material at the bottom.\nExtra:\nWhite threads throughout the litter: fungal threads (mycelium) that break down the leaves.",
   "imageEx.guide.template": "Download template",
   "imageEx.guide.templateName": "descriptions-template",
-  "imageEx.guide.templateText": "Photo 1\nCore:\n[What do you see, where is it, and what does it look like? What does it mean?]\nExtra:\n[Details that are impressive if a student spots them.]\n\nPhoto 2\n[Description of photo 2. Without the Core and Extra headings, LEAP determines what is core based on order and emphasis.]"
+  "imageEx.guide.templateText": "Photo 1\nCore:\n[What do you see, where is it, and what does it look like? What does it mean?]\nExtra:\n[Details that are impressive if a student spots them.]\n\nPhoto 2\n[Description of photo 2. Without the Core and Extra headings, LEAP determines what is core based on order and emphasis.]",
+  "imageEx.link.looseHelp": "LEAP recognizes a new photo by a heading with the photo number or file name. If this text belongs to a photo, add such a heading above it and upload the document again, or paste the text into that photo via “Edit description”.",
+  "imageEx.link.looseDismiss": "Close notification",
+  "imageEx.features.largeBoard": "This will be a large game board: {n} features, {core} of them core. Check whether everything marked as core really needs to be seen; you can make the rest optional."
 }

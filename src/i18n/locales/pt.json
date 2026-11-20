@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "O LEAP fez {n} sugestão(ões); estão assinaladas com ★ na lista de escolha.",
   "imageEx.link.type": "Escrever ou ajustar a descrição",
   "imageEx.link.typeLabel": "Descrição da foto",
-  "imageEx.link.loose": "{n} descrição(ões) ainda não associada(s)",
+  "imageEx.link.loose": "Não foi possível associar {n} trecho(s) de texto do teu documento a uma fotografia",
   "imageEx.features.title": "3. Características ({n} fotos)",
   "imageEx.features.howTo": "O LEAP criou, a partir de cada descrição, uma lista de características, apenas com base no teu texto. Os botões a negrito são essenciais, os tracejados são extra; clica num botão para alternar. Não precisas de rever tudo: só quando o LEAP tiver dúvidas é que te pedimos para dar uma vista de olhos.",
   "imageEx.features.onlyDoubt": "Só onde o LEAP tem dúvidas ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Foto 2\nNúcleo:\nUm perfil de solo de uma floresta em clima temperado.\nNa parte inferior, uma camada espessa e amarelada de húmus; isso indica decomposição lenta num clima fresco e húmido.\nAcima, várias camadas de serapilheira, que de baixo para cima se tornam cada vez mais grosseiras: em cima a folha fresca, em baixo a decomposta.\nExtra:\nFios brancos por toda a serapilheira: hifas de fungos (micélio) que decompõem as folhas.",
   "imageEx.guide.template": "Transferir modelo",
   "imageEx.guide.templateName": "modelo-descrições",
-  "imageEx.guide.templateText": "Foto 1\nNúcleo:\n[O que vês, onde e como é? O que significa?]\nExtra:\n[Detalhes que são impressionantes se um estudante os notar.]\n\nFoto 2\n[Descrição da foto 2. Sem os títulos Núcleo e Extra, o LEAP decide por si o que é núcleo, pela ordem e ênfase.]"
+  "imageEx.guide.templateText": "Foto 1\nNúcleo:\n[O que vês, onde e como é? O que significa?]\nExtra:\n[Detalhes que são impressionantes se um estudante os notar.]\n\nFoto 2\n[Descrição da foto 2. Sem os títulos Núcleo e Extra, o LEAP decide por si o que é núcleo, pela ordem e ênfase.]",
+  "imageEx.link.looseHelp": "O LEAP reconhece uma nova fotografia por um título com o número ou o nome do ficheiro da fotografia. Se este texto pertence a uma fotografia, coloca esse título acima e carrega novamente o documento, ou cola o texto nessa fotografia através de “Ajustar descrição”.",
+  "imageEx.link.looseDismiss": "Fechar notificação",
+  "imageEx.features.largeBoard": "Isto vai ser um tabuleiro de jogo grande: {n} características, das quais {core} principais. Verifica se tudo o que é principal precisa mesmo de ser visto; o resto podes tornar extra."
 }

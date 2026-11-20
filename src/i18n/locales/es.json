@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP hizo {n} propuesta(s); aparecen con ★ en la lista de opciones.",
   "imageEx.link.type": "Escribir o ajustar la descripción tú mismo",
   "imageEx.link.typeLabel": "Descripción de la foto",
-  "imageEx.link.loose": "{n} descripción(es) aún sin vincular",
+  "imageEx.link.loose": "{n} fragmento(s) de texto de tu documento no se pudieron vincular a una foto",
   "imageEx.features.title": "3. Características ({n} fotos)",
   "imageEx.features.howTo": "LEAP ha creado una lista de características a partir de cada descripción, solo con tu texto. Los botones gruesos son centrales, los punteados son adicionales; haz clic en un botón para cambiarlo. No hace falta revisarlo todo: solo donde LEAP tenga dudas te pediremos que eches un vistazo.",
   "imageEx.features.onlyDoubt": "Solo donde LEAP tiene dudas ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Foto 2\nNúcleo:\nUn perfil de suelo de un bosque en un clima templado.\nEn la parte inferior, una capa gruesa y amarillenta de humus; indica una descomposición lenta en un clima fresco y húmedo.\nEncima, varias capas de hojarasca, que de abajo arriba se vuelven cada vez más gruesas: arriba la hoja fresca, abajo la descompuesta.\nExtra:\nHilos blancos por toda la hojarasca: hifas de hongos (micelio) que descomponen las hojas.",
   "imageEx.guide.template": "Descargar plantilla",
   "imageEx.guide.templateName": "plantilla-descripciones",
-  "imageEx.guide.templateText": "Foto 1\nNúcleo:\n[¿Qué ves, dónde y qué aspecto tiene? ¿Qué significa?]\nExtra:\n[Detalles que son destacables si un estudiante los ve.]\n\nFoto 2\n[Descripción de la foto 2. Sin los encabezados Núcleo y Extra, LEAP decide por sí mismo qué es el núcleo, según el orden y el énfasis.]"
+  "imageEx.guide.templateText": "Foto 1\nNúcleo:\n[¿Qué ves, dónde y qué aspecto tiene? ¿Qué significa?]\nExtra:\n[Detalles que son destacables si un estudiante los ve.]\n\nFoto 2\n[Descripción de la foto 2. Sin los encabezados Núcleo y Extra, LEAP decide por sí mismo qué es el núcleo, según el orden y el énfasis.]",
+  "imageEx.link.looseHelp": "LEAP reconoce una foto nueva por un encabezado con el número o el nombre de archivo de la foto. Si este texto pertenece a una foto, coloca un encabezado así encima y vuelve a subir el documento, o pega el texto en esa foto mediante “Ajustar descripción”.",
+  "imageEx.link.looseDismiss": "Cerrar notificación",
+  "imageEx.features.largeBoard": "Esto será un tablero grande: {n} características, de las cuales {core} son esenciales. Revisa si todo lo esencial realmente debe verse; lo demás puedes hacerlo adicional."
 }

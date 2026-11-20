@@ -6,7 +6,9 @@
 // Heeft de docent zelf "Kern:" en "Extra:" als kopjes gebruikt, dan neemt LEAP die
 // indeling letterlijk over (niet het taalmodel beslist, maar de tekst).
 
-export const FEATURE_LIMITS = { MAX_FEATURES: 40, MAX_LABEL: 120, MAX_TEXT: 600, MAX_DESCRIPTION: 20_000 };
+// MAX_CORE: zonder kopjes van de docent houdt LEAP hooguit zoveel kenmerken als kern,
+// zodat het speelbord voor de student te overzien blijft. Met "Kern:" beslist de docent zelf.
+export const FEATURE_LIMITS = { MAX_FEATURES: 40, MAX_CORE: 8, MAX_LABEL: 120, MAX_TEXT: 600, MAX_DESCRIPTION: 20_000 };
 
 // De woorden voor "Kern" en "Extra" in de 20 talen van LEAP (zoals ze in het
 // vertaalde sjabloon staan, imageEx.guide.templateText) plus gangbare varianten.
@@ -60,9 +62,13 @@ Regels:
 - interpretation: wat het betekent of waar het op wijst. Alleen voor zover de tekst dat zegt, anders een lege string.
 - open: true alleen als de tekst zelf aangeeft dat meer dan één duiding verdedigbaar is; anders false.
 - Is de beschrijving maar één zin (bijvoorbeeld alleen wat het is), dan is dat één kenmerk.
+- Een algemene opsomming of conclusie die terugslaat op waarnemingen die al beschreven zijn (bijvoorbeeld "typische kenmerken van … die zichtbaar zijn", of een samenvattende slotzin), is geen nieuwe waarneming: zet die als interpretation bij de waarneming(en) waar ze over gaat. Alleen een conclusie die bij geen enkele waarneming past, wordt een eigen kenmerk.
+- Een tussenkopje in de tekst (zoals "Het haar" of "De achtergrond") is geen kenmerk; het geeft alleen aan waar de waarnemingen eronder over gaan.
 Antwoord uitsluitend met JSON.`;
 
-const CORE_RULE = `- core: true voor een hoofdzaak die een student moet zien; false voor een detail of extra. Kijk naar volgorde (het eerste is meestal het belangrijkste) en nadruk: "kenmerkend", "typisch", "let vooral op", "altijd" wijzen op kern; "soms", "eventueel", "ook", "daarnaast", "bijkomend" op extra.
+const CORE_RULE = `- core: true voor een hoofdzaak die een student moet zien; false voor een detail of extra. Kijk naar volgorde (het eerste is meestal het belangrijkste) en nadruk: "kenmerkend", "typisch", "let vooral op", "het oog wordt getrokken naar", "altijd" wijzen op kern; "soms", "eventueel", "ook", "daarnaast", "bijkomend" op extra.
+- Zet hooguit ${FEATURE_LIMITS.MAX_CORE} kenmerken op core: true: alleen wat een student echt moet zien. De rest is extra, hoe mooi ook.
+- Zet de kenmerken in volgorde van belang: eerst de kern (belangrijkste bovenaan), dan de extra's.
 - uncertain: true als de tekst te vaag, te kort of tegenstrijdig is om goed in te delen, of als niet duidelijk is wat kern en wat extra is. note: één korte zin waarom (of een lege string).
 JSON: {"features":[{"label":"","observation":"","interpretation":"","core":true,"open":false}],"uncertain":false,"note":""}`;
 
@@ -109,6 +115,11 @@ export function parseFeatureResponse(raw, { explicit = false } = {}) {
     if (features.length >= FEATURE_LIMITS.MAX_FEATURES) break;
   }
   if (features.length === 0) return null;
+  // Houdt het taalmodel zich niet aan het maximum, dan blijven de eerste (belangrijkste) kern.
+  if (!explicit) {
+    let core = 0;
+    for (const f of features) if (f.is_core && ++core > FEATURE_LIMITS.MAX_CORE) f.is_core = false;
+  }
   return { features, uncertain: data.uncertain === true, note: str(data.note, 300) };
 }
 

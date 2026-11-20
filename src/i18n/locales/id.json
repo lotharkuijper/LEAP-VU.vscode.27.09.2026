@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP membuat {n} usulan; usulan itu ditandai ★ di daftar pilihan.",
   "imageEx.link.type": "Ketik atau sesuaikan deskripsi sendiri",
   "imageEx.link.typeLabel": "Deskripsi foto",
-  "imageEx.link.loose": "{n} deskripsi belum terhubung",
+  "imageEx.link.loose": "{n} bagian teks dari dokumenmu tidak dapat dikaitkan dengan foto",
   "imageEx.features.title": "3. Ciri-ciri ({n} foto)",
   "imageEx.features.howTo": "LEAP membuat daftar ciri-ciri dari setiap deskripsi, hanya dari teksmu. Tombol tebal adalah inti, yang bergaris putus-putus adalah tambahan; klik tombol untuk mengubahnya. Tidak perlu meninjau semuanya: hanya saat LEAP ragu, kami memintamu melihatnya sebentar.",
   "imageEx.features.onlyDoubt": "Hanya saat LEAP ragu ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Foto 2\nInti:\nProfil tanah hutan di iklim sedang.\nDi bagian bawah ada lapisan humus tebal kekuningan; ini menunjukkan penguraian yang lambat di iklim sejuk dan lembap.\nDi atasnya ada beberapa lapisan serasah, yang dari bawah ke atas makin kasar: daun segar di bagian atas, yang sudah terurai di bagian bawah.\nTambahan:\nBenang-benang putih di seluruh serasah: hifa jamur (miselium) yang menguraikan daun.",
   "imageEx.guide.template": "Unduh templat",
   "imageEx.guide.templateName": "templat-deskripsi",
-  "imageEx.guide.templateText": "Foto 1\nInti:\n[Apa yang kamu lihat, di mana, dan seperti apa bentuknya? Apa artinya?]\nTambahan:\n[Detail yang bagus jika mahasiswa melihatnya.]\n\nFoto 2\n[Deskripsi foto 2. Tanpa judul Inti dan Tambahan, LEAP sendiri menentukan mana yang inti, berdasarkan urutan dan penekanan.]"
+  "imageEx.guide.templateText": "Foto 1\nInti:\n[Apa yang kamu lihat, di mana, dan seperti apa bentuknya? Apa artinya?]\nTambahan:\n[Detail yang bagus jika mahasiswa melihatnya.]\n\nFoto 2\n[Deskripsi foto 2. Tanpa judul Inti dan Tambahan, LEAP sendiri menentukan mana yang inti, berdasarkan urutan dan penekanan.]",
+  "imageEx.link.looseHelp": "LEAP mengenali foto baru dari judul kecil dengan nomor atau nama file foto. Jika teks ini termasuk ke sebuah foto, letakkan judul kecil seperti itu di atasnya lalu unggah ulang dokumen, atau tempel teks pada foto tersebut lewat “Sesuaikan deskripsi”.",
+  "imageEx.link.looseDismiss": "Tutup notifikasi",
+  "imageEx.features.largeBoard": "Ini akan menjadi papan permainan besar: {n} karakteristik, dengan {core} inti. Cek lagi apakah semua yang inti benar-benar perlu dilihat; sisanya bisa kamu jadikan tambahan."
 }

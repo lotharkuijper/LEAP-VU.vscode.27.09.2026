@@ -3568,7 +3568,7 @@
   "imageEx.link.suggestDone": "LEAP a făcut {n} propunere/propuneri; sunt marcate cu ★ în lista de selecție.",
   "imageEx.link.type": "Tastează sau modifică singur descrierea",
   "imageEx.link.typeLabel": "Descrierea fotografiei",
-  "imageEx.link.loose": "{n} descriere(i) încă neasociată(e)",
+  "imageEx.link.loose": "{n} fragment(e) de text din documentul tău nu au putut fi asociate cu o fotografie",
   "imageEx.features.title": "3. Caracteristici ({n} fotografii)",
   "imageEx.features.howTo": "LEAP a creat din fiecare descriere o listă de caracteristici, doar pe baza textului tău. Butoanele îngroșate sunt de bază, cele punctate sunt suplimentare; apasă pe un buton ca să îl schimbi. Nu trebuie să verifici tot: doar acolo unde LEAP are dubii, te rugăm să arunci o privire.",
   "imageEx.features.onlyDoubt": "Doar unde LEAP are dubii ({n})",
@@ -3628,5 +3628,8 @@
   "imageEx.guide.exampleLong": "Fotografia 2\nEsențial:\nUn profil de sol al unei păduri dintr-un climat temperat.\nÎn partea de jos, un strat gros, gălbui de humus; acesta indică o descompunere lentă într-un climat răcoros și umed.\nDeasupra, mai multe straturi de litieră, care devin tot mai grosiere de jos în sus: sus frunzele proaspete, jos cele descompuse.\nSuplimentar:\nFire albe prin toată litiera: hife fungice (miceliu) care descompun frunzele.",
   "imageEx.guide.template": "Descarcă șablonul",
   "imageEx.guide.templateName": "sablon-descrieri",
-  "imageEx.guide.templateText": "Fotografia 1\nEsențial:\n[Ce vezi, unde și cum arată? Ce înseamnă?]\nSuplimentar:\n[Detalii care sunt remarcabile dacă un student le observă.]\n\nFotografia 2\n[Descrierea fotografiei 2. Fără titlurile Esențial și Suplimentar, LEAP decide singur ce este esențial, în funcție de ordine și accent.]"
+  "imageEx.guide.templateText": "Fotografia 1\nEsențial:\n[Ce vezi, unde și cum arată? Ce înseamnă?]\nSuplimentar:\n[Detalii care sunt remarcabile dacă un student le observă.]\n\nFotografia 2\n[Descrierea fotografiei 2. Fără titlurile Esențial și Suplimentar, LEAP decide singur ce este esențial, în funcție de ordine și accent.]",
+  "imageEx.link.looseHelp": "LEAP recunoaște o fotografie nouă după un titlu cu numărul sau numele fișierului fotografiei. Dacă acest text aparține unei fotografii, pune un astfel de titlu deasupra lui și încarcă din nou documentul sau lipește textul la acea fotografie prin „Ajustează descrierea”.",
+  "imageEx.link.looseDismiss": "Închide notificarea",
+  "imageEx.features.largeBoard": "Acesta va fi un tableu de joc mare: {n} caracteristici, dintre care {core} esențiale. Verifică dacă tot ce este esențial chiar trebuie văzut; pe restul le poți face suplimentare."
 }
