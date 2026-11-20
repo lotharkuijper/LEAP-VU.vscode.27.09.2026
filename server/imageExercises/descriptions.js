@@ -9,8 +9,14 @@
 // Tekst na een dubbele punt op de kopregel ("Foto 3: hersenweefsel …") hoort bij de beschrijving.
 
 const MAX_HEADING_CHARS = 100;
-const IMAGE_WORDS = '(?:foto|afbeelding|figuur|fig\\.?|beeld|plaat|plaatje|opname|image|photo|picture|figure|slide|abbildung|bild|imagen|immagine)';
-const WORD_NUMBER_RE = new RegExp(`^${IMAGE_WORDS}\\s*(?:nr\\.?|nummer|no\\.?|#)?\\s*(\\d{1,4})\\b`, 'i');
+// Woorden voor "foto/afbeelding" in de 20 talen van LEAP (zoals in het vertaalde
+// sjabloon imageEx.guide.templateText) plus gangbare varianten.
+const IMAGE_WORDS = `(?:${[
+  'foto', 'afbeelding', 'figuur', 'fig\\.?', 'beeld', 'plaatje', 'plaat', 'opname', 'image', 'photo', 'picture', 'figure', 'slide',
+  'abbildung', 'bild', 'imagen', 'immagine', 'fotografia', 'fotografie', 'fotografija', 'fotoğraf', 'zdjęcie', 'gambar',
+  'φωτογραφία', 'εικόνα', 'фото', 'зображення', 'फ़ोटो', 'फोटो', 'चित्र', 'الصورة', 'صورة', '写真', '画像', '사진', '이미지', '照片', '相片', '图片', '圖片',
+].join('|')})`;
+const WORD_NUMBER_RE = new RegExp(`^${IMAGE_WORDS}\\s*(?:nr\\.?|nummer|no\\.?|#)?\\s*(\\d{1,4})(?!\\d)`, 'iu');
 const NUMBER_ONLY_RE = /^(\d{1,4})\s*[.):-]?\s*$/;
 
 /** "Alzheimer-03.JPG" → "alzheimer03": voor vergelijken van namen. */
@@ -31,7 +37,7 @@ function cleanHeading(line) {
 // Splitst een kopregel in het kopje zelf en eventuele tekst na de dubbele punt.
 function splitHeadingLine(raw) {
   const line = cleanHeading(raw);
-  const idx = line.indexOf(':');
+  const idx = line.search(/[:：]/);
   if (idx > 0 && idx < MAX_HEADING_CHARS) {
     return { heading: line.slice(0, idx).trim(), rest: line.slice(idx + 1).trim() };
   }

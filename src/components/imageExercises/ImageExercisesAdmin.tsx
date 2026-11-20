@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, FileText, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookOpenCheck, Check, FileText, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { AdminHint } from '../help/AdminHint';
 import { ImageFeatureEditor } from './ImageFeatureEditor';
+import { ImageDescriptionGuide } from './ImageDescriptionGuide';
 import {
   confirmImageExercises, deleteImageExercise, fetchImageExercises, regenerateFeatures, setImageFeatureCore,
   suggestImageMatches, updateImageExercise, uploadDescriptions, uploadImageExercisePhoto,
@@ -31,6 +32,7 @@ export function ImageExercisesAdmin() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [editing, setEditing] = useState<ImageExercise | null>(null);
   const [onlyDoubt, setOnlyDoubt] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const photoInput = useRef<HTMLInputElement>(null);
   const docInput = useRef<HTMLInputElement>(null);
 
@@ -136,7 +138,14 @@ export function ImageExercisesAdmin() {
       {/* 1. Uploaden */}
       <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5" data-testid="section-image-upload">
         <h3 className="font-semibold text-gray-900">{t('imageEx.upload.title')}</h3>
-        <AdminHint variant="tip">{t('imageEx.upload.howTo')}</AdminHint>
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border-2 border-amber-300 bg-amber-50 px-4 py-3" data-testid="callout-description-guide">
+          <BookOpenCheck className="h-6 w-6 flex-shrink-0 text-amber-600" aria-hidden="true" />
+          <p className="min-w-[14rem] flex-1 text-sm text-amber-900">{t('imageEx.guide.callout')}</p>
+          <button type="button" onClick={() => setGuideOpen(true)} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-600" data-testid="button-open-guide">
+            <BookOpenCheck className="h-4 w-4" />{t('imageEx.guide.open')}
+          </button>
+        </div>
+        <p className="text-sm text-gray-600">{t('imageEx.upload.howTo')}</p>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => photoInput.current?.click()} disabled={!!busy} className="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" data-testid="button-add-photos">
             {busy === 'photos' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}{t('imageEx.upload.photos')}
@@ -312,6 +321,7 @@ export function ImageExercisesAdmin() {
       )}
 
       {items.length === 0 && <p className="text-sm text-gray-500" data-testid="text-image-empty">{t('imageEx.empty')}</p>}
+      {guideOpen && <ImageDescriptionGuide onClose={() => setGuideOpen(false)} />}
       {editing && <ImageFeatureEditor courseId={courseId} exercise={editing} onClose={() => setEditing(null)} onSaved={() => void load()} />}
     </div>
   );

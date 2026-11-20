@@ -3,6 +3,25 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeStem, numberInName, readHeading, splitDescriptions, matchDescriptions } from '../imageExercises/descriptions.js';
 import { explicitSections, buildFeatureMessages, parseFeatureResponse, cleanTeacherFeatures } from '../imageExercises/features.js';
+import fs from 'node:fs';
+import path from 'node:path';
+
+describe('het sjabloon voor docenten, in elke taal', () => {
+  const dir = path.resolve(__dirname, '../../src/i18n/locales');
+  for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+    it(`${file}: LEAP leest de kopjes per foto en de kopjes kern/extra van het vertaalde sjabloon`, () => {
+      const template = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'))['imageEx.guide.templateText'];
+      expect(typeof template).toBe('string');
+      const { sections } = splitDescriptions(template);
+      expect(sections.map((s) => s.number)).toEqual([1, 2]);
+      const parts = explicitSections(sections[0].text);
+      expect(parts).not.toBeNull();
+      expect(parts.core).not.toBe('');
+      expect(parts.extra).not.toBe('');
+      expect(explicitSections(sections[1].text)).toBeNull();
+    });
+  }
+});
 
 describe('namen en nummers', () => {
   it('vergelijkt bestandsnamen los van hoofdletters, tekens en extensie', () => {

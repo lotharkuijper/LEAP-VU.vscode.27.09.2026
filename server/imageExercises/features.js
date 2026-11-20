@@ -8,8 +8,24 @@
 
 export const FEATURE_LIMITS = { MAX_FEATURES: 40, MAX_LABEL: 120, MAX_TEXT: 600, MAX_DESCRIPTION: 20_000 };
 
-const CORE_HEAD_RE = /^\s*(?:#+\s*)?(?:\*\*)?\s*(kern|kernkenmerken|core|essentieel|essential)\s*(?:\*\*)?\s*:?\s*(.*)$/i;
-const EXTRA_HEAD_RE = /^\s*(?:#+\s*)?(?:\*\*)?\s*(extra|bonus|aanvullend|optioneel|optional)\s*(?:\*\*)?\s*:?\s*(.*)$/i;
+// De woorden voor "Kern" en "Extra" in de 20 talen van LEAP (zoals ze in het
+// vertaalde sjabloon staan, imageEx.guide.templateText) plus gangbare varianten.
+// De test imageExerciseDescriptions.test.js leest het sjabloon van elke taal.
+const CORE_WORDS = [
+  'kern', 'kernkenmerken', 'core', 'essentieel', 'essential', 'essentiel', 'essenziale', 'contenuto essenziale',
+  'núcleo', 'nucleo', 'βασικά', 'मुख्य', 'jezgra', 'inti', '主要ポイント', '핵심', 'część główna', 'esențial',
+  'temel', 'основне', '核心', 'الأساس', 'أساسي',
+];
+const EXTRA_WORDS = [
+  'extra', 'bonus', 'aanvullend', 'optioneel', 'optional', 'zusatz', 'zusätzlich', 'compléments', 'complément',
+  'επιπλέον', 'अतिरिक्त', 'dodatno', 'tambahan', '補足', '추가', 'dodatkowe informacje', 'dodatkowe', 'suplimentar',
+  'ekstra', 'додаткове', '額外', '额外', 'إضافي',
+];
+const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Een kopje is het woord alleen op een regel ("Kern"), of gevolgd door een dubbele punt ("Kern: plaques").
+const headRe = (words) => new RegExp(`^\\s*(?:#+\\s*)?(?:\\*\\*)?\\s*(?:${words.map(esc).join('|')})\\s*(?:\\*\\*)?\\s*(?:[:：]\\s*(.*))?$`, 'iu');
+const CORE_HEAD_RE = headRe(CORE_WORDS);
+const EXTRA_HEAD_RE = headRe(EXTRA_WORDS);
 
 /**
  * Splitst een beschrijving op de kopjes "Kern:" en "Extra:" als de docent die
@@ -24,9 +40,9 @@ export function explicitSections(description) {
   for (const line of lines) {
     const c = line.match(CORE_HEAD_RE);
     const e = line.match(EXTRA_HEAD_RE);
-    // Alleen een korte regel telt als kopje ("Kern:" of "Kern: plaques"), geen zin die met "extra" begint.
-    if (c && (line.trim().length < 20 || /:/.test(line))) { cur = 'core'; found = true; if (c[2]) parts.core.push(c[2]); continue; }
-    if (e && (line.trim().length < 20 || /:/.test(line))) { cur = 'extra'; found = true; if (e[2]) parts.extra.push(e[2]); continue; }
+    // Een zin die met "extra" begint ("Extra veel plaques …") is geen kopje: die heeft geen dubbele punt.
+    if (c) { cur = 'core'; found = true; if (c[1]) parts.core.push(c[1]); continue; }
+    if (e) { cur = 'extra'; found = true; if (e[1]) parts.extra.push(e[1]); continue; }
     parts[cur].push(line);
   }
   if (!found) return null;
