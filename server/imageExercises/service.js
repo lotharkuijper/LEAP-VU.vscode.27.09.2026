@@ -6,17 +6,14 @@
 // Geheim: beschrijvingen en kenmerken zijn de antwoordsleutel. Ze gaan alleen naar
 // de docent van de cursus; studenten krijgen ze in deze stap nergens.
 
+import { BUCKET, fail, signedUrlMap } from './common.js';
 import { planDocument } from './descriptions.js';
 import { buildFeatureMessages, cleanTeacherFeatures, parseFeatureResponse } from './features.js';
 
-export const BUCKET = 'image_exercises';
 export const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
 export const MAX_IMAGE_BYTES = 20 * 1024 * 1024;
 export const MAX_DESCRIPTION_CHARS = 20_000;
-export const THUMB_URL_SECONDS = 600;
 const SUGGEST_MAX_IMAGES = 10;
-
-const fail = ({ status, error, code }) => Object.assign(new Error(error), { status, code });
 
 // Herkent het echte bestandstype aan de eerste bytes; de naam of het opgegeven
 // type is niet genoeg (een .jpg kan iets anders zijn).
@@ -46,11 +43,7 @@ export async function listExercises(db, courseId) {
     if (fErr) throw new Error(fErr.message);
     for (const f of feats || []) featuresBy.get(f.exercise_id)?.push(f);
   }
-  const urls = new Map();
-  if (ids.length) {
-    const { data: signed } = await db.storage.from(BUCKET).createSignedUrls((rows || []).map((r) => r.storage_path), THUMB_URL_SECONDS);
-    for (const s of signed || []) if (s?.path && s?.signedUrl) urls.set(s.path, s.signedUrl);
-  }
+  const urls = await signedUrlMap(db, (rows || []).map((r) => r.storage_path));
   return (rows || []).map((r) => ({
     id: r.id,
     filename: r.filename,

@@ -3,28 +3,15 @@
 // niets: de beschrijvingen en kenmerken zijn de antwoordsleutel.
 import { randomUUID } from 'node:crypto';
 import { isStaffForCourse, requireAuthUser } from '../lib/auth.js';
-import { AZURE_CHAT_READY, LLM_NOT_CONFIGURED_MSG, OPENAI_MODEL, chatModelParams, openaiChatCompletion } from '../lib/azureOpenai.js';
+import { AZURE_CHAT_READY, LLM_NOT_CONFIGURED_MSG } from '../lib/azureOpenai.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { DESCRIPTION_DOC_EXT, MAX_DESCRIPTION_DOC_BYTES, extractDescriptionText } from './documentText.js';
+import { UUID_RE } from './common.js';
+import { llmJson } from './llm.js';
 import {
   addPhoto, applyDescriptionText, confirmExercises, deleteExercise, generateFeatures,
   listExercises, saveFeatures, setFeatureCore, suggestMatches, updateExercise,
 } from './service.js';
-
-// Het taalmodel met een JSON-antwoord; gooit bij een fout.
-async function llmJson(messages, maxTokens = 3000) {
-  const resp = await openaiChatCompletion({
-    model: OPENAI_MODEL,
-    messages,
-    response_format: { type: 'json_object' },
-    ...chatModelParams({ temperature: 0.1, maxTokens }),
-  });
-  const data = await resp.json().catch(() => null);
-  if (!resp.ok) throw new Error(`taalmodel ${resp.status}`);
-  const content = data?.choices?.[0]?.message?.content;
-  if (!content) throw new Error('leeg antwoord');
-  return JSON.parse(content);
-}
 
 // Kenmerken maken loopt op de achtergrond, twee tegelijk; de docent ziet de status.
 // Een foto staat hooguit één keer in de wachtrij, en de wachtrij heeft een plafond:
@@ -62,7 +49,6 @@ function pump() {
 const SUGGEST_GAP_MS = 30_000;
 const lastSuggest = new Map();
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function registerImageExerciseRoutes(app) {
   const base = '/api/admin/image-exercises/:courseId';

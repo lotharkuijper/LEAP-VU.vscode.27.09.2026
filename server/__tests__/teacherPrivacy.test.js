@@ -104,3 +104,25 @@ describe('docenten komen niet via de server in een studentengroep', () => {
     expect(block).toMatch(/groupHasTeacher\(db, s\.project\.course_id, groupId\)/);
   });
 });
+
+// Beeldoefeningen (2026-11-21): pogingen van studenten zijn leerdata. Alleen de
+// server leest ze; geen docentregel in de database, en geen docentroute leest ze.
+describe('docenten zien de pogingen bij beeldoefeningen niet', () => {
+  const attempts = fs.readFileSync(path.join(root, 'supabase/migrations/20261121100000_image_exercise_attempts.sql'), 'utf8');
+  it('de tabel is alleen voor de server: RLS aan, geen regels, geen rechten voor ingelogde gebruikers', () => {
+    expect(attempts).toMatch(/ALTER TABLE public\.image_exercise_attempts ENABLE ROW LEVEL SECURITY/);
+    expect(attempts).toMatch(/REVOKE ALL ON public\.image_exercise_attempts FROM anon, authenticated/);
+    expect(attempts).not.toMatch(/CREATE POLICY/i);
+  });
+  it('de docentroutes van beeldoefeningen lezen geen pogingen', () => {
+    for (const file of ['routes.js', 'service.js']) {
+      const src = fs.readFileSync(path.join(root, 'server/imageExercises', file), 'utf8');
+      expect(src, file).not.toMatch(/image_exercise_attempts/);
+    }
+  });
+  it('de speelbordroutes werken alleen met de poging van de ingelogde gebruiker', () => {
+    const src = fs.readFileSync(path.join(root, 'server/imageExercises/playRoutes.js'), 'utf8');
+    expect(src).toMatch(/userId: auth\.user\.id/);
+    expect(src).not.toMatch(/req\.(body|query|params)\??\.userId/);
+  });
+});

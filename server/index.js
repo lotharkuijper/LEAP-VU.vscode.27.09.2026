@@ -50,6 +50,7 @@ import { registerDocumentRoutes } from './documents/routes.js';
 import { registerCourseRoutes } from './courses/routes.js';
 import { registerIngestionRoutes } from './ingestion/routes.js';
 import { registerImageExerciseRoutes } from './imageExercises/routes.js';
+import { registerImageExercisePlayRoutes } from './imageExercises/playRoutes.js';
 import { registerConceptRoutes } from './concepts/routes.js';
 import { registerStudiecafe } from './studiecafe/routes.js';
 import { registerJournalRoutes } from './journal/routes.js';
@@ -137,6 +138,8 @@ registerCourseRoutes(app);
 registerIngestionRoutes(app);
 
 registerImageExerciseRoutes(app);
+
+registerImageExercisePlayRoutes(app);
 
 registerConceptRoutes(app);
 

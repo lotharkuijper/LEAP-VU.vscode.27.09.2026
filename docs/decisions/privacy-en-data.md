@@ -23,6 +23,7 @@ Why: students who know the teacher reads along ask different questions. Privacy 
 - The exceptions are things a student deliberately shares: Studiecafé posts and submitted project products.
 - Group content is for group members and LEAP admins only. In the server use `isLeapAdmin(profile)` plus membership (`server/lib/auth.js`, `isGroupMember` in `server/projects/access.js`), never `isStaffForCourse` for group content. In the database: migration `20261008100000_teacher_privacy` (rollback in `supabase/rollback/`).
 - `server/__tests__/teacherPrivacy.test.js` guards this.
+- Image exercises (2026-11-21): a student's attempts (`image_exercise_attempts`: answers, LEAP's feedback, found features, hints) are server-only (RLS on, no policies, REVOKE from anon/authenticated). The play routes only ever act on the logged-in user's own attempt; no teacher route reads attempts. They are in the student's own export (My data) and disappear with the photo, the course or the account (ON DELETE CASCADE). Totals for the teacher, if added later, follow the analytics rules (aggregates, k ≥ 5).
 - Roles can only be changed by an admin or the server (trigger `pr_guard_profile_role`). The e-mail address in `profiles` can only be changed by an admin or the server (migration `20261030100000_security_hardening`).
 - Analytics are aggregates only (k ≥ 5); see `docs/decisions/privacy-en-data.md`.
 

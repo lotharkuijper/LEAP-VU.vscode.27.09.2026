@@ -10,13 +10,14 @@ import { evaluateExplanation, llmErrorToDutch, type ExplainFeedbackSections } fr
 import { EarnedBadgesNotice } from '../components/LearningBadge';
 import type { EarnedBadge } from '../lib/badges';
 import { searchRelevantChunksWithStats, dedupeSourcesByDocument, chunkToDisplaySource, ragDocumentDownloadUrl, openRagDocument, fetchConceptEvidence } from '../services/rag.service';
-import { BookOpen, Search, Send, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Trash2, BookText, X, Loader2, History, Coffee } from 'lucide-react';
+import { BookOpen, Search, Send, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, Trash2, BookText, X, Loader2, History, Coffee, Image as ImageIcon } from 'lucide-react';
 import { stashStudiecafeHandoff } from '../lib/studiecafeHandoff';
 import { buildExplainFeedbackExcerpt } from '../lib/explainFeedbackExcerpt';
 import { SourceList } from '../components/SourceList';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { RAGDiagnostics } from '../components/RAGDiagnostics';
 import { PromptDebugBadge } from '../components/PromptDebugBadge';
+import { ImagePlay, useImagePlayItems } from '../components/imageExercises/ImagePlay';
 import type { Database } from '../lib/database.types';
 import { RAGStatusIndicator } from '../components/RAGStatusIndicator';
 import { NoticeBanner, useNotice } from '../components/Notice';
@@ -298,6 +299,10 @@ export function ExplainPage() {
   const partImprove = explainPartView(courseFeatures.features, 'explainImprove', courseFeatures.isStaff);
   const [modeChoice, setModeChoice] = useState<ExplainPart>('explainSelf');
   const mode: ExplainPart = !partSelf.visible ? 'explainImprove' : !partImprove.visible ? 'explainSelf' : modeChoice;
+  // "Wat zie ik?" (beeldoefeningen): alleen als de cursus foto's heeft om mee te oefenen.
+  const playItems = useImagePlayItems(activeCourse, partSelf.visible || partImprove.visible);
+  const [explainView, setExplainView] = useState<'concepts' | 'images'>('concepts');
+  useEffect(() => { setExplainView('concepts'); }, [activeCourse]);
   const [explanation, setExplanation] = useState('');
   const explanationRef = useRef<HTMLTextAreaElement>(null);
   // Onder laptopbreedte staat de oefening onder de begrippenlijst: na het kiezen
@@ -775,6 +780,28 @@ export function ExplainPage() {
         </div>
       </div>
 
+      {playItems.length > 0 && (
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('imagePlay.viewLabel')} data-testid="tabs-explain-view">
+          {(['concepts', 'images'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={explainView === v}
+              onClick={() => setExplainView(v)}
+              className={`inline-flex items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition-colors ${explainView === v ? 'bg-amber-500 text-white shadow' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'}`}
+              data-testid={`tab-explain-view-${v}`}
+            >
+              {v === 'images' ? <ImageIcon className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+              {t(v === 'images' ? 'imagePlay.tab' : 'imagePlay.tabConcepts')}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {explainView === 'images' && activeCourse ? (
+        <ImagePlay courseId={activeCourse} items={playItems} />
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-6">
         <div className="chic-card p-6">
@@ -1284,6 +1311,7 @@ export function ExplainPage() {
           )}
         </div>
       </div>
+      )}
 
       {deleteSummaryDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
