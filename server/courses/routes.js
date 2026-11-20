@@ -36,6 +36,7 @@ import {
 } from './memberRoleAuth.js';
 import { getEmailConfig, sendEmail } from '../lib/notifications.js';
 import { removeCoursePhotos } from '../imageExercises/service.js';
+import { isTestCourseError } from './testCourse.js';
 
 // Helper — gemeenschappelijk voor admin- en self-endpoint hieronder.
 async function fetchTeacherCoursesForUser(userId) {
@@ -615,7 +616,10 @@ export function registerCourseRoutes(app) {
           { course_id: courseId, user_id: userId, member_role, role: nextLegacyRole },
           { onConflict: 'course_id,user_id' }
         );
-      if (upErr) return res.status(500).json({ error: upErr.message });
+      if (upErr) {
+        if (isTestCourseError(upErr)) return res.status(409).json({ error: 'Alleen beheerders kunnen lid zijn van een testcursus', code: 'testCourse' });
+        return res.status(500).json({ error: upErr.message });
+      }
       const profileRole = member_role === 'teacher' ? await promoteCourseTeacherProfile(userId, r.user?.id, courseId) : null;
       return res.json({ ok: true, user_id: userId, course_id: courseId, member_role, ...(profileRole ? { profileRole } : {}) });
     } catch (err) {

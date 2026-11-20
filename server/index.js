@@ -10,9 +10,10 @@ import { registerAuthEmailHook } from './account/authEmailHook.js';
 import { resolveSofficeBin } from './documents/documentRender.js';
 import { registerEnrollmentRoutes } from './courses/enrollment.js';
 import { registerAccessRequestRoutes } from './access/accessRequests.js';
+import { registerTestCourseRoutes } from './courses/testCourse.js';
 import { normalizeLang } from './i18n/languages.js';
 import { applyHttpSecurity } from './lib/httpSecurity.js';
-import { authUser, isLeapAdmin, isStaffForCourse, requireAuthUser } from './lib/auth.js';
+import { authUser, isLeapAdmin, isStaffForCourse, requireAuthUser, resolveAdminUser } from './lib/auth.js';
 import {
   AZURE_CHAT_READY,
   AZURE_EMBEDDINGS_READY,
@@ -25,6 +26,7 @@ import {
 import {
   detectConceptEvidenceSchema,
   detectConceptsCourseIdColumn,
+  detectCoursesIsTestColumn,
   detectCoursesStudentVisibleColumn,
   detectDocumentsContentHash,
   detectQuizAttemptsSchema,
@@ -175,6 +177,8 @@ registerEnrollmentRoutes(app, {
   onOpenRegistration: (userId) => tokenBudget.markOpenAccount(userId),
 });
 
+registerTestCourseRoutes(app, { supabaseAdmin, resolveAdminUser, superuserEmail: SUPERUSER_EMAIL });
+
 registerAccessRequestRoutes(app, {
   supabaseAdmin,
   requireAuthUser,
@@ -217,6 +221,7 @@ if (process.env.NODE_ENV !== 'test') {
     }
     detectConceptsCourseIdColumn();
     detectCoursesStudentVisibleColumn();
+    detectCoursesIsTestColumn();
     detectQuizAttemptsSchema();
     detectQuizSourcesSchema();
     detectConceptEvidenceSchema();

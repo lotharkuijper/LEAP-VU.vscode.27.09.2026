@@ -25,6 +25,7 @@ describe('toegangsroute', () => {
     expect(isSelfJoinable({ ...c, enrollment_mode: 'canvas_open' })).toBe(true);
     expect(isSelfJoinable({ ...c, is_active: false })).toBe(false);
     expect(isSelfJoinable({ ...c, student_visible: false })).toBe(false);
+    expect(isSelfJoinable({ ...c, is_test: true })).toBe(false);
   });
 });
 

@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { createProfileCache, createUserCache } from './authCache.js';
 import { canAccessCourseContent } from '../courses/courseAvailability.js';
 import { isCourseAlumnus } from '../courses/courseEditions.js';
-import { coursesHasStudentVisible } from './schemaFlags.js';
+import { coursesHasStudentVisible, isTestCol } from './schemaFlags.js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL, SUPERUSER_EMAIL, supabaseAdmin } from './supabase.js';
 
 // Inlogcontrole en profiel kort onthouden (server/lib/authCache.js): scheelt per
@@ -130,7 +130,7 @@ export async function userHasCourseAccess(user, profile, courseId) {
   try {
     // Laad de cursus-status eerst. Toegang = lidmaatschap of docentschap
     // (toegangsroute per cursus, server/courses/enrollment.js; spiegelt de courses-RLS).
-    const courseCols = coursesHasStudentVisible ? 'is_active, student_visible' : 'is_active';
+    const courseCols = (coursesHasStudentVisible ? 'is_active, student_visible' : 'is_active') + isTestCol();
     const { data: course, error: courseErr } = await supabaseAdmin
       .from('courses')
       .select(courseCols)
@@ -151,6 +151,8 @@ export async function userHasCourseAccess(user, profile, courseId) {
       return false;
     }
     if (!course) return false;
+    // Testcursus: alleen beheerders (ook als er toch een lidmaatschap bestaat).
+    if (course.is_test === true) return false;
     const isActive = course.is_active !== false;
     const studentVisible = coursesHasStudentVisible ? (course.student_visible !== false) : true;
     // Verborgen cursus: alléén docent (geen membership-lookup nodig).
