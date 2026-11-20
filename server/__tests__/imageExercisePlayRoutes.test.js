@@ -13,6 +13,7 @@ vi.mock('../lib/auth.js', () => ({
   isStaffForCourse: async () => false,
 }));
 vi.mock('../lib/courseFeatureGate.js', () => ({
+  courseFeatureOnFor: async () => true,
   rejectIfFeatureOff: async (res) => {
     if (h.featureOn) return false;
     res.status(403).json({ error: 'uit', code: 'feature_disabled' });
@@ -25,7 +26,7 @@ vi.mock('../imageExercises/playService.js', () => {
   const rec = (name) => async (_db, ...rest) => { h.calls.push({ name, args: rest }); return { ok: true }; };
   return {
     listForStudent: rec('list'), startAttempt: rec('start'), restartAttempt: rec('restart'),
-    answer: rec('answer'), hint: rec('hint'), finish: rec('finish'),
+    answer: rec('answer'), hint: rec('hint'), finish: rec('finish'), saveToJournal: rec('journal'),
   };
 });
 
@@ -51,6 +52,7 @@ const ALL = [
   ['post', `${base}/:id/answer`, { id: EX }, { text: 'iets' }],
   ['post', `${base}/:id/hint`, { id: EX }],
   ['post', `${base}/:id/finish`, { id: EX }],
+  ['post', `${base}/:id/journal`, { id: EX }],
 ];
 
 beforeEach(() => { h.access = true; h.featureOn = true; h.calls = []; });

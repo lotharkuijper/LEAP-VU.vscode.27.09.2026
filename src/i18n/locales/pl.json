@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Główne elementy",
   "imagePlay.bonus": "Dodatkowe",
   "imagePlay.coreDone": "Wszystkie główne elementy znalezione! Widzisz też jakieś dodatkowe? Albo zakończ, aby zobaczyć wszystko.",
-  "imagePlay.allDone": "Wszystko znalezione, dobra robota! Zakończ, aby zobaczyć cały opis.",
   "imagePlay.legend.full": "znalezione",
   "imagePlay.legend.half": "częściowo: dokończ",
   "imagePlay.legend.hint": "z podpowiedzią",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Znalazłeś {self} z {total} samodzielnie.",
   "imagePlay.teacherDescription": "Pełny opis od twojego nauczyciela",
   "imagePlay.restart": "Spróbuj ponownie",
-  "imagePlay.next": "Następne zdjęcie"
+  "imagePlay.next": "Następne zdjęcie",
+  "imagePlay.youSaid": "Ty:",
+  "imagePlay.autoFinished": "Wszystko zostało znalezione lub obejrzane: ćwiczenie zostało ukończone. Poniżej widzisz, co można było zobaczyć.",
+  "imagePlay.toJournal": "Dodaj do mojego dziennika nauki",
+  "imagePlay.journalSaved": "Jest w twoim dzienniku nauki: zobacz"
 }

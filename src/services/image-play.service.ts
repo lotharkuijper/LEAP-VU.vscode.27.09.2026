@@ -28,7 +28,7 @@ export interface PlayTurn {
   role: 'student' | 'leap';
   text: string;
   code: 'generic' | 'hintGeneric' | 'closingGeneric' | null;
-  kind: 'hint' | 'reveal' | 'closing' | null;
+  kind: 'hint' | 'reveal' | 'closing' | 'journal' | null;
 }
 
 export interface PlayState {
@@ -43,6 +43,8 @@ export interface PlayState {
   turns: PlayTurn[];
   answersLeft: number;
   finished: boolean;
+  journalSaved?: boolean;
+  autoFinished?: boolean;
   description?: string;
   newly?: Array<{ id: string; state: 'half' | 'full' }>;
 }
@@ -71,3 +73,4 @@ export const restartPlay = (courseId: string, id: string) => post<PlayState>(`${
 export const answerPlay = (courseId: string, id: string, text: string) => post<PlayState>(`${base(courseId)}/${id}/answer`, { text });
 export const hintPlay = (courseId: string, id: string) => post<PlayState>(`${base(courseId)}/${id}/hint`);
 export const finishPlay = (courseId: string, id: string) => post<PlayState>(`${base(courseId)}/${id}/finish`);
+export const journalPlay = (courseId: string, id: string) => post<{ journalEntryId: string }>(`${base(courseId)}/${id}/journal`);

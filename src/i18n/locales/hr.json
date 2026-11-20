@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Glavne stvari",
   "imagePlay.bonus": "Dodatno",
   "imagePlay.coreDone": "Pronašao/la si sve glavne stvari! Vidiš li još i dodatke? Ili završi kako bi sve pregledao/la.",
-  "imagePlay.allDone": "Sve je pronađeno, bravo! Završi kako bi vidio/la cijeli opis.",
   "imagePlay.legend.full": "pronađeno",
   "imagePlay.legend.half": "djelomično: dovrši",
   "imagePlay.legend.hint": "uz pomoć savjeta",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Sam/a si pronašao/la {self} od {total}.",
   "imagePlay.teacherDescription": "Potpuni opis tvog nastavnika",
   "imagePlay.restart": "Pokušaj ponovno",
-  "imagePlay.next": "Sljedeća fotografija"
+  "imagePlay.next": "Sljedeća fotografija",
+  "imagePlay.youSaid": "Ti:",
+  "imagePlay.autoFinished": "Sve je pronađeno ili pregledano: vježba je završena. U nastavku vidiš što se sve moglo vidjeti.",
+  "imagePlay.toJournal": "Stavi u moj dnevnik učenja",
+  "imagePlay.journalSaved": "Nalazi se u tvom dnevniku učenja: pogledaj"
 }

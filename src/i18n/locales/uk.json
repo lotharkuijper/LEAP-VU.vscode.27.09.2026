@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Головне",
   "imagePlay.bonus": "Додатково",
   "imagePlay.coreDone": "Усе головне знайдено! Бачиш ще щось додаткове? Або заверши, щоб переглянути все.",
-  "imagePlay.allDone": "Усе знайдено, молодець! Заверши, щоб побачити повний опис.",
   "imagePlay.legend.full": "знайдено",
   "imagePlay.legend.half": "наполовину: заверши",
   "imagePlay.legend.hint": "із підказкою",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Ти знайшов/знайшла {self} самостійно з {total}.",
   "imagePlay.teacherDescription": "Повний опис від твого викладача",
   "imagePlay.restart": "Спробувати ще раз",
-  "imagePlay.next": "Наступне фото"
+  "imagePlay.next": "Наступне фото",
+  "imagePlay.youSaid": "Ти:",
+  "imagePlay.autoFinished": "Усе знайдено або переглянуто: вправу завершено. Нижче ти бачиш усе, що можна було побачити.",
+  "imagePlay.toJournal": "Додати до мого навчального щоденника",
+  "imagePlay.journalSaved": "У твоєму навчальному щоденнику: переглянути"
 }

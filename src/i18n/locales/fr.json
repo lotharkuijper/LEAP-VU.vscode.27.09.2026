@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Points principaux",
   "imagePlay.bonus": "Extra",
   "imagePlay.coreDone": "Tous les points principaux ont été trouvés ! Vois-tu aussi des extras ? Ou termine pour tout voir.",
-  "imagePlay.allDone": "Tout est trouvé, bravo ! Termine pour voir toute la description.",
   "imagePlay.legend.full": "trouvé",
   "imagePlay.legend.half": "à moitié : termine-le",
   "imagePlay.legend.hint": "avec un indice",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Tu en as trouvé {self} toi-même, sur {total}.",
   "imagePlay.teacherDescription": "La description complète de ton enseignant",
   "imagePlay.restart": "Réessayer",
-  "imagePlay.next": "Photo suivante"
+  "imagePlay.next": "Photo suivante",
+  "imagePlay.youSaid": "Toi :",
+  "imagePlay.autoFinished": "Tout a été trouvé ou consulté : l’exercice est terminé. Ci-dessous, tu vois tout ce qu’il y avait à voir.",
+  "imagePlay.toJournal": "Ajouter à mon journal d’apprentissage",
+  "imagePlay.journalSaved": "Dans ton journal d’apprentissage : voir"
 }

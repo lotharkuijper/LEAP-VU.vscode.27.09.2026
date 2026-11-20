@@ -4,19 +4,6 @@ import { useLanguage } from '../../i18n';
 import { fetchPlayList, type PlayListItem } from '../../services/image-play.service';
 import { PlayBoard } from './PlayBoard';
 
-/** De foto's waarmee een student in deze cursus kan oefenen (leeg als er geen zijn of het niet mag). */
-export function useImagePlayItems(courseId: string | null | undefined, enabled = true): PlayListItem[] {
-  const [items, setItems] = useState<PlayListItem[]>([]);
-  useEffect(() => {
-    setItems([]);
-    if (!courseId || !enabled) return;
-    let alive = true;
-    fetchPlayList(courseId).then((list) => { if (alive) setItems(list); }).catch(() => {});
-    return () => { alive = false; };
-  }, [courseId, enabled]);
-  return items;
-}
-
 /**
  * "Wat zie ik?" in Ik leg uit: de foto's van de cursus om mee te oefenen, en het
  * speelbord voor de gekozen foto. Geen bestandsnamen (die kunnen het antwoord verraden).

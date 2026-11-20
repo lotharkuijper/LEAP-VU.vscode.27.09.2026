@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Main points",
   "imagePlay.bonus": "Extra",
   "imagePlay.coreDone": "You’ve found all the main points! Can you spot any extras? Or finish to view everything.",
-  "imagePlay.allDone": "You’ve found everything, well done! Finish to see the full description.",
   "imagePlay.legend.full": "found",
   "imagePlay.legend.half": "half: complete it",
   "imagePlay.legend.hint": "with a hint",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "You found {self} yourself, out of {total}.",
   "imagePlay.teacherDescription": "Your teacher’s full description",
   "imagePlay.restart": "Try again",
-  "imagePlay.next": "Next photo"
+  "imagePlay.next": "Next photo",
+  "imagePlay.youSaid": "You:",
+  "imagePlay.autoFinished": "Everything has been found or viewed: the exercise is complete. Below you can see everything that was visible.",
+  "imagePlay.toJournal": "Add to my learning journal",
+  "imagePlay.journalSaved": "In your learning journal: view"
 }

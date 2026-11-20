@@ -7,7 +7,7 @@
 // Docenten krijgen pogingen nooit te zien (alleen later totalen).
 
 import {
-  PLAY_LIMITS, boardFor, buildClosingMessages, buildGradeMessages, buildHintMessages,
+  PLAY_LIMITS, boardFor, buildClosingMessages, buildGradeMessages, buildHintMessages, buildJournalPrompt,
   leaksUnfound, mergeProgress, parseGrade, pickHint, stateOf,
 } from './play.js';
 import { fail, signedUrlMap } from './common.js';
@@ -81,6 +81,7 @@ async function stateResponse(db, { ex, number, features, attempt, reveal = false
     turns: (attempt?.turns || []).map(({ role, text, code, kind }) => ({ role, text: text || '', code: code || null, kind: kind || null })),
     answersLeft: Math.max(0, PLAY_LIMITS.MAX_ANSWERS - (attempt?.answers || 0)),
     finished: attempt?.status === 'finished',
+    journalSaved: (attempt?.turns || []).some((t) => t.kind === 'journal'),
     ...(reveal ? { description: ex.description } : {}),
     ...extra,
   };
@@ -148,10 +149,9 @@ export async function answer(db, llm, { courseId, userId, id, text, languageInst
   const saved = await saveAttempt(db, attempt, {
     progress, answers: (attempt.answers || 0) + 1, turns: [...(attempt.turns || []), turn('student', clean), leap],
   });
-  return stateResponse(db, {
-    ...loaded, attempt: saved,
-    extra: { newly: newly.map((n) => ({ id: n.id, state: n.state })) },
-  });
+  const extra = { newly: newly.map((n) => ({ id: n.id, state: n.state })) };
+  if (allFound(loaded.features, saved)) return closeAttempt(db, llm, { loaded, attempt: saved, languageInstruction, extra });
+  return stateResponse(db, { ...loaded, attempt: saved, extra });
 }
 
 /** De volgende hint (zie pickHint). Niveau 3 laat het kenmerk zien en telt het als gevonden met hint. */
@@ -175,21 +175,35 @@ export async function hint(db, llm, { courseId, userId, id, languageInstruction 
       text = typeof out?.hint === 'string' ? out.hint.trim().slice(0, 600) : '';
     } catch (err) { console.warn('[image-play] hint:', err.message); }
     const studentTexts = (attempt.turns || []).filter((t) => t.role === 'student').map((t) => t.text);
-    const leaks = state !== 'half' && leaksUnfound(text, loaded.features, progress, studentTexts);
+    const leaks = state !== 'half' && leaksUnfound(text, loaded.features, progress, studentTexts, { observation: false });
     leap = text && !leaks ? turn('leap', text, { kind: 'hint' }) : turn('leap', '', { kind: 'hint', code: 'hintGeneric' });
   }
   const saved = await saveAttempt(db, attempt, { hints, progress, turns: [...(attempt.turns || []), leap] });
+  if (allFound(loaded.features, saved)) return closeAttempt(db, llm, { loaded, attempt: saved, languageInstruction, extra: { hintLevel: level } });
   return stateResponse(db, { ...loaded, attempt: saved, extra: { hintLevel: level } });
 }
 
-/** Afronden: alles zichtbaar, met de beschrijving van de docent en een korte terugblik. */
+const allFound = (features, attempt) => features.every((f) => stateOf(attempt.progress, f.id) === 'full');
+
+/** Wat de student zelf vond, met een hint vond, en niet vond (labels; na afronden mag dat). */
+function outcome(features, attempt) {
+  const p = attempt.progress || {};
+  return {
+    found: features.filter((f) => stateOf(p, f.id) !== 'none' && p[f.id]?.how !== 'hint').map((f) => f.label),
+    hinted: features.filter((f) => p[f.id]?.how === 'hint').map((f) => f.label),
+    missed: features.filter((f) => stateOf(p, f.id) === 'none').map((f) => f.label),
+  };
+}
+
+/** Afronden ("Ik stop", of vanzelf als alles gevonden of onthuld is): alles zichtbaar, met terugblik. */
 export async function finish(db, llm, { courseId, userId, id, languageInstruction = '' }) {
   const loaded = await loadPlayable(db, courseId, id);
   const attempt = await currentAttempt(db, { ...loaded, userId, courseId, create: true });
-  const p = attempt.progress || {};
-  const found = loaded.features.filter((f) => stateOf(p, f.id) !== 'none' && p[f.id]?.how !== 'hint').map((f) => f.label);
-  const hinted = loaded.features.filter((f) => p[f.id]?.how === 'hint').map((f) => f.label);
-  const missed = loaded.features.filter((f) => stateOf(p, f.id) === 'none').map((f) => f.label);
+  return closeAttempt(db, llm, { loaded, attempt, languageInstruction });
+}
+
+async function closeAttempt(db, llm, { loaded, attempt, languageInstruction = '', extra = {} }) {
+  const { found, hinted, missed } = outcome(loaded.features, attempt);
   let closing = '';
   try {
     const out = await llm(buildClosingMessages({ found, missed, hinted, languageInstruction }));
@@ -197,5 +211,33 @@ export async function finish(db, llm, { courseId, userId, id, languageInstructio
   } catch (err) { console.warn('[image-play] terugblik:', err.message); }
   const leap = closing ? turn('leap', closing, { kind: 'closing' }) : turn('leap', '', { kind: 'closing', code: 'closingGeneric' });
   const saved = await saveAttempt(db, attempt, { status: 'finished', finished_at: now(), turns: [...(attempt.turns || []), leap] });
-  return stateResponse(db, { ...loaded, attempt: saved, reveal: true });
+  return stateResponse(db, { ...loaded, attempt: saved, reveal: true, extra: { ...extra, autoFinished: !!extra.newly || extra.hintLevel !== undefined } });
+}
+
+/**
+ * De bevindingen van de laatst afgeronde poging in het leerdagboek zetten (Ik leg uit).
+ * `llmText(prompt)` geeft platte tekst met de vaste dagboekkopjes. Eén keer per poging.
+ */
+export async function saveToJournal(db, llmText, { courseId, userId, id, lang = 'nl', languageInstruction = '', formatInstruction = '', toFields, journalOn = true }) {
+  // Staat het leerdagboek in deze cursus uit, dan schrijft LEAP er niets in.
+  if (!journalOn) throw fail({ status: 403, error: 'Dit onderdeel wordt in deze cursus niet gebruikt', code: 'feature_disabled' });
+  const loaded = await loadPlayable(db, courseId, id);
+  const { data } = await db.from('image_exercise_attempts').select('*')
+    .eq('exercise_id', id).eq('user_id', userId).eq('status', 'finished').order('finished_at', { ascending: false }).limit(1);
+  const attempt = data?.[0];
+  if (!attempt) throw fail({ status: 400, error: 'Rond de oefening eerst af.', code: 'notFinished' });
+  if ((attempt.turns || []).some((t) => t.kind === 'journal')) {
+    throw fail({ status: 409, error: 'Deze oefening staat al in je leerdagboek.', code: 'alreadySaved' });
+  }
+  const { found, hinted, missed } = outcome(loaded.features, attempt);
+  const answers = (attempt.turns || []).filter((t) => t.role === 'student').map((t) => t.text).slice(-10);
+  const raw = await llmText(buildJournalPrompt({ found, hinted, missed, answers, depth: loaded.ex.depth }) + formatInstruction + languageInstruction);
+  if (!raw) throw fail({ status: 502, error: 'De notitie kon niet worden gemaakt. Probeer het opnieuw.', code: 'journalFailed' });
+  const title = lang === 'nl' ? `Wat zie ik? Foto ${loaded.number}` : `What do I see? Photo ${loaded.number}`;
+  const { data: entry, error } = await db.from('learning_journal_entries').insert({
+    user_id: userId, title, ...toFields(raw, lang), activity_type: 'explanation_reflection', course_id: courseId,
+  }).select('id').single();
+  if (error) throw new Error(error.message);
+  await saveAttempt(db, attempt, { turns: [...(attempt.turns || []), turn('leap', '', { kind: 'journal' })] });
+  return { journalEntryId: entry.id };
 }

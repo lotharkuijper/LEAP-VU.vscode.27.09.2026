@@ -115,7 +115,7 @@ describe('hints', () => {
   });
 
   it('niveau 1 zegt waar je moet kijken, zonder het label; bij half mag het label', () => {
-    expect(buildHintMessages(F[0], 1, 'none')[0].content).toContain('WAAR');
+    expect(buildHintMessages(F[0], 1, 'none')[0].content).toContain('wijs de plek aan');
     expect(buildHintMessages(F[0], 1, 'none')[0].content).toContain('Noem NOOIT het label');
     expect(buildHintMessages(F[0], 2, 'half')[0].content).toContain('Je mag het label noemen');
   });

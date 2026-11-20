@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Hal utama",
   "imagePlay.bonus": "Ekstra",
   "imagePlay.coreDone": "Semua hal utama sudah ditemukan! Kamu juga masih melihat hal-hal ekstra? Atau selesaikan untuk melihat semuanya.",
-  "imagePlay.allDone": "Semuanya ditemukan, bagus sekali! Selesaikan untuk melihat seluruh deskripsi.",
   "imagePlay.legend.full": "ditemukan",
   "imagePlay.legend.half": "setengah: selesaikan",
   "imagePlay.legend.hint": "dengan petunjuk",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Kamu menemukan {self} sendiri, dari {total}.",
   "imagePlay.teacherDescription": "Deskripsi lengkap dari dosenmu",
   "imagePlay.restart": "Coba lagi",
-  "imagePlay.next": "Foto berikutnya"
+  "imagePlay.next": "Foto berikutnya",
+  "imagePlay.youSaid": "Kamu:",
+  "imagePlay.autoFinished": "Semua sudah ditemukan atau dilihat: latihan telah selesai. Di bawah ini kamu bisa melihat semua yang tadi terlihat.",
+  "imagePlay.toJournal": "Masukkan ke jurnal belajarku",
+  "imagePlay.journalSaved": "Ada di jurnal belajarmu: lihat"
 }

@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Hauptpunkte",
   "imagePlay.bonus": "Extra",
   "imagePlay.coreDone": "Alle Hauptpunkte gefunden! Siehst du auch noch Extras? Oder schließe ab, um alles anzusehen.",
-  "imagePlay.allDone": "Alles gefunden, gut gemacht! Schließe ab, um die ganze Beschreibung zu sehen.",
   "imagePlay.legend.full": "gefunden",
   "imagePlay.legend.half": "halb: mach es fertig",
   "imagePlay.legend.hint": "mit einem Hinweis",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Du hast {self} von {total} selbst gefunden.",
   "imagePlay.teacherDescription": "Die vollständige Beschreibung deines Dozenten",
   "imagePlay.restart": "Erneut versuchen",
-  "imagePlay.next": "Nächstes Foto"
+  "imagePlay.next": "Nächstes Foto",
+  "imagePlay.youSaid": "Du:",
+  "imagePlay.autoFinished": "Alles wurde gefunden oder angesehen: Die Übung ist abgeschlossen. Unten siehst du, was alles zu sehen war.",
+  "imagePlay.toJournal": "In mein Lerntagebuch eintragen",
+  "imagePlay.journalSaved": "In deinem Lerntagebuch: ansehen"
 }

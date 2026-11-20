@@ -4,12 +4,14 @@
 // blijft op de server (zie playService.js).
 import { requireAuthUser, userHasCourseAccess } from '../lib/auth.js';
 import { AZURE_CHAT_READY, LLM_NOT_CONFIGURED_MSG } from '../lib/azureOpenai.js';
-import { rejectIfFeatureOff } from '../lib/courseFeatureGate.js';
+import { courseFeatureOnFor, rejectIfFeatureOff } from '../lib/courseFeatureGate.js';
 import { supabaseAdmin } from '../lib/supabase.js';
 import { buildLanguageInstruction } from '../i18n/languages.js';
-import { llmJson } from './llm.js';
+import { journalFieldsFromModel, journalFormatInstruction } from '../journal/journalSections.js';
+import { normalizeLang } from '../i18n/languages.js';
+import { llmJson, llmText } from './llm.js';
 import { UUID_RE } from './common.js';
-import { answer, finish, hint, listForStudent, restartAttempt, startAttempt } from './playService.js';
+import { answer, finish, hint, listForStudent, restartAttempt, saveToJournal, startAttempt } from './playService.js';
 
 // Rem op de kosten: hooguit zoveel antwoorden, hints en terugblikken (elk een
 // aanroep van het taalmodel) per gebruiker per tien minuten.
@@ -94,6 +96,24 @@ export function registerImageExercisePlayRoutes(app) {
     if (limited(res, auth)) return;
     if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
     try { return res.json(await hint(supabaseAdmin, llm(400), ctx(req, auth))); } catch (err) { return send(res, err, 'hint'); }
+  });
+
+  // Bevindingen in het leerdagboek (Ik leg uit), na afronden; één keer per poging.
+  app.post(`${base}/:id/journal`, async (req, res) => {
+    const auth = await member(req, res);
+    if (!auth) return;
+    if (limited(res, auth)) return;
+    if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
+    const lang = normalizeLang(req.get('x-leap-lang'));
+    try {
+      return res.json(await saveToJournal(supabaseAdmin, (prompt) => llmText(prompt), {
+        ...ctx(req, auth), lang,
+        languageInstruction: buildLanguageInstruction(lang),
+        formatInstruction: journalFormatInstruction(lang),
+        toFields: journalFieldsFromModel,
+        journalOn: await courseFeatureOnFor(auth.user, auth.profile, req.params.courseId, 'journal'),
+      }));
+    } catch (err) { return send(res, err, 'leerdagboek'); }
   });
 
   app.post(`${base}/:id/finish`, async (req, res) => {

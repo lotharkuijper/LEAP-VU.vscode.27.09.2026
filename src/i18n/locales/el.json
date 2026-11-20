@@ -3680,7 +3680,6 @@
   "imagePlay.core": "Κύρια σημεία",
   "imagePlay.bonus": "Επιπλέον",
   "imagePlay.coreDone": "Βρήκες όλα τα κύρια σημεία! Βλέπεις και κάτι επιπλέον; Ή ολοκλήρωσε για να τα δεις όλα.",
-  "imagePlay.allDone": "Τα βρήκες όλα, μπράβο! Ολοκλήρωσε για να δεις ολόκληρη την περιγραφή.",
   "imagePlay.legend.full": "βρέθηκε",
   "imagePlay.legend.half": "μισό: ολοκλήρωσέ το",
   "imagePlay.legend.hint": "με υπόδειξη",
@@ -3703,5 +3702,9 @@
   "imagePlay.result": "Βρήκες {self} μόνος/η σου, από τα {total}.",
   "imagePlay.teacherDescription": "Η πλήρης περιγραφή από τον/την διδάσκοντά/ουσά σου",
   "imagePlay.restart": "Δοκίμασε ξανά",
-  "imagePlay.next": "Επόμενη φωτογραφία"
+  "imagePlay.next": "Επόμενη φωτογραφία",
+  "imagePlay.youSaid": "Εσύ:",
+  "imagePlay.autoFinished": "Όλα έχουν βρεθεί ή προβληθεί: η άσκηση ολοκληρώθηκε. Παρακάτω βλέπεις όλα όσα υπήρχαν για να δεις.",
+  "imagePlay.toJournal": "Βάλε στο μαθησιακό μου ημερολόγιο",
+  "imagePlay.journalSaved": "Βρίσκεται στο μαθησιακό σου ημερολόγιο: προβολή"
 }
