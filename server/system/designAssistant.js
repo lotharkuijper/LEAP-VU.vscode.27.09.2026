@@ -44,6 +44,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 export const ADMIN_SECTIONS = [
   { tab: 'material', labelKey: 'admin.tabs.material', audience: 'all', helpGroups: ['material', 'concepts'],
     what: 'Bestanden en websites toevoegen met een doel (leerstof, cursusinformatie, projectmateriaal, alleen delen, alleen docenten), verwerking controleren, begrippen (kernbegrippen, dubbelingen, maximum) en de controle "Klaar voor studenten".' },
+  { tab: 'image_exercises', labelKey: 'admin.tabs.imageExercises', audience: 'all', helpGroups: [],
+    what: 'Beeldoefeningen: foto\'s uploaden met per foto een beschrijving van wat er te zien is (één document met kopjes per foto, één bestand per foto met dezelfde naam, of bij de foto zelf plakken of uploaden). LEAP koppelt beschrijving en foto (op kopje, bestandsnaam, nummer, volgorde of op het oog; de docent bevestigt en kan ontkoppelen) en maakt van elke beschrijving een lijstje kenmerken, kern of extra, alleen uit de tekst van de docent. Nalopen is optioneel; waar LEAP twijfelt, staat een melding. Per foto: diepgang (benoemen, beschrijven, duiden) en of de student het aantal kenmerken ziet. De beschrijvingen zijn de antwoordsleutel en blijven geheim voor studenten. Studenten oefenen in Ik leg uit onder "Wat zie ik?": ze beschrijven wat ze zien, krijgen per kenmerk een half of heel vakje op een speelbord, trapsgewijze hints en na afronden de volledige beschrijving. Docenten zien geen pogingen van studenten.' },
   { tab: 'projects_admin', labelKey: 'admin.tabs.projects', audience: 'all', helpGroups: ['projects', 'personas'],
     what: 'Groepsprojecten met persona\'s in drie rollen: begeleider, beoordelaar (rubric, feedbackrondes per product) en rolspeler (simulatie, eventueel met verstandhouding en gedragsregels). Ook persona-sjablonen en inleveren.' },
   { tab: 'prompts', labelKey: 'admin.tabs.prompts', audience: 'all', helpGroups: ['chatInstructions'],
@@ -66,6 +68,8 @@ export const ADMIN_SECTIONS = [
     what: 'Alle cursussen van LEAP: cursus aanmaken (met automatisch een cursusmap met submappen RAG en Projectdata), naam en beschrijving wijzigen, per cursus de toegangsroute kiezen, activeren of deactiveren en verwijderen. Per cursus brengen de knoppen Leden en Cursus je naar die tabbladen, met die cursus als actieve cursus.' },
   { tab: 'users', labelKey: 'admin.tabs.users', audience: 'admin', helpGroups: [],
     what: 'Alle gebruikers van LEAP en hun rol.' },
+  { tab: 'access_requests', labelKey: 'admin.tabs.accessRequests', audience: 'admin', helpGroups: [],
+    what: 'Aanvragen: medewerkers van de VU en Amsterdam UMC (@vu.nl, @amsterdamumc.nl) kunnen een account aanmaken zonder cursus en de beheerder vragen om toegang, eventueel met de cursussen waarin ze willen meekijken. De beheerder koppelt ze hier aan een cursus als docent of student (de medewerker krijgt een e-mail) en sluit de aanvraag af. De beheerder krijgt bij elke nieuwe aanvraag een e-mail.' },
   { tab: 'messages', labelKey: 'admin.tabs.messages', audience: 'admin', helpGroups: ['systemMessages'],
     what: 'Systeemberichten aan alle gebruikers, alle studenten, alle docenten of de leden van één cursus. Ze staan op het Dashboard tot iemand ze wegklikt of tot de einddatum; bij "Dashboard" in het menu staat zolang een rood uitroepteken. Eenrichtingsverkeer; de beheerder ziet alleen totalen (ontvangers, weggeklikt).' },
   { tab: 'settings', labelKey: 'admin.tabs.settings', audience: 'admin', helpGroups: ['chatAttachments', 'tokenBudget', 'canvasPlatforms'],

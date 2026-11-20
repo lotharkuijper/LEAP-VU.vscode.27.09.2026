@@ -5,7 +5,7 @@ import path from 'node:path';
 import { routeSource } from './helpers/serverSource.js';
 import {
   ENROLLMENT_MODES, isEnrollmentMode, allowsOpenRegistration, isBlockedEmail, isSelfJoinable,
-  validateRegistration, createRateLimiter, blockedDomains,
+  validateRegistration, createRateLimiter, blockedDomains, isStaffEmail, staffDomains,
 } from '../courses/enrollment.js';
 
 const root = path.resolve(__dirname, '..', '..');
@@ -25,6 +25,7 @@ describe('toegangsroute', () => {
     expect(isSelfJoinable({ ...c, enrollment_mode: 'canvas_open' })).toBe(true);
     expect(isSelfJoinable({ ...c, is_active: false })).toBe(false);
     expect(isSelfJoinable({ ...c, student_visible: false })).toBe(false);
+    expect(isSelfJoinable({ ...c, is_test: true })).toBe(false);
   });
 });
 
@@ -44,7 +45,18 @@ describe('registratie controleren', () => {
   const open = ['c1', 'c2'];
   const ok = { fullName: 'Sam', email: 'sam@example.org', password: 'geheim1', courseIds: ['c1'] };
   it('geldig verzoek', () => {
-    expect(validateRegistration(ok, open)).toEqual({ ok: true, name: 'Sam', email: 'sam@example.org', courseIds: ['c1'] });
+    expect(validateRegistration(ok, open)).toEqual({ ok: true, name: 'Sam', email: 'sam@example.org', courseIds: ['c1'], staff: false });
+  });
+  it('medewerkers (vu.nl, amsterdamumc.nl) mogen zonder cursus; studentadressen nog steeds niet', () => {
+    expect(staffDomains({})).toEqual(['vu.nl', 'amsterdamumc.nl']);
+    expect(isStaffEmail('Peter.van.Grevelingen@VU.nl')).toBe(true);
+    expect(isStaffEmail('a.b@amsterdamumc.nl')).toBe(true);
+    expect(isStaffEmail('s123@student.vu.nl')).toBe(false);
+    expect(isStaffEmail('x@fake-vu.nl')).toBe(false);
+    expect(validateRegistration({ ...ok, email: 'peter@vu.nl', courseIds: [] }, open)).toEqual({ ok: true, name: 'Sam', email: 'peter@vu.nl', courseIds: [], staff: true });
+    expect(validateRegistration({ ...ok, email: 'arts@amsterdamumc.nl', courseIds: [] }, open)).toMatchObject({ ok: true, staff: true });
+    expect(validateRegistration({ ...ok, email: 's1@student.vu.nl', courseIds: [] }, open).code).toBe('vuEmail');
+    expect(validateRegistration({ ...ok, email: 'peter@vu.nl', courseIds: ['dicht'] }, open).code).toBe('courseNotOpen');
   });
   it('weigert met een duidelijke code', () => {
     const code = (b) => validateRegistration({ ...ok, ...b }, open).code;

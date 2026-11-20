@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Mail, Lock, LogIn, KeyRound, User, BookOpen } from 'lucide-react';
 import { fetchOpenCourses, registerOpen, isVuEmail, EnrollmentError, type OpenCourse } from '../services/enrollment.service';
+import { isStaffEmail } from '../services/access.service';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../i18n';
 import { EmailCodeLogin } from '../components/EmailCodeLogin';
@@ -81,7 +82,9 @@ export function LoginPage() {
           setLoading(false);
           return;
         }
-        if (isVuEmail(email)) {
+        // Medewerkers (@vu.nl, @amsterdamumc.nl) mogen zonder cursus; studentadressen van de VU niet.
+        const staff = isStaffEmail(email);
+        if (!staff && isVuEmail(email)) {
           setError(t('login.err.vuEmail'));
           setLoading(false);
           return;
@@ -91,7 +94,7 @@ export function LoginPage() {
           setLoading(false);
           return;
         }
-        if (chosen.length === 0) {
+        if (chosen.length === 0 && !staff) {
           setError(t('login.err.courseRequired'));
           setLoading(false);
           return;
@@ -281,7 +284,11 @@ export function LoginPage() {
               </div>
             </div>
 
-            {isSignUp && (
+            {isSignUp && isStaffEmail(email) && (
+              <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900" data-testid="text-signup-staff">{t('login.staffNotice')}</p>
+            )}
+
+            {isSignUp && !isStaffEmail(email) && (
               <fieldset data-testid="fieldset-signup-courses">
                 <legend className="block text-sm font-semibold text-gray-700 mb-1">{t('login.coursesLabel')}</legend>
                 <p className="text-xs text-gray-500 mb-2">{t('login.coursesHint')}</p>
@@ -322,7 +329,7 @@ export function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading || (isSignUp && openCourses !== null && openCourses.length === 0)}
+              disabled={loading || (isSignUp && !isStaffEmail(email) && openCourses !== null && openCourses.length === 0)}
               className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white font-semibold py-3 rounded-lg hover:from-blue-600 hover:to-green-600 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               data-testid="button-login"
             >

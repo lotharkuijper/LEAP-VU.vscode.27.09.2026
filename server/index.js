@@ -9,9 +9,11 @@ import { installAnalytics } from './analytics/index.js';
 import { registerAuthEmailHook } from './account/authEmailHook.js';
 import { resolveSofficeBin } from './documents/documentRender.js';
 import { registerEnrollmentRoutes } from './courses/enrollment.js';
+import { registerAccessRequestRoutes } from './access/accessRequests.js';
+import { registerTestCourseRoutes } from './courses/testCourse.js';
 import { normalizeLang } from './i18n/languages.js';
 import { applyHttpSecurity } from './lib/httpSecurity.js';
-import { authUser, isLeapAdmin, isStaffForCourse, requireAuthUser } from './lib/auth.js';
+import { authUser, isLeapAdmin, isStaffForCourse, requireAuthUser, resolveAdminUser } from './lib/auth.js';
 import {
   AZURE_CHAT_READY,
   AZURE_EMBEDDINGS_READY,
@@ -24,6 +26,7 @@ import {
 import {
   detectConceptEvidenceSchema,
   detectConceptsCourseIdColumn,
+  detectCoursesIsTestColumn,
   detectCoursesStudentVisibleColumn,
   detectDocumentsContentHash,
   detectQuizAttemptsSchema,
@@ -50,6 +53,8 @@ import { registerDocumentRoutes } from './documents/routes.js';
 import { registerCourseRoutes } from './courses/routes.js';
 import { registerIngestionRoutes } from './ingestion/routes.js';
 import { registerYouTubeRoutes } from './ingestion/youtubeRoutes.js';
+import { registerImageExerciseRoutes } from './imageExercises/routes.js';
+import { registerImageExercisePlayRoutes } from './imageExercises/playRoutes.js';
 import { registerConceptRoutes } from './concepts/routes.js';
 import { registerStudiecafe } from './studiecafe/routes.js';
 import { registerJournalRoutes } from './journal/routes.js';
@@ -137,6 +142,9 @@ registerCourseRoutes(app);
 registerIngestionRoutes(app);
 
 registerYouTubeRoutes(app);
+registerImageExerciseRoutes(app);
+
+registerImageExercisePlayRoutes(app);
 
 registerConceptRoutes(app);
 
@@ -171,6 +179,18 @@ registerEnrollmentRoutes(app, {
   onOpenRegistration: (userId) => tokenBudget.markOpenAccount(userId),
 });
 
+registerTestCourseRoutes(app, { supabaseAdmin, resolveAdminUser, superuserEmail: SUPERUSER_EMAIL });
+
+registerAccessRequestRoutes(app, {
+  supabaseAdmin,
+  requireAuthUser,
+  isAdminProfile: (p) => !!p && (p.role === 'admin' || p.email === SUPERUSER_EMAIL),
+  superuserEmail: SUPERUSER_EMAIL,
+  getEmailConfig,
+  sendEmail,
+  appUrl: () => process.env.APP_PUBLIC_URL || process.env.APP_BASE_URL || '',
+});
+
 registerCanvasRoutes(app);
 
 // Serveer de gebouwde Vite-frontend als dist/index.html bestaat (productie).
@@ -203,6 +223,7 @@ if (process.env.NODE_ENV !== 'test') {
     }
     detectConceptsCourseIdColumn();
     detectCoursesStudentVisibleColumn();
+    detectCoursesIsTestColumn();
     detectQuizAttemptsSchema();
     detectQuizSourcesSchema();
     detectConceptEvidenceSchema();
