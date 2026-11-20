@@ -11,9 +11,9 @@ import {
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
 
 /**
- * Het speelbord voor één foto ("Wat zie ik?"). Links de foto (blijft staan bij
- * scrollen), rechts in één kolom het bord, alleen de laatste reactie van LEAP, het
- * invoervak en de knoppen, zodat je niet heen en weer hoeft te scrollen. Is alles
+ * Het speelbord voor één foto ("Wat zie ik?"), als een één-op-één gesprek: de foto,
+ * direct eronder het invoervak en daaronder alleen de laatste reactie van LEAP (die
+ * de vorige vervangt); het bord met de vakjes staat ernaast. Zo blijft de foto in beeld. Is alles
  * gevonden of onthuld, dan rondt de server vanzelf af; daarna kan de student de
  * bevindingen in het leerdagboek zetten.
  */
@@ -82,33 +82,16 @@ export function PlayBoard({ courseId, exerciseId, onBack, onNext }: {
       </button>
 
       <div className="grid gap-4 lg:grid-cols-5">
-        {/* De foto: blijft in beeld tijdens het scrollen */}
-        <div className="lg:col-span-2">
-          <div className="chic-card space-y-2 p-3 lg:sticky lg:top-4">
-            <h2 className="text-lg font-bold text-gray-900">{t('imagePlay.photoTitle', { n: String(state.exercise.number) })}</h2>
-            {state.exercise.imageUrl && (
-              <button type="button" onClick={() => setZoom(true)} className="relative block w-full" aria-label={t('imagePlay.zoom')} data-testid="button-play-zoom">
-                <img src={state.exercise.imageUrl} alt={t('imagePlay.photoTitle', { n: String(state.exercise.number) })} className="max-h-[70vh] w-full rounded-xl border border-gray-200 bg-gray-50 object-contain" />
-                <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs text-gray-700 shadow-sm"><ZoomIn className="h-3.5 w-3.5" />{t('imagePlay.zoom')}</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Bord, laatste reactie en invoer in één kolom */}
-        <div className="chic-card space-y-4 p-4 lg:col-span-3" data-testid="play-tiles">
-          <div>
-            <p className="text-sm font-medium text-gray-800">{tk(`imagePlay.depth.${state.exercise.depth}`)}</p>
-            <p className="text-sm text-gray-600" data-testid="text-play-count">
-              {count.mode === 'exact' ? t('imagePlay.count.exact', { core: String(count.core), extra: String(count.extra) })
-                : count.mode === 'approx' ? t('imagePlay.count.approx', { n: String(count.about) })
-                  : t('imagePlay.count.none')}
-            </p>
-          </div>
-
-          <TileGroup title={t('imagePlay.core')} tiles={core} empty={emptyCore} fresh={fresh} finished={finished} />
-          {(extra.length > 0 || emptyExtra > 0) && <TileGroup title={t('imagePlay.bonus')} tiles={extra} empty={emptyExtra} fresh={fresh} finished={finished} />}
-          <Legend />
+        {/* Eén-op-één: de foto, direct eronder het invoervak, daaronder de laatste reactie
+            van LEAP (die steeds de vorige vervangt). Zo blijft de foto in beeld. */}
+        <div className="chic-card space-y-3 p-3 lg:col-span-3" data-testid="play-conversation">
+          <h2 className="text-lg font-bold text-gray-900">{t('imagePlay.photoTitle', { n: String(state.exercise.number) })}</h2>
+          {state.exercise.imageUrl && (
+            <button type="button" onClick={() => setZoom(true)} className="relative block w-full" aria-label={t('imagePlay.zoom')} data-testid="button-play-zoom">
+              <img src={state.exercise.imageUrl} alt={t('imagePlay.photoTitle', { n: String(state.exercise.number) })} className="max-h-[50vh] w-full rounded-xl border border-gray-200 bg-gray-50 object-contain" />
+              <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-lg bg-white/90 px-2 py-1 text-xs text-gray-700 shadow-sm"><ZoomIn className="h-3.5 w-3.5" />{t('imagePlay.zoom')}</span>
+            </button>
+          )}
 
           {finished ? (
             <Finished
@@ -123,13 +106,6 @@ export function PlayBoard({ courseId, exerciseId, onBack, onNext }: {
             />
           ) : (
             <>
-              {board.coreDone && (
-                <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800" data-testid="text-core-done">{t('imagePlay.coreDone')}</p>
-              )}
-              <div className="min-h-[3.5rem] space-y-1.5" aria-live="polite" data-testid="play-latest">
-                {lastStudent && <p className="truncate text-xs text-gray-500" data-testid="text-play-last-answer">{t('imagePlay.youSaid')} {lastStudent.text}</p>}
-                {lastLeap ? <Reply turn={lastLeap} /> : <p className="text-sm text-gray-600">{t('imagePlay.start')}</p>}
-              </div>
               <div className="space-y-2">
                 <textarea
                   value={text}
@@ -155,9 +131,37 @@ export function PlayBoard({ courseId, exerciseId, onBack, onNext }: {
                 </div>
                 {state.answersLeft <= 5 && <p className="text-xs text-gray-500">{t('imagePlay.answersLeft', { n: String(state.answersLeft) })}</p>}
               </div>
+              <div className="min-h-[3.5rem] space-y-1.5" aria-live="polite" data-testid="play-latest">
+                {busy === 'answer' || busy === 'hint'
+                  ? <p className="flex items-center gap-2 text-sm text-gray-500"><Loader2 className="h-4 w-4 animate-spin" />{t('imagePlay.thinking')}</p>
+                  : (
+                    <>
+                      {lastStudent && <p className="truncate text-xs text-gray-500" data-testid="text-play-last-answer">{t('imagePlay.youSaid')} {lastStudent.text}</p>}
+                      {lastLeap ? <Reply turn={lastLeap} /> : <p className="text-sm text-gray-600">{t('imagePlay.start')}</p>}
+                    </>
+                  )}
+              </div>
             </>
           )}
           {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" data-testid="text-play-error">{error}</p>}
+        </div>
+
+        {/* Het speelbord ernaast (op een telefoon eronder) */}
+        <div className="chic-card space-y-4 p-4 lg:col-span-2 lg:self-start" data-testid="play-tiles">
+          <div>
+            <p className="text-sm font-medium text-gray-800">{tk(`imagePlay.depth.${state.exercise.depth}`)}</p>
+            <p className="text-sm text-gray-600" data-testid="text-play-count">
+              {count.mode === 'exact' ? t('imagePlay.count.exact', { core: String(count.core), extra: String(count.extra) })
+                : count.mode === 'approx' ? t('imagePlay.count.approx', { n: String(count.about) })
+                  : t('imagePlay.count.none')}
+            </p>
+          </div>
+          <TileGroup title={t('imagePlay.core')} tiles={core} empty={emptyCore} fresh={fresh} finished={finished} />
+          {(extra.length > 0 || emptyExtra > 0) && <TileGroup title={t('imagePlay.bonus')} tiles={extra} empty={emptyExtra} fresh={fresh} finished={finished} />}
+          {board.coreDone && !finished && (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800" data-testid="text-core-done">{t('imagePlay.coreDone')}</p>
+          )}
+          <Legend />
         </div>
       </div>
 

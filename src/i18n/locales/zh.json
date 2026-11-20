@@ -3706,5 +3706,6 @@
   "imagePlay.youSaid": "你：",
   "imagePlay.autoFinished": "所有内容都已找到或查看：练习已完成。下面你可以看到所有可查看的内容。",
   "imagePlay.toJournal": "添加到我的学习日志",
-  "imagePlay.journalSaved": "已在你的学习日志中：查看"
+  "imagePlay.journalSaved": "已在你的学习日志中：查看",
+  "imagePlay.thinking": "LEAP 正在查看…"
 }

@@ -3706,5 +3706,6 @@
   "imagePlay.youSaid": "Tú:",
   "imagePlay.autoFinished": "Todo se ha encontrado o visto: el ejercicio ha finalizado. A continuación ves todo lo que había para ver.",
   "imagePlay.toJournal": "Añadir a mi diario de aprendizaje",
-  "imagePlay.journalSaved": "Está en tu diario de aprendizaje: ver"
+  "imagePlay.journalSaved": "Está en tu diario de aprendizaje: ver",
+  "imagePlay.thinking": "LEAP está mirando…"
 }

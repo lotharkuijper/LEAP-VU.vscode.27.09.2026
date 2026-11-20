@@ -7,7 +7,7 @@
 // Docenten krijgen pogingen nooit te zien (alleen later totalen).
 
 import {
-  PLAY_LIMITS, boardFor, buildClosingMessages, buildGradeMessages, buildHintMessages, buildJournalPrompt,
+  PLAY_LIMITS, boardFor, buildClosingMessages, buildGradeMessages, buildHintMessages, buildJournalPrompt, buildSafeFeedbackMessages,
   leaksUnfound, mergeProgress, parseGrade, pickHint, stateOf,
 } from './play.js';
 import { fail, signedUrlMap } from './common.js';
@@ -144,8 +144,19 @@ export async function answer(db, llm, { courseId, userId, id, text, languageInst
   }
   if (!grade) throw fail({ status: 502, error: 'Nakijken lukte even niet. Probeer het opnieuw.', code: 'gradeFailed' });
   const { progress, newly } = mergeProgress(attempt.progress, grade.updates, attempt.hints);
-  const safe = grade.feedback && !leaksUnfound(grade.feedback, loaded.features, progress, [...previous, clean]);
-  const leap = safe ? turn('leap', grade.feedback) : turn('leap', '', { code: 'generic' });
+  const said = [...previous, clean];
+  let feedback = grade.feedback && !leaksUnfound(grade.feedback, loaded.features, progress, said) ? grade.feedback : '';
+  if (!feedback) {
+    // De eerste reactie verraadde iets (of was leeg): laat een nieuwe schrijven die
+    // alleen weet wat de student al gevonden heeft. Pas daarna de algemene zin.
+    const known = loaded.features.filter((f) => stateOf(progress, f.id) !== 'none').map((f) => ({ label: f.label, state: stateOf(progress, f.id) }));
+    try {
+      const out = await llm(buildSafeFeedbackMessages({ answer: clean, known, newly: newly.length > 0, languageInstruction }));
+      const text = typeof out?.feedback === 'string' ? out.feedback.trim().slice(0, 600) : '';
+      if (text && !leaksUnfound(text, loaded.features, progress, said)) feedback = text;
+    } catch (err) { console.warn('[image-play] nieuwe reactie:', err.message); }
+  }
+  const leap = feedback ? turn('leap', feedback) : turn('leap', '', { code: 'generic' });
   const saved = await saveAttempt(db, attempt, {
     progress, answers: (attempt.answers || 0) + 1, turns: [...(attempt.turns || []), turn('student', clean), leap],
   });

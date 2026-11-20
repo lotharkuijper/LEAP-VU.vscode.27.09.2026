@@ -206,6 +206,20 @@ export function pickHint(features, progress, hints = {}) {
   return { feature, level: Math.min(3, (hints[feature.id] || 0) + 1) };
 }
 
+/**
+ * Een tweede, veilige reactie: het taalmodel krijgt alleen wat de student al gevonden
+ * heeft (niets van de rest), dus kan het niets verraden.
+ */
+export function buildSafeFeedbackMessages({ answer, known, newly, languageInstruction = '' }) {
+  const system = `Je kijkt mee terwijl een student beschrijft wat hij of zij op een afbeelding ziet. Schrijf hooguit 2 korte, luchtige zinnen aan de student (je/jij):
+- ${newly ? 'Bevestig kort en specifiek wat de student net goed beschreef.' : 'Reageer kort en vriendelijk op wat de student net schreef.'}
+- Is iets half gevonden, vraag dan naar waar en hoe het eruitziet (of hoe het heet).
+- Nodig daarna uit om een ander deel van de afbeelding te bekijken, zonder te zeggen wat daar te zien is.
+- Noem geen andere onderdelen van de afbeelding dan wat de student zelf noemde of wat hieronder staat. Geen emoji's.
+Antwoord uitsluitend met JSON: {"feedback":""}${languageInstruction}`;
+  return [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify({ antwoord: String(answer || '').slice(0, 1500), al_gevonden: known }) }];
+}
+
 /** Berichten voor een hint van niveau 1 of 2 (niveau 3 maakt de server zelf). */
 export function buildHintMessages(feature, level, state, languageInstruction = '') {
   const half = state === 'half';

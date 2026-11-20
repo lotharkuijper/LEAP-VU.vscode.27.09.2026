@@ -3706,5 +3706,6 @@
   "imagePlay.youSaid": "あなた:",
   "imagePlay.autoFinished": "すべて見つけた、または確認したため、演習は完了です。以下で何が見られたかを確認できます。",
   "imagePlay.toJournal": "学習日誌に追加",
-  "imagePlay.journalSaved": "学習日誌に保存済み: 表示"
+  "imagePlay.journalSaved": "学習日誌に保存済み: 表示",
+  "imagePlay.thinking": "LEAPが見守っています…"
 }
