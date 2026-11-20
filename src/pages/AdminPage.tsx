@@ -7,11 +7,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { CoursePromptsPanel } from '../components/CoursePromptsPanel';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, Library, ToggleRight, Megaphone, School } from 'lucide-react';
+import { BarChart3, Users, UserPlus, BookOpen, Settings, Search, Trash2, RefreshCw, CheckCircle, XCircle, Loader2, FolderTree, Download, MessageSquareText, CreditCard as Edit2, Home, Plus, Globe, GraduationCap, SlidersHorizontal, Save, ChevronDown, ChevronRight, Sparkles, AlertTriangle, Library, ToggleRight, Megaphone, School, Images } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 import { ImportsHubPanel } from '../components/ImportsHubPanel';
 import { QuizSourcesAdminPanel } from '../components/QuizSourcesAdminPanel';
 import { ProjectsAdminTab } from './admin/ProjectsAdminTab';
+import { ImageExercisesAdmin } from '../components/imageExercises/ImageExercisesAdmin';
 import { LearningLevelsAdminTab } from './admin/LearningLevelsAdminTab';
 import { CourseFeaturesAdminTab } from './admin/CourseFeaturesAdminTab';
 import { ChatAttachmentsPlatformPanel } from './admin/ChatAttachmentsPlatformPanel';
@@ -71,7 +72,7 @@ interface ChatbotPrompt {
 // oude links gaan naar de bijbehorende stap in Cursusmateriaal.
 const LEGACY_MATERIAL_TABS: Record<string, MaterialStep> = { documents: 'files', rag_beheer: 'processing', concepts: 'concepts' };
 
-const TAB_IDS = ['material', 'users', 'members', 'course', 'courses', 'imports', 'quiz_sources', 'prompts', 'rag_settings', 'settings', 'projects_admin', 'analytics', 'course_features', 'messages'] as const;
+const TAB_IDS = ['material', 'image_exercises', 'users', 'members', 'course', 'courses', 'imports', 'quiz_sources', 'prompts', 'rag_settings', 'settings', 'projects_admin', 'analytics', 'course_features', 'messages'] as const;
 type TabType = typeof TAB_IDS[number];
 
 // Herindeling 2026-11-02: Leden (was Studenten uitnodigen + Beheer leden) en Cursus (was per
@@ -1277,6 +1278,7 @@ export function AdminPage() {
 
 const tabs = [
   { id: 'material' as TabType, label: t('admin.tabs.material'), icon: Library, show: true },
+  { id: 'image_exercises' as TabType, label: t('admin.tabs.imageExercises'), icon: Images, show: isAdmin || isDocent },
   { id: 'courses' as TabType, label: t('admin.tabs.courses'), icon: BookOpen, show: isAdmin },
   { id: 'users' as TabType, label: t('admin.tabs.users'), icon: Users, show: isAdmin },
   { id: 'members' as TabType, label: t('admin.tabs.members'), icon: UserPlus, show: isAdmin || isDocent },
@@ -1295,7 +1297,7 @@ const tabs = [
 // Herinrichting 2026-10-26: in de volgorde waarin je een cursus inricht —
 // inhoud, AI-tutor, quiz, openstellen voor studenten, volgen; systeemzaken apart (admin).
 const tabGroups = [
-  { key: 'content', label: t('admin.tabGroups.content'), ids: ['material', 'projects_admin'] },
+  { key: 'content', label: t('admin.tabGroups.content'), ids: ['material', 'image_exercises', 'projects_admin'] },
   { key: 'aiTutor', label: t('admin.tabGroups.aiTutor'), ids: ['prompts', 'rag_settings'] },
   { key: 'quiz', label: t('admin.tabGroups.quiz'), ids: ['quiz_sources', 'imports'] },
   { key: 'publish', label: t('admin.tabGroups.publish'), ids: ['course_features', 'course', 'members'] },
@@ -2717,6 +2719,7 @@ const tabGroups = [
           )}
 
           {activeTab === 'projects_admin' && <ProjectsAdminTab />}
+          {activeTab === 'image_exercises' && <ImageExercisesAdmin />}
           {activeTab === 'members' && <MembersTab />}
           {activeTab === 'course' && <CourseTab />}
           {activeTab === 'courses' && <CoursesAdminTab />}

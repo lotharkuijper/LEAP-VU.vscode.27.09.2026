@@ -44,6 +44,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 export const ADMIN_SECTIONS = [
   { tab: 'material', labelKey: 'admin.tabs.material', audience: 'all', helpGroups: ['material', 'concepts'],
     what: 'Bestanden en websites toevoegen met een doel (leerstof, cursusinformatie, projectmateriaal, alleen delen, alleen docenten), verwerking controleren, begrippen (kernbegrippen, dubbelingen, maximum) en de controle "Klaar voor studenten".' },
+  { tab: 'image_exercises', labelKey: 'admin.tabs.imageExercises', audience: 'all', helpGroups: [],
+    what: 'Beeldoefeningen (in opbouw; studenten zien ze nog niet): foto\'s uploaden met per foto een beschrijving van wat er te zien is (één document met kopjes per foto, of zelf typen). LEAP koppelt beschrijving en foto (op naam, nummer, volgorde of op het oog; de docent bevestigt) en maakt van elke beschrijving een lijstje kenmerken, kern of extra, alleen uit de tekst van de docent. Nalopen is optioneel; waar LEAP twijfelt, staat een melding. Per foto: diepgang (benoemen, beschrijven, duiden) en of de student het aantal kenmerken ziet. De beschrijvingen zijn de antwoordsleutel en blijven geheim voor studenten.' },
   { tab: 'projects_admin', labelKey: 'admin.tabs.projects', audience: 'all', helpGroups: ['projects', 'personas'],
     what: 'Groepsprojecten met persona\'s in drie rollen: begeleider, beoordelaar (rubric, feedbackrondes per product) en rolspeler (simulatie, eventueel met verstandhouding en gedragsregels). Ook persona-sjablonen en inleveren.' },
   { tab: 'prompts', labelKey: 'admin.tabs.prompts', audience: 'all', helpGroups: ['chatInstructions'],

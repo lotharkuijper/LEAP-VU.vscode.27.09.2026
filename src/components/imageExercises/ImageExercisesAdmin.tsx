@@ -1,0 +1,334 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Check, FileText, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
+import { useLanguage } from '../../i18n';
+import { useActiveCourse } from '../../contexts/ActiveCourseContext';
+import { AdminHint } from '../help/AdminHint';
+import { ImageFeatureEditor } from './ImageFeatureEditor';
+import {
+  confirmImageExercises, deleteImageExercise, fetchImageExercises, regenerateFeatures, setImageFeatureCore,
+  suggestImageMatches, updateImageExercise, uploadDescriptions, uploadImageExercisePhoto,
+  type CountDisplay, type DescriptionResult, type Depth, type ImageExercise, type MatchSource,
+} from '../../services/image-exercises.service';
+
+type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Beeldoefeningen, docentkant (stap 1): foto's en beschrijvingen uploaden,
+ * koppelen (LEAP stelt voor, de docent bevestigt) en de kenmerken nalopen.
+ * Beschrijvingen en kenmerken zijn de antwoordsleutel: studenten zien ze niet.
+ */
+export function ImageExercisesAdmin() {
+  const { t } = useLanguage();
+  const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
+  const { activeCourseId: courseId } = useActiveCourse();
+  const [items, setItems] = useState<ImageExercise[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [loose, setLoose] = useState<DescriptionResult['unmatchedSections']>([]);
+  const [suggested, setSuggested] = useState<Record<string, number>>({});
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [editing, setEditing] = useState<ImageExercise | null>(null);
+  const [onlyDoubt, setOnlyDoubt] = useState(false);
+  const photoInput = useRef<HTMLInputElement>(null);
+  const docInput = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    if (!courseId) return;
+    try {
+      setItems(await fetchImageExercises(courseId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }, [courseId]);
+
+  useEffect(() => { setItems(null); setLoose([]); setSuggested({}); setDrafts({}); void load(); }, [load]);
+
+  // Zolang LEAP kenmerken maakt, elke paar seconden kijken of ze klaar zijn.
+  const pending = (items || []).some((e) => e.featuresStatus === 'pending');
+  useEffect(() => {
+    if (!pending) return undefined;
+    const id = window.setInterval(() => { void load(); }, 4000);
+    return () => window.clearInterval(id);
+  }, [pending, load]);
+
+  const run = async (key: string, fn: () => Promise<void>) => {
+    setBusy(key);
+    setError(null);
+    try { await fn(); } catch (err) { setError(err instanceof Error ? err.message : String(err)); } finally { setBusy(null); }
+  };
+
+  if (!courseId) return <p className="text-sm text-gray-600">{t('imageEx.noCourse')}</p>;
+  if (!items) return <div className="flex items-center gap-2 text-sm text-gray-600"><Loader2 className="h-4 w-4 animate-spin" />{t('imageEx.loading')}</div>;
+
+  const toLink = items.filter((e) => !e.confirmed);
+  const linked = toLink.filter((e) => e.description.trim());
+  const done = items.filter((e) => e.confirmed);
+  const doubts = done.filter((e) => e.featuresUncertain || e.featuresStatus === 'failed');
+  const shown = onlyDoubt ? doubts : done;
+
+  const addPhotos = (files: FileList) => run('photos', async () => {
+    const list = Array.from(files);
+    const failed: string[] = [];
+    for (const [i, f] of list.entries()) {
+      setNotice(t('imageEx.upload.progress', { done: String(i + 1), total: String(list.length) }));
+      if (f.size > MAX_PHOTO_BYTES) { failed.push(f.name); continue; }
+      try { await uploadImageExercisePhoto(courseId, f); } catch { failed.push(f.name); }
+    }
+    setNotice(failed.length ? t('imageEx.upload.someFailed', { names: failed.join(', ') }) : t('imageEx.upload.done', { n: String(list.length) }));
+    await load();
+  });
+
+  const addDescriptions = (file: File) => run('doc', async () => {
+    const r = await uploadDescriptions(courseId, { file });
+    setLoose(r.unmatchedSections);
+    setSuggested({});
+    setNotice(t('imageEx.desc.result', { sections: String(r.sections), matched: String(r.matched.length) })
+      + (r.alreadyConfirmed ? ` ${t('imageEx.desc.skipped', { n: String(r.alreadyConfirmed) })}` : ''));
+    await load();
+  });
+
+  const suggest = () => run('suggest', async () => {
+    const r = await suggestImageMatches(courseId, loose.map((s) => `${s.heading}\n${s.text}`));
+    const map: Record<string, number> = {};
+    for (const s of r.suggestions) map[s.id] = s.section;
+    setSuggested(map);
+    setNotice(t('imageEx.link.suggestDone', { n: String(r.suggestions.length) }));
+  });
+
+  const assignText = (e: ImageExercise, text: string, source: MatchSource) => run(`assign-${e.id}`, async () => {
+    await updateImageExercise(courseId, e.id, { description: text, matchSource: source });
+    setDrafts((d) => without(d, e.id));
+    await load();
+  });
+
+  const assignLoose = (e: ImageExercise, idx: number) => {
+    const sec = loose[idx];
+    if (!sec) return;
+    void assignText(e, sec.text, suggested[e.id] === idx ? 'suggested' : 'manual').then(() => {
+      setLoose((l) => l.filter((_, i) => i !== idx));
+      setSuggested({});
+    });
+  };
+
+  const confirm = (ids: string[]) => run('confirm', async () => {
+    await confirmImageExercises(courseId, ids);
+    await load();
+  });
+
+  const remove = (e: ImageExercise) => {
+    if (!window.confirm(t('imageEx.deleteConfirm', { name: e.filename }))) return;
+    void run(`del-${e.id}`, async () => { await deleteImageExercise(courseId, e.id); await load(); });
+  };
+
+  const sourceLabel = (s: MatchSource | null) => (s ? tk(`imageEx.source.${s}`) : '');
+
+  return (
+    <div className="space-y-6" data-testid="panel-image-exercises">
+      <div className="space-y-2">
+        <h2 className="text-xl font-semibold text-gray-900">{t('imageEx.title')}</h2>
+        <AdminHint variant="intro">{t('imageEx.intro')}</AdminHint>
+        <AdminHint variant="tip">{t('imageEx.secret')}</AdminHint>
+        <AdminHint variant="warning">{t('imageEx.peopleWarning')}</AdminHint>
+      </div>
+
+      {/* 1. Uploaden */}
+      <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5" data-testid="section-image-upload">
+        <h3 className="font-semibold text-gray-900">{t('imageEx.upload.title')}</h3>
+        <AdminHint variant="tip">{t('imageEx.upload.howTo')}</AdminHint>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={() => photoInput.current?.click()} disabled={!!busy} className="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" data-testid="button-add-photos">
+            {busy === 'photos' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}{t('imageEx.upload.photos')}
+          </button>
+          <button type="button" onClick={() => docInput.current?.click()} disabled={!!busy || items.length === 0} className="inline-flex items-center gap-2 rounded-xl border border-sky-300 bg-white px-4 py-2 text-sm font-medium text-sky-800 hover:bg-sky-50 disabled:opacity-50" data-testid="button-add-descriptions">
+            {busy === 'doc' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}{t('imageEx.upload.descriptions')}
+          </button>
+          <input ref={photoInput} type="file" multiple accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { if (e.target.files?.length) void addPhotos(e.target.files); e.target.value = ''; }} data-testid="input-photos" />
+          <input ref={docInput} type="file" accept=".docx,.pdf,.txt,.md" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void addDescriptions(f); e.target.value = ''; }} data-testid="input-descriptions" />
+        </div>
+        {notice && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800" data-testid="text-image-notice">{notice}</p>}
+        {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800" data-testid="text-image-error">{error}</p>}
+      </section>
+
+      {/* 2. Koppelen */}
+      {toLink.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5" data-testid="section-image-link">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-semibold text-gray-900">{t('imageEx.link.title', { n: String(toLink.length) })}</h3>
+            <div className="flex flex-wrap gap-2">
+              {loose.length > 0 && toLink.some((e) => !e.description.trim()) && (
+                <button type="button" onClick={() => void suggest()} disabled={!!busy} className="inline-flex items-center gap-1.5 rounded-xl border border-sky-300 px-3 py-1.5 text-sm text-sky-800 hover:bg-sky-50 disabled:opacity-50" data-testid="button-suggest-matches">
+                  {busy === 'suggest' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{t('imageEx.link.suggest')}
+                </button>
+              )}
+              {linked.length > 0 && (
+                <button type="button" onClick={() => void confirm(linked.map((e) => e.id))} disabled={!!busy} className="btn-primary inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold disabled:opacity-50" data-testid="button-confirm-all">
+                  <Check className="h-4 w-4" />{t('imageEx.link.confirmAll', { n: String(linked.length) })}
+                </button>
+              )}
+            </div>
+          </div>
+          <AdminHint variant="tip">{t('imageEx.link.howTo')}</AdminHint>
+          <ul className="divide-y divide-gray-100">
+            {toLink.map((e) => {
+              const draft = drafts[e.id];
+              const sug = suggested[e.id];
+              return (
+                <li key={e.id} className="flex flex-wrap gap-4 py-3" data-testid={`row-link-${e.id}`}>
+                  <Thumb e={e} />
+                  <div className="min-w-[14rem] flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-medium text-gray-900">{e.filename}</span>
+                      {e.matchSource && <span className={`rounded-full px-2 py-0.5 text-xs ${e.matchSource === 'order' || e.matchSource === 'suggested' ? 'bg-amber-100 text-amber-800' : 'bg-sky-100 text-sky-800'}`}>{sourceLabel(e.matchSource)}</span>}
+                      {!e.description.trim() && <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800">{t('imageEx.link.none')}</span>}
+                    </div>
+                    {draft !== undefined ? (
+                      <div className="space-y-2">
+                        <textarea value={draft} onChange={(ev) => setDrafts((d) => ({ ...d, [e.id]: ev.target.value }))} rows={4} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm" aria-label={t('imageEx.link.typeLabel')} data-testid={`textarea-description-${e.id}`} />
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => void assignText(e, draft, 'typed')} disabled={!!busy || !draft.trim()} className="rounded-lg bg-sky-600 px-3 py-1 text-sm text-white disabled:opacity-50">{t('imageEx.save')}</button>
+                          <button type="button" onClick={() => setDrafts((d) => without(d, e.id))} className="rounded-lg bg-gray-100 px-3 py-1 text-sm">{t('imageEx.cancel')}</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {e.description.trim() && <p className="line-clamp-4 whitespace-pre-wrap text-sm text-gray-700">{e.description}</p>}
+                        {!e.description.trim() && loose.length > 0 && (
+                          <select className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm" value="" onChange={(ev) => assignLoose(e, Number(ev.target.value))} aria-label={t('imageEx.link.choose')} data-testid={`select-description-${e.id}`}>
+                            <option value="" disabled>{sug !== undefined ? t('imageEx.link.suggestion', { heading: loose[sug]?.heading || '' }) : t('imageEx.link.choose')}</option>
+                            {loose.map((s, i) => <option key={i} value={i}>{i === sug ? '★ ' : ''}{s.heading}: {s.text.slice(0, 80)}</option>)}
+                          </select>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-start gap-1">
+                    {e.description.trim() && draft === undefined && (
+                      <button type="button" onClick={() => void confirm([e.id])} disabled={!!busy} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1 text-sm text-white disabled:opacity-50" data-testid={`button-confirm-${e.id}`}><Check className="h-4 w-4" />{t('imageEx.link.confirm')}</button>
+                    )}
+                    {draft === undefined && (
+                      <button type="button" onClick={() => setDrafts((d) => ({ ...d, [e.id]: e.description }))} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label={t('imageEx.link.type')} title={t('imageEx.link.type')} data-testid={`button-type-${e.id}`}><Pencil className="h-4 w-4 text-gray-600" /></button>
+                    )}
+                    <button type="button" onClick={() => remove(e)} className="rounded-lg p-1.5 hover:bg-red-50" aria-label={t('imageEx.delete')} data-testid={`button-delete-photo-${e.id}`}><Trash2 className="h-4 w-4 text-red-600" /></button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          {loose.length > 0 && (
+            <details className="text-sm text-gray-700" data-testid="details-loose-sections">
+              <summary className="cursor-pointer text-amber-800">{t('imageEx.link.loose', { n: String(loose.length) })}</summary>
+              <ul className="mt-2 space-y-1">{loose.map((s, i) => <li key={i}><span className="font-medium">{s.heading}</span>: {s.text.slice(0, 120)}</li>)}</ul>
+            </details>
+          )}
+        </section>
+      )}
+
+      {/* 3. Kenmerken */}
+      {done.length > 0 && (
+        <section className="space-y-3 rounded-2xl border border-gray-200 bg-white p-5" data-testid="section-image-features">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-semibold text-gray-900">{t('imageEx.features.title', { n: String(done.length) })}</h3>
+            {doubts.length > 0 && (
+              <label className="flex items-center gap-2 text-sm text-amber-800">
+                <input type="checkbox" checked={onlyDoubt} onChange={(e) => setOnlyDoubt(e.target.checked)} data-testid="checkbox-only-doubt" />
+                {t('imageEx.features.onlyDoubt', { n: String(doubts.length) })}
+              </label>
+            )}
+          </div>
+          <AdminHint variant="tip">{t('imageEx.features.howTo')}</AdminHint>
+          <ul className="divide-y divide-gray-100">
+            {shown.map((e) => (
+              <li key={e.id} className="flex flex-wrap gap-4 py-3" data-testid={`row-features-${e.id}`}>
+                <Thumb e={e} />
+                <div className="min-w-[14rem] flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-medium text-gray-900">{e.filename}</span>
+                    {e.featuresReviewed && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">{t('imageEx.features.reviewed')}</span>}
+                  </div>
+                  {drafts[e.id] !== undefined && (
+                    <div className="space-y-2">
+                      <AdminHint variant="warning">{t('imageEx.features.editDescriptionNote')}</AdminHint>
+                      <textarea value={drafts[e.id]} onChange={(ev) => setDrafts((d) => ({ ...d, [e.id]: ev.target.value }))} rows={5} className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm" aria-label={t('imageEx.link.typeLabel')} data-testid={`textarea-edit-description-${e.id}`} />
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => void assignText(e, drafts[e.id], 'typed')} disabled={!!busy || !drafts[e.id].trim()} className="rounded-lg bg-sky-600 px-3 py-1 text-sm text-white disabled:opacity-50">{t('imageEx.save')}</button>
+                        <button type="button" onClick={() => setDrafts((d) => without(d, e.id))} className="rounded-lg bg-gray-100 px-3 py-1 text-sm">{t('imageEx.cancel')}</button>
+                      </div>
+                    </div>
+                  )}
+                  {e.featuresStatus === 'pending' && <p className="flex items-center gap-1.5 text-sm text-sky-700"><Loader2 className="h-4 w-4 animate-spin" />{t('imageEx.features.pending')}</p>}
+                  {e.featuresStatus === 'failed' && <p className="text-sm text-red-700">{t('imageEx.features.failed')}</p>}
+                  {e.featuresUncertain && e.featuresStatus === 'ready' && (
+                    <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-2 py-1 text-xs text-amber-900" data-testid={`text-doubt-${e.id}`}>
+                      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />{t('imageEx.features.doubt')}{e.featuresNote ? ` ${e.featuresNote}` : ''}
+                    </p>
+                  )}
+                  {e.featuresStatus === 'ready' && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {e.features.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => f.id && void run(`core-${f.id}`, async () => { await setImageFeatureCore(courseId, f.id!, !f.is_core); await load(); })}
+                          className={`rounded-full px-2.5 py-1 text-xs ${f.is_core ? 'bg-brand-600 font-semibold text-white' : 'border border-dashed border-gray-400 text-gray-700'}`}
+                          title={`${f.is_core ? t('imageEx.core') : t('imageEx.extra')} · ${t('imageEx.features.toggle')}`}
+                          data-testid={`chip-feature-${f.id}`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-gray-700">
+                    <label className="flex items-center gap-1.5">{t('imageEx.depth.label')}
+                      <select value={e.depth} onChange={(ev) => void run(`depth-${e.id}`, async () => { await updateImageExercise(courseId, e.id, { depth: ev.target.value as Depth }); await load(); })} className="rounded border border-gray-300 px-1.5 py-0.5" data-testid={`select-depth-${e.id}`}>
+                        {(['name', 'describe', 'interpret'] as const).map((d) => <option key={d} value={d}>{tk(`imageEx.depth.${d}`)}</option>)}
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-1.5">{t('imageEx.count.label')}
+                      <select value={e.countDisplay} onChange={(ev) => void run(`count-${e.id}`, async () => { await updateImageExercise(courseId, e.id, { countDisplay: ev.target.value as CountDisplay }); await load(); })} className="rounded border border-gray-300 px-1.5 py-0.5" data-testid={`select-count-${e.id}`}>
+                        {(['approx', 'exact', 'none'] as const).map((c) => <option key={c} value={c}>{tk(`imageEx.count.${c}`)}</option>)}
+                      </select>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex items-start gap-1">
+                  {e.featuresStatus === 'ready' && (
+                    <button type="button" onClick={() => setEditing(e)} className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-xs hover:bg-gray-50" data-testid={`button-edit-features-${e.id}`}><Pencil className="h-3.5 w-3.5" />{t('imageEx.features.edit')}</button>
+                  )}
+                  {(e.featuresStatus === 'failed' || e.featuresStatus === 'ready') && (
+                    <button type="button" onClick={() => { if (e.featuresStatus === 'failed' || window.confirm(t('imageEx.features.regenerateConfirm'))) void run(`regen-${e.id}`, async () => { await regenerateFeatures(courseId, e.id); await load(); }); }} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label={t('imageEx.features.regenerate')} title={t('imageEx.features.regenerate')} data-testid={`button-regenerate-${e.id}`}><RotateCcw className="h-4 w-4 text-gray-600" /></button>
+                  )}
+                  {drafts[e.id] === undefined && (
+                    <button type="button" onClick={() => setDrafts((d) => ({ ...d, [e.id]: e.description }))} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label={t('imageEx.features.editDescription')} title={t('imageEx.features.editDescription')} data-testid={`button-edit-description-${e.id}`}><FileText className="h-4 w-4 text-gray-600" /></button>
+                  )}
+                  <button type="button" onClick={() => remove(e)} className="rounded-lg p-1.5 hover:bg-red-50" aria-label={t('imageEx.delete')} data-testid={`button-delete-done-${e.id}`}><Trash2 className="h-4 w-4 text-red-600" /></button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {items.length === 0 && <p className="text-sm text-gray-500" data-testid="text-image-empty">{t('imageEx.empty')}</p>}
+      {editing && <ImageFeatureEditor courseId={courseId} exercise={editing} onClose={() => setEditing(null)} onSaved={() => void load()} />}
+    </div>
+  );
+}
+
+function Thumb({ e }: { e: ImageExercise }) {
+  return e.imageUrl ? (
+    <a href={e.imageUrl} target="_blank" rel="noopener noreferrer" className="block flex-shrink-0">
+      <img src={e.imageUrl} alt={e.filename} className="h-24 w-32 rounded-lg border border-gray-200 object-cover" loading="lazy" />
+    </a>
+  ) : (
+    <div className="h-24 w-32 flex-shrink-0 rounded-lg bg-gray-100" />
+  );
+}
+
+function without<T>(map: Record<string, T>, key: string): Record<string, T> {
+  const next = { ...map };
+  delete next[key];
+  return next;
+}

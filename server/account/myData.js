@@ -69,6 +69,8 @@ export const NOT_EXPORTED = [
   // Cursuskeuze bij open registratie, alleen tot de eerste login; daarna
   // lidmaatschap (dat staat wel in de export) en wordt de rij verwijderd.
   'pending_course_enrollments',
+  // Beeldoefeningen: foto's en beschrijvingen van de docent (created_by), cursusmateriaal.
+  'image_exercises',
 ];
 
 const PAGE = 1000;
