@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, BookOpenCheck, Check, FileText, FileUp, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookOpenCheck, Check, FileText, FileUp, ImagePlus, Loader2, Pencil, RotateCcw, Sparkles, Trash2, Unlink } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { AdminHint } from '../help/AdminHint';
@@ -131,12 +131,28 @@ export function ImageExercisesAdmin() {
     await load();
   });
 
+  // De tekst die een foto nu heeft, gaat terug naar de losse stukken, zodat hij bij
+  // een andere foto gezet kan worden (niets gaat verloren bij een verkeerde koppeling).
+  const asLoose = (e: ImageExercise) => ({ heading: e.filename, text: e.description });
+
   const assignLoose = (e: ImageExercise, idx: number) => {
     const sec = loose[idx];
     if (!sec) return;
+    const previous = e.description.trim() ? asLoose(e) : null;
     void assignText(e, sec.text, suggested[e.id] === idx ? 'suggested' : 'manual').then(() => {
-      setLoose((l) => l.filter((_, i) => i !== idx));
+      setLoose((l) => [...l.filter((_, i) => i !== idx), ...(previous ? [previous] : [])]);
       setSuggested({});
+    });
+  };
+
+  // Koppeling ongedaan maken: de foto heeft weer geen beschrijving, de tekst wordt een los stuk.
+  const unlink = (e: ImageExercise) => {
+    if (e.confirmed && !window.confirm(t('imageEx.link.unlinkConfirmed'))) return;
+    const previous = asLoose(e);
+    void run(`unlink-${e.id}`, async () => {
+      await updateImageExercise(courseId, e.id, { description: '' });
+      setLoose((l) => [...l, previous]);
+      await load();
     });
   };
 
@@ -231,9 +247,9 @@ export function ImageExercisesAdmin() {
                     ) : (
                       <>
                         {e.description.trim() && <p className="line-clamp-4 whitespace-pre-wrap text-sm text-gray-700">{e.description}</p>}
-                        {!e.description.trim() && loose.length > 0 && (
+                        {loose.length > 0 && (
                           <select className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm" value="" onChange={(ev) => assignLoose(e, Number(ev.target.value))} aria-label={t('imageEx.link.choose')} data-testid={`select-description-${e.id}`}>
-                            <option value="" disabled>{sug !== undefined ? t('imageEx.link.suggestion', { heading: loose[sug]?.heading || '' }) : t('imageEx.link.choose')}</option>
+                            <option value="" disabled>{sug !== undefined ? t('imageEx.link.suggestion', { heading: loose[sug]?.heading || '' }) : e.description.trim() ? t('imageEx.link.chooseOther') : t('imageEx.link.choose')}</option>
                             {loose.map((s, i) => <option key={i} value={i}>{i === sug ? '★ ' : ''}{s.heading}: {s.text.slice(0, 80)}</option>)}
                           </select>
                         )}
@@ -246,6 +262,9 @@ export function ImageExercisesAdmin() {
                     )}
                     {draft === undefined && (
                       <button type="button" onClick={() => setDrafts((d) => ({ ...d, [e.id]: e.description }))} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label={t('imageEx.link.type')} title={t('imageEx.link.type')} data-testid={`button-type-${e.id}`}><Pencil className="h-4 w-4 text-gray-600" /></button>
+                    )}
+                    {draft === undefined && e.description.trim() && (
+                      <button type="button" onClick={() => unlink(e)} disabled={!!busy} className="rounded-lg p-1.5 hover:bg-gray-100 disabled:opacity-50" aria-label={t('imageEx.link.unlink')} title={t('imageEx.link.unlink')} data-testid={`button-unlink-${e.id}`}><Unlink className="h-4 w-4 text-gray-600" /></button>
                     )}
                     {draft === undefined && (
                       <button type="button" onClick={() => { setDocFor(e.id); photoDocInput.current?.click(); }} disabled={!!busy} className="rounded-lg p-1.5 hover:bg-gray-100 disabled:opacity-50" aria-label={t('imageEx.link.uploadForPhoto')} title={t('imageEx.link.uploadForPhoto')} data-testid={`button-upload-description-${e.id}`}>
@@ -266,6 +285,7 @@ export function ImageExercisesAdmin() {
         <div className="space-y-2 rounded-2xl border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="alert" data-testid="warning-loose-sections">
           <p className="flex items-start gap-2 font-semibold"><AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />{t('imageEx.link.loose', { n: String(loose.length) })}</p>
           <p>{t('imageEx.link.looseHelp')}</p>
+          <p className="text-xs">{t('imageEx.link.looseNotSaved')}</p>
           <ul className="space-y-1">{loose.map((s, i) => <li key={i}><span className="font-medium">{s.heading}</span>: {s.text.slice(0, 160)}{s.text.length > 160 ? '…' : ''}</li>)}</ul>
           <button type="button" onClick={() => setLoose([])} className="text-xs underline" data-testid="button-dismiss-loose">{t('imageEx.link.looseDismiss')}</button>
         </div>
@@ -353,6 +373,9 @@ export function ImageExercisesAdmin() {
                   )}
                   {drafts[e.id] === undefined && (
                     <button type="button" onClick={() => setDrafts((d) => ({ ...d, [e.id]: e.description }))} className="rounded-lg p-1.5 hover:bg-gray-100" aria-label={t('imageEx.features.editDescription')} title={t('imageEx.features.editDescription')} data-testid={`button-edit-description-${e.id}`}><FileText className="h-4 w-4 text-gray-600" /></button>
+                  )}
+                  {drafts[e.id] === undefined && (
+                    <button type="button" onClick={() => unlink(e)} disabled={!!busy} className="rounded-lg p-1.5 hover:bg-gray-100 disabled:opacity-50" aria-label={t('imageEx.link.unlink')} title={t('imageEx.link.unlink')} data-testid={`button-unlink-done-${e.id}`}><Unlink className="h-4 w-4 text-gray-600" /></button>
                   )}
                   <button type="button" onClick={() => remove(e)} className="rounded-lg p-1.5 hover:bg-red-50" aria-label={t('imageEx.delete')} data-testid={`button-delete-done-${e.id}`}><Trash2 className="h-4 w-4 text-red-600" /></button>
                 </div>

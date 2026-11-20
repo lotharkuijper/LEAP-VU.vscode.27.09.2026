@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Sau un singur document pentru toate fotografiile, cu deasupra fiecărei descrieri un titlu cu numărul („Foto 3”) sau numele fișierului fotografiei.",
   "imageEx.tips.mentions": "Sau menționează în fiecare descriere numele fișierului fotografiei, cu extensie (de exemplu „în bodem-03.jpg vezi …”).",
   "imageEx.tips.numbering": "Sfat: pune un număr în numele fișierelor fotografiilor tale (bodem-01.jpg, bodem-02.jpg). Atunci un titlu precum „Foto 1” se asociază automat cu fotografia corectă.",
-  "imageEx.tips.always": "Dacă asocierea nu reușește automat, LEAP te întreabă cărei fotografii îi aparține un text. Confirmi întotdeauna tu."
+  "imageEx.tips.always": "Dacă asocierea nu reușește automat, LEAP te întreabă cărei fotografii îi aparține un text. Confirmi întotdeauna tu.",
+  "imageEx.link.unlink": "Deconectează: separă această descriere de fotografie",
+  "imageEx.link.unlinkConfirmed": "Această asociere a fost deja confirmată. O deconectezi? Caracteristicile acestei fotografii vor dispărea; textul va reveni la descrierile neasociate, astfel încât să îl poți pune la o altă fotografie.",
+  "imageEx.link.chooseOther": "Alege altă descriere… (cea actuală devine un fragment neasociat)",
+  "imageEx.link.looseNotSaved": "Fragmentele neasociate nu sunt salvate: asociază-le cu o fotografie înainte să părăsești această pagină sau încarcă documentul din nou mai târziu."
 }

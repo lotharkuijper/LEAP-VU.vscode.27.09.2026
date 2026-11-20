@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Or one document for all photos, with a heading above each description using the number (“Photo 3”) or the photo’s file name.",
   "imageEx.tips.mentions": "Or mention the photo’s file name in each description, including the extension (for example, “on bodem-03.jpg you can see …”).",
   "imageEx.tips.numbering": "Tip: put a number in your photo file names (bodem-01.jpg, bodem-02.jpg). Then a heading like “Photo 1” will automatically link to the right photo.",
-  "imageEx.tips.always": "If LEAP can’t link it automatically, it will ask which photo a text belongs to. You always confirm it yourself."
+  "imageEx.tips.always": "If LEAP can’t link it automatically, it will ask which photo a text belongs to. You always confirm it yourself.",
+  "imageEx.link.unlink": "Unlink: detach this description from the photo",
+  "imageEx.link.unlinkConfirmed": "This link has already been confirmed. Unlink it? The features of this photo will disappear; the text will return to the loose descriptions, so you can attach it to another photo.",
+  "imageEx.link.chooseOther": "Choose another description… (the current one will become a loose item)",
+  "imageEx.link.looseNotSaved": "Loose items are not saved: attach them to a photo before you leave this page, or upload the document again later."
 }

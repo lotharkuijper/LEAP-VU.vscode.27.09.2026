@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Ou un seul document pour toutes les photos, avec au-dessus de chaque description un titre indiquant le numéro (« Photo 3 ») ou le nom du fichier de la photo.",
   "imageEx.tips.mentions": "Ou mentionne dans chaque description le nom du fichier de la photo, avec l’extension (par exemple « sur bodem-03.jpg, tu vois … »).",
   "imageEx.tips.numbering": "Astuce : mets un numéro dans les noms de fichiers de tes photos (bodem-01.jpg, bodem-02.jpg). Ainsi, un titre comme « Photo 1 » sera automatiquement associé à la bonne photo.",
-  "imageEx.tips.always": "Si l’association ne se fait pas automatiquement, LEAP te demandera à quelle photo un texte correspond. Tu confirmes toujours toi-même."
+  "imageEx.tips.always": "Si l’association ne se fait pas automatiquement, LEAP te demandera à quelle photo un texte correspond. Tu confirmes toujours toi-même.",
+  "imageEx.link.unlink": "Dissocier : détacher cette description de la photo",
+  "imageEx.link.unlinkConfirmed": "Cette association a déjà été confirmée. La dissocier ? Les caractéristiques de cette photo disparaîtront ; le texte retournera parmi les descriptions non associées, afin que tu puisses le placer avec une autre photo.",
+  "imageEx.link.chooseOther": "Choisir une autre description… (l’actuelle deviendra un élément non associé)",
+  "imageEx.link.looseNotSaved": "Les éléments non associés ne sont pas enregistrés : associe-les à une photo avant de quitter cette page, ou téléverse à nouveau le document plus tard."
 }

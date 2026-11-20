@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Oppure un unico documento per tutte le foto, con sopra ogni descrizione un titolo con il numero (“Foto 3”) o il nome del file della foto.",
   "imageEx.tips.mentions": "Oppure cita in ogni descrizione il nome del file della foto, con estensione (per esempio “in bodem-03.jpg si vede …”).",
   "imageEx.tips.numbering": "Suggerimento: inserisci un numero nei nomi dei file delle tue foto (bodem-01.jpg, bodem-02.jpg). Così un titolo come “Foto 1” si collega automaticamente alla foto giusta.",
-  "imageEx.tips.always": "Se il collegamento non riesce automaticamente, LEAP chiede a quale foto appartiene un testo. Confermi sempre tu."
+  "imageEx.tips.always": "Se il collegamento non riesce automaticamente, LEAP chiede a quale foto appartiene un testo. Confermi sempre tu.",
+  "imageEx.link.unlink": "Scollega: separa questa descrizione dalla foto",
+  "imageEx.link.unlinkConfirmed": "Questo collegamento è già stato confermato. Scollegarlo? Le caratteristiche di questa foto scompariranno; il testo tornerà tra le descrizioni separate, così potrai associarlo a un’altra foto.",
+  "imageEx.link.chooseOther": "Scegli un’altra descrizione… (quella attuale diventerà un elemento separato)",
+  "imageEx.link.looseNotSaved": "Gli elementi separati non vengono salvati: collegali a una foto prima di lasciare questa pagina, oppure carica di nuovo il documento più tardi."
 }

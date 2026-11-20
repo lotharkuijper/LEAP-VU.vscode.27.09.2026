@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Albo jeden dokument dla wszystkich zdjęć, z nagłówkiem nad każdym opisem zawierającym numer („Zdjęcie 3”) lub nazwę pliku zdjęcia.",
   "imageEx.tips.mentions": "Albo podaj w każdym opisie nazwę pliku zdjęcia z rozszerzeniem (na przykład „na bodem-03.jpg widać …”).",
   "imageEx.tips.numbering": "Wskazówka: dodaj numer w nazwach plików zdjęć (bodem-01.jpg, bodem-02.jpg). Wtedy nagłówek taki jak „Zdjęcie 1” automatycznie połączy się z właściwym zdjęciem.",
-  "imageEx.tips.always": "Jeśli połączenie nie uda się automatycznie, LEAP zapyta, do którego zdjęcia należy tekst. Zawsze samodzielnie potwierdzasz."
+  "imageEx.tips.always": "Jeśli połączenie nie uda się automatycznie, LEAP zapyta, do którego zdjęcia należy tekst. Zawsze samodzielnie potwierdzasz.",
+  "imageEx.link.unlink": "Odłącz: odłącz ten opis od zdjęcia",
+  "imageEx.link.unlinkConfirmed": "To powiązanie jest już potwierdzone. Odłączyć? Cechy tego zdjęcia znikną; tekst wróci do luźnych opisów, żeby można było przypisać go do innego zdjęcia.",
+  "imageEx.link.chooseOther": "Wybierz inny opis… (obecny stanie się luźnym fragmentem)",
+  "imageEx.link.looseNotSaved": "Luźne fragmenty nie zostaną zapisane: połącz je ze zdjęciem przed opuszczeniem tej strony albo prześlij dokument ponownie później."
 }

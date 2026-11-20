@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Ili jedan dokument za sve fotografije, s naslovom iznad svakog opisa s brojem (“Fotografija 3”) ili nazivom datoteke fotografije.",
   "imageEx.tips.mentions": "Ili u svakom opisu navedi naziv datoteke fotografije, s ekstenzijom (na primjer “na bodem-03.jpg vidiš …”).",
   "imageEx.tips.numbering": "Savjet: stavi broj u nazive datoteka svojih fotografija (bodem-01.jpg, bodem-02.jpg). Tada će se naslov poput “Fotografija 1” automatski povezati s pravom fotografijom.",
-  "imageEx.tips.always": "Ako povezivanje ne uspije automatski, LEAP će pitati kojoj fotografiji tekst pripada. Uvijek sam(a) potvrđuješ."
+  "imageEx.tips.always": "Ako povezivanje ne uspije automatski, LEAP će pitati kojoj fotografiji tekst pripada. Uvijek sam(a) potvrđuješ.",
+  "imageEx.link.unlink": "Prekini vezu: odvoji ovaj opis od fotografije",
+  "imageEx.link.unlinkConfirmed": "Ova je veza već potvrđena. Prekinuti vezu? Značajke ove fotografije nestat će; tekst se vraća među odvojene opise kako bi ga mogao/mogla povezati s drugom fotografijom.",
+  "imageEx.link.chooseOther": "Odaberi drugi opis… (trenutačni postaje odvojeni dio)",
+  "imageEx.link.looseNotSaved": "Odvojeni dijelovi neće se spremiti: poveži ih s fotografijom prije nego što napustiš ovu stranicu ili dokument kasnije ponovno prenesi."
 }

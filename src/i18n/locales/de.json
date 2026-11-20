@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Oder ein Dokument für alle Fotos, mit einer Überschrift über jeder Beschreibung mit der Nummer („Foto 3“) oder dem Dateinamen des Fotos.",
   "imageEx.tips.mentions": "Oder nenne in jeder Beschreibung den Dateinamen des Fotos mit Erweiterung (zum Beispiel „auf bodem-03.jpg siehst du …“).",
   "imageEx.tips.numbering": "Tipp: Nimm eine Nummer in die Dateinamen deiner Fotos auf (boden-01.jpg, boden-02.jpg). Dann wird eine Überschrift wie „Foto 1“ automatisch mit dem richtigen Foto verknüpft.",
-  "imageEx.tips.always": "Wenn das Verknüpfen nicht automatisch klappt, fragt LEAP, zu welchem Foto ein Text gehört. Du bestätigst immer selbst."
+  "imageEx.tips.always": "Wenn das Verknüpfen nicht automatisch klappt, fragt LEAP, zu welchem Foto ein Text gehört. Du bestätigst immer selbst.",
+  "imageEx.link.unlink": "Trennen: Diese Beschreibung vom Foto lösen",
+  "imageEx.link.unlinkConfirmed": "Diese Verknüpfung wurde bereits bestätigt. Trennen? Die Merkmale dieses Fotos gehen verloren; der Text erscheint wieder bei den losen Beschreibungen, sodass du ihn einem anderen Foto zuordnen kannst.",
+  "imageEx.link.chooseOther": "Andere Beschreibung wählen … (die aktuelle wird zu einem losen Teil)",
+  "imageEx.link.looseNotSaved": "Lose Teile werden nicht gespeichert: Verknüpfe sie mit einem Foto, bevor du diese Seite verlässt, oder lade das Dokument später erneut hoch."
 }

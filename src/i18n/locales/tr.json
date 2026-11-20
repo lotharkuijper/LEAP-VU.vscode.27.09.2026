@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Ya da tüm fotoğraflar için tek bir belge kullan; her açıklamanın üstüne numara (“Foto 3”) veya fotoğrafın dosya adını başlık olarak ekle.",
   "imageEx.tips.mentions": "Ya da her açıklamada fotoğrafın dosya adını uzantısıyla birlikte belirt (örneğin “bodem-03.jpg üzerinde şunu görüyorsun …”).",
   "imageEx.tips.numbering": "İpucu: fotoğraflarının dosya adlarına numara ekle (bodem-01.jpg, bodem-02.jpg). Böylece “Foto 1” gibi bir başlık otomatik olarak doğru fotoğrafla eşleşir.",
-  "imageEx.tips.always": "Eşleştirme otomatik yapılamazsa LEAP, metnin hangi fotoğrafa ait olduğunu sorar. Onayı her zaman sen verirsin."
+  "imageEx.tips.always": "Eşleştirme otomatik yapılamazsa LEAP, metnin hangi fotoğrafa ait olduğunu sorar. Onayı her zaman sen verirsin.",
+  "imageEx.link.unlink": "Bağlantıyı kaldır: bu açıklamayı fotoğraftan ayır",
+  "imageEx.link.unlinkConfirmed": "Bu eşleştirme zaten onaylandı. Bağlantı kaldırılsın mı? Bu fotoğrafın özellikleri kaybolur; metin bağımsız açıklamalara geri döner, böylece onu başka bir fotoğrafa ekleyebilirsin.",
+  "imageEx.link.chooseOther": "Başka bir açıklama seç… (mevcut olan bağımsız bir parça olur)",
+  "imageEx.link.looseNotSaved": "Bağımsız parçalar kaydedilmez: bu sayfadan ayrılmadan önce onları bir fotoğrafa bağla veya belgeyi daha sonra yeniden yükle."
 }

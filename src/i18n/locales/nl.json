@@ -3647,5 +3647,9 @@
   "imageEx.tips.headings": "Of één document voor alle foto’s, met boven elke beschrijving een kopje met het nummer (“Foto 3”) of de bestandsnaam van de foto.",
   "imageEx.tips.mentions": "Of noem in elke beschrijving de bestandsnaam van de foto, met extensie (bijvoorbeeld “op bodem-03.jpg zie je …”).",
   "imageEx.tips.numbering": "Tip: zet een nummer in de bestandsnamen van je foto’s (bodem-01.jpg, bodem-02.jpg). Dan koppelt een kopje als “Foto 1” vanzelf aan de goede foto.",
-  "imageEx.tips.always": "Lukt koppelen niet vanzelf, dan vraagt LEAP bij welke foto een tekst hoort. Je bevestigt altijd zelf."
+  "imageEx.tips.always": "Lukt koppelen niet vanzelf, dan vraagt LEAP bij welke foto een tekst hoort. Je bevestigt altijd zelf.",
+  "imageEx.link.unlink": "Ontkoppelen: deze beschrijving loskoppelen van de foto",
+  "imageEx.link.unlinkConfirmed": "Deze koppeling is al bevestigd. Ontkoppelen? De kenmerken van deze foto verdwijnen; de tekst komt terug bij de losse beschrijvingen, zodat je hem bij een andere foto kunt zetten.",
+  "imageEx.link.chooseOther": "Andere beschrijving kiezen… (de huidige wordt een los stuk)",
+  "imageEx.link.looseNotSaved": "Losse stukken worden niet bewaard: koppel ze aan een foto voordat je deze pagina verlaat, of upload het document later opnieuw."
 }

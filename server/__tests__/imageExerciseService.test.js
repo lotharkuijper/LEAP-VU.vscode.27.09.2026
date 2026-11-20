@@ -152,6 +152,15 @@ describe('beschrijvingen koppelen en bevestigen', () => {
     expect(tables.image_exercise_features).toEqual([]);
   });
 
+  it('ontkoppelen: de foto heeft weer geen beschrijving, ook als hij al bevestigd was', async () => {
+    const a = await photo('a.jpg');
+    Object.assign(tables.image_exercises[0], { description: 'Verkeerde tekst.', match_source: 'manual', description_confirmed_at: 'x', features_status: 'ready' });
+    tables.image_exercise_features.push({ id: 'f1', exercise_id: a, label: 'X' });
+    await updateExercise(db(), { courseId: 'c1', id: a, description: '' });
+    expect(tables.image_exercises[0]).toMatchObject({ description: null, match_source: null, description_confirmed_at: null, features_status: 'none' });
+    expect(tables.image_exercise_features).toEqual([]);
+  });
+
   it('instellingen alleen met geldige waarden, en nooit voor een andere cursus', async () => {
     const a = await photo('a.jpg');
     await updateExercise(db(), { courseId: 'c1', id: a, depth: 'interpret', countDisplay: 'exact' });
