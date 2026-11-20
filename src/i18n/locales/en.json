@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Confirm all linked ({n})",
   "imageEx.link.none": "no description yet",
   "imageEx.link.choose": "Choose a description…",
-  "imageEx.link.suggestion": "LEAP’s suggestion: {heading}",
   "imageEx.link.suggest": "Ask LEAP for a suggestion",
-  "imageEx.link.suggestDone": "LEAP made {n} suggestion(s); they are marked with ★ in the dropdown list.",
+  "imageEx.link.suggestDone": "LEAP made {n} suggestion(s). They are shown with the photos: if a suggestion is correct, click “Correct, confirm”.",
   "imageEx.link.type": "Type or edit the description yourself",
   "imageEx.link.typeLabel": "Photo description",
   "imageEx.link.loose": "{n} piece(s) of text from your document could not be linked to a photo",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Or one document for all photos, with a heading above each description using the number (“Photo 3”) or the photo’s file name.",
   "imageEx.tips.mentions": "Or mention the photo’s file name in each description, including the extension (for example, “on bodem-03.jpg you can see …”).",
   "imageEx.tips.numbering": "Tip: put a number in your photo file names (bodem-01.jpg, bodem-02.jpg). Then a heading like “Photo 1” will automatically link to the right photo.",
-  "imageEx.tips.always": "If LEAP can’t link it automatically, it will ask which photo a text belongs to. You always confirm it yourself."
+  "imageEx.tips.always": "If LEAP can’t link it automatically, it will ask which photo a text belongs to. You always confirm it yourself.",
+  "imageEx.link.unlink": "Unlink: detach this description from the photo",
+  "imageEx.link.unlinkConfirmed": "This link has already been confirmed. Unlink it? The features of this photo will disappear; the text will return to the loose descriptions, so you can attach it to another photo.",
+  "imageEx.link.chooseOther": "Choose another description… (the current one will become a loose item)",
+  "imageEx.link.looseNotSaved": "Loose items are not saved: attach them to a photo before you leave this page, or upload the document again later.",
+  "imageEx.link.suggestionTitle": "Suggestion from LEAP",
+  "imageEx.link.suggestionReplace": "Suggestion from LEAP (replaces the current description)",
+  "imageEx.link.takeConfirm": "Correct, confirm",
+  "imageEx.link.take": "Apply, don’t confirm yet",
+  "imageEx.link.rejectSuggestion": "Not correct",
+  "imageEx.link.takeAll": "Apply and confirm all suggestions ({n})"
 }

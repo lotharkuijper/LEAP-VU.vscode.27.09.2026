@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Bevestig alle gekoppelde ({n})",
   "imageEx.link.none": "nog geen beschrijving",
   "imageEx.link.choose": "Kies een beschrijving…",
-  "imageEx.link.suggestion": "Voorstel van LEAP: {heading}",
   "imageEx.link.suggest": "Laat LEAP een voorstel doen",
-  "imageEx.link.suggestDone": "LEAP deed {n} voorstel(len); ze staan met ★ in de keuzelijst.",
+  "imageEx.link.suggestDone": "LEAP deed {n} voorstel(len). Ze staan bij de foto’s: klopt een voorstel, klik dan op “Klopt, bevestig”.",
   "imageEx.link.type": "Beschrijving zelf typen of aanpassen",
   "imageEx.link.typeLabel": "Beschrijving van de foto",
   "imageEx.link.loose": "{n} stuk(ken) tekst uit je document kon(den) niet aan een foto worden gekoppeld",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Of één document voor alle foto’s, met boven elke beschrijving een kopje met het nummer (“Foto 3”) of de bestandsnaam van de foto.",
   "imageEx.tips.mentions": "Of noem in elke beschrijving de bestandsnaam van de foto, met extensie (bijvoorbeeld “op bodem-03.jpg zie je …”).",
   "imageEx.tips.numbering": "Tip: zet een nummer in de bestandsnamen van je foto’s (bodem-01.jpg, bodem-02.jpg). Dan koppelt een kopje als “Foto 1” vanzelf aan de goede foto.",
-  "imageEx.tips.always": "Lukt koppelen niet vanzelf, dan vraagt LEAP bij welke foto een tekst hoort. Je bevestigt altijd zelf."
+  "imageEx.tips.always": "Lukt koppelen niet vanzelf, dan vraagt LEAP bij welke foto een tekst hoort. Je bevestigt altijd zelf.",
+  "imageEx.link.unlink": "Ontkoppelen: deze beschrijving loskoppelen van de foto",
+  "imageEx.link.unlinkConfirmed": "Deze koppeling is al bevestigd. Ontkoppelen? De kenmerken van deze foto verdwijnen; de tekst komt terug bij de losse beschrijvingen, zodat je hem bij een andere foto kunt zetten.",
+  "imageEx.link.chooseOther": "Andere beschrijving kiezen… (de huidige wordt een los stuk)",
+  "imageEx.link.looseNotSaved": "Losse stukken worden niet bewaard: koppel ze aan een foto voordat je deze pagina verlaat, of upload het document later opnieuw.",
+  "imageEx.link.suggestionTitle": "Voorstel van LEAP",
+  "imageEx.link.suggestionReplace": "Voorstel van LEAP (vervangt de huidige beschrijving)",
+  "imageEx.link.takeConfirm": "Klopt, bevestig",
+  "imageEx.link.take": "Overnemen, nog niet bevestigen",
+  "imageEx.link.rejectSuggestion": "Niet juist",
+  "imageEx.link.takeAll": "Alle voorstellen overnemen en bevestigen ({n})"
 }

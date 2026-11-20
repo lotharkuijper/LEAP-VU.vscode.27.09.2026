@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Potwierdź wszystkie połączone ({n})",
   "imageEx.link.none": "jeszcze brak opisu",
   "imageEx.link.choose": "Wybierz opis…",
-  "imageEx.link.suggestion": "Propozycja LEAP: {heading}",
   "imageEx.link.suggest": "Poproś LEAP o propozycję",
-  "imageEx.link.suggestDone": "LEAP przygotował {n} propozycję/propozycji; są oznaczone ★ na liście wyboru.",
+  "imageEx.link.suggestDone": "LEAP zaproponował {n} sugestii. Znajdziesz je przy zdjęciach: jeśli sugestia jest poprawna, kliknij „Zgadza się, potwierdź”.",
   "imageEx.link.type": "Wpisz lub dostosuj opis samodzielnie",
   "imageEx.link.typeLabel": "Opis zdjęcia",
   "imageEx.link.loose": "Nie udało się powiązać {n} fragmentu/fragmentów tekstu z Twojego dokumentu ze zdjęciem",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Albo jeden dokument dla wszystkich zdjęć, z nagłówkiem nad każdym opisem zawierającym numer („Zdjęcie 3”) lub nazwę pliku zdjęcia.",
   "imageEx.tips.mentions": "Albo podaj w każdym opisie nazwę pliku zdjęcia z rozszerzeniem (na przykład „na bodem-03.jpg widać …”).",
   "imageEx.tips.numbering": "Wskazówka: dodaj numer w nazwach plików zdjęć (bodem-01.jpg, bodem-02.jpg). Wtedy nagłówek taki jak „Zdjęcie 1” automatycznie połączy się z właściwym zdjęciem.",
-  "imageEx.tips.always": "Jeśli połączenie nie uda się automatycznie, LEAP zapyta, do którego zdjęcia należy tekst. Zawsze samodzielnie potwierdzasz."
+  "imageEx.tips.always": "Jeśli połączenie nie uda się automatycznie, LEAP zapyta, do którego zdjęcia należy tekst. Zawsze samodzielnie potwierdzasz.",
+  "imageEx.link.unlink": "Odłącz: odłącz ten opis od zdjęcia",
+  "imageEx.link.unlinkConfirmed": "To powiązanie jest już potwierdzone. Odłączyć? Cechy tego zdjęcia znikną; tekst wróci do luźnych opisów, żeby można było przypisać go do innego zdjęcia.",
+  "imageEx.link.chooseOther": "Wybierz inny opis… (obecny stanie się luźnym fragmentem)",
+  "imageEx.link.looseNotSaved": "Luźne fragmenty nie zostaną zapisane: połącz je ze zdjęciem przed opuszczeniem tej strony albo prześlij dokument ponownie później.",
+  "imageEx.link.suggestionTitle": "Sugestia LEAP",
+  "imageEx.link.suggestionReplace": "Sugestia LEAP (zastępuje obecny opis)",
+  "imageEx.link.takeConfirm": "Zgadza się, potwierdź",
+  "imageEx.link.take": "Przejmij, jeszcze nie potwierdzaj",
+  "imageEx.link.rejectSuggestion": "Nieprawidłowe",
+  "imageEx.link.takeAll": "Przejmij i potwierdź wszystkie sugestie ({n})"
 }

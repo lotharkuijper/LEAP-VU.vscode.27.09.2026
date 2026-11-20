@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Confirmar todas as associadas ({n})",
   "imageEx.link.none": "ainda sem descrição",
   "imageEx.link.choose": "Escolhe uma descrição…",
-  "imageEx.link.suggestion": "Sugestão do LEAP: {heading}",
   "imageEx.link.suggest": "Deixar o LEAP fazer uma sugestão",
-  "imageEx.link.suggestDone": "O LEAP fez {n} sugestão(ões); estão assinaladas com ★ na lista de escolha.",
+  "imageEx.link.suggestDone": "A LEAP fez {n} sugestão(ões). Estão junto às fotos: se uma sugestão estiver correta, clica em “Correto, confirmar”.",
   "imageEx.link.type": "Escrever ou ajustar a descrição",
   "imageEx.link.typeLabel": "Descrição da foto",
   "imageEx.link.loose": "Não foi possível associar {n} trecho(s) de texto do teu documento a uma fotografia",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Ou um documento para todas as fotos, com um título acima de cada descrição com o número (“Foto 3”) ou o nome do ficheiro da foto.",
   "imageEx.tips.mentions": "Ou menciona em cada descrição o nome do ficheiro da foto, com extensão (por exemplo, “em bodem-03.jpg vês …”).",
   "imageEx.tips.numbering": "Dica: coloca um número nos nomes dos ficheiros das tuas fotos (bodem-01.jpg, bodem-02.jpg). Assim, um título como “Foto 1” é associado automaticamente à foto correta.",
-  "imageEx.tips.always": "Se a associação não funcionar automaticamente, o LEAP pergunta a que foto pertence um texto. És sempre tu que confirmas."
+  "imageEx.tips.always": "Se a associação não funcionar automaticamente, o LEAP pergunta a que foto pertence um texto. És sempre tu que confirmas.",
+  "imageEx.link.unlink": "Desassociar: separar esta descrição da foto",
+  "imageEx.link.unlinkConfirmed": "Esta associação já foi confirmada. Desassociar? As características desta foto irão desaparecer; o texto voltará às descrições soltas, para que possas colocá-lo noutra foto.",
+  "imageEx.link.chooseOther": "Escolher outra descrição… (a atual torna-se um elemento solto)",
+  "imageEx.link.looseNotSaved": "Os elementos soltos não são guardados: associa-os a uma foto antes de saíres desta página, ou carrega o documento novamente mais tarde.",
+  "imageEx.link.suggestionTitle": "Sugestão da LEAP",
+  "imageEx.link.suggestionReplace": "Sugestão da LEAP (substitui a descrição atual)",
+  "imageEx.link.takeConfirm": "Correto, confirmar",
+  "imageEx.link.take": "Assumir, ainda não confirmar",
+  "imageEx.link.rejectSuggestion": "Incorreto",
+  "imageEx.link.takeAll": "Assumir e confirmar todas as sugestões ({n})"
 }

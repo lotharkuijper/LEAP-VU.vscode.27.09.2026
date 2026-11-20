@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "연결된 항목 모두 확인({n})",
   "imageEx.link.none": "아직 설명 없음",
   "imageEx.link.choose": "설명 선택…",
-  "imageEx.link.suggestion": "LEAP의 제안: {heading}",
   "imageEx.link.suggest": "LEAP이 제안하게 하기",
-  "imageEx.link.suggestDone": "LEAP이 제안 {n}개를 만들었어. 선택 목록에 ★로 표시되어 있어.",
+  "imageEx.link.suggestDone": "LEAP에서 {n}개의 제안을 했어. 사진 옆에 표시되어 있어. 제안이 맞으면 “맞아, 확인”을 클릭해.",
   "imageEx.link.type": "설명을 직접 입력하거나 수정",
   "imageEx.link.typeLabel": "사진 설명",
   "imageEx.link.loose": "문서의 텍스트 {n}개를 사진에 연결할 수 없었어",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "또는 모든 사진에 대한 하나의 문서에, 각 설명 위에 번호(“Foto 3”)나 사진 파일명을 제목으로 넣어.",
   "imageEx.tips.mentions": "또는 각 설명에 확장자를 포함한 사진 파일명을 적어 (예: “bodem-03.jpg에서 …를 볼 수 있어”).",
   "imageEx.tips.numbering": "팁: 사진 파일명에 번호를 넣어 (bodem-01.jpg, bodem-02.jpg). 그러면 “Foto 1” 같은 제목이 자동으로 올바른 사진에 연결돼.",
-  "imageEx.tips.always": "자동으로 연결되지 않으면 LEAP이 텍스트가 어떤 사진에 해당하는지 물어봐. 최종 확인은 항상 네가 직접 해."
+  "imageEx.tips.always": "자동으로 연결되지 않으면 LEAP이 텍스트가 어떤 사진에 해당하는지 물어봐. 최종 확인은 항상 네가 직접 해.",
+  "imageEx.link.unlink": "연결 해제: 이 설명을 사진에서 분리",
+  "imageEx.link.unlinkConfirmed": "이 연결은 이미 확인됐어. 연결을 해제할까? 이 사진의 특징은 사라지고, 텍스트는 개별 설명으로 돌아가서 다른 사진에 연결할 수 있어.",
+  "imageEx.link.chooseOther": "다른 설명 선택… (현재 설명은 개별 항목이 됨)",
+  "imageEx.link.looseNotSaved": "개별 항목은 저장되지 않아: 이 페이지를 떠나기 전에 사진에 연결하거나, 나중에 문서를 다시 업로드해.",
+  "imageEx.link.suggestionTitle": "LEAP의 제안",
+  "imageEx.link.suggestionReplace": "LEAP의 제안(현재 설명을 대체함)",
+  "imageEx.link.takeConfirm": "맞아, 확인",
+  "imageEx.link.take": "적용만 하고, 아직 확인하지 않기",
+  "imageEx.link.rejectSuggestion": "맞지 않음",
+  "imageEx.link.takeAll": "모든 제안 적용 및 확인({n})"
 }

@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Conferma tutti i collegati ({n})",
   "imageEx.link.none": "ancora nessuna descrizione",
   "imageEx.link.choose": "Scegli una descrizione…",
-  "imageEx.link.suggestion": "Proposta di LEAP: {heading}",
   "imageEx.link.suggest": "Chiedi a LEAP di fare una proposta",
-  "imageEx.link.suggestDone": "LEAP ha fatto {n} proposta/e; sono indicate con ★ nell’elenco di scelta.",
+  "imageEx.link.suggestDone": "LEAP ha fatto {n} proposta/e. Le trovi accanto alle foto: se una proposta è corretta, clicca su “Corretto, conferma”.",
   "imageEx.link.type": "Digitare o modificare tu la descrizione",
   "imageEx.link.typeLabel": "Descrizione della foto",
   "imageEx.link.loose": "{n} testo/i del tuo documento non è/sono stato/i collegato/i a una foto",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Oppure un unico documento per tutte le foto, con sopra ogni descrizione un titolo con il numero (“Foto 3”) o il nome del file della foto.",
   "imageEx.tips.mentions": "Oppure cita in ogni descrizione il nome del file della foto, con estensione (per esempio “in bodem-03.jpg si vede …”).",
   "imageEx.tips.numbering": "Suggerimento: inserisci un numero nei nomi dei file delle tue foto (bodem-01.jpg, bodem-02.jpg). Così un titolo come “Foto 1” si collega automaticamente alla foto giusta.",
-  "imageEx.tips.always": "Se il collegamento non riesce automaticamente, LEAP chiede a quale foto appartiene un testo. Confermi sempre tu."
+  "imageEx.tips.always": "Se il collegamento non riesce automaticamente, LEAP chiede a quale foto appartiene un testo. Confermi sempre tu.",
+  "imageEx.link.unlink": "Scollega: separa questa descrizione dalla foto",
+  "imageEx.link.unlinkConfirmed": "Questo collegamento è già stato confermato. Scollegarlo? Le caratteristiche di questa foto scompariranno; il testo tornerà tra le descrizioni separate, così potrai associarlo a un’altra foto.",
+  "imageEx.link.chooseOther": "Scegli un’altra descrizione… (quella attuale diventerà un elemento separato)",
+  "imageEx.link.looseNotSaved": "Gli elementi separati non vengono salvati: collegali a una foto prima di lasciare questa pagina, oppure carica di nuovo il documento più tardi.",
+  "imageEx.link.suggestionTitle": "Proposta di LEAP",
+  "imageEx.link.suggestionReplace": "Proposta di LEAP (sostituisce la descrizione attuale)",
+  "imageEx.link.takeConfirm": "Corretto, conferma",
+  "imageEx.link.take": "Usa, ma non confermare ancora",
+  "imageEx.link.rejectSuggestion": "Non corretto",
+  "imageEx.link.takeAll": "Usa e conferma tutte le proposte ({n})"
 }

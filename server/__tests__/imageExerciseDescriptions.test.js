@@ -139,6 +139,18 @@ describe('matchDescriptions', () => {
     expect(r.unmatchedSections).toEqual([]);
   });
 
+  it('"Afbeelding 1/2" bij foto’s zonder nummer in de naam: op volgorde van toevoegen', () => {
+    const imgs = [{ id: 'p', filename: 'Art-nouveau.png' }, { id: 'q', filename: 'libel.png' }];
+    const r = matchDescriptions(imgs, [{ stem: null, number: 2 }, { stem: null, number: 1 }]);
+    expect(r.matches).toEqual([
+      { imageId: 'p', section: 1, source: 'order' },
+      { imageId: 'q', section: 0, source: 'order' },
+    ]);
+    // dubbele nummers of een ander aantal: niet raden
+    expect(matchDescriptions(imgs, [{ stem: null, number: 1 }, { stem: null, number: 1 }]).matches).toEqual([]);
+    expect(matchDescriptions(imgs, [{ stem: null, number: 1 }]).matches).toEqual([]);
+  });
+
   it('een nummer dat bij twee foto’s past, koppelt niet', () => {
     const r = matchDescriptions([{ id: 'x', filename: 'a-1.jpg' }, { id: 'y', filename: 'b-1.jpg' }], [{ stem: null, number: 1 }]);
     expect(r.matches).toEqual([]);

@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "सभी जुड़ी हुई ({n}) की पुष्टि करें",
   "imageEx.link.none": "अभी कोई विवरण नहीं",
   "imageEx.link.choose": "विवरण चुनो…",
-  "imageEx.link.suggestion": "LEAP का सुझाव: {heading}",
   "imageEx.link.suggest": "LEAP से सुझाव दिलवाओ",
-  "imageEx.link.suggestDone": "LEAP ने {n} सुझाव दिए; वे चयन सूची में ★ के साथ हैं।",
+  "imageEx.link.suggestDone": "LEAP ने {n} सुझाव दिए। वे फ़ोटो के पास हैं: अगर कोई सुझाव सही है, तो “सही है, पुष्टि करें” पर क्लिक करें।",
   "imageEx.link.type": "विवरण खुद टाइप करो या बदलो",
   "imageEx.link.typeLabel": "फोटो का विवरण",
   "imageEx.link.loose": "तुम्हारे दस्तावेज़ के पाठ के {n} हिस्से किसी फ़ोटो से लिंक नहीं किए जा सके",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "या सभी फ़ोटो के लिए एक दस्तावेज़, जिसमें हर विवरण के ऊपर नंबर (“Foto 3”) या फ़ोटो के फ़ाइल नाम वाला शीर्षक हो।",
   "imageEx.tips.mentions": "या हर विवरण में फ़ोटो का फ़ाइल नाम एक्सटेंशन सहित लिखो (उदाहरण के लिए “op bodem-03.jpg zie je …”)।",
   "imageEx.tips.numbering": "टिप: अपनी फ़ोटो के फ़ाइल नामों में नंबर डालो (bodem-01.jpg, bodem-02.jpg)। तब “Foto 1” जैसा शीर्षक अपने-आप सही फ़ोटो से मिल जाएगा।",
-  "imageEx.tips.always": "अगर मिलान अपने-आप नहीं हो पाता, तो LEAP पूछेगा कि टेक्स्ट किस फ़ोटो से संबंधित है। पुष्टि हमेशा तुम खुद करते हो।"
+  "imageEx.tips.always": "अगर मिलान अपने-आप नहीं हो पाता, तो LEAP पूछेगा कि टेक्स्ट किस फ़ोटो से संबंधित है। पुष्टि हमेशा तुम खुद करते हो।",
+  "imageEx.link.unlink": "अलग करें: इस विवरण को फ़ोटो से अलग करें",
+  "imageEx.link.unlinkConfirmed": "यह लिंक पहले ही पुष्टि किया जा चुका है। अलग करें? इस फ़ोटो की विशेषताएँ गायब हो जाएँगी; टेक्स्ट अलग विवरणों में वापस आ जाएगा, ताकि तुम उसे किसी दूसरी फ़ोटो से जोड़ सको।",
+  "imageEx.link.chooseOther": "दूसरा विवरण चुनें… (मौजूदा वाला एक अलग हिस्सा बन जाएगा)",
+  "imageEx.link.looseNotSaved": "अलग हिस्से सहेजे नहीं जाएँगे: इस पेज को छोड़ने से पहले उन्हें किसी फ़ोटो से जोड़ो, या दस्तावेज़ को बाद में फिर से अपलोड करो।",
+  "imageEx.link.suggestionTitle": "LEAP का सुझाव",
+  "imageEx.link.suggestionReplace": "LEAP का सुझाव (मौजूदा विवरण को बदलता है)",
+  "imageEx.link.takeConfirm": "सही है, पुष्टि करें",
+  "imageEx.link.take": "अपनाएँ, अभी पुष्टि न करें",
+  "imageEx.link.rejectSuggestion": "सही नहीं",
+  "imageEx.link.takeAll": "सभी सुझाव अपनाएँ और पुष्टि करें ({n})"
 }

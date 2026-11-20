@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Confirmă toate asocierile ({n})",
   "imageEx.link.none": "încă nicio descriere",
   "imageEx.link.choose": "Alege o descriere…",
-  "imageEx.link.suggestion": "Propunerea LEAP: {heading}",
   "imageEx.link.suggest": "Lasă LEAP să facă o propunere",
-  "imageEx.link.suggestDone": "LEAP a făcut {n} propunere/propuneri; sunt marcate cu ★ în lista de selecție.",
+  "imageEx.link.suggestDone": "LEAP a făcut {n} propunere(i). Acestea sunt lângă fotografii: dacă o propunere este corectă, apasă pe „Corect, confirmă”.",
   "imageEx.link.type": "Tastează sau modifică singur descrierea",
   "imageEx.link.typeLabel": "Descrierea fotografiei",
   "imageEx.link.loose": "{n} fragment(e) de text din documentul tău nu au putut fi asociate cu o fotografie",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Sau un singur document pentru toate fotografiile, cu deasupra fiecărei descrieri un titlu cu numărul („Foto 3”) sau numele fișierului fotografiei.",
   "imageEx.tips.mentions": "Sau menționează în fiecare descriere numele fișierului fotografiei, cu extensie (de exemplu „în bodem-03.jpg vezi …”).",
   "imageEx.tips.numbering": "Sfat: pune un număr în numele fișierelor fotografiilor tale (bodem-01.jpg, bodem-02.jpg). Atunci un titlu precum „Foto 1” se asociază automat cu fotografia corectă.",
-  "imageEx.tips.always": "Dacă asocierea nu reușește automat, LEAP te întreabă cărei fotografii îi aparține un text. Confirmi întotdeauna tu."
+  "imageEx.tips.always": "Dacă asocierea nu reușește automat, LEAP te întreabă cărei fotografii îi aparține un text. Confirmi întotdeauna tu.",
+  "imageEx.link.unlink": "Deconectează: separă această descriere de fotografie",
+  "imageEx.link.unlinkConfirmed": "Această asociere a fost deja confirmată. O deconectezi? Caracteristicile acestei fotografii vor dispărea; textul va reveni la descrierile neasociate, astfel încât să îl poți pune la o altă fotografie.",
+  "imageEx.link.chooseOther": "Alege altă descriere… (cea actuală devine un fragment neasociat)",
+  "imageEx.link.looseNotSaved": "Fragmentele neasociate nu sunt salvate: asociază-le cu o fotografie înainte să părăsești această pagină sau încarcă documentul din nou mai târziu.",
+  "imageEx.link.suggestionTitle": "Propunere de la LEAP",
+  "imageEx.link.suggestionReplace": "Propunere de la LEAP (înlocuiește descrierea actuală)",
+  "imageEx.link.takeConfirm": "Corect, confirmă",
+  "imageEx.link.take": "Preia, dar nu confirma încă",
+  "imageEx.link.rejectSuggestion": "Nu este corect",
+  "imageEx.link.takeAll": "Preia și confirmă toate propunerile ({n})"
 }

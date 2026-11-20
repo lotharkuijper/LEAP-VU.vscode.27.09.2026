@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Konfirmasi semua yang terhubung ({n})",
   "imageEx.link.none": "belum ada deskripsi",
   "imageEx.link.choose": "Pilih deskripsi…",
-  "imageEx.link.suggestion": "Usulan dari LEAP: {heading}",
   "imageEx.link.suggest": "Minta LEAP membuat usulan",
-  "imageEx.link.suggestDone": "LEAP membuat {n} usulan; usulan itu ditandai ★ di daftar pilihan.",
+  "imageEx.link.suggestDone": "LEAP membuat {n} saran. Saran-saran itu ada di foto: jika sebuah saran benar, klik “Benar, konfirmasi”.",
   "imageEx.link.type": "Ketik atau sesuaikan deskripsi sendiri",
   "imageEx.link.typeLabel": "Deskripsi foto",
   "imageEx.link.loose": "{n} bagian teks dari dokumenmu tidak dapat dikaitkan dengan foto",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "Atau satu dokumen untuk semua foto, dengan judul kecil di atas setiap deskripsi berisi nomor (“Foto 3”) atau nama file foto.",
   "imageEx.tips.mentions": "Atau sebutkan nama file foto di setiap deskripsi, termasuk ekstensinya (misalnya “di bodem-03.jpg kamu melihat …”).",
   "imageEx.tips.numbering": "Tips: tambahkan nomor pada nama file foto-fotomu (bodem-01.jpg, bodem-02.jpg). Dengan begitu, judul kecil seperti “Foto 1” akan otomatis dipasangkan dengan foto yang tepat.",
-  "imageEx.tips.always": "Jika tidak bisa dipasangkan otomatis, LEAP akan menanyakan foto mana yang sesuai dengan teks. Kamu selalu mengonfirmasinya sendiri."
+  "imageEx.tips.always": "Jika tidak bisa dipasangkan otomatis, LEAP akan menanyakan foto mana yang sesuai dengan teks. Kamu selalu mengonfirmasinya sendiri.",
+  "imageEx.link.unlink": "Batalkan tautan: lepaskan deskripsi ini dari foto",
+  "imageEx.link.unlinkConfirmed": "Tautan ini sudah dikonfirmasi. Batalkan tautan? Karakteristik foto ini akan hilang; teks akan kembali ke deskripsi terpisah, sehingga kamu bisa memasangkannya ke foto lain.",
+  "imageEx.link.chooseOther": "Pilih deskripsi lain… (yang saat ini akan menjadi bagian terpisah)",
+  "imageEx.link.looseNotSaved": "Bagian terpisah tidak disimpan: tautkan ke foto sebelum kamu meninggalkan halaman ini, atau unggah ulang dokumen nanti.",
+  "imageEx.link.suggestionTitle": "Saran dari LEAP",
+  "imageEx.link.suggestionReplace": "Saran dari LEAP (menggantikan deskripsi saat ini)",
+  "imageEx.link.takeConfirm": "Benar, konfirmasi",
+  "imageEx.link.take": "Ambil alih, belum konfirmasi",
+  "imageEx.link.rejectSuggestion": "Tidak benar",
+  "imageEx.link.takeAll": "Ambil alih dan konfirmasi semua saran ({n})"
 }

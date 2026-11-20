@@ -214,8 +214,14 @@ export function matchDescriptions(images, sections) {
   const restSec = sections.map((_, i) => i).filter((i) => !usedSec.has(i));
   const restImg = images.filter((im) => !usedImg.has(im.id));
   const keyless = restSec.every((i) => sections[i].number == null && !sections[i].stem);
-  if (restSec.length > 0 && restSec.length === restImg.length && keyless) {
-    restSec.forEach((secIdx, k) => { matches.push({ imageId: restImg[k].id, section: secIdx, source: 'order' }); usedImg.add(restImg[k].id); usedSec.add(secIdx); });
+  // "Afbeelding 1", "Afbeelding 2" bij foto's zonder nummer in de naam ("libel.png"):
+  // dan slaat het nummer op de volgorde waarin de foto's zijn toegevoegd.
+  const numberedOnly = restSec.every((i) => sections[i].number != null && !sections[i].stem)
+    && restImg.every((im) => numberInName(im.filename) == null)
+    && new Set(restSec.map((i) => sections[i].number)).size === restSec.length;
+  if (restSec.length > 0 && restSec.length === restImg.length && (keyless || numberedOnly)) {
+    const order = numberedOnly ? [...restSec].sort((a, b) => sections[a].number - sections[b].number) : restSec;
+    order.forEach((secIdx, k) => { matches.push({ imageId: restImg[k].id, section: secIdx, source: 'order' }); usedImg.add(restImg[k].id); usedSec.add(secIdx); });
   }
 
   return {

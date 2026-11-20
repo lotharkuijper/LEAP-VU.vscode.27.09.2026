@@ -3562,9 +3562,8 @@
   "imageEx.link.confirmAll": "Confirmar todos los vinculados ({n})",
   "imageEx.link.none": "aún no hay descripción",
   "imageEx.link.choose": "Elige una descripción…",
-  "imageEx.link.suggestion": "Propuesta de LEAP: {heading}",
   "imageEx.link.suggest": "Deja que LEAP haga una propuesta",
-  "imageEx.link.suggestDone": "LEAP hizo {n} propuesta(s); aparecen con ★ en la lista de opciones.",
+  "imageEx.link.suggestDone": "LEAP hizo {n} propuesta(s). Están junto a las fotos: si una propuesta es correcta, haz clic en “Correcto, confirmar”.",
   "imageEx.link.type": "Escribir o ajustar la descripción tú mismo",
   "imageEx.link.typeLabel": "Descripción de la foto",
   "imageEx.link.loose": "{n} fragmento(s) de texto de tu documento no se pudieron vincular a una foto",
@@ -3647,5 +3646,15 @@
   "imageEx.tips.headings": "O un solo documento para todas las fotos, con un encabezado encima de cada descripción con el número (“Foto 3”) o el nombre del archivo de la foto.",
   "imageEx.tips.mentions": "O menciona en cada descripción el nombre del archivo de la foto, con extensión (por ejemplo: “en bodem-03.jpg ves …”).",
   "imageEx.tips.numbering": "Consejo: pon un número en los nombres de archivo de tus fotos (bodem-01.jpg, bodem-02.jpg). Así un encabezado como “Foto 1” se vincula automáticamente a la foto correcta.",
-  "imageEx.tips.always": "Si no se puede vincular automáticamente, LEAP preguntará a qué foto corresponde un texto. Siempre confirmas tú."
+  "imageEx.tips.always": "Si no se puede vincular automáticamente, LEAP preguntará a qué foto corresponde un texto. Siempre confirmas tú.",
+  "imageEx.link.unlink": "Desvincular: separar esta descripción de la foto",
+  "imageEx.link.unlinkConfirmed": "Este vínculo ya está confirmado. ¿Desvincular? Las características de esta foto desaparecerán; el texto volverá a las descripciones sueltas, para que puedas ponerlo en otra foto.",
+  "imageEx.link.chooseOther": "Elegir otra descripción… (la actual se convertirá en un fragmento suelto)",
+  "imageEx.link.looseNotSaved": "Los fragmentos sueltos no se guardan: vincúlalos a una foto antes de salir de esta página, o sube el documento de nuevo más tarde.",
+  "imageEx.link.suggestionTitle": "Propuesta de LEAP",
+  "imageEx.link.suggestionReplace": "Propuesta de LEAP (reemplaza la descripción actual)",
+  "imageEx.link.takeConfirm": "Correcto, confirmar",
+  "imageEx.link.take": "Aplicar, sin confirmar todavía",
+  "imageEx.link.rejectSuggestion": "No es correcto",
+  "imageEx.link.takeAll": "Aplicar y confirmar todas las propuestas ({n})"
 }
