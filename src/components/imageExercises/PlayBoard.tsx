@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, BookText, Check, Flag, Lightbulb, Loader2, RotateCcw, Send, X, ZoomIn } from 'lucide-react';
+import { ArrowLeft, BookText, Check, Flag, Lightbulb, Loader2, RotateCcw, Send, ZoomIn } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../i18n';
 import { MathText } from '../MathText';
+import { ZoomableImage } from './ZoomableImage';
 import {
   answerPlay, finishPlay, hintPlay, journalPlay, restartPlay, startPlay, PlayError,
   type PlayState, type PlayTile, type PlayTurn,
@@ -166,10 +167,7 @@ export function PlayBoard({ courseId, exerciseId, onBack, onNext }: {
       </div>
 
       {zoom && state.exercise.imageUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-auto bg-black/80 p-4" role="dialog" aria-modal="true" onClick={() => setZoom(false)} data-testid="dialog-play-zoom">
-          <button type="button" onClick={() => setZoom(false)} className="absolute right-4 top-4 rounded-full bg-white/90 p-2" aria-label={t('imagePlay.close')}><X className="h-5 w-5" /></button>
-          <img src={state.exercise.imageUrl} alt="" className="max-h-full max-w-full object-contain" />
-        </div>
+        <ZoomableImage src={state.exercise.imageUrl} alt={t('imagePlay.photoTitle', { n: String(state.exercise.number) })} onClose={() => setZoom(false)} />
       )}
     </div>
   );
