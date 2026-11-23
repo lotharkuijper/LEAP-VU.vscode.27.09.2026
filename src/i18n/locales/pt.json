@@ -3578,6 +3578,7 @@
   "imageEx.extra": "Extra",
   "imageEx.upload.title": "1. Adicionar fotografias e descrições",
   "imageEx.upload.howTo": "Adiciona primeiro as fotos (jpg, png ou webp, até 20 MB) e depois as descrições (Word, pdf ou texto). Podes usar um documento para todas as fotos, ou um ficheiro por foto.",
+  "imageEx.upload.otherFormats": "Tens um ficheiro noutro formato, como uma digitalização em .ecw, .svs ou .tif? Converte-o primeiro para jpg ou png no teu próprio computador. Se a imagem for muito grande, recorta a parte que os estudantes devem ver: ao ser reduzida a uma única foto, muitas vezes perde-se demasiado detalhe.",
   "imageEx.upload.photos": "Adicionar fotografias",
   "imageEx.upload.descriptions": "Adicionar descrições",
   "imageEx.upload.progress": "A guardar fotografia {done} de {total}…",

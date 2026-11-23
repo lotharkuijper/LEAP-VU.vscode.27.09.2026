@@ -3578,6 +3578,7 @@
   "imageEx.extra": "追加",
   "imageEx.upload.title": "1. 写真と説明を追加",
   "imageEx.upload.howTo": "まず写真を追加して（jpg、png、webp、20 MBまで）、その後で説明文（Word、pdf、テキスト）を追加してね。すべての写真に1つの文書を使っても、写真ごとに1ファイルを使ってもOK。",
+  "imageEx.upload.otherFormats": "スキャン画像（.ecw、.svs、.tif など）のように別の形式のファイルがある？まず自分のコンピューターで jpg または png に変換してね。画像がとても大きい場合は、学生に見せたい部分を切り出してね。1枚の写真に縮小すると、細部が十分に残らないことが多いよ。",
   "imageEx.upload.photos": "写真を追加",
   "imageEx.upload.descriptions": "説明を追加",
   "imageEx.upload.progress": "写真 {done}/{total} を保存中…",

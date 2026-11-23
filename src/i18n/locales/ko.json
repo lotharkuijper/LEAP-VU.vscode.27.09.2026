@@ -3578,6 +3578,7 @@
   "imageEx.extra": "추가",
   "imageEx.upload.title": "1. 사진과 설명 추가",
   "imageEx.upload.howTo": "먼저 사진을 추가해 (jpg, png 또는 webp, 최대 20MB), 그다음 설명을 추가해 (Word, pdf 또는 텍스트). 모든 사진에 하나의 문서를 사용할 수도 있고, 사진마다 파일을 하나씩 사용할 수도 있어.",
+  "imageEx.upload.otherFormats": "스캔 파일이 .ecw, .svs, .tif 같은 다른 형식으로 되어 있어? 먼저 네 컴퓨터에서 jpg 또는 png로 변환해. 이미지가 매우 크다면 학생들이 봐야 할 부분만 잘라내: 한 장의 사진으로 축소하면 세부 정보가 너무 적게 남는 경우가 많아.",
   "imageEx.upload.photos": "사진 추가",
   "imageEx.upload.descriptions": "설명 추가",
   "imageEx.upload.progress": "사진 {total}장 중 {done}장을 저장하는 중…",

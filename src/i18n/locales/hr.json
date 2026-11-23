@@ -3578,6 +3578,7 @@
   "imageEx.extra": "Dodatno",
   "imageEx.upload.title": "1. Dodaj fotografije i opise",
   "imageEx.upload.howTo": "Prvo dodaj fotografije (jpg, png ili webp, do 20 MB), zatim opise (Word, pdf ili tekst). Možeš upotrijebiti jedan dokument za sve fotografije ili jednu datoteku po fotografiji.",
+  "imageEx.upload.otherFormats": "Imaš datoteku u drugom formatu, poput skena u .ecw, .svs ili .tif? Najprije je na svom računalu pretvori u jpg ili png. Ako je slika jako velika, izreži dio koji studenti trebaju vidjeti: kad se smanji na jednu fotografiju, često ostane premalo detalja.",
   "imageEx.upload.photos": "Dodaj fotografije",
   "imageEx.upload.descriptions": "Dodaj opise",
   "imageEx.upload.progress": "Spremanje fotografije {done} od {total}…",

@@ -3578,6 +3578,7 @@
   "imageEx.extra": "Extra",
   "imageEx.upload.title": "1. Fotos und Beschreibungen hinzufügen",
   "imageEx.upload.howTo": "Füge zuerst die Fotos hinzu (jpg, png oder webp, bis 20 MB), danach die Beschreibungen (Word, PDF oder Text). Du kannst ein Dokument für alle Fotos verwenden oder eine Datei pro Foto.",
+  "imageEx.upload.otherFormats": "Hast du eine Datei in einem anderen Format, z. B. einen Scan als .ecw, .svs oder .tif? Wandle sie zuerst auf deinem eigenen Computer in jpg oder png um. Ist das Bild sehr groß, schneide den Ausschnitt zu, den Studierende sehen sollen: Wenn es auf ein einziges Foto verkleinert wird, bleibt oft zu wenig Detail übrig.",
   "imageEx.upload.photos": "Fotos hinzufügen",
   "imageEx.upload.descriptions": "Beschreibungen hinzufügen",
   "imageEx.upload.progress": "Foto {done} von {total} wird gespeichert…",

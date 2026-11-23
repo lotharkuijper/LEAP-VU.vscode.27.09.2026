@@ -3578,6 +3578,7 @@
   "imageEx.extra": "Ek",
   "imageEx.upload.title": "1. Fotoğraflar ve açıklamalar ekle",
   "imageEx.upload.howTo": "Önce fotoğrafları ekle (jpg, png veya webp, en fazla 20 MB), ardından açıklamaları (Word, pdf veya metin). Tüm fotoğraflar için tek bir belge kullanabilir ya da her fotoğraf için ayrı bir dosya ekleyebilirsin.",
+  "imageEx.upload.otherFormats": "Başka bir formatta, örneğin .ecw, .svs veya .tif biçiminde taranmış bir dosyan mı var? Önce kendi bilgisayarında jpg veya png’ye dönüştür. Görsel çok büyükse öğrencilerin görmesi gereken bölümü kesip çıkar: tek bir fotoğrafa küçültüldüğünde çoğu zaman çok az ayrıntı kalır.",
   "imageEx.upload.photos": "Fotoğraf ekle",
   "imageEx.upload.descriptions": "Açıklama ekle",
   "imageEx.upload.progress": "Fotoğraf {done}/{total} kaydediliyor…",

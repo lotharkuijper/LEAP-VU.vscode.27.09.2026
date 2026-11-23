@@ -209,6 +209,7 @@ export function ImageExercisesAdmin() {
           </button>
         </div>
         <p className="text-sm text-gray-600">{t('imageEx.upload.howTo')}</p>
+        <p className="text-xs text-gray-500" data-testid="text-image-other-formats">{t('imageEx.upload.otherFormats')}</p>
         <LinkingTips waiting={items.filter((e) => !e.confirmed && !e.description.trim()).length} />
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => photoInput.current?.click()} disabled={!!busy} className="btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-50" data-testid="button-add-photos">

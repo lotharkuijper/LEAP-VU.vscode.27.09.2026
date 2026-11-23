@@ -3578,6 +3578,7 @@
   "imageEx.extra": "Ekstra",
   "imageEx.upload.title": "1. Tambahkan foto dan deskripsi",
   "imageEx.upload.howTo": "Tambahkan foto terlebih dahulu (jpg, png, atau webp, hingga 20 MB), lalu deskripsinya (Word, pdf, atau teks). Kamu bisa menggunakan satu dokumen untuk semua foto, atau satu file per foto.",
+  "imageEx.upload.otherFormats": "Apakah kamu punya file dalam format lain, seperti hasil pemindaian dalam .ecw, .svs, atau .tif? Ubah dulu di komputermu sendiri menjadi jpg atau png. Jika gambarnya sangat besar, potong bagian yang perlu dilihat mahasiswa: jika diperkecil menjadi satu foto, sering kali detailnya terlalu sedikit.",
   "imageEx.upload.photos": "Tambahkan foto",
   "imageEx.upload.descriptions": "Tambahkan deskripsi",
   "imageEx.upload.progress": "Foto {done} dari {total} sedang disimpan…",
