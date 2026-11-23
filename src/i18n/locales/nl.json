@@ -3578,7 +3578,7 @@
   "imageEx.extra": "Extra",
   "imageEx.upload.title": "1. Foto’s en beschrijvingen toevoegen",
   "imageEx.upload.howTo": "Voeg eerst de foto’s toe (jpg, png of webp, tot 20 MB), daarna de beschrijvingen (Word, pdf of tekst). Je kunt één document voor alle foto’s gebruiken, of één bestand per foto.",
-  "imageEx.upload.otherFormats": "Heb je een bestand in een ander formaat, zoals een scan in .ecw, .svs of .tif? Zet het eerst op je eigen computer om naar jpg of png. Is het beeld heel groot, snijd dan het stuk uit dat studenten moeten zien: verkleind tot één foto blijft er vaak te weinig detail over.",
+  "imageEx.upload.otherFormats": "Heb je een bestand in een ander formaat, zoals een scan in .ecw, .svs, .tif of .bmp? Zet het eerst op je eigen computer om naar jpg of png. Is het beeld heel groot, snijd dan het stuk uit dat studenten moeten zien: verkleind tot één foto blijft er vaak te weinig detail over.",
   "imageEx.upload.photos": "Foto’s toevoegen",
   "imageEx.upload.descriptions": "Beschrijvingen toevoegen",
   "imageEx.upload.progress": "Foto {done} van {total} wordt opgeslagen…",

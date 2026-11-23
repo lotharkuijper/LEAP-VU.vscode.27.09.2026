@@ -3578,7 +3578,7 @@
   "imageEx.extra": "Supplémentaire",
   "imageEx.upload.title": "1. Ajouter des photos et des descriptions",
   "imageEx.upload.howTo": "Ajoute d’abord les photos (jpg, png ou webp, jusqu’à 20 Mo), puis les descriptions (Word, pdf ou texte). Tu peux utiliser un seul document pour toutes les photos, ou un fichier par photo.",
-  "imageEx.upload.otherFormats": "Tu as un fichier dans un autre format, comme un scan en .ecw, .svs ou .tif ? Convertis-le d’abord sur ton propre ordinateur en jpg ou png. Si l’image est très grande, découpe la partie que les étudiants doivent voir : réduite à une seule photo, il reste souvent trop peu de détails.",
+  "imageEx.upload.otherFormats": "Tu as un fichier dans un autre format, comme une numérisation en .ecw, .svs, .tif ou .bmp ? Convertis-le d’abord en jpg ou png sur ton propre ordinateur. Si l’image est très grande, découpe la partie que les étudiants doivent voir : réduite à une seule image, elle perd souvent trop de détails.",
   "imageEx.upload.photos": "Ajouter des photos",
   "imageEx.upload.descriptions": "Ajouter des descriptions",
   "imageEx.upload.progress": "Enregistrement de la photo {done} sur {total}…",

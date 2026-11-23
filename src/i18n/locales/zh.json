@@ -3578,7 +3578,7 @@
   "imageEx.extra": "额外",
   "imageEx.upload.title": "1. 添加照片和描述",
   "imageEx.upload.howTo": "请先添加照片（jpg、png 或 webp，最大 20 MB），然后添加描述（Word、pdf 或文本）。你可以为所有照片使用一个文档，或每张照片一个文件。",
-  "imageEx.upload.otherFormats": "你的文件是其他格式吗，比如 .ecw、.svs 或 .tif 格式的扫描件？请先在自己的电脑上将它转换为 jpg 或 png。如果图像很大，请裁剪出学生需要看的部分：缩小成一张图片后，通常会丢失太多细节。",
+  "imageEx.upload.otherFormats": "你有其他格式的文件吗，比如 .ecw、.svs、.tif 或 .bmp 格式的扫描件？请先在你自己的电脑上将其转换为 jpg 或 png。如果图像很大，请裁剪出学生需要看的部分：缩小成一张图片后，往往会丢失太多细节。",
   "imageEx.upload.photos": "添加照片",
   "imageEx.upload.descriptions": "添加描述",
   "imageEx.upload.progress": "正在保存第 {done} 张照片，共 {total} 张…",

@@ -3578,7 +3578,7 @@
   "imageEx.extra": "Dodatkowe",
   "imageEx.upload.title": "1. Dodaj zdjęcia i opisy",
   "imageEx.upload.howTo": "Najpierw dodaj zdjęcia (jpg, png lub webp, do 20 MB), a potem opisy (Word, pdf lub tekst). Możesz użyć jednego dokumentu dla wszystkich zdjęć albo jednego pliku na każde zdjęcie.",
-  "imageEx.upload.otherFormats": "Masz plik w innym formacie, np. skan w .ecw, .svs lub .tif? Najpierw przekonwertuj go na swoim komputerze do jpg lub png. Jeśli obraz jest bardzo duży, wytnij fragment, który studenci mają zobaczyć: po zmniejszeniu do jednego zdjęcia często zostaje zbyt mało szczegółów.",
+  "imageEx.upload.otherFormats": "Masz plik w innym formacie, np. skan w .ecw, .svs, .tif lub .bmp? Najpierw przekonwertuj go na swoim komputerze do jpg lub png. Jeśli obraz jest bardzo duży, wytnij fragment, który studenci mają zobaczyć: po zmniejszeniu do jednego zdjęcia często zostaje zbyt mało szczegółów.",
   "imageEx.upload.photos": "Dodaj zdjęcia",
   "imageEx.upload.descriptions": "Dodaj opisy",
   "imageEx.upload.progress": "Zapisywanie zdjęcia {done} z {total}…",

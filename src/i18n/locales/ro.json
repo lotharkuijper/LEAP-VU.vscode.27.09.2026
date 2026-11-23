@@ -3578,7 +3578,7 @@
   "imageEx.extra": "Extra",
   "imageEx.upload.title": "1. Adaugă fotografii și descrieri",
   "imageEx.upload.howTo": "Adaugă mai întâi fotografiile (jpg, png sau webp, până la 20 MB), apoi descrierile (Word, pdf sau text). Poți folosi un singur document pentru toate fotografiile sau câte un fișier pentru fiecare fotografie.",
-  "imageEx.upload.otherFormats": "Ai un fișier într-un alt format, cum ar fi o scanare în .ecw, .svs sau .tif? Convertește-l mai întâi pe computerul tău în jpg sau png. Dacă imaginea este foarte mare, decupează partea pe care trebuie să o vadă studenții: micșorată la o singură fotografie, adesea rămân prea puține detalii.",
+  "imageEx.upload.otherFormats": "Ai un fișier într-un alt format, cum ar fi o scanare în .ecw, .svs, .tif sau .bmp? Convertește-l mai întâi pe propriul computer în jpg sau png. Dacă imaginea este foarte mare, decupează partea pe care studenții trebuie să o vadă: redusă la o singură fotografie, adesea rămân prea puține detalii.",
   "imageEx.upload.photos": "Adaugă fotografii",
   "imageEx.upload.descriptions": "Adaugă descrieri",
   "imageEx.upload.progress": "Se salvează fotografia {done} din {total}…",

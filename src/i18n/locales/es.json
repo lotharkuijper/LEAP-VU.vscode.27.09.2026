@@ -3578,7 +3578,7 @@
   "imageEx.extra": "Extra",
   "imageEx.upload.title": "1. Añadir fotos y descripciones",
   "imageEx.upload.howTo": "Primero añade las fotos (jpg, png o webp, hasta 20 MB) y después las descripciones (Word, pdf o texto). Puedes usar un solo documento para todas las fotos, o un archivo por foto.",
-  "imageEx.upload.otherFormats": "¿Tienes un archivo en otro formato, como un escaneo en .ecw, .svs o .tif? Primero conviértelo en tu propio ordenador a jpg o png. Si la imagen es muy grande, recorta la parte que los estudiantes deben ver: al reducirla a una sola foto, a menudo queda demasiado poco detalle.",
+  "imageEx.upload.otherFormats": "¿Tienes un archivo en otro formato, como un escaneo en .ecw, .svs, .tif o .bmp? Primero conviértelo a jpg o png en tu propio ordenador. Si la imagen es muy grande, recorta la parte que los estudiantes deben ver: al reducirla a una sola foto, a menudo se pierde demasiado detalle.",
   "imageEx.upload.photos": "Añadir fotos",
   "imageEx.upload.descriptions": "Añadir descripciones",
   "imageEx.upload.progress": "Se está guardando la foto {done} de {total}…",
