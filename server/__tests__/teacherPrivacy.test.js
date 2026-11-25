@@ -126,3 +126,15 @@ describe('docenten zien de pogingen bij beeldoefeningen niet', () => {
     expect(src).not.toMatch(/req\.(body|query|params)\??\.userId/);
   });
 });
+
+describe('begrippen verwijderen en opnieuw samenstellen verraden niets over studenten', () => {
+  // Verbergen of verwijderen mag alleen afhangen van wat de docent zelf weet
+  // (zichtbaar, itembank, quizbronnen), nooit van studentuitleg (2026-11-25).
+  it('de verwijderroute en de opruimstap lezen geen studentgegevens', () => {
+    expect(routeSource("app.delete('/api/admin/concepts/:id'")).not.toMatch(/student_explanations/);
+    expect(functionSource('extractConceptsHandler')).not.toMatch(/student_explanations/);
+    const scope = fs.readFileSync(path.join(root, 'server/concepts/conceptSearchScope.js'), 'utf8');
+    const routes = fs.readFileSync(path.join(root, 'server/concepts/searchScopeRoutes.js'), 'utf8');
+    expect(scope + routes).not.toMatch(/student_explanations|quiz_attempts|explain_attempts/);
+  });
+});

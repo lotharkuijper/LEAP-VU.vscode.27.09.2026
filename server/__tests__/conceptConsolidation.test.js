@@ -276,7 +276,9 @@ describe('extract-concepts: minimum en maximum in de route (extractConceptsHandl
   const handler = functionSource('extractConceptsHandler');
   it('de reserve bevat alleen kandidaten met bewijs, en aangevulde begrippen worden "te beoordelen"', () => {
     expect(handler).toMatch(/if \(r\.matchedCount >= 1\) reserveResults\.push\(r\)/);
-    expect(handler).toMatch(/c\.__topUp \? \{ review_status: 'needs_review' \}/);
+    expect(handler).toMatch(/c\.__topUp \|\| reviewNew \? \{ review_status: 'needs_review' \}/);
+    // Aanvullen op een bestaande lijst: nieuwe begrippen eerst laten beoordelen.
+    expect(handler).toMatch(/const reviewNew = !replace && existingList\.length > 0/);
     expect(handler).toMatch(/selectConcepts\(dedupedResults, \{\s*min: extractionSettings\.min_concepts,\s*max: extractionSettings\.max_concepts,/);
   });
   it('een minimum boven het maximum wordt geweigerd; een tekort wordt gemeld', () => {

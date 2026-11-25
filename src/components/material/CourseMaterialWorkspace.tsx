@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { LeerlijnPanel } from './LeerlijnPanel';
-import { Loader2, RefreshCw, CheckCircle2, ChevronRight, Search } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { Loader2, RefreshCw, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import {
@@ -17,10 +16,8 @@ import { FilesStep } from './FilesStep';
 import { PurposeReview } from './PurposeReview';
 import { ReadinessStep, WarningList, type MaterialStep } from './ReadinessStep';
 import { HelpTip } from '../help/HelpTip';
-import { ExtractionProgressText } from '../ExtractionProgressText';
-import { startConceptExtractionTask, CONCEPT_TASK_KIND, extractionBody, DEFAULT_EXTRACTION_OPTIONS, type ExtractionOptions } from '../../lib/conceptExtractionJob';
-import { ExtractionOptionsPanel } from './ExtractionOptionsPanel';
-import { useTask } from '../../lib/backgroundTasks';
+import type { ExtractionOptions } from '../../lib/conceptExtractionJob';
+import { ConceptSearchPanel } from './ConceptSearchPanel';
 import { AdminHint } from '../help/AdminHint';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
@@ -39,8 +36,6 @@ export function CourseMaterialWorkspace({
   onGoToTab,
   onConceptsChanged,
   refreshKey = 0,
-  extractionOptions = DEFAULT_EXTRACTION_OPTIONS,
-  onExtractionOptionsChange,
   conceptPicker,
   conceptBounds,
 }: {
@@ -50,17 +45,16 @@ export function CourseMaterialWorkspace({
   onGoToTab: (tab: 'projects_admin' | 'quiz_sources') => void;
   onConceptsChanged?: () => void;
   refreshKey?: number;
-  /** Taal en documentkeuze voor de extractie (gedeeld met "Hergenereer" in AdminPage). */
-  extractionOptions?: ExtractionOptions;
-  onExtractionOptionsChange?: (next: ExtractionOptions) => void;
   /** "Begrippen kiezen" (ConceptPicker): direct onder de uitleg van stap 3, vóór de waarschuwingen. */
   conceptPicker?: ReactNode;
-  /** Minimum en maximum aantal begrippen (AdminPage), bovenaan stap 3 naast "Zoek nieuwe begrippen". */
+  /** Minimum en maximum aantal begrippen (AdminPage), onder "Meer opties" van het zoekpaneel. */
   conceptBounds?: ReactNode;
 }) {
   const { t } = useLanguage();
   const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
   const { activeCourseId, activeCourse } = useActiveCourse();
+  // Taal van de begrippen bij zoeken (alleen voor deze sessie).
+  const [language, onLanguageChange] = useState<ExtractionOptions['language']>('auto');
   const [files, setFiles] = useState<CourseFile[] | null>(null);
   const [projects, setProjects] = useState<CourseProject[]>([]);
   const [webSources, setWebSources] = useState<WebSource[]>([]);
@@ -68,40 +62,6 @@ export function CourseMaterialWorkspace({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [reviewDeferred, setReviewDeferred] = useState(false);
-  const [findingNew, setFindingNew] = useState(false);
-  const [findResult, setFindResult] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
-  const conceptTask = useTask(CONCEPT_TASK_KIND, activeCourseId || '');
-  const conceptTaskRunning = conceptTask?.status === 'running';
-
-  // Nieuwe begrippen zoeken zonder de bestaande lijst (en eerdere goedkeuringen)
-  // te vervangen: de server voegt alleen toe (replace:false) en meldt wat nieuw is.
-  const findNewConcepts = async () => {
-    if (!activeCourseId) return;
-    setFindingNew(true);
-    setFindResult(null);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
-      const body = await startConceptExtractionTask({
-        courseId: activeCourseId,
-        body: extractionBody(activeCourseId, false, extractionOptions),
-        token: session?.access_token || '',
-        title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
-        resultLink: '/admin?tab=material&step=concepts',
-      }).promise as { concepts?: Array<{ name: string }> };
-      const names: string[] = (body.concepts || []).map((c: { name: string }) => c.name);
-      setFindResult({
-        kind: 'ok',
-        text: names.length ? t('material.concepts.foundNew', { n: String(names.length), names: names.join(', ') }) : t('material.concepts.foundNone'),
-      });
-      onConceptsChanged?.();
-    } catch (err) {
-      setFindResult({ kind: 'error', text: t('material.concepts.findFailed', { error: err instanceof Error ? err.message : String(err) }) });
-    } finally {
-      setFindingNew(false);
-    }
-  };
-
   const load = useCallback(async () => {
     if (!activeCourseId) return;
     setLoading(true);
@@ -210,7 +170,7 @@ export function CourseMaterialWorkspace({
 
       {files && step === 'files' && (
         <>
-          <WarningList warnings={warningsFor('files').filter(w => w.code !== 'unconfirmedPurposes')} onGoTo={onStepChange} />
+          <WarningList warnings={warningsFor('files').filter(w => w.code !== 'unconfirmedPurposes')} onGoTo={onStepChange} currentStep="files" />
           <FilesStep courseId={activeCourseId} files={files} projects={projects} webSources={webSources} onChanged={() => void load()} onGoToProjects={() => onGoToTab('projects_admin')} />
           <LeerlijnPanel courseId={activeCourseId} files={files} />
         </>
@@ -219,7 +179,7 @@ export function CourseMaterialWorkspace({
       {step === 'processing' && (
         <div className="space-y-4">
           <AdminHint variant="intro">{t('material.processing.intro')}</AdminHint>
-          <WarningList warnings={warningsFor('processing')} onGoTo={onStepChange} />
+          <WarningList warnings={warningsFor('processing')} onGoTo={onStepChange} currentStep="processing" />
           <RAGDocumentStatusPanel />
         </div>
       )}
@@ -228,28 +188,17 @@ export function CourseMaterialWorkspace({
         <div className="space-y-3">
           <AdminHint variant="intro">{t('material.concepts.intro')}</AdminHint>
           {conceptPicker}
-          <WarningList warnings={warningsFor('concepts')} onGoTo={onStepChange} />
-          {conceptBounds}
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={findNewConcepts}
-              disabled={findingNew || conceptTaskRunning}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-sky-300 text-sky-800 bg-white hover:bg-sky-50 disabled:opacity-50"
-              data-testid="button-find-new-concepts"
-            >
-              {findingNew ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              {findingNew ? t('material.concepts.findingNew') : t('material.concepts.findNew')}
-            </button>
-            <HelpTip id="material.findNewConcepts" />
-            {(findingNew || conceptTaskRunning) && <ExtractionProgressText progress={conceptTask?.progress} />}
-            {findResult && (
-              <span className={`text-sm ${findResult.kind === 'ok' ? 'text-emerald-800' : 'text-red-700'}`} data-testid="text-find-new-result">{findResult.text}</span>
-            )}
-          </div>
-          {files && onExtractionOptionsChange && (
-            <ExtractionOptionsPanel files={files} value={extractionOptions} onChange={onExtractionOptionsChange} />
-          )}
+          {/* "Leerstof gewijzigd" staat al in het zoekpaneel (nieuwe bestanden voorgekozen). */}
+          <WarningList warnings={warningsFor('concepts').filter(w => w.code !== 'docsChanged')} onGoTo={onStepChange} currentStep="concepts" />
+          <ConceptSearchPanel
+            courseId={activeCourseId}
+            conceptCount={readiness?.concepts.length ?? 0}
+            language={language}
+            onLanguageChange={onLanguageChange}
+            bounds={conceptBounds}
+            refreshKey={refreshKey}
+            onDone={() => { onConceptsChanged?.(); void load(); }}
+          />
         </div>
       )}
 

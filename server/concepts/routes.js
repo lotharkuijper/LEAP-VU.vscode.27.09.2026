@@ -14,6 +14,18 @@ import {
   planSureMerges,
   selectConcepts,
 } from './conceptConsolidation.js';
+import {
+  conceptCourseId,
+  keepAsHidden,
+  parseRemovedKeys,
+  planStaleConcepts,
+  recordSearch,
+  withoutRemoved,
+} from './conceptSearchScope.js';
+import { linkedConceptIds, registerConceptSearchRoutes, rememberRemovedConcepts } from './searchScopeRoutes.js';
+import {
+  conceptRegenKey, conceptRemovedKey, mergeDismissKey, readKeyValue, writeKeyValue,
+} from '../lib/keyValue.js';
 import { registerConceptEvidenceRoutes } from './conceptEvidence.js';
 import {
   classifyConceptDifficulty,
@@ -90,8 +102,6 @@ async function requireConceptStaff(req, res, courseId) {
   return auth.user;
 }
 
-// Voorvoegsel __concepts_regen_ wordt overal uitgesloten waar prompts worden getoond/gekozen.
-const mergeDismissKey = (courseId) => `__concepts_regen_merge_dismissed_${courseId}__`;
 
 const groupSignature = (ids) => [...ids].sort().join('|');
 
@@ -123,19 +133,13 @@ async function extractConceptsHandler(req, res) {
   const conceptLanguage = ['nl', 'en', 'auto'].includes(language) ? language : 'auto';
 
   const courseMarker = `course_id:${courseId}`;
-  const regenKey = `__concepts_regen_${courseId}__`;
+  const regenKey = conceptRegenKey(courseId);
 
-  async function writeRegenTimestamp() {
-    const content = JSON.stringify({ lastRegenAt: new Date().toISOString() });
-    const { data: existing } = await supabaseAdmin
-      .from('chatbot_prompts').select('id').eq('name', regenKey).maybeSingle();
-    if (existing) {
-      await supabaseAdmin.from('chatbot_prompts')
-        .update({ content, updated_at: new Date().toISOString() }).eq('name', regenKey);
-    } else {
-      await supabaseAdmin.from('chatbot_prompts')
-        .insert({ name: regenKey, content, is_active: false });
-    }
+  // Tijdstip van deze zoektocht, plus welke documenten zijn gelezen: daarmee
+  // weet "alleen in nieuwe of gewijzigde bestanden" later wat nog niet doorzocht is.
+  async function writeRegenTimestamp(readDocIds = []) {
+    const previous = await readKeyValue(supabaseAdmin, regenKey);
+    await writeKeyValue(supabaseAdmin, regenKey, JSON.stringify(recordSearch(previous, readDocIds, new Date().toISOString())));
   }
 
   try {
@@ -172,6 +176,7 @@ async function extractConceptsHandler(req, res) {
     // cursus dan met een lege begrippenlijst achter. We voeren de replace
     // pas uit zodra we daadwerkelijk nieuwe begrippen hebben om in te
     // voegen — zie verderop in deze handler (`runReplace`).
+    let replaceOutcome = { hidden: 0, deleted: 0 };
     async function runReplace(keepNames = new Set()) {
       if (!replace) return;
       const ragMarkerLocal = '[RAG-geëxtraheerd uit cursusmateriaal]';
@@ -181,27 +186,36 @@ async function extractConceptsHandler(req, res) {
         // staan in keepNames en blijven dus behouden.
         const { data: courseConcepts, error: fetchErr } = await supabaseAdmin
           .from('concepts')
-          .select('id, name, key_points')
+          .select('id, name, key_points, review_status')
           .eq('course_id', courseId);
         if (fetchErr) {
           console.error('[extract-concepts] Fetch (replace) error:', fetchErr);
           throw new Error(`Ophalen mislukt: ${fetchErr.message}`);
         }
-        const staleIds = (courseConcepts || [])
+        const stale = (courseConcepts || [])
           .filter((c) => (c.key_points || []).includes(ragMarkerLocal))
-          .filter((c) => !keepNames.has(String(c.name || '').toLowerCase().trim()))
-          .map((c) => c.id);
-        if (staleIds.length > 0) {
+          .filter((c) => !keepNames.has(String(c.name || '').toLowerCase().trim()));
+        // Zichtbaar voor studenten, of met itembank/quizbronnen: verbergen in
+        // plaats van verwijderen (keepAsHidden; nooit op grond van studentgegevens).
+        const linked = await linkedConceptIds(supabaseAdmin, stale.map((c) => c.id));
+        const protectedIds = new Set(stale.filter((c) => keepAsHidden(c, linked)).map((c) => c.id));
+        const { hideIds, deleteIds } = planStaleConcepts(stale.map((c) => c.id), protectedIds);
+        if (hideIds.length > 0) {
+          const { error: hideErr } = await supabaseAdmin.from('concepts').update({ review_status: 'rejected' }).in('id', hideIds);
+          if (hideErr) throw new Error(`Verbergen mislukt: ${hideErr.message}`);
+        }
+        if (deleteIds.length > 0) {
           const { error: delErr } = await supabaseAdmin
             .from('concepts')
             .delete()
-            .in('id', staleIds);
+            .in('id', deleteIds);
           if (delErr) {
             console.error('[extract-concepts] Delete (replace) error:', delErr);
             throw new Error(`Verwijderen mislukt: ${delErr.message}`);
           }
         }
-        console.log(`[extract-concepts] Replace (course_id): deleted ${staleIds.length} stale RAG concepts for course ${courseId}`);
+        replaceOutcome = { hidden: hideIds.length, deleted: deleteIds.length };
+        console.log(`[extract-concepts] Replace (course_id): ${deleteIds.length} verouderde begrippen verwijderd, ${hideIds.length} verborgen voor cursus ${courseId}`);
         return;
       }
       const { data: taggedConcepts, error: taggedErr } = await supabaseAdmin
@@ -458,6 +472,11 @@ ${combinedText}`;
       return result;
     });
     const failedWindows = windowResults.filter((r) => r.error);
+    // Alleen documenten die helemaal gelezen zijn, gelden als doorzocht.
+    const readDocIds = () => {
+      const failed = new Set(failedWindows.map((r) => r.documentId));
+      return docIds.filter((id) => !failed.has(id));
+    };
     if (failedWindows.length === windowResults.length) {
       const llmErrData = failedWindows[0]?.error;
       console.error('[extract-concepts] LLM error (alle vensters):', llmErrData);
@@ -475,7 +494,7 @@ ${combinedText}`;
       r.concepts.map((c) => ({ ...c, documentIds: [r.documentId] })));
 
     if (!Array.isArray(extractedConcepts) || extractedConcepts.length === 0) {
-      await writeRegenTimestamp().catch(() => {});
+      await writeRegenTimestamp(readDocIds()).catch(() => {});
       return res.json({ concepts: [], message: 'Geen begrippen gevonden in LLM-respons' });
     }
 
@@ -506,6 +525,14 @@ ${combinedText}`;
       console.log(`[extract-concepts] ${metaRejected.length} kandidaten afgewezen als waardeoordeel/commentaar (geen vakterm): ${metaRejected.map((r) => `"${r.concept.name}"`).join(', ')}`);
     }
 
+    // Wat de docent eerder bewust verwijderde, komt niet vanzelf terug.
+    const removedKeys = parseRemovedKeys(await readKeyValue(supabaseAdmin, conceptRemovedKey(courseId)).catch(() => null));
+    const removedFilter = withoutRemoved(candidateConcepts, removedKeys, conceptKey);
+    candidateConcepts = removedFilter.kept;
+    if (removedFilter.skipped.length > 0) {
+      console.log(`[extract-concepts] ${removedFilter.skipped.length} eerder verwijderde begrippen overgeslagen`);
+    }
+
     // SAMENVOEGEN vóór de (dure) verificatie. 1) Zekere spellingvarianten
     // (conceptKey). 2) Synoniemen/afkortingen/vertalingen via het taalmodel,
     // samen met de begrippen die al in de cursus staan: een bestaand begrip
@@ -513,6 +540,10 @@ ${combinedText}`;
     const { data: existingForMerge } = await supabaseAdmin
       .from('concepts').select('id, name, definition, aliases, source_document_ids').eq('course_id', courseId);
     const existingList = existingForMerge || [];
+    // Aanvullen op een bestaande lijst: nieuwe begrippen eerst laten beoordelen
+    // (studenten zien ze pas na goedkeuring), zodat de docent alleen het nieuwe
+    // hoeft na te lopen. De eerste keer (lege lijst) gaan ze direct aan.
+    const reviewNew = !replace && existingList.length > 0;
     const existingByKey = new Map(existingList.map((c) => [conceptKey(c.name), c]));
     const aliasUpdates = new Map(); // bestaand begrip-id → { aliases:Set, docs:Set }
     const addToExisting = (row, aliases, docs) => {
@@ -771,7 +802,7 @@ ${combinedText}`;
       const msg = rawValidConcepts.length === 0
         ? 'De LLM vond geen begrippen in dit cursusmateriaal.'
         : `De LLM stelde ${rawValidConcepts.length} begrippen voor, maar geen enkele haalde de RAG-verificatiedrempel (similarity ≥ ${verifyThreshold.toFixed(2)}, ≥ ${minEvidence} chunks). Verlaag de drempel via Beheer → RAG-instellingen → Extractie en probeer opnieuw. Voorbeelden: ${sampleNames}.`;
-      await writeRegenTimestamp().catch(() => {});
+      await writeRegenTimestamp(readDocIds()).catch(() => {});
       return res.json({
         concepts: [],
         updated: 0,
@@ -848,8 +879,9 @@ ${combinedText}`;
           aliases: (c.aliases || []).filter((a) => a && a !== c.name),
           source_document_ids: c.documentIds || [],
           source_document_id: (c.documentIds || [])[0] || null,
-          // Aangevuld om het minimum te halen (minder bewijs): docent beoordeelt.
-          ...(c.__topUp ? { review_status: 'needs_review' } : {}),
+          // Aangevuld om het minimum te halen (minder bewijs) of toegevoegd aan
+          // een bestaande lijst: de docent beoordeelt eerst.
+          ...(c.__topUp || reviewNew ? { review_status: 'needs_review' } : {}),
         });
       }
 
@@ -1066,7 +1098,7 @@ ${combinedText}`;
 
     console.log(`[extract-concepts] Done for course ${courseId}: ${inserted.length} new, ${updatedCount} updated, ${skipped} already tagged, ${verificationRejected} afgewezen door verificatie`);
 
-    await writeRegenTimestamp().catch(() => {});
+    await writeRegenTimestamp(readDocIds()).catch(() => {});
 
     // Splits de afwijzingsreden uit i.p.v. alles onder "RAG-verificatie" te
     // groeperen: sinds de near-duplicate-merge en de max_concepts-cap zitten
@@ -1119,6 +1151,13 @@ ${combinedText}`;
       shortBy: selection.shortBy,
       failedDocuments: failedDocTitles,
       verifyFailed,
+      // Voor de melding in de app: nieuw toegevoegd en te beoordelen, overgeslagen
+      // omdat de docent ze eerder verwijderde, en bij opnieuw samenstellen
+      // wat verborgen/verwijderd is.
+      needsReview: reviewNew,
+      removedSkipped: removedFilter.skipped.length,
+      staleHidden: replaceOutcome.hidden,
+      staleDeleted: replaceOutcome.deleted,
       message: `${netTotal} begrippen totaal voor deze cursus (${totalAdded} nieuw/bijgewerkt, ${skipped} al aanwezig)${verifMsg}${minMsg}${failMsg}${verifyFailMsg}`,
     });
   } catch (err) {
@@ -1222,71 +1261,10 @@ export function registerConceptRoutes(app) {
         }
       }
 
-      let lastDocumentChange = null;
-      try {
-        const { data: assignments } = await supabaseAdmin
-          .from('course_folder_assignments')
-          .select('folder_id')
-          .eq('course_id', courseId);
-
-        if (assignments && assignments.length > 0) {
-          const assignedFolderIds = assignments.map((a) => a.folder_id);
-
-          const { data: ragFolders } = await supabaseAdmin
-            .from('document_folders')
-            .select('id')
-            .in('id', assignedFolderIds)
-            .eq('folder_type', 'rag_sources');
-
-          if (ragFolders && ragFolders.length > 0) {
-            const ragFolderIds = ragFolders.map((f) => f.id);
-
-            const { data: latestDocs } = await supabaseAdmin
-              .from('documents')
-              .select('created_at')
-              .in('folder_id', ragFolderIds)
-              .order('created_at', { ascending: false })
-              .limit(1);
-
-            if (latestDocs && latestDocs.length > 0) {
-              lastDocumentChange = latestDocs[0].created_at;
-            }
-          }
-        }
-
-        const mutationKey = `__doc_mutation_${courseId}__`;
-        const { data: mutationRecord } = await supabaseAdmin
-          .from('chatbot_prompts').select('content').eq('name', mutationKey).maybeSingle();
-
-        if (mutationRecord?.content) {
-          try {
-            const { lastMutationAt } = JSON.parse(mutationRecord.content);
-            if (lastMutationAt && (!lastDocumentChange || lastMutationAt > lastDocumentChange)) {
-              lastDocumentChange = lastMutationAt;
-            }
-          } catch { /* ignore parse errors */ }
-        }
-      } catch (docErr) {
-        console.warn('[concepts-meta] Could not determine lastDocumentChange:', docErr.message);
-      }
-
-      let lastSuccessfulRegeneration = null;
-      try {
-        const regenKey = `__concepts_regen_${courseId}__`;
-        const { data: regenRecord } = await supabaseAdmin
-          .from('chatbot_prompts').select('content').eq('name', regenKey).maybeSingle();
-        if (regenRecord?.content) {
-          const { lastRegenAt } = JSON.parse(regenRecord.content);
-          if (lastRegenAt) lastSuccessfulRegeneration = lastRegenAt;
-        }
-      } catch { /* ignore */ }
-
       return res.json({
         ragCount: ragConcepts.length,
         manualCount: manualConcepts.length,
         lastExtraction,
-        lastDocumentChange,
-        lastSuccessfulRegeneration,
       });
     } catch (err) {
       console.error('[concepts-meta] Unexpected error:', err);
@@ -1361,9 +1339,8 @@ export function registerConceptRoutes(app) {
       if (!resp.ok) return res.status(502).json({ error: 'Het taalmodel kon geen voorstellen maken.', autoMerged });
       const data = await resp.json();
       const groups = parseSynonymGroups(data.choices?.[0]?.message?.content || '', classified.map((r) => r.name));
-      const { data: dismissedRow } = await supabaseAdmin.from('chatbot_prompts').select('content').eq('name', mergeDismissKey(courseId)).maybeSingle();
       let dismissed = [];
-      try { dismissed = JSON.parse(dismissedRow?.content || '[]'); } catch { dismissed = []; }
+      try { dismissed = JSON.parse((await readKeyValue(supabaseAdmin, mergeDismissKey(courseId))) || '[]'); } catch { dismissed = []; }
       const suggestions = buildMergeSuggestions(groups, classified, new Set(dismissed));
       return res.json({ suggestions, autoMerged });
     } catch (err) {
@@ -1398,12 +1375,10 @@ export function registerConceptRoutes(app) {
     if (!Array.isArray(ids) || ids.length < 2) return res.status(400).json({ error: 'ids zijn vereist' });
     try {
       const key = mergeDismissKey(courseId);
-      const { data: row } = await supabaseAdmin.from('chatbot_prompts').select('id, content').eq('name', key).maybeSingle();
       let list = [];
-      try { list = JSON.parse(row?.content || '[]'); } catch { list = []; }
+      try { list = JSON.parse((await readKeyValue(supabaseAdmin, key)) || '[]'); } catch { list = []; }
       const next = [...new Set([...list, groupSignature(ids)])];
-      if (row) await supabaseAdmin.from('chatbot_prompts').update({ content: JSON.stringify(next), updated_at: new Date().toISOString() }).eq('id', row.id);
-      else await supabaseAdmin.from('chatbot_prompts').insert({ name: key, content: JSON.stringify(next), is_active: false });
+      await writeKeyValue(supabaseAdmin, key, JSON.stringify(next));
       return res.json({ ok: true });
     } catch (err) {
       return res.status(500).json({ error: err.message });
@@ -1747,9 +1722,27 @@ export function registerConceptRoutes(app) {
         return res.status(403).json({ error: 'Could not verify user role' });
       }
 
+      const { data: concept, error: conceptErr } = await supabaseAdmin
+        .from('concepts').select('id, name, course_id, key_points, review_status').eq('id', id).maybeSingle();
+      if (conceptErr) return res.status(500).json({ error: conceptErr.message });
+      if (!concept) return res.status(404).json({ error: 'Begrip niet gevonden' });
+      const courseId = conceptCourseId(concept);
+
+      // Beheerders altijd; docenten alleen voor begrippen van hun eigen cursus.
       const isAdmin = profile.role === 'admin' || profile.email === SUPERUSER_EMAIL;
-      if (!isAdmin) {
-        return res.status(403).json({ error: 'Admin role required' });
+      if (!isAdmin && !(courseId && await isCourseTeacher(user.id, courseId))) {
+        return res.status(403).json({ error: 'Geen docent-toegang tot deze cursus' });
+      }
+
+      // Zichtbaar voor studenten, of met itembank/quizbronnen: verbergen in plaats
+      // van verwijderen, zodat werk dat eraan hangt bewaard blijft. De keuze hangt
+      // alleen af van wat de docent zelf al weet (keepAsHidden), nooit van studentgegevens.
+      const linked = await linkedConceptIds(supabaseAdmin, [id]);
+      if (keepAsHidden(concept, linked)) {
+        const { error: hideErr } = await supabaseAdmin.from('concepts').update({ review_status: 'rejected' }).eq('id', id);
+        if (hideErr) return res.status(500).json({ error: `Verbergen mislukt: ${hideErr.message}` });
+        console.log(`[delete-concept] Concept ${id} verborgen i.p.v. verwijderd door ${user.id}`);
+        return res.json({ success: true, hidden: true });
       }
 
       const { error: deleteError } = await supabaseAdmin
@@ -1761,12 +1754,21 @@ export function registerConceptRoutes(app) {
         console.error('[delete-concept] Delete error:', deleteError);
         return res.status(500).json({ error: `Verwijderen mislukt: ${deleteError.message}` });
       }
+      if (courseId) {
+        await rememberRemovedConcepts(supabaseAdmin, courseId, [concept.name]).catch((e) => console.warn('[delete-concept] verwijderd begrip niet onthouden:', e.message));
+      }
 
       console.log(`[delete-concept] Concept ${id} verwijderd door ${user.id}`);
-      return res.json({ success: true });
+      return res.json({ success: true, hidden: false });
     } catch (err) {
       console.error('[delete-concept] Unexpected error:', err);
       return res.status(500).json({ error: err.message || 'Internal server error' });
     }
+  });
+
+  registerConceptSearchRoutes(app, {
+    supabaseAdmin,
+    requireConceptStaff,
+    conceptSourceDocIds,
   });
 }

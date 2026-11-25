@@ -43,6 +43,7 @@ export function ConceptPicker({ courseId, token, concepts, moduleCounts, onChang
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string[] | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const rows = useMemo(() => buildPickerRows(
     concepts.map((c) => (override[c.id] ? { ...c, review_status: override[c.id] === 'visible' ? 'approved' : 'rejected' } : c)),
@@ -79,9 +80,13 @@ export function ConceptPicker({ courseId, token, concepts, moduleCounts, onChang
     setConfirmDelete(null);
     setError(null);
     setBusy(true);
+    setNotice(null);
     const results = await Promise.allSettled(ids.map((id) => post(`/api/admin/concepts/${id}`, { method: 'DELETE' })));
     const failed = results.filter((r) => r.status === 'rejected').length;
     if (failed > 0) setError(tk('admin.concepts.bulkDeleteError', { failed: String(failed), total: String(ids.length) }));
+    // Begrippen waar studenten al mee werkten, verbergt de server in plaats van ze te verwijderen.
+    const hidden = results.filter((r) => r.status === 'fulfilled' && (r.value as { hidden?: boolean })?.hidden).length;
+    if (hidden > 0) setNotice(tk('admin.conceptPicker.hiddenNotDeleted', { n: String(hidden) }));
     await onChanged();
     setBusy(false);
   };
@@ -205,6 +210,7 @@ export function ConceptPicker({ courseId, token, concepts, moduleCounts, onChang
             </div>
           )}
           {error && <p className="text-sm text-red-700" data-testid="text-concept-picker-error">{error}</p>}
+          {notice && <p className="text-sm text-amber-800" data-testid="text-concept-picker-notice">{notice}</p>}
 
           <div className="max-h-[70vh] overflow-y-auto rounded-lg border border-gray-200 bg-white" data-testid="list-concept-picker">
             {shown.length === 0 ? (

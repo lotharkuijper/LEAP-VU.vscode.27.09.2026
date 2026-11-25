@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { X, Loader2, Eye, EyeOff, FileText } from 'lucide-react';
+import { X, Loader2, Eye, EyeOff, FileText, Pencil } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import { fetchConceptEvidence, type DocumentChunk } from '../../services/rag.service';
-import { setConceptVisibility } from '../../services/course-files.service';
+import { setConceptVisibility, updateConceptDefinition } from '../../services/course-files.service';
 import { Tooltip } from '../help/Tooltip';
 
 type TKey = Parameters<ReturnType<typeof useLanguage>['t']>[0];
@@ -90,6 +90,24 @@ export function ConceptDetailDrawer({
     }
   };
 
+  // De docent past de uitleg aan; Ik leg uit en de quiz gebruiken die definitie.
+  const [editing, setEditing] = useState<string | null>(null);
+  const saveDefinition = async () => {
+    if (!concept || editing === null || !editing.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await updateConceptDefinition(courseId, concept.id, editing.trim());
+      setConcept({ ...concept, definition: r.definition });
+      setEditing(null);
+      onChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const role = concept?.concept_role === 'example_instance' ? 'example' : null;
   const keyPoints = (concept?.key_points || []).filter(k => typeof k === 'string' && !k.startsWith('[') && !k.startsWith('course_id:'));
 
@@ -131,8 +149,36 @@ export function ConceptDetailDrawer({
             </div>
 
             <section>
-              <h3 className="font-semibold text-gray-900 mb-1">{t('material.drawer.definition')}</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{concept.definition || '—'}</p>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <h3 className="font-semibold text-gray-900">{t('material.drawer.definition')}</h3>
+                {editing === null && (
+                  <button type="button" onClick={() => setEditing(concept.definition || '')} className="inline-flex items-center gap-1 text-xs font-medium text-sky-700 hover:underline" data-testid="button-drawer-edit-definition">
+                    <Pencil className="w-3.5 h-3.5" aria-hidden />{t('material.drawer.editDefinition')}
+                  </button>
+                )}
+              </div>
+              {editing === null ? (
+                <p className="text-gray-700 whitespace-pre-wrap" data-testid="text-drawer-definition">{concept.definition || '—'}</p>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600">{t('material.drawer.editHint')}</p>
+                  <textarea
+                    value={editing}
+                    onChange={e => setEditing(e.target.value)}
+                    rows={4}
+                    maxLength={2000}
+                    aria-label={t('material.drawer.definition')}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    data-testid="input-drawer-definition"
+                  />
+                  <div className="flex gap-2">
+                    <button type="button" onClick={saveDefinition} disabled={busy || !editing.trim()} className="rounded-lg bg-sky-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-50" data-testid="button-drawer-save-definition">
+                      {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : t('common.save')}
+                    </button>
+                    <button type="button" onClick={() => setEditing(null)} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50">{t('common.cancelAction')}</button>
+                  </div>
+                </div>
+              )}
             </section>
 
             {keyPoints.length > 0 && (

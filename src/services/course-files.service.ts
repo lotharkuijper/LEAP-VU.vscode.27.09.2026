@@ -67,7 +67,12 @@ export interface CourseProject {
 export interface ReadinessConcept {
   id: string;
   name: string;
+  /** Hoe LEAP het begrip uitlegt (definitie). */
+  definition: string | null;
+  /** Studenten zien het (goedgekeurd). */
   visible: boolean;
+  /** Nieuw gevonden, wacht op beoordeling door de docent. */
+  review: boolean;
   role: string | null;
   difficulty: string | null;
   evidenceDocuments: number;
@@ -188,6 +193,27 @@ export const setConceptVisibility = (courseId: string, conceptId: string, visibl
   request<{ id: string; visible: boolean }>(`/api/admin/course-files/${courseId}/concepts/${conceptId}/visibility`, {
     method: 'POST',
     body: JSON.stringify({ visible }),
+  });
+
+export interface SearchScope {
+  /** Leerstof waarin begrippen gezocht kunnen worden; isNew = nieuw of gewijzigd sinds de laatste zoektocht. */
+  documents: Array<{ id: string; title: string; isNew: boolean }>;
+  lastSearchAt: string | null;
+  /** Begrippen die de docent verwijderde en die bij zoeken worden overgeslagen. */
+  removedCount: number;
+}
+
+export const fetchConceptSearchScope = (courseId: string) =>
+  request<SearchScope>(`/api/admin/concepts/search-scope?courseId=${encodeURIComponent(courseId)}`);
+
+export const resetRemovedConcepts = (courseId: string) =>
+  request<{ ok: boolean }>('/api/admin/concepts/removed-reset', { method: 'POST', body: JSON.stringify({ courseId }) });
+
+/** De docent past aan hoe LEAP een begrip uitlegt. */
+export const updateConceptDefinition = (courseId: string, conceptId: string, definition: string) =>
+  request<{ id: string; definition: string }>(`/api/admin/concepts/${conceptId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ courseId, definition }),
   });
 
 export async function uploadCourseFile(

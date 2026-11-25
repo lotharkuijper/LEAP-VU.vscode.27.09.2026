@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { useLanguage } from '../i18n';
 import { intlLocale } from '../i18n/languages';
 import { tStatic } from '../i18n/translations';
@@ -28,16 +28,12 @@ import { useActiveCourse } from '../contexts/ActiveCourseContext';
 import { ConceptPicker } from '../components/material/ConceptPicker';
 
 import { CourseMaterialWorkspace, MATERIAL_STEPS } from '../components/material/CourseMaterialWorkspace';
-import { extractionBody, DEFAULT_EXTRACTION_OPTIONS, type ExtractionOptions } from '../lib/conceptExtractionJob';
 import { ConceptDetailDrawer } from '../components/material/ConceptDetailDrawer';
 import type { MaterialStep } from '../components/material/ReadinessStep';
 import { RAG_PRESETS, presetValues, detectPreset, passagesFound, type RagPreset } from '../lib/ragPresets';
 import { HelpToggle } from '../components/help/HelpToggle';
 import { ConceptQualityPanel } from '../components/ConceptQualityPanel';
 import { DesignAssistantDock } from '../components/admin/DesignAssistant';
-import { ExtractionProgressText } from '../components/ExtractionProgressText';
-import { startConceptExtractionTask, CONCEPT_TASK_KIND } from '../lib/conceptExtractionJob';
-import { useTask } from '../lib/backgroundTasks';
 import { Tooltip } from '../components/help/Tooltip';
 import { AdminHint } from '../components/help/AdminHint';
 import { HelpTip } from '../components/help/HelpTip';
@@ -118,145 +114,6 @@ interface RagDiagnosticChunk {
 
 type UserRole = 'student' | 'docent' | 'admin';
 
-interface ConceptCardProps {
-  concept: Concept;
-  sourceLabel: string;
-  sourceBg: string;
-  deleteConfirmId: string | null;
-  deletingConceptId: string | null;
-  onDeleteRequest: (id: string) => void;
-  onDeleteConfirm: (id: string) => void;
-  onDeleteCancel: () => void;
-  isSelected?: boolean;
-  onToggleSelect?: (id: string) => void;
-  onOpenDetails?: (id: string) => void;
-  lang: string;
-}
-
-function ConceptCard({ concept, sourceLabel, sourceBg, deleteConfirmId, deletingConceptId, onDeleteRequest, onDeleteConfirm, onDeleteCancel, isSelected, onToggleSelect, onOpenDetails, lang }: ConceptCardProps) {
-  const { t } = useLanguage();
-  // Detecteer of de (op 2 regels afgeknotte) definitie daadwerkelijk is
-  // afgekapt, zodat we alleen dán een hover-tooltip met de volledige tekst
-  // tonen. Herberekent ook bij venstergrootte-wijziging.
-  const defRef = useRef<HTMLParagraphElement>(null);
-  const [defTruncated, setDefTruncated] = useState(false);
-  useEffect(() => {
-    const el = defRef.current;
-    if (!el) return;
-    const check = () => setDefTruncated(el.scrollHeight > el.clientHeight + 1);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, [concept.definition]);
-  return (
-    <div
-      className={`p-4 border rounded-lg transition-colors ${isSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 hover:bg-gray-50'}`}
-      data-testid={`card-concept-${concept.id}`}
-    >
-      <div className="flex items-start gap-3">
-        {onToggleSelect && (
-          <input
-            type="checkbox"
-            checked={!!isSelected}
-            onChange={() => onToggleSelect(concept.id)}
-            className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer flex-shrink-0 accent-blue-600"
-            data-testid={`checkbox-concept-${concept.id}`}
-          />
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="flex min-w-0 flex-1 items-center gap-2 flex-wrap">
-              {onOpenDetails ? (
-                <button
-                  type="button"
-                  onClick={() => onOpenDetails(concept.id)}
-                  className="font-semibold text-gray-900 text-left hover:text-sky-700 hover:underline"
-                  data-testid={`button-concept-details-${concept.id}`}
-                >
-                  {concept.name}
-                </button>
-              ) : (
-                <h3 className="font-semibold text-gray-900">{concept.name}</h3>
-              )}
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sourceBg}`}>
-                {sourceLabel}
-              </span>
-              {concept.review_status === 'rejected' && (
-                <span
-                  className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-200 text-gray-600"
-                  data-testid={`badge-not-approved-${concept.id}`}
-                >
-                  {t('admin.concepts.notApprovedBadge')}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-              {deleteConfirmId === concept.id ? (
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-red-600">{t('admin.concepts.deleteQuestion')}</span>
-                  <button
-                    onClick={() => onDeleteConfirm(concept.id)}
-                    disabled={deletingConceptId === concept.id}
-                    className="px-2 py-0.5 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-                    data-testid={`button-confirm-delete-${concept.id}`}
-                  >
-                    {deletingConceptId === concept.id ? <Loader2 className="w-3 h-3 animate-spin inline" /> : t('common.yes')}
-                  </button>
-                  <button
-                    onClick={onDeleteCancel}
-                    className="px-2 py-0.5 text-xs bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                  >
-                    {t('common.no')}
-                  </button>
-                </div>
-              ) : (
-                <Tooltip label={t('common.deleteAction')}>
-                  <button
-                    onClick={() => onDeleteRequest(concept.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    data-testid={`button-delete-${concept.id}`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </Tooltip>
-              )}
-            </div>
-          </div>
-          {(() => {
-            // Synoniemen/afkortingen/vertalingen die LEAP heeft samengevoegd.
-            const aliases = (concept as Concept & { aliases?: string[] | null }).aliases || [];
-            return aliases.length > 0 ? (
-              <p className="mb-1 text-xs text-gray-500" data-testid={`text-concept-aliases-${concept.id}`}>
-                {t('admin.concepts.aliases', { names: aliases.join(', ') })}
-              </p>
-            ) : null;
-          })()}
-          {concept.definition && (
-            <div className="relative group/def">
-              <p
-                ref={defRef}
-                className={`text-sm text-gray-600 line-clamp-2 ${defTruncated ? 'cursor-help' : ''}`}
-                data-testid={`text-concept-definition-${concept.id}`}
-              >
-                {concept.definition}
-              </p>
-              {defTruncated && (
-                <div
-                  role="tooltip"
-                  className="absolute left-0 top-full z-30 hidden group-hover/def:block w-80 max-w-[calc(100vw-3rem)] max-h-72 overflow-auto rounded-lg bg-gray-900 text-gray-50 text-xs leading-relaxed p-3 shadow-xl whitespace-pre-wrap break-words"
-                  data-testid={`tooltip-concept-definition-${concept.id}`}
-                >
-                  {concept.definition}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function AdminPage() {
   const { t, lang } = useLanguage();
   const { profile, isAdmin, isDocent, session } = useAuth();
@@ -301,9 +158,6 @@ export function AdminPage() {
   };
   const [conceptDrawerId, setConceptDrawerId] = useState<string | null>(null);
   const [materialRefresh, setMaterialRefresh] = useState(0);
-  // Keuzes voor het extraheren van begrippen (taal, documenten): gedeeld door
-  // "Zoek nieuwe begrippen" en "Hergenereer begrippenlijst".
-  const [extractionOptions, setExtractionOptions] = useState<ExtractionOptions>(DEFAULT_EXTRACTION_OPTIONS);
   const setActiveTab = (t: TabType) => {
     setActiveTabState(t);
     const next = new URLSearchParams(searchParams);
@@ -362,24 +216,14 @@ export function AdminPage() {
   }, [searchParams]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [courseConcepts, setCourseConcepts] = useState<Concept[]>([]);
-  const [globalConcepts, setGlobalConcepts] = useState<Concept[]>([]);
   const [prompts, setPrompts] = useState<ChatbotPrompt[]>([]);
-  const [deletingConceptId, setDeletingConceptId] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [addConceptForm, setAddConceptForm] = useState(false);
   const [addConceptName, setAddConceptName] = useState('');
   const [addConceptDefinition, setAddConceptDefinition] = useState('');
   const [addConceptLoading, setAddConceptLoading] = useState(false);
   const [addConceptError, setAddConceptError] = useState<string | null>(null);
   const [addConceptSuccess, setAddConceptSuccess] = useState(false);
-  const [regeneratingConcepts, setRegeneratingConcepts] = useState(false);
-  // Loopt er (nog) een extractie voor deze cursus? Ook als die startte vóórdat je hier terugkwam.
-  const conceptTask = useTask(CONCEPT_TASK_KIND, activeCourseId || '');
-  const conceptTaskRunning = conceptTask?.status === 'running';
-  const [regenerateResult, setRegenerateResult] = useState<{ message: string } | null>(null);
-  const [regenerateError, setRegenerateError] = useState<string | null>(null);
-  const [conceptsMeta, setConceptsMeta] = useState<{ ragCount: number; manualCount: number; lastExtraction: string | null; lastDocumentChange: string | null; lastSuccessfulRegeneration: string | null } | null>(null);
+  const [conceptsMeta, setConceptsMeta] = useState<{ ragCount: number; manualCount: number; lastExtraction: string | null } | null>(null);
   // Aantal DISTINCT documenten met bewijs per begrip-id (uit concept_evidence),
   // gebruikt om te bepalen of een begrip cursusbreed (meerdere modules) of
   // module-specifiek (één bestand) is — zie classifyConceptForTeacher.
@@ -586,19 +430,13 @@ export function AdminPage() {
       }
       const data = await res.json();
       const all: Concept[] = data.concepts || [];
-      const isGlobalSeed = (c: Concept) =>
-        !c.course_id && !(c.key_points || []).some(kp => kp.startsWith('course_id:'));
       if (activeCourseId) {
         const courseMarker = `course_id:${activeCourseId}`;
-        const course = all.filter(
+        setCourseConcepts(all.filter(
           c => c.course_id === activeCourseId || (c.key_points || []).includes(courseMarker)
-        );
-        const global = all.filter(isGlobalSeed);
-        setCourseConcepts(course);
-        setGlobalConcepts(global);
+        ));
       } else {
         setCourseConcepts([]);
-        setGlobalConcepts(all.filter(isGlobalSeed));
       }
       setMaterialRefresh(x => x + 1);
     } catch (err) {
@@ -672,13 +510,14 @@ export function AdminPage() {
 
   // Minimum en maximum aantal begrippen: in "Kwaliteit en instellingen" én bovenaan
   // stap 3 (zelfde waarden, zelfde opslag). idSuffix houdt de ids uniek.
-  const renderConceptBounds = (idSuffix: string, withHelp: boolean) => (
+  // Eén keer getoond: onder "Meer opties" van het zoekpaneel (ConceptSearchPanel).
+  const renderConceptBounds = () => (
     <div className="flex flex-wrap items-center gap-2 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-      <label htmlFor={`input-min-concepts${idSuffix}`} className="text-gray-700 font-medium">
+      <label htmlFor={`input-min-concepts`} className="text-gray-700 font-medium">
         {t('admin.concepts.minConceptsLabel')}
       </label>
       <input
-        id={`input-min-concepts${idSuffix}`}
+        id={`input-min-concepts`}
         type="number"
         min={1}
         max={500}
@@ -692,13 +531,13 @@ export function AdminPage() {
           handleSaveMinConcepts(Number.isFinite(parsed) ? Math.max(1, Math.min(500, parsed)) : null);
         }}
         className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
-        data-testid={`input-min-concepts${idSuffix}`}
+        data-testid={`input-min-concepts`}
       />
-      <label htmlFor={`input-max-concepts${idSuffix}`} className="text-gray-700 font-medium">
+      <label htmlFor={`input-max-concepts`} className="text-gray-700 font-medium">
         {t('admin.concepts.maxConceptsLabel')}
       </label>
       <input
-        id={`input-max-concepts${idSuffix}`}
+        id={`input-max-concepts`}
         type="number"
         min={5}
         max={500}
@@ -712,9 +551,9 @@ export function AdminPage() {
           handleSaveMaxConcepts(Number.isFinite(parsed) ? Math.max(5, Math.min(500, parsed)) : null);
         }}
         className="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm"
-        data-testid={`input-max-concepts${idSuffix}`}
+        data-testid={`input-max-concepts`}
       />
-      {withHelp && <HelpTip id="concepts.minMax" />}
+      <HelpTip id="concepts.minMax" />
       <span className="min-w-0 text-xs text-gray-500">{t('admin.concepts.minMaxHint')}</span>
       {maxConceptsSaving && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
       {maxConceptsError && <span className="text-xs text-red-600">{maxConceptsError}</span>}
@@ -1120,54 +959,6 @@ export function AdminPage() {
       setTimeout(() => setAddConceptSuccess(false), 3000);
     }
     setAddConceptLoading(false);
-  };
-
-  const handleDeleteConcept = async (conceptId: string) => {
-    if (!session?.access_token) return;
-    setDeletingConceptId(conceptId);
-    setDeleteError(null);
-    try {
-      const res = await fetch(`/api/admin/concepts/${conceptId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || t('admin.concepts.errorStatus', { status: String(res.status) }));
-      }
-      setDeleteConfirmId(null);
-      await loadConcepts();
-      await loadConceptsMeta();
-    } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
-    } finally {
-      setDeletingConceptId(null);
-    }
-  };
-
-  const handleRegenerateConcepts = async () => {
-    if (!activeCourseId || !session?.access_token) return;
-    setRegeneratingConcepts(true);
-    setRegenerateResult(null);
-    setRegenerateError(null);
-    try {
-      // Als achtergrondtaak: loopt door als je elders in de app verder werkt (zie takenvak).
-      const data = await startConceptExtractionTask({
-        courseId: activeCourseId,
-        body: extractionBody(activeCourseId, true, extractionOptions),
-        token: session.access_token,
-        title: t('tasks.concepts.title', { course: activeCourse?.name || '' }),
-        resultLink: '/admin?tab=material&step=concepts',
-      }).promise as { message?: string };
-      setRegenerateResult({ message: data.message || '' });
-      await loadConcepts();
-      await loadConceptsMeta();
-      await loadConceptModuleCounts();
-    } catch (err) {
-      setRegenerateError(err instanceof Error ? err.message : t('admin.concepts.unknownError'));
-    } finally {
-      setRegeneratingConcepts(false);
-    }
   };
 
   const handleSavePrompt = async () => {
@@ -1777,8 +1568,6 @@ const tabGroups = [
               onGoToTab={(tab) => setActiveTab(tab)}
               onConceptsChanged={() => { loadConcepts(); loadConceptsMeta(); loadConceptModuleCounts(); }}
               refreshKey={materialRefresh}
-              extractionOptions={extractionOptions}
-              onExtractionOptionsChange={setExtractionOptions}
               conceptPicker={activeCourseId && session?.access_token && courseConcepts.length > 0 ? (
                 <ConceptPicker
                   courseId={activeCourseId}
@@ -1789,7 +1578,7 @@ const tabGroups = [
                   onOpenDetails={setConceptDrawerId}
                 />
               ) : undefined}
-              conceptBounds={activeCourseId ? renderConceptBounds('-top', false) : undefined}
+              conceptBounds={activeCourseId ? renderConceptBounds() : undefined}
             />
           )}
           {conceptDrawerId && activeCourseId && (
@@ -1840,26 +1629,6 @@ const tabGroups = [
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  {activeCourseId && (
-                    <button
-                      onClick={handleRegenerateConcepts}
-                      disabled={regeneratingConcepts || conceptTaskRunning}
-                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-lg flex items-center gap-2 disabled:opacity-50"
-                      data-testid="button-regenerate-concepts"
-                    >
-                      {regeneratingConcepts ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {t('admin.concepts.working')}
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="w-4 h-4" />
-                          {t('admin.concepts.regenerateBtn')}
-                        </>
-                      )}
-                    </button>
-                  )}
                   <button
                     onClick={() => { setAddConceptForm(v => !v); setAddConceptError(null); setAddConceptSuccess(false); }}
                     className="whitespace-nowrap flex-shrink-0 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg flex items-center gap-2"
@@ -1888,64 +1657,9 @@ const tabGroups = [
                   onChanged={() => { void loadConcepts(); void loadConceptsMeta(); void loadConceptModuleCounts(); }}
                 />
               )}
-
-              {activeCourseId && renderConceptBounds('', true)}
                 </div>
               </details>
               )}
-
-              {activeCourse && conceptsMeta && conceptsMeta.lastDocumentChange && (() => {
-                const effectiveRegen = [conceptsMeta.lastSuccessfulRegeneration, conceptsMeta.lastExtraction]
-                  .filter(Boolean).sort().reverse()[0] ?? null;
-                return !effectiveRegen || conceptsMeta.lastDocumentChange > effectiveRegen;
-              })() && (
-                <div className="flex flex-wrap items-start justify-between gap-3 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3" data-testid="banner-docs-changed">
-                  <div className="flex items-start gap-2 text-sm text-amber-800">
-                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 text-amber-600" />
-                    <span>
-                      <strong>{t('admin.ragBeheer.docsChanged')}</strong> — {t('admin.ragBeheer.docsChangedDesc')}{' '}
-                      {conceptsMeta.lastDocumentChange && (
-                        <span className="text-amber-700">
-                          {t('admin.ragBeheer.lastDocChange')}{' '}
-                          {new Date(conceptsMeta.lastDocumentChange).toLocaleString(intlLocale(lang), { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleRegenerateConcepts}
-                    disabled={regeneratingConcepts || conceptTaskRunning}
-                    className="flex-shrink-0 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                    data-testid="button-regenerate-now"
-                  >
-                    {regeneratingConcepts ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        {t('admin.ragBeheer.working')}
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        {t('admin.ragBeheer.regenerateNow')}
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {(regeneratingConcepts || conceptTaskRunning) && <ExtractionProgressText progress={conceptTask?.progress} />}
-              {regenerateResult && (
-                <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-800" data-testid="text-regenerate-result">
-                  <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-green-600" />
-                  <span>{regenerateResult.message}</span>
-                </div>
-              )}
-              {regenerateError && (
-                <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-3" data-testid="text-regenerate-error">
-                  {regenerateError}
-                </p>
-              )}
-
               {addConceptForm && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
                   <h3 className="font-semibold text-gray-900">{t('admin.concepts.addTitle')}</h3>
@@ -1995,48 +1709,8 @@ const tabGroups = [
                   </div>
                 </div>
               )}
-
-              {deleteError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{deleteError}</p>
-              )}
-
-              <AdminHint variant="tip">
-                <strong>{t('admin.tip')}</strong> {t('admin.concepts.tip')}
-              </AdminHint>
-
-              <div>
-                <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Globe className="w-4 h-4 text-gray-500" />
-                  {t('admin.concepts.globalSeeds')}
-                  <span className="text-sm font-normal text-gray-500">({globalConcepts.length})</span>
-                </h3>
-                {globalConcepts.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500 border border-dashed border-gray-200 rounded-lg">
-                    <BookOpen className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm">{t('admin.concepts.noGlobalConcepts')}</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(min(18rem,100%),1fr))] gap-3">
-                    {globalConcepts.map(concept => (
-                      <ConceptCard
-                        key={concept.id}
-                        concept={concept}
-                        sourceLabel={t('admin.concepts.globalLabel')}
-                        sourceBg="bg-gray-100 text-gray-600"
-                        deleteConfirmId={deleteConfirmId}
-                        deletingConceptId={deletingConceptId}
-                        onDeleteRequest={(id) => { setDeleteConfirmId(id); setDeleteError(null); }}
-                        onDeleteConfirm={handleDeleteConcept}
-                        onDeleteCancel={() => setDeleteConfirmId(null)}
-                        lang={lang}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           )}
-
 
           {activeTab === 'imports' && (
             <ImportsHubPanel
