@@ -29,6 +29,7 @@ import {
 import { computeTeacherFolderScope } from '../rag/documentScope.js';
 import { createProcessingQueue } from '../ingestion/processingQueue.js';
 import { EMBEDDINGS_RATE_LIMIT_MSG } from '../lib/embeddingsRetry.js';
+import { conceptRegenKey, docMutationKey, writeKeyValue } from '../lib/keyValue.js';
 
 /**
  * Meerdere bestanden tegelijk verwijderen (2026-10-18). Vanaf dit aantal moet de
@@ -165,13 +166,9 @@ export function buildReadinessWarnings({ files, concepts, projects, docsChanged 
   return warnings;
 }
 
-/** Registreer dat de cursusdocumenten zijn gewijzigd (voedt "nieuwe begrippen zoeken"). */
+/** Registreer dat de cursusdocumenten zijn gewijzigd (voedt de waarschuwing "leerstof gewijzigd" bij Klaar voor studenten). */
 export async function recordDocMutation(supabaseAdmin, courseId) {
-  const key = `__doc_mutation_${courseId}__`;
-  const content = JSON.stringify({ lastMutationAt: new Date().toISOString() });
-  const { data: existing } = await supabaseAdmin.from('chatbot_prompts').select('id').eq('name', key).maybeSingle();
-  if (existing) await supabaseAdmin.from('chatbot_prompts').update({ content, updated_at: new Date().toISOString() }).eq('name', key);
-  else await supabaseAdmin.from('chatbot_prompts').insert({ name: key, content, is_active: false });
+  await writeKeyValue(supabaseAdmin, docMutationKey(courseId), JSON.stringify({ lastMutationAt: new Date().toISOString() }));
 }
 
 export function registerCourseFilesRoutes(app, deps) {
@@ -878,7 +875,11 @@ export function registerCourseFilesRoutes(app, deps) {
         return {
           id: c.id,
           name: c.name,
-          visible: c.review_status !== 'rejected',
+          // Hoe LEAP het begrip uitlegt: dat controleert de docent bij "Klaar voor studenten".
+          definition: c.definition || null,
+          // Studenten zien alleen goedgekeurde begrippen; "te beoordelen" nog niet.
+          visible: !c.review_status || c.review_status === 'approved',
+          review: c.review_status === 'needs_review',
           role: c.concept_role || null,
           difficulty: c.difficulty || null,
           evidenceDocuments: new Set(ev.map(e => e.document_id)).size,
@@ -894,13 +895,13 @@ export function registerCourseFilesRoutes(app, deps) {
       // Zelfde bronnen als /api/admin/concepts-meta: registratie van
       // documentwijzigingen + nieuwste leerstof vs. laatste begrippen-run.
       const { data: metaRows } = await supabaseAdmin.from('chatbot_prompts')
-        .select('name, content').in('name', [`__doc_mutation_${courseId}__`, `__concepts_regen_${courseId}__`]);
+        .select('name, content').in('name', [docMutationKey(courseId), conceptRegenKey(courseId)]);
       const parse = (name, key) => {
         try { return JSON.parse((metaRows || []).find(r => r.name === name)?.content || '{}')[key] || null; } catch { return null; }
       };
       const newestMaterial = files.filter(f => f.purpose === 'course_material').map(f => f.created_at).sort().pop() || null;
-      const lastDocChange = [parse(`__doc_mutation_${courseId}__`, 'lastMutationAt'), newestMaterial].filter(Boolean).sort().pop() || null;
-      const docsChanged = docsChangedSinceConcepts({ lastDocChange, lastConceptsRun: parse(`__concepts_regen_${courseId}__`, 'lastRegenAt') });
+      const lastDocChange = [parse(docMutationKey(courseId), 'lastMutationAt'), newestMaterial].filter(Boolean).sort().pop() || null;
+      const docsChanged = docsChangedSinceConcepts({ lastDocChange, lastConceptsRun: parse(conceptRegenKey(courseId), 'lastRegenAt') });
 
       const warnings = buildReadinessWarnings({ files, concepts, projects, docsChanged, webSources });
       return res.json({ counts, concepts, projects, warnings });

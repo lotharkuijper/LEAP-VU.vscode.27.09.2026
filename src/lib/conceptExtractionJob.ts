@@ -21,7 +21,7 @@ export interface ExtractionResponse {
   json: () => Promise<any>;
 }
 
-/** Keuzes bij het extraheren (Cursusmateriaal → Begrippen → Meer opties). */
+/** Keuzes bij het extraheren (Cursusmateriaal → Begrippen → Begrippen zoeken). */
 export interface ExtractionOptions {
   /** Taal van naam en definitie; 'auto' volgt de taal van het materiaal. */
   language: 'auto' | 'nl' | 'en';

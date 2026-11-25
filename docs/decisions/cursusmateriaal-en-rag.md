@@ -27,6 +27,21 @@ LEAP is built around course document ingestion, RAG chunking, concept extraction
 - Concepts never leak between courses: `/api/concepts` returns only the course's own concepts (no fallback to concepts without a course; without a course only the manage view sees everything). Query expansion (`server/rag/queryExpansion.js`, `src/services/queryExpansion.ts`) uses only the concept's own aliases, key points and definition, with no static synonym list.
 - `concepts.key_points` contains technical labels (`course_id:…`, `[RAG-…]`); filter them out (`cleanKeyPoints` / `realKeyPoints`) before they reach a prompt or a search query (see `docs/decisions/leren-met-ai.md`).
 
+### Searching for concepts: one place, three choices (2026-11-25, product owner)
+- The Concepts step has one panel, "Begrippen zoeken" (`src/components/material/ConceptSearchPanel.tsx`, pure helpers in `src/lib/conceptSearch.ts`). The old "Hergenereer begrippenlijst" button, the "documents changed, consider regenerating" banner and the empty "Globale seeds" block (concepts without a course; there are none, and students never see them) are gone. Each choice says what happens to the existing list:
+  - **Only in new or chosen files** (default when there are any): reads only those documents and adds.
+  - **In all course material, add**: reads everything and adds only what is missing.
+  - **Rebuild the list** (with a confirmation): `replace: true`, always from all material.
+- What has been searched is recorded per document in `__concepts_regen_<course>__` (`searched`: documentId → time; `server/concepts/conceptSearchScope.js`). A document is "new or changed" when it was never read or was updated after it was read; documents whose windows failed do not count as read. Courses without that record fall back to "added after the last search". `GET /api/admin/concepts/search-scope` lists the material with that flag.
+- When adding to an existing list, new concepts are stored as `needs_review`: students see them only after the teacher approves them, and the teacher reviews only what is new. The first extraction (empty list) stays directly visible. Existing concepts, visibility choices, aliases and merges are never touched by adding.
+- A concept the teacher deletes does not come back by itself: its `conceptKey` goes to `__concepts_regen_removed_<course>__` (the last 2000) and extraction skips candidates whose name or alias matches. The panel shows the count with "Laat ze weer toe" (`POST /api/admin/concepts/removed-reset`).
+- Hide instead of delete (`keepAsHidden` in `server/concepts/conceptSearchScope.js`): a concept that students can see (approved) or that has itembank sections or chosen quiz sources is hidden on the first delete and on rebuild; the rest is deleted. Deleting a hidden concept again deletes it. `DELETE /api/admin/concepts/:id` is open to the course's teachers (owner course via `conceptCourseId`: `course_id` before the old key_points tag), not only admins.
+- Privacy: that choice NEVER depends on student data (e.g. whether students explained the concept), because the outcome would tell the teacher what students did. `teacherPrivacy.test.js` guards this.
+- Key-value records (`chatbot_prompts`, `__…__` keys) go through `server/lib/keyValue.js`.
+- "Klaar voor studenten" shows, per concept students get, how LEAP explains it (the definition) and its sources; hidden and to-review concepts on request. The teacher corrects an explanation in the concept drawer (`PATCH /api/admin/concepts/:id`, course staff only, same owner rule); Ik leg uit and the quiz use that definition. "Voorbeeldvraag" stays as a secondary action. The routes live in `server/concepts/searchScopeRoutes.js`.
+- The "documents changed" readiness warning stays for "Klaar voor studenten" (it links to Begrippen); on the Begrippen step itself it is left out, because the search panel already preselects the new files.
+- A warning never links to the step you are already on (`WarningList` `currentStep`).
+
 ### Ingestion and chunking
 - Uploads are read in through one queue (`server/ingestion/processingQueue.js`, 2 at a time; rate limits are re-queued, not failed). Count chunks in the database (GROUP BY), never by fetching chunk rows in the browser: the API returns at most 1000 rows.
 - A document that collapses into a single giant chunk is a failure mode and must be diagnosed.

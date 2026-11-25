@@ -93,4 +93,9 @@ describe('WarningList', () => {
     fireEvent.click(w.querySelector('button')!);
     expect(onGoTo).toHaveBeenCalledWith('concepts');
   });
+
+  it('toont geen link naar de stap waar je al bent', () => {
+    wrap(<WarningList onGoTo={vi.fn()} currentStep="concepts" warnings={[{ code: 'conceptsWithoutEvidence', severity: 'warning', step: 'concepts', count: 1, items: ['Bias'] }]} />);
+    expect(screen.getByTestId('warning-conceptsWithoutEvidence').querySelector('button')).toBeNull();
+  });
 });

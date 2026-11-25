@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { AlertTriangle, AlertCircle, Info, CheckCircle2, Loader2, Sparkles, X, Check } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, CheckCircle2, Loader2, Sparkles, Pencil } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { supabase } from '../../lib/supabase';
 import type { Readiness, ReadinessWarning } from '../../services/course-files.service';
@@ -18,7 +18,8 @@ const SEVERITY_STYLE: Record<ReadinessWarning['severity'], { box: string; icon: 
   info: { box: 'bg-sky-50 border-sky-200 text-sky-900', icon: Info },
 };
 
-export function WarningList({ warnings, onGoTo }: { warnings: ReadinessWarning[]; onGoTo: (s: MaterialStep) => void }) {
+/** Waarschuwingen met een link naar de stap waar je het oplost (niet als je daar al bent). */
+export function WarningList({ warnings, onGoTo, currentStep }: { warnings: ReadinessWarning[]; onGoTo: (s: MaterialStep) => void; currentStep?: MaterialStep }) {
   const { t } = useLanguage();
   const tk = (k: string, v?: Record<string, string>) => t(k as TKey, v);
   if (warnings.length === 0) return null;
@@ -37,9 +38,11 @@ export function WarningList({ warnings, onGoTo }: { warnings: ReadinessWarning[]
                 <p className="text-xs mt-1 opacity-80">{w.items.join(' · ')}{w.count > w.items.length ? ' …' : ''}</p>
               )}
             </div>
-            <button type="button" onClick={() => onGoTo(w.step)} className="text-xs font-medium underline whitespace-nowrap">
-              {t('material.ready.goTo', { step: tk(`material.steps.${w.step}`) })}
-            </button>
+            {w.step !== currentStep && (
+              <button type="button" onClick={() => onGoTo(w.step)} className="text-xs font-medium underline whitespace-nowrap" data-testid={`button-goto-${w.code}`}>
+                {t('material.ready.goTo', { step: tk(`material.steps.${w.step}`) })}
+              </button>
+            )}
           </li>
         );
       })}
@@ -67,11 +70,16 @@ export function ReadinessStep({
   const [trying, setTrying] = useState<string | null>(null);
   const [tryResult, setTryResult] = useState<TryResult | null>(null);
 
+  const [showAll, setShowAll] = useState(false);
+  // Standaard alleen wat studenten krijgen; verborgen en nog te beoordelen begrippen op verzoek.
+  const notShown = readiness.concepts.filter(c => !c.visible).length;
   const concepts = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return readiness.concepts.filter(c =>
-      (!q || c.name.toLowerCase().includes(q)) && (!onlyProblems || (c.visible && !c.quizReady)));
-  }, [readiness.concepts, filter, onlyProblems]);
+      (showAll || c.visible)
+      && (!q || c.name.toLowerCase().includes(q) || (c.definition || '').toLowerCase().includes(q))
+      && (!onlyProblems || (c.visible && !c.quizReady)));
+  }, [readiness.concepts, filter, onlyProblems, showAll]);
 
   // "Probeer als student": exact dezelfde keten als de quiz (materiaal ophalen,
   // genereren en controleren op de server) voor één meerkeuzevraag over dit
@@ -110,10 +118,6 @@ export function ReadinessStep({
     }
   };
 
-  const yesNo = (v: boolean) => v
-    ? <span className="inline-flex items-center gap-1 text-emerald-700"><Check className="w-3.5 h-3.5" />{t('material.ready.yes')}</span>
-    : <span className="inline-flex items-center gap-1 text-red-700"><X className="w-3.5 h-3.5" />{t('material.ready.no')}</span>;
-
   return (
     <div className="space-y-6">
       <AdminHint variant="intro">{t('material.ready.intro')}</AdminHint>
@@ -123,7 +127,7 @@ export function ReadinessStep({
           <CheckCircle2 className="w-5 h-5" /> {t('material.ready.allGood')}
         </div>
       ) : (
-        <WarningList warnings={readiness.warnings} onGoTo={onGoTo} />
+        <WarningList warnings={readiness.warnings} onGoTo={onGoTo} currentStep="ready" />
       )}
 
       <section>
@@ -137,64 +141,70 @@ export function ReadinessStep({
         </div>
       </section>
 
-      <section className="space-y-2">
+      <section className="space-y-3">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">{t('material.ready.checkTitle')}</h3>
+          <p className="text-sm text-gray-700">{t('material.ready.checkIntro')}</p>
+        </div>
         <div className="flex flex-wrap items-center gap-3">
           <input
             value={filter}
             onChange={e => setFilter(e.target.value)}
             placeholder={t('material.ready.filter')}
-            className="chic-input text-sm px-3 py-1.5 w-64"
+            aria-label={t('material.ready.filter')}
+            className="chic-input text-sm px-3 py-1.5 w-64 max-w-full"
             data-testid="input-readiness-filter"
           />
           <label className="text-sm text-gray-700 inline-flex items-center gap-2">
             <input type="checkbox" checked={onlyProblems} onChange={e => setOnlyProblems(e.target.checked)} data-testid="checkbox-only-problems" />
             {t('material.ready.onlyProblems')}
           </label>
+          {notShown > 0 && (
+            <label className="text-sm text-gray-700 inline-flex items-center gap-2">
+              <input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} data-testid="checkbox-show-hidden" />
+              {tk('material.ready.showNotShown', { n: String(notShown) })}
+            </label>
+          )}
         </div>
         {readiness.concepts.length === 0 ? (
           <p className="text-sm text-gray-500">{t('material.ready.noConcepts')}</p>
+        ) : concepts.length === 0 ? (
+          <p className="text-sm text-gray-500">{t('material.ready.noMatches')}</p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs text-gray-600">
-                <tr>
-                  <th className="px-3 py-2">{t('material.ready.col.concept')}</th>
-                  <th className="px-3 py-2">{t('material.ready.col.evidence')}</th>
-                  <th className="px-3 py-2">{t('material.ready.col.quiz')}</th>
-                  <th className="px-3 py-2">{t('material.ready.col.itembank')}</th>
-                  <th className="px-3 py-2">{t('material.ready.col.visible')}</th>
-                  <th className="px-3 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {concepts.map(c => (
-                  <tr key={c.id} className={`border-t border-gray-100 ${!c.visible ? 'text-gray-400' : ''}`} data-testid={`row-readiness-${c.id}`}>
-                    <td className="px-3 py-2">
-                      <button type="button" onClick={() => onOpenConcept(c.id)} className="font-medium text-left text-sky-800 hover:underline" data-testid={`button-open-concept-${c.id}`}>
-                        {c.name}
-                      </button>
-                    </td>
-                    <td className="px-3 py-2">{c.evidenceDocuments}</td>
-                    <td className="px-3 py-2">{yesNo(c.quizReady)}</td>
-                    <td className="px-3 py-2">{c.itembankSections || '—'}</td>
-                    <td className="px-3 py-2">{c.visible ? yesNo(true) : <span>{t('material.ready.hidden')}</span>}</td>
-                    <td className="px-3 py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => tryAsStudent(c.id, c.name)}
-                        disabled={!!trying}
-                        className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-fuchsia-200 text-fuchsia-700 hover:bg-fuchsia-50 disabled:opacity-50"
-                        data-testid={`button-try-${c.id}`}
-                      >
-                        {trying === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                        {t('material.ready.try')}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ul className="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white" data-testid="list-readiness-concepts">
+            {concepts.map(c => (
+              <li key={c.id} className="px-4 py-3" data-testid={`row-readiness-${c.id}`}>
+                <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+                  <button type="button" onClick={() => onOpenConcept(c.id)} className="font-semibold text-left text-gray-900 hover:text-sky-800 hover:underline" data-testid={`button-open-concept-${c.id}`}>
+                    {c.name}
+                  </button>
+                  {c.review && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">{t('material.ready.badgeReview')}</span>}
+                  {!c.visible && !c.review && <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[11px] font-medium text-gray-700">{t('material.ready.hidden')}</span>}
+                  {c.visible && !c.quizReady && <span className="rounded bg-red-50 px-1.5 py-0.5 text-[11px] font-medium text-red-800">{t('material.ready.badgeNoQuiz')}</span>}
+                </div>
+                <p className="mt-1 text-sm leading-relaxed text-gray-800" data-testid={`text-readiness-definition-${c.id}`}>
+                  {c.definition || <span className="italic text-gray-600">{t('material.ready.noDefinition')}</span>}
+                </p>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-600">
+                  <span>{c.evidenceDocuments === 1 ? t('material.ready.sourcesOne') : tk('material.ready.sources', { n: String(c.evidenceDocuments) })}</span>
+                  {c.itembankSections > 0 && <span>{tk('material.ready.itembankN', { n: String(c.itembankSections) })}</span>}
+                  <button type="button" onClick={() => onOpenConcept(c.id)} className="inline-flex items-center gap-1 font-medium text-sky-700 hover:underline" data-testid={`button-check-${c.id}`}>
+                    <Pencil className="w-3.5 h-3.5" aria-hidden />{t('material.ready.checkAction')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => tryAsStudent(c.id, c.name)}
+                    disabled={!!trying}
+                    className="inline-flex items-center gap-1 font-medium text-gray-700 hover:underline disabled:opacity-50"
+                    data-testid={`button-try-${c.id}`}
+                  >
+                    {trying === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" aria-hidden />}
+                    {t('material.ready.try')}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 
