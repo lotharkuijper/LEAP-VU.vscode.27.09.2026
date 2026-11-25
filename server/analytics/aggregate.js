@@ -161,7 +161,7 @@ export function buildConceptThermometer({ attempts = [], concepts = [], chatRows
       name: c.name,
       quiz: {
         attempts: enough ? s.attempts : null,
-        avgScore: enough ? s.avg : null,
+        avgScore: enough ? scoreBand(s.avg) : null,
         suppressed: s.students > 0 && !enough,
       },
       chat: { asked, misses },
@@ -176,7 +176,7 @@ export function buildConceptThermometer({ attempts = [], concepts = [], chatRows
     k,
     quiz: {
       attempts: courseEnough ? course.attempts : null,
-      avgScore: courseEnough ? course.avg : null,
+      avgScore: courseEnough ? scoreBand(course.avg) : null,
       suppressed: course.students > 0 && !courseEnough,
     },
     chat: { hit: ev('hit'), miss: ev('miss') },
@@ -196,7 +196,7 @@ export function weeklyQuizSeries(attempts = [], k = K_MIN) {
   return [...byWeek.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([week, rows]) => {
     const v = perStudentAverage(rows);
     return v.students >= k
-      ? { week, avgScore: v.avg, attempts: v.attempts }
+      ? { week, avgScore: scoreBand(v.avg), attempts: v.attempts }
       : { week, avgScore: null, attempts: null, suppressed: true };
   });
 }

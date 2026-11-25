@@ -6,7 +6,7 @@ import express from 'express';
 import { createCollector, recordActivity, groupIdOf, analyticsMiddleware } from '../analytics/collector.js';
 import {
   amsterdamDay, daysBetween, studentPartOf, tokenGroupOf,
-  buildCourseUsage, explainPerConcept, summarizeAchievements, summarizeDaily, splitForTables, weeksBetween,
+  buildCourseUsage, explainPerConcept, buildConceptThermometer, summarizeAchievements, summarizeDaily, splitForTables, weeksBetween,
 } from '../analytics/aggregate.js';
 
 const C = '22222222-2222-2222-2222-222222222222';
@@ -142,6 +142,15 @@ describe('niet terug te rekenen naar één student', () => {
   it('beheerder, één cursus: ook daar geen aantal studenten onder 5', () => {
     const d = summarizeDaily([{ day: 'd', course_id: C, kind: 'active_users', key: 'student', n: 1 }], { days: ['d'], courseId: C });
     expect(d.days[0].students).toBeNull();
+  });
+});
+
+describe('quizgemiddelden ook afgerond', () => {
+  it('thermometer: gemiddelde per begrip en cursus op 10 afgerond', () => {
+    const attempts = ['a', 'b', 'c', 'd', 'e'].map((st, i) => ({ student_id: st, topics: ['Bias'], score_percentage: 61 + i }));
+    const r = buildConceptThermometer({ attempts, concepts: [{ name: 'Bias', aliases: [] }] });
+    expect(r.quiz.avgScore).toBe(60);
+    expect(r.concepts[0].quiz.avgScore).toBe(60);
   });
 });
 
