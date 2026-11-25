@@ -3,13 +3,16 @@
 //
 // Alleen geaggregeerde cijfers. Een quizcijfer dat op minder dan k studenten
 // berust, komt als `null` van de server en wordt hier als "< k" getoond.
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Activity, AlertTriangle, BarChart3, RefreshCw, Thermometer } from 'lucide-react';
 import { useLanguage } from '../../i18n';
 import { useAuth } from '../../contexts/AuthContext';
 import { useActiveCourse } from '../../contexts/ActiveCourseContext';
 import { AdminHint } from '../../components/help/AdminHint';
 import { HelpTip } from '../../components/help/HelpTip';
+import { useApi, Tile, fmt } from './shared';
+import { CourseUsage } from './CourseUsage';
+import { PlatformCosts } from './PlatformCosts';
 
 export interface ConceptRow {
   name: string;
@@ -28,60 +31,22 @@ export interface ThermometerData {
   attachments?: { image: number; file: number };
   concepts: ConceptRow[];
   weekly: Array<{ week: string; avgScore: number | null; attempts: number | null; suppressed?: boolean }>;
+  /** Ik leg uit per begrip (2026-11-25); onder k studenten verborgen. */
+  explain?: Array<{ name: string; students: number | null; avgScore: number | null; suppressed: boolean }>;
 }
 export interface PlatformData {
   since: string;
   parts: Array<{ key: string; requests: number; errors: number; slow: number; avgMs: number | null; errorRate: number | null; llmCalls: number; tokens: number }>;
   totals: { requests: number; errors: number; tokens: number; llmCalls: number };
-  tokensByCourse: Array<{ courseId: string | null; name: string | null; tokens: number }>;
-  tokensByWeek: Array<{ week: string; tokens: number }>;
   ingestion: Array<{ courseId: string; name: string; active: boolean; documents: number; failed: number; busy: number; noChunks: number; singleGiantChunk: number; bytes: number; chunks: number }>;
 }
 
 const PERIODS = [4, 8, 16, 52];
 
-function useApi<T>(url: string | null) {
-  const { session } = useAuth();
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const load = useCallback(async () => {
-    if (!url || !session?.access_token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${session.access_token}` } });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || `HTTP ${res.status}`);
-      setData(d as T);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [url, session?.access_token]);
-  useEffect(() => { void load(); }, [load]);
-  return { data, error, loading, load };
-}
-
 function scoreColor(score: number) {
   if (score < 55) return 'bg-red-400';
   if (score < 70) return 'bg-amber-400';
   return 'bg-accent-500';
-}
-
-function Tile({ label, value, sub, testId }: { label: string; value: string; sub?: string; testId: string }) {
-  return (
-    <div className="chic-card p-3 min-w-0" data-testid={testId}>
-      <div className="text-xs text-gray-500 truncate">{label}</div>
-      <div className="text-xl font-semibold text-gray-900">{value}</div>
-      {sub && <div className="text-xs text-gray-400">{sub}</div>}
-    </div>
-  );
-}
-
-function fmt(n: number, lang: string) {
-  return new Intl.NumberFormat(lang).format(n);
 }
 
 // ── Begrippen-thermometer (docent, eigen cursus) ──────────────────────────────
@@ -93,15 +58,16 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
   const [sort, setSort] = useState<'attention' | 'name'>('attention');
   const [showAll, setShowAll] = useState(false);
 
+  const explainBy = useMemo(() => new Map((data?.explain || []).map(e => [e.name, e])), [data]);
   const rows = useMemo(() => {
     // Standaard alleen begrippen waarover iets te zeggen valt.
-    const hasData = (c: ConceptRow) => c.quiz.avgScore != null || c.quiz.suppressed || c.chat.asked > 0;
+    const hasData = (c: ConceptRow) => c.quiz.avgScore != null || c.quiz.suppressed || c.chat.asked > 0 || explainBy.has(c.name);
     const list = (data?.concepts || []).filter(c => showAll || hasData(c));
     if (sort === 'name') return list.sort((a, b) => a.name.localeCompare(b.name, lang));
     // Meeste aandacht nodig: laagste quizscore eerst, dan meeste vragen zonder bewijs.
     const s = (c: ConceptRow) => (c.quiz.avgScore ?? 101);
     return list.sort((a, b) => (s(a) - s(b)) || (b.chat.misses - a.chat.misses) || a.name.localeCompare(b.name, lang));
-  }, [data, sort, lang, showAll]);
+  }, [data, sort, lang, showAll, explainBy]);
   const gaps = (data?.concepts || []).filter(c => c.chat.misses > 0).sort((a, b) => b.chat.misses - a.chat.misses).slice(0, 8);
 
   if (!activeCourseId) return <AdminHint variant="intro">{t('analytics.noCourse')}</AdminHint>;
@@ -187,6 +153,7 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
                 <div className="hidden lg:flex gap-3 text-xs text-gray-400">
                   <div className="w-[40%] min-w-0">{t('analytics.thermometer.colConcept')}</div>
                   <div className="flex-1">{t('analytics.thermometer.colQuiz')}</div>
+                  <div className="w-40 text-right">{t('analytics.thermometer.colExplain')}</div>
                   <div className="w-40 text-right">{t('analytics.thermometer.colChat')}</div>
                 </div>
                 {rows.map(c => (
@@ -205,6 +172,14 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
                           {c.quiz.suppressed ? lessThanK : t('analytics.thermometer.noQuiz')}
                         </span>
                       )}
+                    </div>
+                    <div className="lg:w-40 shrink-0 text-right text-xs text-gray-500 whitespace-nowrap" data-testid={`text-explain-${c.name}`}>
+                      {(() => {
+                        const e = explainBy.get(c.name);
+                        if (!e) return '—';
+                        if (e.suppressed) return lessThanK;
+                        return t('analytics.thermometer.explainCell', { n: String(e.students), score: String(e.avgScore) });
+                      })()}
                     </div>
                     <div className="lg:w-40 shrink-0 text-right text-xs text-gray-500 whitespace-nowrap">
                       {c.chat.asked > 0 ? t('analytics.thermometer.chatCell', { n: String(c.chat.asked), miss: String(c.chat.misses) }) : '—'}
@@ -236,11 +211,15 @@ export function ConceptThermometer({ weeks, onOpenMaterial }: { weeks: number; o
 export function PlatformHealth({ weeks }: { weeks: number }) {
   const { t, lang } = useLanguage();
   const { data, error, loading, load } = useApi<PlatformData>(`/api/analytics/platform?weeks=${weeks}`);
-  const maxWeek = Math.max(1, ...(data?.tokensByWeek || []).map(w => w.tokens));
   const problems = (data?.ingestion || []).filter(r => r.failed || r.noChunks || r.singleGiantChunk || r.busy);
 
   return (
-    <section className="space-y-4" data-testid="section-platform">
+    <details className="group rounded-xl border border-gray-200 bg-white p-4" data-testid="section-platform">
+      <summary className="cursor-pointer list-none">
+        <span className="text-sm font-semibold text-gray-700">{t('analytics.platform.technicalTitle')}</span>
+        <span className="block text-xs text-gray-500">{t('analytics.platform.technicalHint')}</span>
+      </summary>
+      <div className="mt-4 space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2 min-w-0">
           <Activity className="w-5 h-5 text-brand-600" />
@@ -266,41 +245,9 @@ export function PlatformHealth({ weeks }: { weeks: number }) {
               value={data.totals.requests ? new Intl.NumberFormat(lang, { style: 'percent', maximumFractionDigits: 1 }).format(data.totals.errors / data.totals.requests) : '—'}
               sub={t('analytics.platform.errors', { n: fmt(data.totals.errors, lang) })} />
             <Tile testId="tile-llm-calls" label={t('analytics.platform.llmCalls')} value={fmt(data.totals.llmCalls, lang)} />
-            <Tile testId="tile-tokens" label={t('analytics.platform.tokens')} value={fmt(data.totals.tokens, lang)} />
           </div>
 
-          {data.tokensByWeek.length > 0 && (
-            <div className="chic-card p-4" data-testid="block-tokens-week">
-              <h4 className="text-sm font-semibold text-gray-700 mb-3">{t('analytics.platform.tokensPerWeek')}</h4>
-              <div className="space-y-1.5">
-                {data.tokensByWeek.map(w => (
-                  <div key={w.week} className="flex items-center gap-3">
-                    <div className="w-24 shrink-0 text-xs text-gray-500">{new Date(w.week).toLocaleDateString(lang)}</div>
-                    <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
-                      <div className="h-full bg-brand-400" style={{ width: `${Math.max((w.tokens / maxWeek) * 100, 2)}%` }} />
-                    </div>
-                    <div className="w-24 shrink-0 text-right text-xs text-gray-600">{fmt(w.tokens, lang)}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(min(22rem,100%),1fr))]">
-            <div className="chic-card p-4 min-w-0" data-testid="block-tokens-course">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('analytics.platform.tokensPerCourse')}</h4>
-              {data.tokensByCourse.length === 0 ? <p className="text-sm text-gray-500">—</p> : (
-                <ul className="text-sm space-y-1">
-                  {data.tokensByCourse.map(c => (
-                    <li key={c.courseId || 'none'} className="flex gap-2 min-w-0">
-                      <span className="min-w-0 truncate">{c.name || t('analytics.platform.noCourse')}</span>
-                      <span className="ml-auto whitespace-nowrap text-gray-600">{fmt(c.tokens, lang)}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
             <div className="chic-card p-4 min-w-0" data-testid="block-parts">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">{t('analytics.platform.perPart')}</h4>
               <div className="overflow-x-auto">
@@ -367,11 +314,12 @@ export function PlatformHealth({ weeks }: { weeks: number }) {
           </p>
         </>
       )}
-    </section>
+      </div>
+    </details>
   );
 }
 
-export function AnalyticsAdminTab({ onOpenMaterial }: { onOpenMaterial?: () => void }) {
+export function AnalyticsAdminTab({ onOpenMaterial, levels }: { onOpenMaterial?: () => void; levels?: ReactNode }) {
   const { t } = useLanguage();
   const { isAdmin } = useAuth();
   const [weeks, setWeeks] = useState(8);
@@ -395,8 +343,16 @@ export function AnalyticsAdminTab({ onOpenMaterial }: { onOpenMaterial?: () => v
         </label>
       </div>
 
+      <CourseUsage weeks={weeks} />
       <ConceptThermometer weeks={weeks} onOpenMaterial={onOpenMaterial} />
-      {isAdmin && <PlatformHealth weeks={weeks} />}
+      {levels}
+      {isAdmin && (
+        <div className="space-y-6 border-t border-gray-200 pt-8" data-testid="section-admin-only">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('analytics.adminOnly')}</p>
+          <PlatformCosts weeks={weeks} />
+          <PlatformHealth weeks={weeks} />
+        </div>
+      )}
     </div>
   );
 }

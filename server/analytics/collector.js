@@ -15,7 +15,7 @@
 // kan hooguit de laatste minuut verloren gaan; voor tellers is dat acceptabel.
 
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { weekStart, featureOf, isUuid, matchConcepts } from './aggregate.js';
+import { weekStart, amsterdamDay, featureOf, isUuid, matchConcepts, studentPartOf } from './aggregate.js';
 
 const als = new AsyncLocalStorage();
 const SLOW_MS = 10000;
@@ -23,14 +23,35 @@ const SLOW_MS = 10000;
 export function createCollector({ write, now = () => new Date(), log = console } = {}) {
   const buf = new Map();
   let pausedUntil = 0;
+  // "Wie is vandaag/deze week al geteld": alleen in het geheugen, nooit opgeslagen.
+  // Bij een herstart begint dit opnieuw; iemand kan dan die dag twee keer tellen.
+  const seen = { day: new Set(), week: new Set() };
+  const seenFor = { day: '', week: '' };
 
+  // Elke rij hoort bij een week (analytics_counters) én een dag (analytics_daily).
   function bump(kind, key = '', { courseId = null, n = 1, total = 0 } = {}) {
-    const week = weekStart(now());
+    const at = now();
+    const week = weekStart(at);
+    const day = amsterdamDay(at);
     const cid = isUuid(courseId) ? courseId : null;
-    const k = `${week}|${cid || ''}|${kind}|${key}`;
-    const cur = buf.get(k) || { week, course_id: cid, kind, key: String(key).slice(0, 200), n: 0, total: 0 };
+    const k = `${day}|${cid || ''}|${kind}|${key}`;
+    const cur = buf.get(k) || { week, day, course_id: cid, kind, key: String(key).slice(0, 200), n: 0, total: 0 };
     cur.n += n; cur.total += total;
     buf.set(k, cur);
+  }
+
+  /** Eén keer per periode tellen ('day' of 'week'); id (bv. gebruiker) blijft in het geheugen. */
+  function bumpOnce(period, id, kind, key = '', { courseId = null } = {}) {
+    const at = now();
+    const p = period === 'week' ? 'week' : 'day';
+    const current = p === 'week' ? weekStart(at) : amsterdamDay(at);
+    if (seenFor[p] !== current) { seen[p].clear(); seenFor[p] = current; }
+    const k = `${courseId || ''}|${kind}|${key}|${id}`;
+    if (seen[p].has(k)) return;
+    // Begrensd: bij een (onwaarschijnlijk) enorme set liever iemand dubbel tellen dan geheugen vol.
+    if (seen[p].size > 200000) seen[p].clear();
+    seen[p].add(k);
+    bump(kind, key, { courseId });
   }
 
   function drain() {
@@ -54,7 +75,46 @@ export function createCollector({ write, now = () => new Date(), log = console }
     }
   }
 
-  return { bump, drain, flush, size: () => buf.size };
+  return { bump, bumpOnce, drain, flush, size: () => buf.size };
+}
+
+/** Groep uit een projectpad (/api/projects/…/groups/<id>/…), voor "actieve groepen". */
+export function groupIdOf(path) {
+  const seg = String(path || '').split('?')[0].split('/');
+  const i = seg.indexOf('groups');
+  return i >= 0 && isUuid(seg[i + 1]) ? seg[i + 1] : null;
+}
+
+/**
+ * Activiteit tellen zonder iets over personen op te slaan. Alleen geslaagde
+ * acties (geen GET: openen telt niet als gebruiken). Per dag en per week:
+ *  - active_users   key 'student'|'staff', per cursus en voor heel LEAP (course null)
+ *  - active_students per cursus (dag en week)
+ *  - active_part    key = onderdeel, studenten per week
+ *  - part_actions   key = onderdeel, aantal acties
+ *  - active_group   projectgroepen met activiteit, per week
+ * `who(userId, courseId)` geeft { courseId, role }: de cursus (valt terug op de
+ * laatst gekozen cursus als het verzoek er geen noemt) en 'student' of iets
+ * anders (docent, beheerder). Alleen 'student' telt als student.
+ */
+export async function recordActivity(collector, { userId, feature, courseId, method, path, status }, who) {
+  if (!userId || method === 'GET' || status >= 400 || !who) return;
+  const ctx = await who(userId, courseId);
+  const role = ctx?.role === 'student' ? 'student' : 'staff';
+  collector.bumpOnce('day', userId, 'active_users', role, { courseId: null });
+  const cid = ctx?.courseId || null;
+  if (!cid) return;
+  collector.bumpOnce('day', userId, 'active_users', role, { courseId: cid });
+  if (role !== 'student') return;
+  collector.bumpOnce('day', userId, 'active_students', '', { courseId: cid });
+  collector.bumpOnce('week', userId, 'active_students_week', '', { courseId: cid });
+  const part = studentPartOf(feature);
+  if (part) {
+    collector.bumpOnce('week', userId, 'active_part', part, { courseId: cid });
+    collector.bump('part_actions', part, { courseId: cid });
+  }
+  const group = feature === 'projects' ? groupIdOf(path) : null;
+  if (group) collector.bumpOnce('week', group, 'active_group', '', { courseId: cid });
 }
 
 function courseIdOf(req) {
@@ -75,7 +135,7 @@ function lastUserText(body) {
  * Middleware: meet elk /api-verzoek. `conceptsFor(courseId)` levert de
  * begrippen [{ name, aliases }] voor de chat-herkenning (mag cachen).
  */
-export function analyticsMiddleware(collector, { conceptsFor } = {}) {
+export function analyticsMiddleware(collector, { conceptsFor, who, verifyUser } = {}) {
   return (req, res, next) => {
     let feature = null;
     try { feature = featureOf(req.path || req.url, req.body); } catch { feature = null; }
@@ -92,6 +152,13 @@ export function analyticsMiddleware(collector, { conceptsFor } = {}) {
         if (res.statusCode >= 500) collector.bump('api_error', feature, { courseId });
         if (ms > SLOW_MS) collector.bump('api_slow', feature, { courseId });
         if (store.calls) collector.bump('tokens', feature, { courseId, n: store.calls, total: store.tokens });
+        // Alleen een gebruiker wiens login de server zelf heeft gecontroleerd (verifyUser),
+        // nooit een id uit een ongecontroleerd token: anders kan iemand activiteit namaken.
+        if (verifyUser && who && req.method !== 'GET' && res.statusCode < 400 && req.headers?.authorization) {
+          Promise.resolve(verifyUser(req)).then((userId) => recordActivity(collector, {
+            userId, feature, courseId, method: req.method, path: req.path || req.url, status: res.statusCode,
+          }, who)).catch(() => {});
+        }
         if ((feature === 'chat' || feature === 'chat-attachments') && courseId && res.statusCode < 400) {
           recordChatEvidence(collector, req.body, courseId, conceptsFor);
           if (feature === 'chat-attachments') recordAttachments(collector, req.body, courseId);

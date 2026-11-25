@@ -80,6 +80,8 @@ export const HELP_TOPICS = [
   // Analyse (losse module: src/features/analytics)
   'analytics.thermometer',
   'analytics.platform',
+  'analytics.usage',
+  'analytics.costs',
   'chatInstructions.overview',
   // Verdieping (fase 2/3)
   'quizSources.coverage',

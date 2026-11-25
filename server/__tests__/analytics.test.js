@@ -111,10 +111,9 @@ describe('platform: inlezen, fouten en kosten', () => {
       { week: '2026-10-05', course_id: C, kind: 'api_error', key: 'quiz', n: 1, total: 0 },
       { week: '2026-10-05', course_id: C, kind: 'tokens', key: 'quiz', n: 4, total: 8000 },
       { week: '2026-10-05', course_id: null, kind: 'tokens', key: 'background', n: 1, total: 500 },
-    ], { [C]: 'E&B1' });
+    ]);
     expect(r.since).toBe('2026-09-28');
     expect(r.parts.find(p => p.key === 'quiz')).toMatchObject({ requests: 10, errors: 1, avgMs: 500, errorRate: 0.1, llmCalls: 4, tokens: 8000 });
-    expect(r.tokensByCourse).toEqual([{ courseId: C, name: 'E&B1', tokens: 8000 }, { courseId: null, name: null, tokens: 500 }]);
     expect(r.totals.tokens).toBe(8500);
   });
   it('onderdeel uit het pad; analytics meet zichzelf niet', () => {
@@ -272,7 +271,7 @@ describe('losse module', () => {
     const src = fs.readFileSync(path.join(root, 'server/index.js'), 'utf8');
     expect(src.match(/^import .*'\.\/analytics\//gm)).toHaveLength(1);
     expect(src.match(/installAnalytics\(/g)).toHaveLength(1);
-    expect(src).not.toMatch(/analytics_counters|recordTokens|analyticsMiddleware/);
+    expect(src).not.toMatch(/analytics_counters|analytics_daily|analytics_bump_daily|recordTokens|analyticsMiddleware/);
   });
   it('geen andere servermodule raakt analytics (sinds de opsplitsing van server/index.js)', () => {
     const others = serverFiles().filter((f) => f !== 'server/index.js' && !f.startsWith('server/analytics/'));
@@ -280,13 +279,13 @@ describe('losse module', () => {
     for (const f of others) {
       const other = fileSource(f);
       expect(other, f).not.toMatch(/from '[^']*analytics\/|import\([^)]*analytics\//);
-      expect(other, f).not.toMatch(/installAnalytics|analytics_counters|recordTokens|analyticsMiddleware/);
+      expect(other, f).not.toMatch(/installAnalytics|analytics_counters|analytics_daily|analytics_bump_daily|recordTokens|analyticsMiddleware/);
     }
   });
-  it('de tabel bevat geen kolom die naar een persoon wijst', () => {
-    const sql = fs.readFileSync(path.join(root, 'supabase/migrations/20261009100000_analytics_counters.sql'), 'utf8');
+  it.each(['20261009100000_analytics_counters', '20261125100000_analytics_daily'])('de tabel %s bevat geen kolom die naar een persoon wijst', (name) => {
+    const sql = fs.readFileSync(path.join(root, `supabase/migrations/${name}.sql`), 'utf8');
     const table = sql.slice(sql.indexOf('CREATE TABLE'), sql.indexOf(');', sql.indexOf('CREATE TABLE')));
     expect(table).not.toMatch(/user|student|profile|email|text_content|question/i);
-    expect(fs.existsSync(path.join(root, 'supabase/rollback/20261009100000_analytics_counters_down.sql'))).toBe(true);
+    expect(fs.existsSync(path.join(root, `supabase/rollback/${name}_down.sql`))).toBe(true);
   });
 });
