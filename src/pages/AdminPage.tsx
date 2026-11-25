@@ -1724,12 +1724,12 @@ const tabGroups = [
           {activeTab === 'messages' && isAdmin && <SystemMessagesAdminTab />}
           {activeTab === 'access_requests' && isAdmin && <AccessRequestsAdmin />}
           {/* Leerniveaus (verdeling, alleen totalen) staan sinds 2026-10-26 onder Analytics. Ze horen
-              niet bij de losse analytics-module: wordt die verwijderd, dan blijft dit blok staan. */}
+              niet bij de losse analytics-module; AdminPage geeft ze als `levels` mee. Wordt de module verwijderd, zet dan <LearningLevelsAdminTab /> hier los neer. */}
           {activeTab === 'analytics' && (
-            <div className="space-y-10">
-              <AnalyticsAdminTab onOpenMaterial={() => setActiveTab('material')} />
-              <div className="border-t border-gray-100 pt-8" data-testid="section-analytics-learning-levels"><LearningLevelsAdminTab /></div>
-            </div>
+            <AnalyticsAdminTab
+              onOpenMaterial={() => setActiveTab('material')}
+              levels={<div data-testid="section-analytics-learning-levels"><LearningLevelsAdminTab /></div>}
+            />
           )}
 
 
