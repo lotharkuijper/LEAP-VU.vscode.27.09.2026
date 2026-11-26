@@ -129,23 +129,33 @@ Geef nu je feedback als JSON-object volgens het eerder beschreven schema.`;
   return { inserted };
 }
 
-// Aantal gebruikte feedbackrondes van een groep bij een beoordelaar: ingeleverd werk
-// (het bestand staat er al vóór het taalmodel begint en gaat weg als dat mislukt, dus
-// een ronde in behandeling telt mee) plus elke keer "Feedback op jullie aanpak" (roomRoutes.js),
-// zodat de docent met één maximum bepaalt hoeveel feedback een groep krijgt.
-export async function countFeedbackRounds(groupId, personaId) {
-  const [reviews, assessments] = await Promise.all([
-    supabaseAdmin.from('project_group_products')
-      .select('id', { count: 'exact', head: true })
-      .eq('group_id', groupId).eq('persona_id', personaId),
-    supabaseAdmin.from('project_group_assessments')
-      .select('id', { count: 'exact', head: true })
-      .eq('group_id', groupId).eq('persona_id', personaId),
-  ]);
-  if (reviews.error) throw reviews.error;
-  // Ontbrekende tabel (oude database): alleen de feedback op ingeleverd werk.
-  if (assessments.error && assessments.error.code !== '42P01') throw assessments.error;
-  return (reviews.count || 0) + (assessments.count || 0);
+// Aantal gebruikte feedbackrondes van een groep bij een feedbackgever, per soort
+// (2026-11-26: proces en product hebben elk hun eigen maximum).
+//   'product': ingeleverde voorlopige versies (het bestand staat er al vóór het
+//              taalmodel begint en gaat weg als dat mislukt, dus een ronde in
+//              behandeling telt mee); maximum = max_reviews.
+//   'process': "Feedback op ons proces" (roomRoutes.js); maximum = max_process_reviews.
+export async function countFeedbackRounds(groupId, personaId, kind) {
+  if (kind !== 'product' && kind !== 'process') throw new Error('countFeedbackRounds: kind must be product or process');
+  const table = kind === 'product' ? 'project_group_products' : 'project_group_assessments';
+  const { count, error } = await supabaseAdmin.from(table)
+    .select('id', { count: 'exact', head: true })
+    .eq('group_id', groupId).eq('persona_id', personaId);
+  // Ontbrekende tabel (oude database): nog niets gebruikt.
+  if (error && !(kind === 'process' && error.code === '42P01')) throw error;
+  return count || 0;
+}
+
+/**
+ * Maximum rondes van deze soort bij deze feedbackgever (null = onbeperkt). Ontbreekt
+ * de kolom voor proces (database teruggedraaid), dan geldt het productmaximum, zodat
+ * procesfeedback nooit onbeperkt wordt doordat een kolom weg is.
+ */
+export function maxRoundsFor(persona, kind) {
+  if (kind === 'process') {
+    return persona && 'max_process_reviews' in persona ? (persona.max_process_reviews ?? null) : (persona?.max_reviews ?? null);
+  }
+  return persona?.max_reviews ?? null;
 }
 
 // Gedeelde checks voor de feedback-routes: project, groep, persona (beoordelaar)

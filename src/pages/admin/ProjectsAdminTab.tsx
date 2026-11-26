@@ -91,6 +91,10 @@ interface ProjectPersona {
   start_level?: number;
   deliverable_label?: string | null;
   max_reviews?: number | null;
+  product_feedback?: boolean | null;
+  process_feedback?: boolean | null;
+  max_process_reviews?: number | null;
+  process_focus?: string | null;
   max_consultations?: number | null;
   auto_close_hours?: number | null;
 }
@@ -748,6 +752,9 @@ function ProjectDetailPanel({ project: initialProject, token, onBack, onOpenTemp
       persona_type: 'evaluator',
       deliverable_label: marking ? t('admin.projects.fb.finalProduct') : '',
       max_reviews: marking ? null : 3,
+      // Feedbackgever: op het product én op het proces, elk 3 rondes (2026-11-26).
+      product_feedback: true, process_feedback: true,
+      max_process_reviews: marking ? null : 3,
       // Nakijkhulp: standaard de rubric, de opdracht en overige projectdocumenten
       // (bv. de planning) en alle leerstof als maatstaf. Feedbackgever: alleen de rubric.
       course_knowledge: marking ? 'all' : 'none', course_knowledge_doc_ids: [],

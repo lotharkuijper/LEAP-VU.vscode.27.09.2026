@@ -13,52 +13,79 @@ interface FeedbackItem {
   /** Staat dit oordeel al in MIJN leerdagboek? */
   journalSaved?: boolean;
 }
-interface EvaluatorFeedback {
+export interface RoundsInfo {
+  maxReviews: number | null;
+  used: number;
+  remaining: number | null;
+  canSubmit: boolean;
+}
+/** Een feedbackgever zoals GET …/groups/:groupId/feedback hem teruggeeft. */
+export interface FeedbackGiver extends RoundsInfo {
   personaId: string;
   name: string;
   avatarEmoji: string | null;
   avatar?: unknown;
   deliverableLabel: string | null;
-  maxReviews: number | null;
-  used: number;
-  remaining: number | null;
-  canSubmit: boolean;
+  /** Geeft feedback op het product (upload); de rondes hierboven gelden daarvoor. */
+  product: boolean;
   items: FeedbackItem[];
+  /** Feedback op het proces (geen upload), met eigen rondes; null = geeft hij niet. */
+  process: RoundsInfo | null;
+}
+
+/** Feedbackgevers van deze groep met per soort de rondes (gedeeld door beide knoppen en de rechterkolom). */
+export function useGroupFeedback(projectId: string | undefined, groupId: string | undefined, token: string | null | undefined) {
+  const [givers, setGivers] = useState<FeedbackGiver[]>([]);
+  const reload = useCallback(async () => {
+    if (!projectId || !groupId || !token) return;
+    try {
+      const r = await fetch(`/api/projects/${projectId}/groups/${groupId}/feedback`, { headers: { Authorization: `Bearer ${token}` } });
+      const d = await r.json().catch(() => ({}));
+      if (r.ok) setGivers(d.evaluators || []);
+    } catch { /* aanvullend overzicht */ }
+  }, [projectId, groupId, token]);
+  useEffect(() => { void reload(); }, [reload]);
+  return { givers, reload };
+}
+
+/** "Nog 2 van 3 feedbackrondes" of "Onbeperkt · 1 keer gevraagd". */
+export function RoundsLine({ rounds, testId }: { rounds: RoundsInfo; testId?: string }) {
+  const { t } = useLanguage();
+  return (
+    <div className="text-[11px] text-gray-500" data-testid={testId}>
+      {rounds.maxReviews === null
+        ? t('room.feedback.roundsUnlimited', { used: String(rounds.used) })
+        : t('room.feedback.roundsLeft', { left: String(rounds.remaining ?? 0), max: String(rounds.maxReviews) })}
+    </div>
+  );
 }
 
 const ACCEPT = '.txt,.md,.pdf,.docx,.pptx,.odt,.odp,.rtf,.csv,.xlsx,.ods';
 
 /**
- * "Feedback op jullie werk": per beoordelaar het product waarover hij feedback
- * geeft, hoeveel rondes er nog over zijn, een knop om werk in te leveren en de
- * eerdere feedback. Een ronde telt alleen als er echt een oordeel kwam.
+ * Feedback op het (voorlopige) product, besluit 2026-11-26.
+ *  * mode "submit" (venster achter de knop "Feedback op ons product"): per
+ *    feedbackgever waarover hij feedback geeft, hoeveel rondes er nog zijn en een
+ *    knop om een voorlopige versie in te leveren.
+ *  * mode "history" (rechterkolom): alleen de eerdere feedback, om terug te lezen.
+ * Een ronde telt alleen als er echt feedback kwam.
  */
-export function ProductFeedbackPanel({ projectId, groupId, token, disabled = false, onInfo, journalOn = true }: {
+export function ProductFeedbackPanel({ projectId, groupId, token, givers, reload, mode, onInfo, journalOn = true }: {
   projectId: string;
   groupId: string;
   token: string;
-  /** Groep/project afgerond: alleen terugkijken. */
-  disabled?: boolean;
+  givers: FeedbackGiver[];
+  reload: () => Promise<void> | void;
+  mode: 'submit' | 'history';
   onInfo?: (msg: string) => void;
   /** Leerdagboek aan in deze cursus: dan "Bewaar in mijn leerdagboek". */
   journalOn?: boolean;
 }) {
   const { t, lang } = useLanguage();
-  const [evaluators, setEvaluators] = useState<EvaluatorFeedback[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const r = await fetch(`/api/projects/${projectId}/groups/${groupId}/feedback`, { headers: { Authorization: `Bearer ${token}` } });
-      const d = await r.json().catch(() => ({}));
-      if (r.ok) setEvaluators(d.evaluators || []);
-    } catch { /* aanvullend overzicht */ }
-  }, [projectId, groupId, token]);
-
-  useEffect(() => { void load(); }, [load]);
-
-  const submit = async (ev: EvaluatorFeedback, file: File) => {
+  const submit = async (ev: FeedbackGiver, file: File) => {
     setBusy(ev.personaId); setError(null);
     try {
       const fd = new FormData();
@@ -70,7 +97,7 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error || t('room.feedback.failed'));
       onInfo?.(t('room.feedback.done', { name: ev.name }));
-      await load();
+      await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -78,17 +105,21 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
     }
   };
 
-  if (!evaluators || evaluators.length === 0) return null;
-
+  const shown = mode === 'submit'
+    ? givers.filter(ev => ev.product)
+    : givers.filter(ev => ev.items.some(it => it.review));
+  if (shown.length === 0) return null;
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-100" data-testid="panel-product-feedback">
-      <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-        <MessageSquare className="w-3 h-3" /> {t('room.feedback.title')}
-      </div>
-      {error && <p className="mb-2 text-[11px] text-red-700" data-testid="text-feedback-error">{error}</p>}
+    <div className={mode === 'history' ? 'mt-3 pt-3 border-t border-gray-100' : ''} data-testid={mode === 'history' ? 'panel-product-feedback' : 'panel-product-feedback-submit'}>
+      {mode === 'history' && (
+        <div className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+          <MessageSquare className="w-3 h-3" /> {t('room.feedbackProduct.historyTitle')}
+        </div>
+      )}
+      {error && <p className="mb-2 text-xs text-red-700" data-testid="text-feedback-error">{error}</p>}
       <div className="space-y-3">
-        {evaluators.map(ev => (
+        {shown.map(ev => (
           <div key={ev.personaId} className="rounded-lg border border-gray-200 p-2.5" data-testid={`feedback-evaluator-${ev.personaId}`}>
             <div className="flex items-start gap-2">
               <PersonaAvatar avatar={ev.avatar} name={ev.name} size={28} />
@@ -97,18 +128,14 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
                 {ev.deliverableLabel && (
                   <div className="text-[11px] text-gray-600">{t('room.feedback.about', { product: ev.deliverableLabel })}</div>
                 )}
-                <div className="text-[11px] text-gray-500" data-testid={`text-feedback-rounds-${ev.personaId}`}>
-                  {ev.maxReviews === null
-                    ? t('room.feedback.roundsUnlimited', { used: String(ev.used) })
-                    : t('room.feedback.roundsLeft', { left: String(ev.remaining ?? 0), max: String(ev.maxReviews) })}
-                </div>
+                {mode === 'submit' && <RoundsLine rounds={ev} testId={`text-feedback-rounds-${ev.personaId}`} />}
               </div>
             </div>
-            {!disabled && (
+            {mode === 'submit' && (
               ev.canSubmit ? (
-                <label className={`mt-2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[11px] font-medium ${busy ? 'bg-gray-100 text-gray-400' : 'cursor-pointer bg-purple-600 text-white hover:bg-purple-700'}`}>
+                <label className={`mt-2 inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium ${busy ? 'bg-gray-100 text-gray-400' : 'cursor-pointer bg-violet-600 text-white hover:bg-violet-700'}`}>
                   {busy === ev.personaId ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
-                  {busy === ev.personaId ? t('room.feedback.reading', { name: ev.name }) : t('room.feedback.submit')}
+                  {busy === ev.personaId ? t('room.feedback.reading', { name: ev.name }) : t('room.feedbackProduct.choose')}
                   <input
                     type="file"
                     accept={ACCEPT}
@@ -122,40 +149,38 @@ export function ProductFeedbackPanel({ projectId, groupId, token, disabled = fal
                 <p className="mt-2 text-[11px] text-gray-500" data-testid={`text-feedback-used-up-${ev.personaId}`}>{t('room.feedback.usedUp')}</p>
               )
             )}
-            {ev.items.length > 0 && (
+            {mode === 'history' && ev.items.length > 0 && (
               <ul className="mt-2 space-y-1.5">
-                {ev.items.map((it, idx) => {
-                  return (
-                    <li key={it.productId} data-testid={`feedback-item-${it.productId}`}>
-                      <details open={idx === 0} className="rounded bg-gray-50 px-2 py-1.5 text-[11px] text-gray-700">
-                        <summary className="flex cursor-pointer flex-wrap items-center gap-1.5">
-                          <span className="font-medium">{t('room.feedback.round', { n: String(ev.items.length - idx) })}</span>
-                          <span className="min-w-0 truncate text-gray-500">{it.filename}</span>
-                        </summary>
-                        {it.review && (
-                          <div className="mt-1.5">
-                            <div className="font-medium text-gray-600">{t('room.review.feedbackLabel')}</div>
-                            <div className="whitespace-pre-wrap">{it.review.reasoning}</div>
-                            {it.review.feed_forward && (
-                              <>
-                                <div className="mt-1 font-medium text-gray-600">{t('room.review.feedForwardLabel')}</div>
-                                <div className="whitespace-pre-wrap">{it.review.feed_forward}</div>
-                              </>
-                            )}
-                            {journalOn && (
-                              <SaveToJournalButton
-                                groupId={groupId} token={token} source="review" id={it.review.id}
-                                saved={!!it.journalSaved}
-                                onSaved={() => void load()}
-                                testId={'button-journal-review-' + it.review.id}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </details>
-                    </li>
-                  );
-                })}
+                {ev.items.map((it, idx) => (
+                  <li key={it.productId} data-testid={`feedback-item-${it.productId}`}>
+                    <details open={idx === 0} className="rounded bg-gray-50 px-2 py-1.5 text-[11px] text-gray-700">
+                      <summary className="flex cursor-pointer flex-wrap items-center gap-1.5">
+                        <span className="font-medium">{t('room.feedback.round', { n: String(ev.items.length - idx) })}</span>
+                        <span className="min-w-0 truncate text-gray-500">{it.filename}</span>
+                      </summary>
+                      {it.review && (
+                        <div className="mt-1.5">
+                          <div className="font-medium text-gray-600">{t('room.review.feedbackLabel')}</div>
+                          <div className="whitespace-pre-wrap">{it.review.reasoning}</div>
+                          {it.review.feed_forward && (
+                            <>
+                              <div className="mt-1 font-medium text-gray-600">{t('room.review.feedForwardLabel')}</div>
+                              <div className="whitespace-pre-wrap">{it.review.feed_forward}</div>
+                            </>
+                          )}
+                          {journalOn && (
+                            <SaveToJournalButton
+                              groupId={groupId} token={token} source="review" id={it.review.id}
+                              saved={!!it.journalSaved}
+                              onSaved={() => void reload()}
+                              testId={'button-journal-review-' + it.review.id}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </details>
+                  </li>
+                ))}
               </ul>
             )}
           </div>

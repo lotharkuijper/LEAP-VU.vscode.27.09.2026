@@ -1,7 +1,8 @@
 // "Feedback en beoordeling" in een project (besluit 2026-11-10): drie stappen in
 // de volgorde waarin een student ze meemaakt, met per stap wie wat ziet.
 //   1. Wat telt: de rubric (openbaar) en de criteria in het kort.
-//   2. Feedback tijdens het project: beoordelaars met een maximum aantal rondes;
+//   2. Feedback tijdens het project: feedbackgevers, elk op het product (upload)
+//      en/of op het proces (geen upload), met eigen rondes per soort (2026-11-26);
 //      zuiver formatief, alleen de groep ziet het.
 //   3. Nakijkcommentaar voor de docent: één beoordelaar leest het eindproduct.
 // Onder de motorkap blijven het gewone beoordelaar-persona's en projectdocumenten
@@ -26,6 +27,9 @@ export interface FeedbackPersona {
   persona_type?: string;
   deliverable_label?: string | null;
   max_reviews?: number | null;
+  product_feedback?: boolean | null;
+  process_feedback?: boolean | null;
+  max_process_reviews?: number | null;
   project_knowledge_doc_ids?: string[] | null;
   course_knowledge?: 'none' | 'all' | 'selected' | null;
   course_knowledge_doc_ids?: string[] | null;
@@ -149,6 +153,47 @@ export function ProjectFeedbackSetup({
   const linkRubric = (p: FeedbackPersona) =>
     patchPersona(p, { project_knowledge_doc_ids: [...new Set([...(p.project_knowledge_doc_ids || []), ...rubricIds])] });
 
+  // Per feedbackgever twee soorten feedback (2026-11-26), elk aan/uit met eigen rondes.
+  // Waar hij bij het proces op let, staat in de editor (potloodje).
+  const kindRow = (p: FeedbackPersona, kind: 'product' | 'process') => {
+    const on = (kind === 'product' ? p.product_feedback : p.process_feedback) !== false;
+    const roundsField = kind === 'product' ? 'max_reviews' : 'max_process_reviews';
+    const rounds = (kind === 'product' ? p.max_reviews : p.max_process_reviews) ?? null;
+    return (
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+        <label className="flex min-w-0 flex-1 basis-56 items-start gap-1.5 text-gray-800">
+          <input
+            type="checkbox" className="mt-0.5" checked={on}
+            onChange={(e) => void patchPersona(p, { [kind === 'product' ? 'product_feedback' : 'process_feedback']: e.target.checked })}
+            data-testid={`checkbox-fb-${kind}-${p.id}`}
+          />
+          <span>
+            <span className="font-medium">{t(kind === 'product' ? 'admin.personaRole.evaluator.productTitle' : 'admin.personaRole.evaluator.processTitle')}</span>
+            <span className="block text-[11px] text-gray-500">{t(kind === 'product' ? 'admin.projects.fb.productShort' : 'admin.projects.fb.processShort')}</span>
+          </span>
+        </label>
+        {on && (
+          <label className="flex items-center gap-1.5 text-gray-600">
+            {t('admin.projects.fb.rounds')}
+            <input
+              key={`${p.id}-${kind}-${rounds ?? ''}`}
+              type="number" min={1} max={50}
+              defaultValue={rounds ?? ''}
+              placeholder={t('admin.personaRole.evaluator.unlimited')}
+              onBlur={(e) => {
+                const v = e.target.value.trim();
+                const next = v === '' ? null : Math.max(1, Math.min(50, Math.floor(Number(v))));
+                if (next !== rounds) void patchPersona(p, { [roundsField]: next });
+              }}
+              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+              data-testid={kind === 'product' ? `input-fb-rounds-${p.id}` : `input-fb-process-rounds-${p.id}`}
+            />
+          </label>
+        )}
+      </div>
+    );
+  };
+
   const evaluatorRow = (p: FeedbackPersona, withRounds: boolean) => (
     <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1.5" data-testid={`fb-evaluator-${p.id}`}>
       <PersonaAvatar avatar={p.avatar} name={p.name} size={24} />
@@ -156,23 +201,6 @@ export function ProjectFeedbackSetup({
         <div className="truncate text-sm text-gray-900">{p.name}</div>
         {p.deliverable_label && <div className="text-[11px] text-gray-500">{t('room.feedback.about', { product: p.deliverable_label })}</div>}
       </div>
-      {withRounds && (
-        <label className="flex items-center gap-1.5 text-xs text-gray-600">
-          {t('admin.projects.fb.rounds')}
-          <input
-            type="number" min={1} max={50}
-            defaultValue={p.max_reviews ?? ''}
-            placeholder={t('admin.personaRole.evaluator.unlimited')}
-            onBlur={(e) => {
-              const v = e.target.value.trim();
-              const next = v === '' ? null : Math.max(1, Math.min(50, Math.floor(Number(v))));
-              if (next !== (p.max_reviews ?? null)) void patchPersona(p, { max_reviews: next });
-            }}
-            className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
-            data-testid={`input-fb-rounds-${p.id}`}
-          />
-        </label>
-      )}
       {knowsRubric(p) ? (
         <span className="text-[11px] text-green-700">{t('admin.projects.fb.knowsRubric')}</span>
       ) : rubricIds.length > 0 ? (
@@ -190,6 +218,15 @@ export function ProjectFeedbackSetup({
           <button type="button" onClick={() => onDeletePersona(p)} className="p-1 rounded text-red-500 hover:bg-red-50" data-testid={`button-fb-delete-${p.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
         </Tooltip>
       </span>
+      {withRounds && (
+        <div className="basis-full space-y-1.5 pl-8" data-testid={`fb-kinds-${p.id}`}>
+          {kindRow(p, 'product')}
+          {kindRow(p, 'process')}
+          {p.product_feedback === false && p.process_feedback === false && (
+            <p className="text-[11px] text-amber-700">{t('admin.personaRole.evaluator.noneOn')}</p>
+          )}
+        </div>
+      )}
     </li>
   );
 
@@ -261,7 +298,7 @@ export function ProjectFeedbackSetup({
       {showFeedback && (
       <Step n={2} title={t('admin.projects.fb.step2')} who={t('admin.projects.fb.step2Who')} testId="fb-step-feedback">
         {mode === 'marking' && <AdminHint variant="warning" testId="hint-fb-leftover-feedback">{t('admin.projects.fb.leftoverFeedback')}</AdminHint>}
-        <p className="text-xs text-gray-600">{t('admin.projects.fb.step2Desc')}</p>
+        <p className="text-xs text-gray-600">{t('admin.projects.fb.step2DescKinds')}</p>
         {feedbackGivers.length === 0
           ? <p className="text-xs text-gray-500" data-testid="text-fb-feedback-off">{t('admin.projects.fb.feedbackOff')}</p>
           : <ul className="divide-y divide-gray-100">{feedbackGivers.map((p) => evaluatorRow(p, true))}</ul>}

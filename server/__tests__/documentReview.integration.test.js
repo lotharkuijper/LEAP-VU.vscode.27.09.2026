@@ -27,10 +27,11 @@ describe('feedback vragen bij een beoordelaar', () => {
     expect(routeSource("app.get('/api/projects/:projectId/groups/:groupId/feedback'")).not.toMatch(/verdict|grade|badge/);
   });
 
-  it('"Feedback op jullie aanpak" telt als feedbackronde en respecteert het maximum', () => {
+  it('"Feedback op ons proces" heeft eigen rondes en respecteert dat maximum', () => {
     expect(functionSource('countFeedbackRounds')).toMatch(/project_group_assessments/);
     const evaluate = routeSource("app.post('/api/projects/groups/:groupId/evaluate'");
-    expect(evaluate).toContain('feedbackRoundsState(ev.max_reviews, await countFeedbackRounds(groupId, ev.id)).canSubmit');
+    expect(evaluate).toContain("feedbackRoundsState(maxRoundsFor(ev, 'process'), await countFeedbackRounds(groupId, ev.id, 'process')).canSubmit");
+    expect(evaluate).toContain('feedbackKinds(ev).process');
     expect(evaluate).toContain('for (const evalPersona of withRounds)');
   });
 

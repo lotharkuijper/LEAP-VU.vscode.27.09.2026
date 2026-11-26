@@ -9,7 +9,8 @@ import { useContentTranslation, type TranslatableItem } from '../hooks/useConten
 import { PersonaMessageBody, personaSourcesFrom, type PersonaSourceTarget } from '../components/PersonaMessageBody';
 import { ViewerErrorBoundary } from '../components/ViewerErrorBoundary';
 import { PersonaAvatar } from '../components/PersonaAvatar';
-import { ProductFeedbackPanel } from '../components/ProductFeedbackPanel';
+import { ProductFeedbackPanel, useGroupFeedback } from '../components/ProductFeedbackPanel';
+import { ProcessFeedbackDialog, ProductFeedbackDialog } from '../components/projects/GroupFeedbackDialogs';
 import { SaveToJournalButton } from '../components/projects/SaveToJournalButton';
 import { MarkdownMessage } from '../components/MarkdownMessage';
 import { appendQuote, focusAtEnd } from '../lib/chatQuote';
@@ -21,7 +22,7 @@ const DocumentViewer = lazy(() => import('../components/DocumentViewer').then(m 
 import {
   ArrowLeft, Send, Users, MessageCircle, Bot, CheckCircle2,
   Flag, Clipboard, Copy, Loader2, BookOpen, Paperclip, Trash2, FileText, ShieldAlert, Download, Database, EyeOff,
-  LogOut, ScrollText, ChevronDown, ChevronRight, UploadCloud, RotateCcw,
+  LogOut, ScrollText, ChevronDown, ChevronRight, UploadCloud, RotateCcw, MessagesSquare, PackageCheck,
 } from 'lucide-react';
 
 interface Persona {
@@ -101,7 +102,7 @@ interface Checkpoint {
   journal_items?: Array<{ key: string; title: string; content: string }> | null;
   created_at: string;
 }
-/** Rapport van "Beoordeling opvragen" (project_group_assessments). */
+/** Rapport van "Feedback op ons proces" (project_group_assessments). */
 interface GroupAssessment {
   id: string;
   persona_name: string;
@@ -265,7 +266,9 @@ export function ProjectRoomPage() {
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [projectMaterials, setProjectMaterials] = useState<ProjectMaterialDoc[]>([]);
   const [bestandenOpen, setBestandenOpen] = useState(false);
-  const [hasEvaluator, setHasEvaluator] = useState(false);
+  // Welke feedbackknoppen heeft deze groep (besluit 2026-11-26)?
+  const [feedbackAvailable, setFeedbackAvailable] = useState<{ process: boolean; product: boolean }>({ process: false, product: false });
+  const [feedbackDialog, setFeedbackDialog] = useState<'process' | 'product' | null>(null);
   const [evaluators, setEvaluators] = useState<EvaluatorPersona[]>([]);
   // Task #167 — Persona-relaties
   const [relationships, setRelationships] = useState<RelationshipInfo[]>([]);
@@ -295,8 +298,6 @@ export function ProjectRoomPage() {
   const submitFileRef = useRef<HTMLInputElement>(null);
   // Eindproduct één keer inleveren: eerst kiezen, dan bevestigen (besluit 2026-11-11).
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [evaluating, setEvaluating] = useState(false);
-  const [evaluateRequestId, setEvaluateRequestId] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
   // Gesprek afsluiten
@@ -322,6 +323,7 @@ export function ProjectRoomPage() {
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   const token = session?.access_token;
+  const { givers: feedbackGivers, reload: reloadFeedback } = useGroupFeedback(projectId, groupId, token);
 
   const loadRoom = useCallback(async () => {
     if (!token || !projectId || !groupId) return;
@@ -345,7 +347,7 @@ export function ProjectRoomPage() {
       setJournalOn(data.courseFeatures?.journal !== false);
       setProjectMaterials(data.projectDocuments || []);
       setEvaluators(data.evaluators || []);
-      setHasEvaluator(!!data.hasEvaluator);
+      setFeedbackAvailable({ process: !!data.feedbackAvailable?.process, product: !!data.feedbackAvailable?.product });
       setConsultations(data.consultations || []);
       if (!activePersonaId && data.personas?.length > 0) {
         setActivePersonaId(data.personas[0].id);
@@ -915,37 +917,12 @@ export function ProjectRoomPage() {
     }
   };
 
-  const requestEvaluation = async () => {
-    if (!groupId || !token) return;
-    if (!confirm(t('room.assessmentConfirm'))) return;
-    setEvaluating(true);
-    setError(null);
-    try {
-      const requestId = evaluateRequestId || (
-        (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-      );
-      if (!evaluateRequestId) setEvaluateRequestId(requestId);
-      const r = await fetch(`/api/projects/groups/${groupId}/evaluate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ requestId, lang }),
-      });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || t('room.assessmentFailed'));
-      const okCount = (data.results || []).filter((x: any) => x.ok).length;
-      setInfo(okCount > 0
-        ? t('room.assessmentCompleteRoom', { count: String(okCount) })
-        : t('room.assessmentNoFeedback'));
-      setTimeout(() => setInfo(null), 7000);
-      setEvaluateRequestId(null);
-      void loadRoom();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setEvaluating(false);
-    }
+  const showInfo = (m: string, ms = 5000) => { setInfo(m); setTimeout(() => setInfo(null), ms); };
+  const onProcessFeedbackDone = (okCount: number) => {
+    setFeedbackDialog(null);
+    showInfo(okCount > 0 ? t('room.feedbackProcess.done') : t('room.assessmentNoFeedback'), 7000);
+    void loadRoom();
+    void reloadFeedback();
   };
 
   const loadConversationLog = useCallback(async () => {
@@ -1059,6 +1036,7 @@ export function ProjectRoomPage() {
   const isFinalized = group?.status === 'finalized';
   // Ingeleverd is ingeleverd; alleen in een concept probeert de docent opnieuw.
   const submissionLocked = submissions.length > 0 && project?.status !== 'draft';
+  const readyToFinish = !project?.submissions_enabled || submissions.length > 0;
 
   // Vertaal docent-content (briefing, persona-namen, rubric-criteria) naar de
   // actieve taal (Task #288). Hooks vóór de early-returns zodat de volgorde
@@ -1137,6 +1115,26 @@ export function ProjectRoomPage() {
           <span className="flex items-center gap-1 text-gray-600 text-xs">
             <Users className="w-4 h-4" />{members.length}
           </span>
+          {!isFinalized && feedbackAvailable.process && (
+            <button
+              onClick={() => setFeedbackDialog('process')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white hover:bg-violet-700 rounded-lg text-xs font-medium"
+              data-testid="button-feedback-process"
+              title={t('room.feedbackProcess.buttonTitle')}
+            >
+              <MessagesSquare className="w-4 h-4" /> {t('room.feedbackProcess.button')}
+            </button>
+          )}
+          {!isFinalized && feedbackAvailable.product && (
+            <button
+              onClick={() => setFeedbackDialog('product')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-800 border border-violet-200 hover:bg-violet-100 rounded-lg text-xs font-medium"
+              data-testid="button-feedback-product"
+              title={t('room.feedbackProduct.buttonTitle')}
+            >
+              <PackageCheck className="w-4 h-4" /> {t('room.feedbackProduct.button')}
+            </button>
+          )}
           {project.submissions_enabled && !isFinalized && (
             <button
               onClick={() => { setSubmitError(null); setPendingFile(null); setShowSubmitModal(true); }}
@@ -1145,38 +1143,31 @@ export function ProjectRoomPage() {
               title={t('room.submission.buttonTitle')}
             >
               <UploadCloud className="w-4 h-4" />
-              {submissions.length === 0 ? t('room.submission.submitProduct') : submissionLocked ? t('room.submission.viewSubmitted') : t('room.submission.replace')}
+              {submissions.length === 0 ? t('room.submission.submitFinal') : submissionLocked ? t('room.submission.viewSubmitted') : t('room.submission.replace')}
             </button>
           )}
           {!isFinalized && (
             <>
+              <span className="mx-1 h-5 w-px bg-gray-200" aria-hidden="true" />
               <button
                 onClick={() => openCheckpoint('checkpoint')}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded-lg text-xs font-medium"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-medium"
                 data-testid="button-open-checkpoint"
               >
                 <CheckCircle2 className="w-4 h-4" /> {t('room.checkpoint')}
               </button>
+              {/* Afronden licht pas op na definitief inleveren (of als er niets in te leveren is). */}
               <button
                 onClick={() => openCheckpoint('final')}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-lg text-xs font-medium"
+                className={readyToFinish
+                  ? 'flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white hover:bg-green-700 rounded-lg text-xs font-medium'
+                  : 'flex items-center gap-1.5 px-3 py-1.5 text-gray-600 hover:bg-gray-100 rounded-lg text-xs font-medium'}
                 data-testid="button-open-finalize"
+                title={readyToFinish ? undefined : t('room.finaliseAfterSubmit')}
               >
                 <Flag className="w-4 h-4" /> {t('room.finalise')}
               </button>
             </>
-          )}
-          {hasEvaluator && (
-            <button
-              onClick={requestEvaluation}
-              disabled={evaluating}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50 rounded-lg text-xs font-medium"
-              data-testid="button-request-evaluation"
-              title={t('room.assessmentTitle')}
-            >
-              {evaluating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
-              {evaluating ? t('room.assessing') : t('room.requestAssessment')}
-            </button>
           )}
         </div>
       </div>
@@ -1252,11 +1243,7 @@ export function ProjectRoomPage() {
                 );
               })()}
             </div>
-            {/* Beoordelaar: in de chat alleen hulp bij inleveren; feedback via de feedbackrondes. */}
-            {activePersona?.persona_type === 'evaluator' && (
-              <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900" data-testid="hint-evaluator-chat">{t('room.evaluatorChatHint')}</p>
-            )}
-            {activePersona && activePersona.persona_type !== 'evaluator' && (
+            {activePersona && (
               <div className="flex items-center justify-between gap-2 text-xs text-gray-600">
                 <div className="flex items-center gap-2 min-w-0 flex-wrap">
                   <span className="text-gray-500">{t('room.documents')} ({personaDocs.length}):</span>
@@ -1764,9 +1751,10 @@ export function ProjectRoomPage() {
                 projectId={projectId}
                 groupId={groupId}
                 token={token}
-                disabled={isFinalized}
+                givers={feedbackGivers}
+                reload={reloadFeedback}
+                mode="history"
                 journalOn={journalOn}
-                onInfo={(m) => { setInfo(m); setTimeout(() => setInfo(null), 5000); }}
               />
             )}
             {isStaff && relationships.length > 0 && (
@@ -1955,7 +1943,7 @@ export function ProjectRoomPage() {
             {assessments.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100" data-testid="section-assessments">
                 <div className="text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" /> {t('room.assessmentsCount', { count: String(assessments.length) })}
+                  <BookOpen className="w-3 h-3" /> {t('room.feedbackProcess.historyTitle', { count: String(assessments.length) })}
                 </div>
                 <ul className="space-y-1 text-xs">
                   {assessments.map(a => (
@@ -2456,7 +2444,23 @@ export function ProjectRoomPage() {
         </div>
       )}
 
-      {/* Inlever-dialoog projectproduct (Task #156) */}
+      {feedbackDialog === 'process' && groupId && token && (
+        <ProcessFeedbackDialog
+          groupId={groupId} token={token} givers={feedbackGivers}
+          onClose={() => setFeedbackDialog(null)}
+          onDone={onProcessFeedbackDone}
+        />
+      )}
+      {feedbackDialog === 'product' && projectId && groupId && token && (
+        <ProductFeedbackDialog
+          projectId={projectId} groupId={groupId} token={token}
+          givers={feedbackGivers} reload={reloadFeedback}
+          onClose={() => setFeedbackDialog(null)}
+          onInfo={(m) => showInfo(m)}
+        />
+      )}
+
+      {/* Inlever-dialoog: definitief inleveren (Task #156) */}
       {showSubmitModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6">

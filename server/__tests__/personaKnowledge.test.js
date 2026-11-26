@@ -134,7 +134,7 @@ describe('koppeling in de server', () => {
   it('studenten krijgen de kennisinstellingen niet mee in de projectkamer', () => {
     // Studenten krijgen een vaste lijst velden (studentPersonaView); kennis zit daar niet in.
     expect(routeSource("app.get('/api/projects/:projectId/room'")).toMatch(/: \{ \.\.\.studentPersonaView\(p\), _source: 'project' \}/);
-    for (const k of ['course_knowledge', 'course_knowledge_doc_ids', 'project_knowledge_doc_ids', 'rag_folder_ids']) {
+    for (const k of ['course_knowledge', 'course_knowledge_doc_ids', 'project_knowledge_doc_ids', 'rag_folder_ids', 'system_prompt', 'process_focus', 'conduct_rules']) {
       expect(STUDENT_PERSONA_FIELDS).not.toContain(k);
     }
   });

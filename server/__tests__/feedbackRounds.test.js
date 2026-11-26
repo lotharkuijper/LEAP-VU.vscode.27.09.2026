@@ -1,6 +1,6 @@
-// Feedbackrondes (2026-11-10): feedback op ingeleverd werk én elke keer "Feedback
-// op jullie aanpak" tellen mee, zodat de docent met één maximum bepaalt hoeveel
-// feedback een groep krijgt. Gedragstest met een nep-database.
+// Feedbackrondes per soort (2026-11-26): feedback op het product (ingeleverde
+// voorlopige versies) en feedback op het proces ("Feedback op ons proces") hebben
+// elk een eigen maximum. Gedragstest met een nep-database.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const rows = { project_group_products: [], project_group_assessments: [] };
@@ -24,13 +24,14 @@ vi.mock('../lib/supabase.js', () => ({
   },
 }));
 
-const { countFeedbackRounds } = await import('../projects/evaluatorReview.js');
+const { countFeedbackRounds, maxRoundsFor } = await import('../projects/evaluatorReview.js');
 const { feedbackRoundsState } = await import('../projects/documentReview.js');
 
 beforeEach(() => {
   missingAssessments = false;
   // Ingeleverd werk (ook als de feedback nog wordt geschreven: het bestand staat er al).
   rows.project_group_products = [
+    { group_id: 'g', persona_id: 'ev' },
     { group_id: 'g', persona_id: 'ev' },
     { group_id: 'other', persona_id: 'ev' },
   ];
@@ -40,19 +41,32 @@ beforeEach(() => {
   ];
 });
 
-describe('feedbackrondes tellen', () => {
-  it('ingeleverd werk plus "Feedback op jullie aanpak", alleen van deze groep en beoordelaar', async () => {
-    expect(await countFeedbackRounds('g', 'ev')).toBe(2);
-    expect(await countFeedbackRounds('g', 'other-ev')).toBe(1);
+describe('feedbackrondes tellen, per soort', () => {
+  it('product en proces tellen apart, alleen van deze groep en feedbackgever', async () => {
+    expect(await countFeedbackRounds('g', 'ev', 'product')).toBe(2);
+    expect(await countFeedbackRounds('g', 'ev', 'process')).toBe(1);
+    expect(await countFeedbackRounds('g', 'other-ev', 'process')).toBe(1);
+    expect(await countFeedbackRounds('g', 'other-ev', 'product')).toBe(0);
   });
 
-  it('bij het maximum kan de groep geen feedback meer vragen', async () => {
-    expect(feedbackRoundsState(2, await countFeedbackRounds('g', 'ev')).canSubmit).toBe(false);
-    expect(feedbackRoundsState(3, await countFeedbackRounds('g', 'ev')).canSubmit).toBe(true);
+  it('een soort zonder rondes houdt de andere niet tegen', async () => {
+    const ev = { max_reviews: 2, max_process_reviews: 3 };
+    expect(feedbackRoundsState(maxRoundsFor(ev, 'product'), await countFeedbackRounds('g', 'ev', 'product')).canSubmit).toBe(false);
+    expect(feedbackRoundsState(maxRoundsFor(ev, 'process'), await countFeedbackRounds('g', 'ev', 'process')).canSubmit).toBe(true);
   });
 
-  it('oude database zonder tabel voor "Feedback op jullie aanpak": alleen ingeleverd werk', async () => {
+  it('zonder soort weigert de teller (nooit stilletjes alles samen)', async () => {
+    await expect(countFeedbackRounds('g', 'ev')).rejects.toThrow();
+  });
+
+  it('oude database zonder tabel voor procesfeedback: nog niets gebruikt', async () => {
     missingAssessments = true;
-    expect(await countFeedbackRounds('g', 'ev')).toBe(1);
+    expect(await countFeedbackRounds('g', 'ev', 'process')).toBe(0);
+    expect(await countFeedbackRounds('g', 'ev', 'product')).toBe(2);
+  });
+
+  it('leeg maximum = onbeperkt', () => {
+    expect(maxRoundsFor({}, 'process')).toBeNull();
+    expect(maxRoundsFor({ max_reviews: 4 }, 'product')).toBe(4);
   });
 });

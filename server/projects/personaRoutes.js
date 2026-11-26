@@ -15,7 +15,6 @@ import {
   normalizeMaxConsultations as conNormalizeMax,
 } from './consultationLimit.js';
 import { feedbackRoundsState } from './documentReview.js';
-import { buildEvaluatorChatPrompt, loadEvaluatorChatFacts } from './evaluatorChat.js';
 import { purposeAllowsModule } from '../rag/filePurpose.js';
 import { buildLanguageInstruction, languageEnglishName, normalizeLang } from '../i18n/languages.js';
 import { authUser, isLeapAdmin, isStaffForCourse, loadProfileRoleEmail, profileCache } from '../lib/auth.js';
@@ -55,7 +54,7 @@ import {
   nextLevel as relNextLevel,
   validateConductJudgement as relValidateJudgement,
 } from './personaRelationship.js';
-import { clampStartLevel, copyRoleFields, reputationActive, roleFieldsFrom } from './personaRoles.js';
+import { clampStartLevel, copyRoleFields, feedbackKinds, reputationActive, roleFieldsFrom } from './personaRoles.js';
 import { loadRagSettings, searchChunksServerSide } from '../rag/search.js';
 import { indexProjectKnowledgeText } from '../ingestion/ragProcessing.js';
 import { registerRelationshipAdjustRoute } from './relationshipAdjust.js';
@@ -311,17 +310,11 @@ export function registerProjectPersonaRoutes(app) {
         }
       }
       if (!persona) return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
-      // Een beoordelaar is in de chat alleen een wegwijzer bij het inleveren
-      // (evaluatorChat.js); feedback geeft hij alleen in een feedbackronde. De
-      // nakijkhulp van het eindproduct is geen gesprekspartner.
-      const isEvaluator = persona.persona_type === 'evaluator';
-      let evaluatorFacts = null;
-      if (isEvaluator) {
-        evaluatorFacts = await loadEvaluatorChatFacts(supabaseAdmin, { projectId: project.id, groupId, persona });
-        // De nakijkhulp is geen gesprekspartner, voor niemand.
-        if (evaluatorFacts.isPreassessor) {
-          return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
-        }
+      // Een feedbackgever (beoordelaar) en de nakijkhulp zijn geen gesprekspartners,
+      // voor niemand (besluit 2026-11-26): feedback komt alleen via de knoppen
+      // "Feedback op ons proces" en "Feedback op ons product".
+      if (persona.persona_type === 'evaluator') {
+        return res.status(404).json({ error: 'Persona niet gevonden of niet in dit project' });
       }
 
       // Verstandhouding: alleen bij een rolspeler die er een bijhoudt. Staat het
@@ -391,8 +384,7 @@ export function registerProjectPersonaRoutes(app) {
         } catch (e) {
           console.warn('[persona-chat] extra raadplegingen laden mislukte:', e.message);
         }
-        // Vragen over inleveren bij een beoordelaar tellen niet als raadpleging.
-        const effLimit = isEvaluator ? null : conComputeEffectiveLimit(persona.max_consultations, extra);
+        const effLimit = conComputeEffectiveLimit(persona.max_consultations, extra);
         if (conIsBlocked(used, effLimit)) {
           return res.json({
             reply: conLimitMessage(lang, effLimit),
@@ -448,9 +440,7 @@ export function registerProjectPersonaRoutes(app) {
           })
           : null,
         (async () => {
-          // Een beoordelaar zoekt in de chat niets op: hij helpt alleen bij inleveren. (De
-          // course_knowledge van de nakijkhulp gebruikt alleen preassessment.js.)
-          const mode = isEvaluator ? 'none' : (persona.course_knowledge || 'none');
+          const mode = persona.course_knowledge || 'none';
           if (mode === 'none') return { context: '', sources: [] };
           const [ragSettings, courseFolders] = await Promise.all([
             ragSettingsP,
@@ -468,7 +458,6 @@ export function registerProjectPersonaRoutes(app) {
           return matched && matched.length > 0 ? buildNumberedRagContext(matched, 5) : { context: '', sources: [] };
         })(),
         (async () => {
-          if (isEvaluator) return [];
           const { data: docs } = await supabaseAdmin
             .from('project_persona_documents')
             .select('id, filename, content_text')
@@ -478,8 +467,7 @@ export function registerProjectPersonaRoutes(app) {
           return docs || [];
         })(),
         (async () => {
-          // Niet voor een beoordelaar: zijn kennis (de rubric) blijft voor de feedbackrondes.
-          if (!persona.project_id || isEvaluator) return { docs: [], matched: [], unindexed: [] };
+          if (!persona.project_id) return { docs: [], matched: [], unindexed: [] };
           const docs = await loadPersonaProjectDocs(supabaseAdmin, persona);
           if (!docs.length) return { docs, matched: [], unindexed: [] };
           const counts = await chunkCounts(supabaseAdmin, docs.map(d => d.document_ref_id));
@@ -544,9 +532,7 @@ export function registerProjectPersonaRoutes(app) {
         ? relBuildPromptBlock(relationship.score, persona.conduct_rules, lang, relationship.history)
         : '';
       // Task #296: leerniveau-blok vóór de taal-instructie (laatste blok blijft taal).
-      const systemContent = isEvaluator
-        ? `${buildEvaluatorChatPrompt(persona, evaluatorFacts)}${sourcesRulesBlock}${langSuffix}`
-        : `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${sourcesRulesBlock}${langSuffix}`;
+      const systemContent = `${persona.system_prompt}${relationshipBlock}${agreementsBlock}${ragBlock}${projectDocBlock}${docBlock}${sourcesRulesBlock}${langSuffix}`;
 
       if (!AZURE_CHAT_READY) return res.status(503).json({ error: LLM_NOT_CONFIGURED_MSG });
       const personaMessages = [
@@ -1302,8 +1288,9 @@ export function registerProjectPersonaRoutes(app) {
       if (!memberOfGroup && !isStaff) return res.status(403).json({ error: 'Je bent geen lid van deze groep' });
       if (!projectAcceptsWork(project)) return res.status(403).json({ error: 'Project is niet meer actief' });
       if (group.status === 'archived') return res.status(403).json({ error: 'Groep is gearchiveerd' });
+      if (!feedbackKinds(persona).product) return res.status(403).json({ error: 'Deze feedbackgever geeft geen feedback op een product.' });
       if (!req.file) return res.status(400).json({ error: 'Geen bestand ontvangen (veld "file")' });
-      const used = await countFeedbackRounds(group.id, persona.id);
+      const used = await countFeedbackRounds(group.id, persona.id, 'product');
       if (!feedbackRoundsState(persona.max_reviews, used).canSubmit) {
         return res.status(403).json({ error: 'Alle feedbackrondes bij deze beoordelaar zijn gebruikt.' });
       }
@@ -1323,7 +1310,7 @@ export function registerProjectPersonaRoutes(app) {
       if (pErr) return res.status(500).json({ error: pErr.message });
       // Opnieuw tellen nu het bestand er staat: twee gelijktijdige inleveringen kunnen
       // samen het maximum niet overschrijden.
-      if (!feedbackRoundsState(persona.max_reviews, (await countFeedbackRounds(group.id, persona.id)) - 1).canSubmit) {
+      if (!feedbackRoundsState(persona.max_reviews, (await countFeedbackRounds(group.id, persona.id, 'product')) - 1).canSubmit) {
         await supabaseAdmin.from('project_group_products').delete().eq('id', product.id);
         return res.status(403).json({ error: 'Alle feedbackrondes bij deze beoordelaar zijn gebruikt.' });
       }
