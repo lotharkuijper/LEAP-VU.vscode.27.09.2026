@@ -48,6 +48,10 @@ interface CoursePersona {
   start_level?: number | null;
   deliverable_label?: string | null;
   max_reviews?: number | null;
+  product_feedback?: boolean | null;
+  process_feedback?: boolean | null;
+  max_process_reviews?: number | null;
+  process_focus?: string | null;
 }
 
 interface ProjectOption {
@@ -69,6 +73,10 @@ const EMPTY_FORM = {
   start_level: 0 as number,
   deliverable_label: null as string | null,
   max_reviews: null as number | null,
+  product_feedback: true as boolean,
+  process_feedback: true as boolean,
+  max_process_reviews: null as number | null,
+  process_focus: null as string | null,
 };
 
 export function PersonaLibraryTab({ onOpenProjects }: {
@@ -177,6 +185,10 @@ export function PersonaLibraryTab({ onOpenProjects }: {
       start_level: p.start_level ?? 0,
       deliverable_label: p.deliverable_label ?? null,
       max_reviews: p.max_reviews ?? null,
+      product_feedback: p.product_feedback !== false,
+      process_feedback: p.process_feedback !== false,
+      max_process_reviews: p.max_process_reviews ?? null,
+      process_focus: p.process_focus ?? null,
     });
     setEditingId(p.id);
     setFaceOpen(false);

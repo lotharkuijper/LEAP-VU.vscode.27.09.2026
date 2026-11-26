@@ -189,3 +189,32 @@ describe('ProjectFeedbackSetup', () => {
     expect(criteriaLines(undefined)).toBe('');
   });
 });
+
+describe('feedback op product en proces (2026-11-26)', () => {
+  it('per feedbackgever twee schakelaars met eigen rondes; de nakijkhulp heeft ze niet', () => {
+    setup();
+    expect(screen.getByTestId('checkbox-fb-product-e1')).toBeChecked();
+    expect(screen.getByTestId('checkbox-fb-process-e1')).toBeChecked();
+    expect(screen.getByTestId('input-fb-rounds-e1')).toHaveValue(3);
+    expect(screen.getByTestId('input-fb-process-rounds-e1')).toHaveValue(null);
+    expect(screen.queryByTestId('checkbox-fb-product-e2')).toBeNull();
+  });
+
+  it('procesfeedback uitzetten en rondes instellen slaat het juiste veld op', async () => {
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
+    vi.stubGlobal('fetch', fetchMock);
+    setup();
+    fireEvent.change(screen.getByTestId('input-fb-process-rounds-e1'), { target: { value: '2' } });
+    fireEvent.blur(screen.getByTestId('input-fb-process-rounds-e1'));
+    fireEvent.click(screen.getByTestId('checkbox-fb-process-e1'));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    const bodies = fetchMock.mock.calls.map((c) => JSON.parse(((c as unknown as [string, RequestInit])[1]).body as string));
+    expect(bodies).toEqual([{ max_process_reviews: 2 }, { process_feedback: false }]);
+  });
+
+  it('beide uit: waarschuwing dat de feedbackgever niets doet', () => {
+    setup({ personas: [{ ...personas[0], product_feedback: false, process_feedback: false }, personas[1]] });
+    expect(screen.getByTestId('fb-kinds-e1')).toHaveTextContent('Beide soorten feedback staan uit');
+    expect(screen.queryByTestId('input-fb-rounds-e1')).toBeNull();
+  });
+});

@@ -22,6 +22,11 @@ export interface RoleFieldValues {
   start_level?: number | null;
   deliverable_label?: string | null;
   max_reviews?: number | null;
+  /** Feedback op het product (upload) en op het proces (geen upload), elk met eigen rondes (2026-11-26). */
+  product_feedback?: boolean | null;
+  process_feedback?: boolean | null;
+  max_process_reviews?: number | null;
+  process_focus?: string | null;
 }
 
 /** Wat er naar de server gaat; velden die niet bij de rol horen worden daar neutraal gezet. */
@@ -34,7 +39,34 @@ export function roleFieldsPayload(v: RoleFieldValues) {
     start_level: role === 'roleplayer' ? (v.start_level ?? 0) : 0,
     deliverable_label: role === 'evaluator' ? (v.deliverable_label?.trim() || null) : null,
     max_reviews: role === 'evaluator' ? (v.max_reviews ?? null) : null,
+    product_feedback: v.product_feedback !== false,
+    process_feedback: v.process_feedback !== false,
+    max_process_reviews: role === 'evaluator' ? (v.max_process_reviews ?? null) : null,
+    process_focus: role === 'evaluator' ? (v.process_focus?.trim() || null) : null,
   };
+}
+
+const roundsValue = (raw: string) => (raw.trim() === '' ? null : Math.max(1, Math.min(50, Math.floor(Number(raw)))));
+
+/** Rondes-veld (leeg = onbeperkt), gedeeld door product en proces. */
+function RoundsInput({ id, label, value, onChange }: { id: string; label: string; value: number | null | undefined; onChange: (v: number | null) => void }) {
+  const { t } = useLanguage();
+  return (
+    <label htmlFor={id} className="flex items-center gap-1.5 text-xs text-gray-700">
+      {label}
+      <input
+        id={id}
+        type="number"
+        min={1}
+        max={50}
+        value={value ?? ''}
+        placeholder={t('admin.personaRole.evaluator.unlimited')}
+        onChange={e => onChange(roundsValue(e.target.value))}
+        className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+        data-testid={id}
+      />
+    </label>
+  );
 }
 
 const ROLES: Array<{ role: PersonaRole; Icon: typeof Compass; tone: string }> = [
@@ -126,8 +158,8 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
         </div>
       </fieldset>}
 
-      {role === 'evaluator' && (
-        <div className="grid gap-3 rounded-lg border border-purple-100 bg-purple-50/40 p-3 grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))]">
+      {role === 'evaluator' && marking && (
+        <div className="grid gap-3 rounded-lg border border-purple-100 bg-purple-50/40 p-3">
           <div>
             <label htmlFor={`${idPrefix}-deliverable`} className="text-xs font-medium text-gray-700">{t('admin.personaRole.evaluator.deliverable')}</label>
             <input
@@ -139,24 +171,84 @@ export function PersonaRoleFields({ value, onChange, personaName, courseId, toke
               data-testid={`${idPrefix}-deliverable`}
             />
           </div>
-          {!marking && <div>
-            <label htmlFor={`${idPrefix}-max-reviews`} className="flex items-center gap-1.5 text-xs font-medium text-gray-700">{t('admin.personaRole.evaluator.maxReviews')}<HelpTip id="personas.feedbackRounds" /></label>
-            <input
-              id={`${idPrefix}-max-reviews`}
-              type="number"
-              min={1}
-              max={50}
-              value={value.max_reviews ?? ''}
-              placeholder={t('admin.personaRole.evaluator.unlimited')}
-              onChange={e => {
-                const v = e.target.value.trim();
-                onChange({ ...value, max_reviews: v === '' ? null : Math.max(1, Math.min(50, Math.floor(Number(v)))) });
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-              data-testid={`${idPrefix}-max-reviews`}
-            />
-          </div>}
-          <AdminHint variant="tip" className="col-span-full">{t(marking ? 'admin.personaRole.evaluator.markingHint' : 'admin.personaRole.evaluator.hint')}</AdminHint>
+          <AdminHint variant="tip">{t('admin.personaRole.evaluator.markingHint')}</AdminHint>
+        </div>
+      )}
+
+      {/* Feedbackgever: twee soorten feedback, elk aan/uit met eigen rondes (2026-11-26). */}
+      {role === 'evaluator' && !marking && (
+        <div className="space-y-3 rounded-lg border border-purple-100 bg-purple-50/40 p-3" data-testid={`${idPrefix}-feedback-kinds`}>
+          <div className="space-y-2">
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={value.product_feedback !== false}
+                onChange={e => onChange({ ...value, product_feedback: e.target.checked })}
+                data-testid={`${idPrefix}-product-feedback`}
+              />
+              <span>
+                <span className="font-medium">{t('admin.personaRole.evaluator.productTitle')}</span>
+                <span className="block text-[11px] text-gray-600">{t('admin.personaRole.evaluator.productDesc')}</span>
+              </span>
+            </label>
+            {value.product_feedback !== false && (
+              <div className="ml-6 grid gap-2 grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))]">
+                <div>
+                  <label htmlFor={`${idPrefix}-deliverable`} className="text-xs font-medium text-gray-700">{t('admin.personaRole.evaluator.deliverable')}</label>
+                  <input
+                    id={`${idPrefix}-deliverable`}
+                    value={value.deliverable_label || ''}
+                    onChange={e => onChange({ ...value, deliverable_label: e.target.value })}
+                    placeholder={t('admin.personaRole.evaluator.deliverablePlaceholder')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    data-testid={`${idPrefix}-deliverable`}
+                  />
+                </div>
+                <div className="flex items-end gap-1.5">
+                  <RoundsInput id={`${idPrefix}-max-reviews`} label={t('admin.projects.fb.rounds')} value={value.max_reviews} onChange={v => onChange({ ...value, max_reviews: v })} />
+                  <HelpTip id="personas.feedbackRounds" />
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={value.process_feedback !== false}
+                onChange={e => onChange({ ...value, process_feedback: e.target.checked })}
+                data-testid={`${idPrefix}-process-feedback`}
+              />
+              <span>
+                <span className="font-medium">{t('admin.personaRole.evaluator.processTitle')}</span>
+                <span className="block text-[11px] text-gray-600">{t('admin.personaRole.evaluator.processDesc')}</span>
+              </span>
+            </label>
+            {value.process_feedback !== false && (
+              <div className="ml-6 space-y-2">
+                <RoundsInput id={`${idPrefix}-max-process-reviews`} label={t('admin.projects.fb.rounds')} value={value.max_process_reviews} onChange={v => onChange({ ...value, max_process_reviews: v })} />
+                <div>
+                  <label htmlFor={`${idPrefix}-process-focus`} className="text-xs font-medium text-gray-700">{t('admin.personaRole.evaluator.processFocus')}</label>
+                  <textarea
+                    id={`${idPrefix}-process-focus`}
+                    value={value.process_focus || ''}
+                    onChange={e => onChange({ ...value, process_focus: e.target.value })}
+                    rows={3}
+                    maxLength={2000}
+                    placeholder={t('admin.personaRole.evaluator.processFocusPlaceholder')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    data-testid={`${idPrefix}-process-focus`}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          {value.product_feedback === false && value.process_feedback === false && (
+            <AdminHint variant="warning">{t('admin.personaRole.evaluator.noneOn')}</AdminHint>
+          )}
+          <AdminHint variant="tip">{t('admin.personaRole.evaluator.hintKinds')}</AdminHint>
         </div>
       )}
 

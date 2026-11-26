@@ -1,4 +1,6 @@
 import { feedbackRoundsState } from './documentReview.js';
+import { feedbackKinds } from './personaRoles.js';
+import { maxRoundsFor } from './evaluatorReview.js';
 import { MATERIAL_KINDS } from '../rag/filePurpose.js';
 import { buildLanguageInstruction } from '../i18n/languages.js';
 import {
@@ -488,8 +490,10 @@ export function registerProjectDocumentRoutes(app) {
     }
   });
 
-  // GET /api/projects/:projectId/groups/:groupId/feedback — per beoordelaar het
-  // product, de rondes (gebruikt / maximum) en de eerdere feedback van de groep.
+  // GET /api/projects/:projectId/groups/:groupId/feedback — per feedbackgever wat
+  // hij geeft (product en/of proces, 2026-11-26), per soort de rondes (gebruikt /
+  // maximum) en de eerdere productfeedback van de groep. De procesfeedback zelf
+  // staat in de projectruimte (assessments in /room).
   app.get('/api/projects/:projectId/groups/:groupId/feedback', async (req, res) => {
     if (!supabaseAdmin) return res.status(503).json({ error: 'Admin client niet beschikbaar' });
     try {
@@ -498,7 +502,7 @@ export function registerProjectDocumentRoutes(app) {
       const { project, group, auth } = ctx;
       const { data: evaluators } = await supabaseAdmin
         .from('project_personas')
-        .select('id, name, avatar_emoji, avatar, deliverable_label, max_reviews, sort_order')
+        .select('*')
         .eq('project_id', project.id).eq('persona_type', 'evaluator').neq('id', project.preassessment_persona_id || '00000000-0000-0000-0000-000000000000').order('sort_order');
       const evIds = (evaluators || []).map(e => e.id);
       if (evIds.length === 0) return res.json({ evaluators: [] });
@@ -516,7 +520,7 @@ export function registerProjectDocumentRoutes(app) {
           .in('product_id', productIds);
         reviews = data || [];
       }
-      // "Feedback op jullie aanpak" telt ook als ronde (countFeedbackRounds in evaluatorReview.js).
+      // "Feedback op ons proces" heeft eigen rondes (countFeedbackRounds in evaluatorReview.js).
       const { data: assessments } = await supabaseAdmin
         .from('project_group_assessments').select('persona_id')
         .eq('group_id', group.id).in('persona_id', evIds);
@@ -532,13 +536,20 @@ export function registerProjectDocumentRoutes(app) {
           const review = reviewByProduct.get(p.id) || null;
           return { productId: p.id, filename: p.filename, createdAt: p.created_at, review, journalSaved: review ? isSaved(reviewRefs(review), mySavedSet) : false };
         });
-        const asked = (assessments || []).filter(a => a.persona_id === ev.id).length;
-        const rounds = feedbackRoundsState(ev.max_reviews, items.filter(i => i.review).length + asked);
+        const kinds = feedbackKinds(ev);
+        const rounds = feedbackRoundsState(ev.max_reviews, items.filter(i => i.review).length);
+        const processRounds = feedbackRoundsState(maxRoundsFor(ev, 'process'), (assessments || []).filter(a => a.persona_id === ev.id).length);
         return {
           personaId: ev.id, name: ev.name, avatarEmoji: ev.avatar_emoji, avatar: ev.avatar ?? null,
           deliverableLabel: ev.deliverable_label || null,
-          maxReviews: rounds.maxReviews, used: rounds.used, remaining: rounds.remaining, canSubmit: rounds.canSubmit,
+          // Feedback op het product (upload).
+          product: kinds.product,
+          maxReviews: rounds.maxReviews, used: rounds.used, remaining: rounds.remaining, canSubmit: kinds.product && rounds.canSubmit,
           items,
+          // Feedback op het proces (geen upload).
+          process: kinds.process
+            ? { maxReviews: processRounds.maxReviews, used: processRounds.used, remaining: processRounds.remaining, canSubmit: processRounds.canSubmit }
+            : null,
         };
       });
       return res.json({ evaluators: out });

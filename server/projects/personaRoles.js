@@ -4,13 +4,15 @@
 // opschoont en doorgeeft.
 //
 //   conversational = Begeleider  — helpt de groep; geen verstandhouding.
-//   evaluator      = Beoordelaar — feedback op een product (rubric, rondes).
+//   evaluator      = Beoordelaar — feedback op het product (upload, rubric) en/of
+//                    op het proces (geen upload), elk met eigen rondes.
 //   roleplayer     = Rolspeler   — personage in een simulatie; verstandhouding optioneel.
 
 export const PERSONA_TYPES = ['conversational', 'evaluator', 'roleplayer'];
 export const MAX_REVIEWS_MAX = 50;
 const RULE_MAX_CHARS = 1500;
 const LEVEL_RULE_MAX_CHARS = 400;
+export const PROCESS_FOCUS_MAX_CHARS = 2000;
 export const LEVEL_KEYS = ['cold', 'strained', 'neutral', 'positive', 'warm'];
 
 export function normalizePersonaType(value) {
@@ -69,9 +71,22 @@ export function roleFieldsFrom(input, { partial = false } = {}) {
   if (has('start_level')) out.start_level = clampStartLevel(src.start_level);
   if (has('deliverable_label')) out.deliverable_label = cleanText(src.deliverable_label, 120) || null;
   if (has('max_reviews')) out.max_reviews = normalizeMaxReviews(src.max_reviews);
+  // Feedback op het product (upload) en op het proces (geen upload), elk aan/uit
+  // met eigen rondes (2026-11-26). Ontbreekt de schakelaar, dan staat hij aan.
+  if (has('product_feedback')) out.product_feedback = src.product_feedback !== false;
+  if (has('process_feedback')) out.process_feedback = src.process_feedback !== false;
+  if (has('max_process_reviews')) out.max_process_reviews = normalizeMaxReviews(src.max_process_reviews);
+  if (has('process_focus')) out.process_focus = cleanText(src.process_focus, PROCESS_FOCUS_MAX_CHARS) || null;
   if (out.persona_type && out.persona_type !== 'roleplayer') out.reputation_enabled = false;
-  if (out.persona_type && out.persona_type !== 'evaluator') { out.max_reviews = null; out.deliverable_label = null; }
+  if (out.persona_type && out.persona_type !== 'evaluator') {
+    out.max_reviews = null; out.deliverable_label = null; out.max_process_reviews = null; out.process_focus = null;
+  }
   return out;
+}
+
+/** Welke feedback geeft deze beoordelaar? Zonder kolom (oude rij): beide. */
+export function feedbackKinds(persona) {
+  return { product: persona?.product_feedback !== false, process: persona?.process_feedback !== false };
 }
 
 /** Velden die van sjabloon naar project-kopie (en terug) meegaan. */
@@ -83,5 +98,9 @@ export function copyRoleFields(src) {
     start_level: src?.start_level,
     deliverable_label: src?.deliverable_label,
     max_reviews: src?.max_reviews,
+    product_feedback: src?.product_feedback,
+    process_feedback: src?.process_feedback,
+    max_process_reviews: src?.max_process_reviews,
+    process_focus: src?.process_focus,
   });
 }
