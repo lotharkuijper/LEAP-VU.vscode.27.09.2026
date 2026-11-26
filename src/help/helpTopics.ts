@@ -76,6 +76,12 @@ export const HELP_TOPICS = [
   'student.journal.achievements',
   'student.myData.delete',
   'student.formula',
+  // Projectruimte (2026-11-26): de knoppen bovenin.
+  'student.room.feedbackProcess',
+  'student.room.feedbackProduct',
+  'student.room.submitFinal',
+  'student.room.checkpoint',
+  'student.room.finalise',
   'courseFeatures.formulaEditor',
   // Analyse (losse module: src/features/analytics)
   'analytics.thermometer',
