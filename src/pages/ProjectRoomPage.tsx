@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
+import { HelpTip } from '../components/help/HelpTip';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../i18n';
 import { useAuth } from '../contexts/AuthContext';
@@ -1116,6 +1117,7 @@ export function ProjectRoomPage() {
             <Users className="w-4 h-4" />{members.length}
           </span>
           {!isFinalized && feedbackAvailable.process && (
+            <span className="inline-flex items-center gap-1">
             <button
               onClick={() => setFeedbackDialog('process')}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 text-white hover:bg-violet-700 rounded-lg text-xs font-medium"
@@ -1124,8 +1126,11 @@ export function ProjectRoomPage() {
             >
               <MessagesSquare className="w-4 h-4" /> {t('room.feedbackProcess.button')}
             </button>
+            <HelpTip id="student.room.feedbackProcess" always className="-ml-1" />
+            </span>
           )}
           {!isFinalized && feedbackAvailable.product && (
+            <span className="inline-flex items-center gap-1">
             <button
               onClick={() => setFeedbackDialog('product')}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-800 border border-violet-200 hover:bg-violet-100 rounded-lg text-xs font-medium"
@@ -1134,8 +1139,11 @@ export function ProjectRoomPage() {
             >
               <PackageCheck className="w-4 h-4" /> {t('room.feedbackProduct.button')}
             </button>
+            <HelpTip id="student.room.feedbackProduct" always className="-ml-1" />
+            </span>
           )}
           {project.submissions_enabled && !isFinalized && (
+            <span className="inline-flex items-center gap-1">
             <button
               onClick={() => { setSubmitError(null); setPendingFile(null); setShowSubmitModal(true); }}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 text-white hover:bg-amber-600 rounded-lg text-xs font-medium"
@@ -1145,6 +1153,8 @@ export function ProjectRoomPage() {
               <UploadCloud className="w-4 h-4" />
               {submissions.length === 0 ? t('room.submission.submitFinal') : submissionLocked ? t('room.submission.viewSubmitted') : t('room.submission.replace')}
             </button>
+            <HelpTip id="student.room.submitFinal" always className="-ml-1" />
+            </span>
           )}
           {!isFinalized && (
             <>
@@ -1156,6 +1166,7 @@ export function ProjectRoomPage() {
               >
                 <CheckCircle2 className="w-4 h-4" /> {t('room.checkpoint')}
               </button>
+              <HelpTip id="student.room.checkpoint" always className="-ml-1" />
               {/* Afronden licht pas op na definitief inleveren (of als er niets in te leveren is). */}
               <button
                 onClick={() => openCheckpoint('final')}
@@ -1167,6 +1178,7 @@ export function ProjectRoomPage() {
               >
                 <Flag className="w-4 h-4" /> {t('room.finalise')}
               </button>
+              <HelpTip id="student.room.finalise" always className="-ml-1" />
             </>
           )}
         </div>
