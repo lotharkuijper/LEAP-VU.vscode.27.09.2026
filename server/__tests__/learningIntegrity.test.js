@@ -52,8 +52,8 @@ describe('thermometer: elke student weegt even zwaar', () => {
     const honest = ['a', 'b', 'c', 'd', 'e'].map(s => ({ student_id: s, topics: ['Bias'], score_percentage: 80 }));
     const flood = Array.from({ length: 50 }, () => ({ student_id: 'x', topics: ['Bias'], score_percentage: 0 }));
     const r = buildConceptThermometer({ attempts: [...honest, ...flood], concepts: [{ name: 'Bias', aliases: [] }] });
-    // (5 × 80 + 1 × 0) / 6 ≈ 67, niet (400 + 0) / 55 ≈ 7.
-    expect(r.concepts[0].quiz.avgScore).toBe(67);
+    // (5 × 80 + 1 × 0) / 6 ≈ 67, niet (400 + 0) / 55 ≈ 7. Afgerond op 10 (privacy, 2026-11-25): 70.
+    expect(r.concepts[0].quiz.avgScore).toBe(70);
     expect(r.concepts[0].quiz.attempts).toBe(55);
   });
   it('perStudentAverage', () => {
